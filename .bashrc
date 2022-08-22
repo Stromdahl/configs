@@ -129,6 +129,8 @@ alias mv='mv -iv'
 alias mkdir='mkdir -pv'
 alias i3lock='i3lock -c 000000'
 alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
 
 # Aliases for xclip
 alias xco='xclip -out -selection clipboard'
