@@ -3,8 +3,9 @@ let g:maplocalleader = ','
 nnoremap <silent> <leader>      :<c-u>WhichKey '<Space>'<CR>
 nnoremap <silent> <localleader> :<c-u>WhichKey  ','<CR>
 
-" == vim-plug ==
-
+" ==========================================================
+" # vim-plug 
+" ==========================================================
 call plug#begin()
 Plug 'preservim/nerdtree'
 Plug 'dracula/vim', { 'as': 'dracula' }
