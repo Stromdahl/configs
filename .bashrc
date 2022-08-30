@@ -138,6 +138,21 @@ alias xci='xclip -in -selection clipboard'
 alias xcpo='xclip -out'
 alias xcpi='xclip -in'
 
+# Aliases for kubectl
+kube() {
+  case "$1" in
+    gp)
+      kubectl get pods
+      ;;
+    sh)
+      kubectl exec $2 -it -- bash
+      ;;
+    *)
+    echo "Usage: $0 {gp|sh}"
+      ;;
+  esac
+}
+
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
