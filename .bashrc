@@ -8,9 +8,6 @@ case $- in
   *) return;;
 esac
 
-alias lsl='ls -l'
-alias lsa='lsl -a'
-
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
 HISTCONTROL=ignoreboth
@@ -19,8 +16,8 @@ HISTCONTROL=ignoreboth
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+HISTSIZE=
+HISTFILESIZE=
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -28,7 +25,7 @@ shopt -s checkwinsize
 
 # If set, the pattern "**" used in a pathname expansion context will
 # match all files and zero or more directories and subdirectories.
-#shopt -s globstar
+shopt -s globstar
 
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
@@ -59,6 +56,7 @@ if [ -n "$force_color_prompt" ]; then
   fi
 fi
 
+# Add returnvalue if command return != 0
 returnvalue() {
   ret=$?
   if [ $ret -ne 0 ]; then
@@ -113,30 +111,41 @@ fi
 # colored GCC warnings and errors
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
+# Set EDITOR depending to nvim or vim
+if command -v nvim &> /dev/null
+then
+  export EDITOR=nvim
+else
+  export EDITOR=vim
+fi
+
 function mkcd () {
   dirname=$1
   mkdir $dirname
   cd $dirname 
 }
 
-# some more ls aliases
-alias ll='ls -hlF --time-style=long-iso'
-alias la='ll -A'
-alias l='ls -CF'
-alias rm='rm -iv'
+# Aliases
+# ==============================================
 alias cp='cp -iv'
-alias mv='mv -iv'
+alias l='ls -CF'
+alias la='ll -A'
+alias ll='ls -hlF --time-style=long-iso'
 alias mkdir='mkdir -pv'
-alias i3lock='i3lock -c 000000'
+alias mv='mv -iv'
+alias rm='rm -iv'
+alias vi='${EDITOR}'
+
+# cd up dir
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
 # Aliases for xclip
-alias xco='xclip -out -selection clipboard'
 alias xci='xclip -in -selection clipboard'
-alias xcpo='xclip -out'
+alias xco='xclip -out -selection clipboard'
 alias xcpi='xclip -in'
+alias xcpo='xclip -out'
 
 # Aliases for kubectl
 kube() {
