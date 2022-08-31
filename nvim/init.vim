@@ -154,12 +154,30 @@ call plug#end()
 " ===============================
 
 " === Fzf
-nmap <leader>f :Files<CR>
-nmap <leader>gc :Commits<CR>
-nmap <leader>gf :GFiles<CR>
-nmap <leader>gs :GFiles?<CR>
-nmap <leader>h :History<CR>
-nmap <leader>s :Rg<CR>
+nmap <leader>s/ :History/<CR>
+nmap <leader>s; :Commands<CR>
+nmap <leader>sa :Ag<CR>
+nmap <leader>sb :BLines<CR>
+nmap <leader>sB :Buffers<CR>
+nmap <leader>sC :BCommits<CR>
+nmap <leader>sc :Commits<CR>
+nmap <leader>sf :Files<CR>
+nmap <leader>sg :GFiles<CR>
+nmap <leader>sG :GFiles?<CR>
+nmap <leader>sH :History:<CR>
+nmap <leader>sh :History<CR>
+nmap <leader>sl :Lines<CR>
+nmap <leader>sM :Maps<CR>
+nmap <leader>sm :Marks<CR>
+nmap <leader>sp :Helptags<CR>
+nmap <leader>sP :Tags<CR>
+nmap <leader>sS :Colors<CR>
+nmap <leader>ss :Snippets<CR>
+nmap <leader>sT :Btags<CR>
+nmap <leader>st :Rg<CR>
+nmap <leader>sw :Windows<CR>
+nmap <leader>sy :Filetypes<CR>
+nmap <leader>sz :FZF<CR>
 
 " s is for search
 let g:which_key_map.s = {
@@ -169,27 +187,29 @@ let g:which_key_map.s = {
       \ 'a' : [':Ag'           , 'text Ag'],
       \ 'b' : [':BLines'       , 'current buffer'],
       \ 'B' : [':Buffers'      , 'open buffers'],
-      \ 'c' : [':Commits'      , 'commits'],
       \ 'C' : [':BCommits'     , 'buffer commits'],
+      \ 'c' : [':Commits'      , 'commits'],
       \ 'f' : [':Files'        , 'files'],
       \ 'g' : [':GFiles'       , 'git files'],
       \ 'G' : [':GFiles?'      , 'modified git files'],
       \ 'h' : [':History'      , 'file history'],
       \ 'H' : [':History:'     , 'command history'],
       \ 'l' : [':Lines'        , 'lines'] ,
-      \ 'm' : [':Marks'        , 'marks'] ,
       \ 'M' : [':Maps'         , 'normal maps'] ,
+      \ 'm' : [':Marks'        , 'marks'] ,
       \ 'p' : [':Helptags'     , 'help tags'] ,
       \ 'P' : [':Tags'         , 'project tags'],
-      \ 's' : [':Snippets'     , 'snippets'],
       \ 'S' : [':Colors'       , 'color schemes'],
-      \ 't' : [':Rg'           , 'text Rg'],
+      \ 's' : [':Snippets'     , 'snippets'],
       \ 'T' : [':BTags'        , 'buffer tags'],
+      \ 't' : [':Rg'           , 'text Rg'],
       \ 'w' : [':Windows'      , 'search windows'],
       \ 'y' : [':Filetypes'    , 'file types'],
       \ 'z' : [':FZF'          , 'FZF'],
       \ }
 
+nmap <leader>w :w<CR>
+nmap <leader>q :q<CR>
 
 """ NERDTree
 nnoremap <leader>n :NERDTreeFocus<CR>
