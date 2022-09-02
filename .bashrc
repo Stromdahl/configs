@@ -125,11 +125,14 @@ function mkcd () {
   cd $dirname 
 }
 
-# Aliases
+# ===1 Aliases
 # ==============================================
+alias cdgr='cd /home/mattias/Sensative/Yggio'
+alias cl='clear'
 alias cp='cp -iv'
 alias l='ls -CF'
 alias la='ll -A'
+alias lc='cl && ll'
 alias ll='ls -hlF --time-style=long-iso'
 alias mkdir='mkdir -pv'
 alias mv='mv -iv'
