@@ -16,11 +16,14 @@
 " nnoremap gk gkzz
 " ===============================
 
-" TODO: toggle relative number when entering insert mode
-" notes: 
-" |InsertEnter|		starting Insert mode
-" |InsertChange|		when typing <Insert> while in Insert or Replace mode
-" |InsertLeave|		when leaving Insert mode
+" toggle relative numbers
+:set number
+
+:augroup numbertoggle
+:  autocmd!
+:  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &nu && mode() != "i" | setlocal relativenumber  | endif
+:  autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &nu                  | setlocal norelativenumber | endif
+:augroup END
 
 set autoindent              " Indent newlines automatically
 set backupcopy=yes          " Do not write new inode when saving file
@@ -35,7 +38,6 @@ set ignorecase              " Search is not case-sensitive
 set incsearch               " Search while typing
 set linebreak               " Break long lines by word-boundaries instead of in the middle of word
 set mouse=a                 " Mouse support
-set number relativenumber   " Line numbers
 set scrolloff=999            " Cursor centered-ish
 set shiftwidth=0            " Indent with cindent the same amount of characters as tabstop
 set shortmess-=S            " Display search hit count
@@ -131,7 +133,7 @@ map <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans
       \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 
 " I do this often enough it requires its own keymap =P
-nmap <leader>ee :e ~/.config/nvim/init.vim<CR>
+nmap <leader>ee :e ~/.dotfiles/nvim/init.vim<CR>
 nmap <leader>es :source ~/.config/nvim/init.vim<CR>
 nmap <leader>ep :pwd <CR>
 " e is for editor config
@@ -254,7 +256,9 @@ nnoremap <C-t> :NERDTreeToggle<CR>
 nnoremap <C-f> :NERDTreeFind<CR>
 
 " fugitive.vim
+" g is for GIT
 nmap <leader>gb :Git blame<CR>
+nmap <leader>gg :Git<CR>
 nmap <leader>gd :Gvdiffsplit<CR>
 
 """ CoC 
