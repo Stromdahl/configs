@@ -1,5 +1,26 @@
-" General configuration
+"TEST THIS! 
+" CENTER CURSORk
+"set scrolloff=99999
+" 
+" nnoremap <C-U> 11kzz
+" nnoremap <C-D> 11jzz
+" nnoremap j jzz
+" nnoremap k kzz
+" nnoremap # #zz
+" nnoremap * *zz
+" nnoremap n nzz
+" nnoremap N Nzz
+" nnoremap gg ggzz
+" nnoremap G Gzz
+" nnoremap gj gjzz
+" nnoremap gk gkzz
 " ===============================
+
+" TODO: toggle relative number when entering insert mode
+" notes: 
+" |InsertEnter|		starting Insert mode
+" |InsertChange|		when typing <Insert> while in Insert or Replace mode
+" |InsertLeave|		when leaving Insert mode
 
 set autoindent              " Indent newlines automatically
 set backupcopy=yes          " Do not write new inode when saving file
@@ -15,7 +36,7 @@ set incsearch               " Search while typing
 set linebreak               " Break long lines by word-boundaries instead of in the middle of word
 set mouse=a                 " Mouse support
 set number relativenumber   " Line numbers
-set scrolloff=10            " Cursor centered-ish
+set scrolloff=999            " Cursor centered-ish
 set shiftwidth=0            " Indent with cindent the same amount of characters as tabstop
 set shortmess-=S            " Display search hit count
 set showcmd                 " Show count of marked lines in bottom right
@@ -30,7 +51,6 @@ set wildmode=full           " Complete to first word
 syntax on                   " Syntax highlighting
 
 autocmd FileType json syntax match Comment +\/\/.\+$+
-
 
 " Check if working file is updated when entering that buffer
 autocmd FocusGained,BufEnter * :silent! checktime
@@ -114,7 +134,6 @@ map <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans
 nmap <leader>ee :e ~/.config/nvim/init.vim<CR>
 nmap <leader>es :source ~/.config/nvim/init.vim<CR>
 nmap <leader>ep :pwd <CR>
-
 " e is for editor config
 let g:which_key_map.e = {
       \ 'name' : '+Editor' ,
@@ -129,8 +148,9 @@ let g:which_key_map.e = {
 
 call plug#begin()
 
-" Colors 
+" Prettiness 
 Plug 'gruvbox-community/gruvbox'
+Plug 'vim-airline/vim-airline'
 
 " Utils
 Plug 'tpope/vim-fugitive'   
@@ -141,7 +161,7 @@ Plug 'luochen1990/rainbow'
 Plug 'preservim/nerdtree'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
-
+Plug 'jeetsukumaran/vim-indentwise'
 
 " Language
 Plug 'neoclide/coc.nvim', {'branch': 'release'} 
@@ -161,6 +181,7 @@ nmap <leader>sb :BLines<CR>
 nmap <leader>sB :Buffers<CR>
 nmap <leader>sC :BCommits<CR>
 nmap <leader>sc :Commits<CR>
+nmap <leader>sF :Files %:p:h<CR>
 nmap <leader>sf :Files<CR>
 nmap <leader>sg :GFiles<CR>
 nmap <leader>sG :GFiles?<CR>
@@ -208,8 +229,23 @@ let g:which_key_map.s = {
       \ 'z' : [':FZF'          , 'FZF'],
       \ }
 
+" b is for buffer
+nmap <leader>bq :bd<CR>
+nmap <leader>bQ :bd!<CR>
+
 nmap <leader>w :w<CR>
-nmap <leader>q :q<CR>
+nmap <leader>Q :q<CR>
+
+map [- <Plug>(IndentWisePreviousLesserIndent)
+map [= <Plug>(IndentWisePreviousEqualIndent)
+map [+ <Plug>(IndentWisePreviousGreaterIndent)
+map ]- <Plug>(IndentWiseNextLesserIndent)
+map ]= <Plug>(IndentWiseNextEqualIndent)
+map ]+ <Plug>(IndentWiseNextGreaterIndent)
+map [_ <Plug>(IndentWisePreviousAbsoluteIndent)
+map ]_ <Plug>(IndentWiseNextAbsoluteIndent)
+map [% <Plug>(IndentWiseBlockScopeBoundaryBegin)
+map ]% <Plug>(IndentWiseBlockScopeBoundaryEnd)
 
 """ NERDTree
 nnoremap <leader>n :NERDTreeFocus<CR>
@@ -245,7 +281,6 @@ nmap <silent> gD <Plug>(coc-declaration)
 nmap <silent> gy <Plug>(coc-type-definition)
 nmap <silent> gi <Plug>(coc-implementation)
 nmap <silent> gr <Plug>(coc-references)
-
 " Use `[g` and `]g` to navigate diagnostics
 nmap <silent> [g <Plug>(coc-diagnostic-prev)
 nmap <silent> ]g <Plug>(coc-diagnostic-next)
@@ -284,6 +319,8 @@ autocmd CursorHold * silent call CocActionAsync('highlight')
 
 " Plugin config 
 " ===============================
+""" Airline
+let g:airline_powerline_fonts = 1
 
 """ Rainbow (Parentheses Improved)
 let g:rainbow_active = 1 "set to 0 if you want to enable it later via :RainbowToggle
