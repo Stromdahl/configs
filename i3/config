@@ -92,6 +92,7 @@ bindsym $mod+Shift+q kill;
 bindsym $mod+r mode "resize"
 bindsym $mod+Pause mode "$mode_system"
 bindsym $mod+m mode "$mode_workspace"
+
 # change focus (vim)
 bindsym $mod+h focus left
 bindsym $mod+j focus down
@@ -108,6 +109,8 @@ bindsym $mod+Shift+l move right
 bindsym $mod+s layout stacking
 bindsym $mod+w layout tabbed
 bindsym $mod+e layout toggle split
+
+bindsym $mod+23 workspace back_and_forth
 
 # switch to workspace
 bindsym $mod+1 workspace number $ws1
