@@ -2,18 +2,18 @@
 " CENTER CURSORk
 "set scrolloff=99999
 " 
-" nnoremap <C-U> 11kzz
-" nnoremap <C-D> 11jzz
-" nnoremap j jzz
-" nnoremap k kzz
-" nnoremap # #zz
-" nnoremap * *zz
-" nnoremap n nzz
-" nnoremap N Nzz
-" nnoremap gg ggzz
-" nnoremap G Gzz
-" nnoremap gj gjzz
-" nnoremap gk gkzz
+nnoremap <C-U> 11kzz
+nnoremap <C-D> 11jzz
+nnoremap j jzz
+nnoremap k kzz
+nnoremap # #zz
+nnoremap * *zz
+nnoremap n nzz
+nnoremap N Nzz
+nnoremap gg ggzz
+nnoremap G Gzz
+nnoremap gj gjzz
+nnoremap gk gkzz
 " ===============================
 
 " toggle relative numbers
@@ -42,7 +42,7 @@ set scrolloff=999            " Cursor centered-ish
 set shiftwidth=0            " Indent with cindent the same amount of characters as tabstop
 set shortmess-=S            " Display search hit count
 set showcmd                 " Show count of marked lines in bottom right
-set signcolumn=number       " Add signs on top of number column
+" set signcolumn=number       " Add signs on top of number column
 set smartcase               " Search is case sensitive when searching for words with capital letters
 set softtabstop=-1          " Indent is removed with same amount of characters as tabstop
 set tabstop=2               " Indent with 2 spaces
@@ -303,11 +303,18 @@ function! s:show_documentation()
 endfunction
 
 " Use tab for trigger completion with characters ahead and navigate
-inoremap <silent><expr> <TAB>
-      \ pumvisible() ? "\<C-n>" :
-      \ <SID>check_back_space() ? "\<TAB>" :
-      \ coc#refresh()
-inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+   inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+    inoremap <silent><expr> <C-x><C-z> coc#pum#visible() ? coc#pum#stop() : "\<C-x>\<C-z>"
+    " remap for complete to use tab and <cr>
+    inoremap <silent><expr> <TAB>
+        \ coc#pum#visible() ? coc#pum#next(1):
+        \ <SID>check_back_space() ? "\<Tab>" :
+        \ coc#refresh()
+    inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+    inoremap <silent><expr> <c-space> coc#refresh()
+
+    hi CocSearch ctermfg=12 guifg=#18A3FF
+    hi CocMenuSel ctermbg=109 guibg=#13354A
 
 function! s:check_back_space() abort
   let col = col('.') - 1
