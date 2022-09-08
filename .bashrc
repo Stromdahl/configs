@@ -189,15 +189,13 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# Yggio
-if [ -f /home/mattias/Sensative/Yggio/tools/dev-scripts/yggiorc.sh ]; then
-  source /home/mattias/Sensative/Yggio/tools/dev-scripts/yggiorc.sh
+# cargo
+if [ -f $HOME/.cargo/env ]; then
+  . "$HOME/.cargo/env"
 fi
 
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-# BEGIN ANSIBLE MANAGED BLOCK
-export KUBECONFIG=$HOME/.kube/config:/home/mattias/Sensative/dev-ops/kubeconfigs/kube_config_kna.yml:/home/mattias/Sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
-# END ANSIBLE MANAGED BLOCK
+
 
 source /usr/share/doc/fzf/examples/key-bindings.bash
 
@@ -205,8 +203,14 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-alias to-yggio='cd ~/Sensative/Yggio'
-alias to-translator-service='cd ~/Sensative/Yggio/storm/services/translator-service'
 alias to=". $HOME/dev/bash/to/to.sh"
-. "$HOME/.cargo/env"
-alias config='/usr/bin/git --git-dir=/home/mattias/.dotfiles/ --work-tree=/home/mattias'
+
+# WORK
+# Yggio
+if [ -f $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
+  source $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh
+fi
+
+# BEGIN ANSIBLE MANAGED BLOCK
+export KUBECONFIG=$HOME/.kube/config:/home/mattias/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:/home/mattias/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
+# END ANSIBLE MANAGED BLOCK

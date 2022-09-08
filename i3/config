@@ -189,12 +189,12 @@ mode "$mode_workspace" {
 }
 
 # ================================ i3Bar ================================
-bar {
-  status_command i3status
-    font pango:DejaVu Sans Mono 8
-    separator_symbol "<>"
-    tray_output $primary_display
-}
+# bar {
+#   status_command i3status
+#     font pango:DejaVu Sans Mono 8
+#     separator_symbol "<>"
+#     tray_output $primary_display
+# }
 
 
 # ================================ Micellaneous ================================
