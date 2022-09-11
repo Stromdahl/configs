@@ -56,14 +56,6 @@ if [ -n "$force_color_prompt" ]; then
   fi
 fi
 
-# Add returnvalue if command return != 0
-returnvalue() {
-  ret=$?
-  if [ $ret -ne 0 ]; then
-    echo "[$ret] "
-  fi
-}
-
 # Prompt colors and special ansi codes
 RED="\[\033[91m\]"
 GREEN="\[\033[92m\]"
@@ -77,10 +69,24 @@ BELL="\[\a\]"
 RESET="\[\033[0m\]"
 BOLD="\[\033[1m\]"
 
+# Add returnvalue if command return != 0
+returnvalue() {
+  ret=$?
+  if [ $ret -ne 0 ]; then
+    echo "[$ret] "
+  fi
+}
+
+host_prompt() {
+  if [ -n "$SSH_CLIENT" ]; then
+    echo "$GREEN\u@\h "
+  fi
+}
+
 PROMPT_DIRTRIM=3
 if [ "$color_prompt" = yes ]; then
   # PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]$(__git_ps1 "(%s)\[\033[00m\]:")\[\033[01;34m\]\w\[\033[00m\]\n\$ '
-  PS1="$BELL$BOLD$RED\$(returnvalue)$RESET$CYAN\# $BLUE\w$YELLOW\$(__git_ps1) \n$GRAY\$ $RESET"
+  PS1="$BELL$BOLD$RED\$(returnvalue)$RESET$CYAN\# $(host_prompt)$BLUE\w$YELLOW\$(__git_ps1) \n$GRAY\$ $RESET"
   else
     PS1='$BLUE${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 fi
