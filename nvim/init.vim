@@ -249,6 +249,12 @@ map ]_ <Plug>(IndentWiseNextAbsoluteIndent)
 map [% <Plug>(IndentWiseBlockScopeBoundaryBegin)
 map ]% <Plug>(IndentWiseBlockScopeBoundaryEnd)
 
+""" Rust
+let g:rustfmt_autosave = 1
+let g:rustfmt_emit_fiels = 1
+let g:rustfmt_fail_silently = 0
+let g:rust_clip_command = 'xci'
+
 """ NERDTree
 nnoremap <leader>n :NERDTreeFocus<CR>
 nnoremap <C-n> :NERDTree<CR>
