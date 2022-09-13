@@ -58,7 +58,7 @@ autocmd FileType json syntax match Comment +\/\/.\+$+
 autocmd FocusGained,BufEnter * :silent! checktime
 
 " Clear the jumplist once vim starts
-autocmd VimEnter * clearjumps
+" autocmd VimEnter * clearjumps
 
 " Filetype specific indentation
 autocmd FileType rust setlocal tabstop=4
@@ -155,20 +155,21 @@ Plug 'gruvbox-community/gruvbox'
 Plug 'vim-airline/vim-airline'
 
 " Utils
-Plug 'tpope/vim-fugitive'   
+Plug 'airblade/vim-rooter'   
 Plug 'liuchengxu/vim-which-key'
 Plug 'luochen1990/rainbow'
+Plug 'tpope/vim-fugitive'   
 
 " File management
-Plug 'preservim/nerdtree'
+Plug 'jeetsukumaran/vim-indentwise'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
-Plug 'jeetsukumaran/vim-indentwise'
+Plug 'preservim/nerdtree'
 
 " Language
 Plug 'neoclide/coc.nvim', {'branch': 'release'} 
-Plug 'rust-lang/rust.vim'           
 Plug 'pangloss/vim-javascript'      
+Plug 'rust-lang/rust.vim'           
 
 call plug#end()
 
@@ -234,6 +235,16 @@ let g:which_key_map.s = {
 " b is for buffer
 nmap <leader>bq :bd<CR>
 nmap <leader>bQ :bd!<CR>
+
+" g is for GIT
+nmap <leader>gb :Git blame<CR>
+nmap <leader>gg :Git<CR>
+nmap <leader>gd :Gvdiffsplit<CR>
+
+" t is for file tree
+nmap <leader>ft :NERDTreeToggle<CR>
+nmap <leader>ff :NERDTreeFind<CR>
+nmap <leader>fl :NERDTreeFocus<CR>
 
 nmap <leader>w :w<CR>
 nmap <leader>Q :q<CR>
@@ -322,8 +333,8 @@ function! s:check_back_space() abort
 endfunction
 
 " End completion with CR in insert mode
-inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
-
+" inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<C-y>"
 " Highlight the symbol and its references when holding the cursor
 autocmd CursorHold * silent call CocActionAsync('highlight')
 
