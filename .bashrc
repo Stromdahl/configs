@@ -133,7 +133,9 @@ function mkcd () {
 
 # ===1 Aliases
 # ==============================================
-alias cdgr='cd /home/mattias/Sensative/Yggio'
+function cdgr() {
+  cd $(git rev-parse --show-toplevel)
+}
 alias cl='clear'
 alias cp='cp -iv'
 alias l='ls -CF'
