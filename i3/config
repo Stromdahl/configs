@@ -24,15 +24,6 @@ set $ws10 "10"
 exec xinput set-prop "SYNA2B31:00 06CB:7F8B Touchpad" "libinput Tapping Enabled" 1
 exec xinput set-prop "SYNA2B31:00 06CB:7F8B Touchpad" "libinput Natural Scrolling Enabled" 1
 
-# Monitor setup
-#   TODO: Handle more configurations
-set $monitor_setup_workdesk xrandr --output DP-1 --primary --mode 1920x1080 --pos 0x0 --output eDP-1 --pos 1920x0 
-set $monitor_setup_auto xrandr --auto --noprimary
-set $monitor_setup_laptop xrandr --output eDP-1 --primary 
-exec_always $monitor_setup_auto 
-# exec_always xrandr --output DP-3 --primary --mode 1920x1080 --pos -1920x0 --output secondary_display --pos 1920x0 # workpace config
-# exec_always xrandr --auto # Only laptop config
-
 # ================================ Autostart ================================
 
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
@@ -151,11 +142,16 @@ bindsym Ctrl+Shift+Print exec --no-startup-id maim --select | xclip -selection c
 # resize window
 mode "resize" {
 
-    bindsym h resize shrink width 5 px or 5 ppt
-    bindsym j resize grow height 5 px or 5 ppt
-    bindsym k resize shrink height 5 px or 5 ppt
-    bindsym l resize grow width 5 px or 5 ppt
+    bindsym Ctrl+h resize shrink width 5 px or 5 ppt
+    bindsym Ctrl+j resize grow height 5 px or 5 ppt
+    bindsym Ctrl+k resize shrink height 5 px or 5 ppt
+    bindsym Ctrl+l resize grow width 5 px or 5 ppt
 
+    bindsym h resize shrink width 10 px or 10 ppt
+    bindsym j resize grow height 10 px or 10 ppt
+    bindsym k resize shrink height 10 px or 10 ppt
+    bindsym l resize grow width 10 px or 10 ppt
+    
     bindsym Return mode "default"
     bindsym Escape mode "default"
     bindsym $mod+r mode "default"
@@ -177,53 +173,32 @@ mode "$mode_system" {
     bindsym Escape mode "default"
 }
 
-set $mode_workspace (1) work,(2) laptop, (3) auto
-mode "$mode_workspace" {
-  bindsym 1 exec $monitor_setup_workdesk, mode "default"
-  bindsym 2 exec $monitor_setup_laptop, mode "default"
-  bindsym 3 exec $monitor_setup_auto, mode "default"
-
-  # back to normal: Enter or Escape
-  bindsym Return mode "default"
-  bindsym Escape mode "default"
-}
-
-# ================================ i3Bar ================================
-# bar {
-#   status_command i3status
-#     font pango:DejaVu Sans Mono 8
-#     separator_symbol "<>"
-#     tray_output $primary_display
-# }
-
-
 # ================================ Micellaneous ================================
 
-set $primary_display DP-1
+# TODO: remove eDP-1
 set $secondary_display eDP-1
+
 # workspace defaults
 workspace 1 output primary
 workspace 2 output primary
 workspace 3 output primary
 workspace 4 output primary
+workspace 5 output primary
+# workspace 6 output primary
+# workspace 7 output primary
+# workspace 7 output primary
 
-workspace 7 output $secondary_display
 workspace 8 output $secondary_display
 workspace 9 output $secondary_display
 workspace 10 output $secondary_display
 
 # autostart some apps on correct workspace 
 exec --no-startup-id i3-msg 'workspace 10; exec slack;'
-exec --no-startup-id i3-msg 'workspace 9;  exec firefox;'
-exec --no-startup-id i3-msg 'workspace 2;  exec firefox';
-exec --no-startup-id i3-msg 'workspace 3;  exec i3-sensible-terminal';
-exec --no-startup-id i3-msg 'workspace 1;  exec code;'
-
 # Move apps to workspace on startup 
 for_window [class="Slack"] move to workspace $ws10
 
-# keyboard layout setup
-exec_always --no-startup-id "setxkbmap -layout gb,se -option 'grp:lalt_lshift_toggle'"
+# keyboard layout setup TODO: remove this
+# exec_always --no-startup-id "setxkbmap -layout gb,se -option 'grp:lalt_lshift_toggle'"
 
 # ================================
 # Colors
@@ -240,12 +215,14 @@ set $darkgray #1d2021
 
 font pango:Hack 8
 
+# ================================ i3Bar ================================
 # Start i3bar to display a workspace bar (plus the system information i3status
 # finds out, if available)
 bar {
   status_command i3status -c "~/.dotfiles/i3/i3status/config" 
   wheel_up_cmd nop
   wheel_down_cmd nop
+  tray_output primary
 
   colors {
     # bar background color

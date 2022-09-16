@@ -1,181 +1,179 @@
-"TEST THIS! 
-" CENTER CURSORk
-"set scrolloff=99999
-" 
-nnoremap <C-U> 11kzz
-nnoremap <C-D> 11jzz
-nnoremap j jzz
-nnoremap k kzz
-nnoremap # #zz
-nnoremap * *zz
-nnoremap n nzz
-nnoremap N Nzz
-nnoremap gg ggzz
-nnoremap G Gzz
-nnoremap gj gjzz
-nnoremap gk gkzz
-" ===============================
+ "TEST THIS! 
+ " CENTER CURSORk
+ "set scrolloff=99999
+ nnoremap <C-U> 11kzz
+ nnoremap <C-D> 11jzz
+ nnoremap j jzz
+ nnoremap k kzz
+ nnoremap # #zz
+ nnoremap * *zz
+ nnoremap n nzz
+ nnoremap N Nzz
+ nnoremap gg ggzz
+ nnoremap G Gzz
+ nnoremap gj gjzz
+ nnoremap gk gkzz
+ " ===============================
+ " toggle relative numbers
+ :set number
 
-" toggle relative numbers
-:set number
+ :augroup numbertoggle
+ :  autocmd!
+ :  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &nu && mode() != "i" | setlocal relativenumber  | endif
+ :  autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &nu                  | setlocal norelativenumber | endif
+ :augroup END
 
-:augroup numbertoggle
-:  autocmd!
-:  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &nu && mode() != "i" | setlocal relativenumber  | endif
-:  autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &nu                  | setlocal norelativenumber | endif
-:augroup END
-
-set autoindent              " Indent newlines automatically
-set backupcopy=yes          " Do not write new inode when saving file
-set cindent                 " Indent c-style syntax automatically
-set clipboard+=unnamedplus  " Always use system clipboard for cut/copy
-set cursorline              " Highlight the line the Cursor is on
-set expandtab               " Indent tabs as spaces
-set guifont=Hack:h10        " Font and size in GUI:s
-set hidden                  " Keep unsaved data and undo information when switching buffers
-set hlsearch                " Search results are highlighted
-set ignorecase              " Search is not case-sensitive
-set incsearch               " Search while typing
-set linebreak               " Break long lines by word-boundaries instead of in the middle of word
-set mouse=a                 " Mouse support
-set scrolloff=999            " Cursor centered-ish
-set shiftwidth=0            " Indent with cindent the same amount of characters as tabstop
-set shortmess-=S            " Display search hit count
-set showcmd                 " Show count of marked lines in bottom right
+ set autoindent              " Indent newlines automatically
+ set backupcopy=yes          " Do not write new inode when saving file
+ set cindent                 " Indent c-style syntax automatically
+ set clipboard+=unnamedplus  " Always use system clipboard for cut/copy
+ set cursorline              " Highlight the line the Cursor is on
+ set expandtab               " Indent tabs as spaces
+ set guifont=Hack:h10        " Font and size in GUI:s
+ set hidden                  " Keep unsaved data and undo information when switching buffers
+ set hlsearch                " Search results are highlighted
+ set ignorecase              " Search is not case-sensitive
+ set incsearch               " Search while typing
+ set linebreak               " Break long lines by word-boundaries instead of in the middle of word
+ set mouse=a                 " Mouse support
+ set scrolloff=999            " Cursor centered-ish
+ set shiftwidth=0            " Indent with cindent the same amount of characters as tabstop
+ set shortmess-=S            " Display search hit count
+ set showcmd                 " Show count of marked lines in bottom right
 " set signcolumn=number       " Add signs on top of number column
-set smartcase               " Search is case sensitive when searching for words with capital letters
-set softtabstop=-1          " Indent is removed with same amount of characters as tabstop
-set tabstop=2               " Indent with 2 spaces
-set termguicolors           " Enables truecolor support
-set updatetime=300          " Wait 300 milliseconds for saving swap files and cursorhold autocommand
-set wildmenu                " Better completion mode
-set wildmode=full           " Complete to first word
-syntax on                   " Syntax highlighting
-
-autocmd FileType json syntax match Comment +\/\/.\+$+
-
-" Check if working file is updated when entering that buffer
-autocmd FocusGained,BufEnter * :silent! checktime
-
-" Clear the jumplist once vim starts
-" autocmd VimEnter * clearjumps
-
-" Filetype specific indentation
-autocmd FileType rust setlocal tabstop=4
-autocmd FileType javascript setlocal tabstop=2
-autocmd FileType python setlocal tabstop=4 noexpandtab
-autocmd FileType yaml setlocal tabstop=2
-autocmd FileType html setlocal tabstop=2
-
-" Key map
-" ===============================
-" Map leader 
-let g:mapleader = "\<Space>"
-let g:maplocalleader = ','
-
-""" Witch Key
-nnoremap <silent> <leader> :WhichKey '<Space>'<CR>
-
-" Create map to add keys to
-let g:which_key_map = {}
-" Define a separator
-let g:which_key_sep = '→'
-" set timeoutlen=100
-
-nmap <leader>ex :Files expand('%:p')<CR>
-""" Keymap by Daniel Ohlsson 
-""" https://github.com/DOhlsson/configs/blob/master/nvim/init.vim
-
-" Remap s key as a delete without writing to cut register
-noremap s "_d
-noremap ss "_dd
-noremap S "_D
-
-" Remap x key so that it does not write to cut register
-noremap x "_x
-noremap X "_X
-
-" Remap Y key to act as all the other capital letters
-" Seriously, why is Y = yy when D = d$ and C = c$ ?!
-noremap Y y$
-
-" Use F12 to switch buffers
-nnoremap <silent> <F12> :bn<CR>
-nnoremap <silent> <S-F12> :bp<CR>
-
-" Move vertically by visual line
-nnoremap j gj
-nnoremap k gk
-
-" Use ctrl-k/ctrl-j as up/down
-map <c-k> <c-p>
-map <c-j> <c-n>
-map! <c-k> <c-p>
-map! <c-j> <c-n>
-
-" Disable arrow-keys, use hjkl instead
-noremap <Up> <NOP>
-noremap <Down> <NOP>
-noremap <Left> <NOP>
-noremap <Right> <NOP>
-inoremap <Up> <NOP>
-inoremap <Down> <NOP>
-inoremap <Left> <NOP>
-inoremap <Right> <NOP>
-
-" Disable PageUp/PageDown use ctrl-u/ctrl-d instead
-noremap <PageUp> <NOP>
-noremap <PageDown> <NOP>
-
-" Get highlighting group under cursor
-map <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
-      \ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
-      \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
-
-" I do this often enough it requires its own keymap =P
-nmap <leader>ee :e ~/.dotfiles/nvim/init.vim<CR>
-nmap <leader>es :source ~/.config/nvim/init.vim<CR>
-nmap <leader>ep :pwd <CR>
-" e is for editor config
-let g:which_key_map.e = {
-      \ 'name' : '+Editor' ,
-      \ 'e' : [':e ~/.config/nvim/init.vim'     , 'config'],
-      \ 's' : [':source ~/.config/nvim/init.vim'     , 'reload'],
-      \ 'p' : [':pwd'     , 'pwd'],
-      \ } 
-
-"
-" Plugins
-" ===============================
-
-call plug#begin()
-
-" Prettiness 
-Plug 'gruvbox-community/gruvbox'
-Plug 'vim-airline/vim-airline'
-
-" Utils
-Plug 'airblade/vim-rooter'   
-Plug 'liuchengxu/vim-which-key'
-Plug 'luochen1990/rainbow'
-Plug 'tpope/vim-fugitive'   
-
-" File management
-Plug 'jeetsukumaran/vim-indentwise'
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-Plug 'junegunn/fzf.vim'
-Plug 'preservim/nerdtree'
-
-" Language
-Plug 'neoclide/coc.nvim', {'branch': 'release'} 
-Plug 'pangloss/vim-javascript'      
-Plug 'rust-lang/rust.vim'           
-
-call plug#end()
-
-" Plugins Key Map
-" ===============================
-
+ set smartcase               " Search is case sensitive when searching for words with capital letters
+ set softtabstop=-1          " Indent is removed with same amount of characters as tabstop
+ set tabstop=2               " Indent with 2 spaces
+ set termguicolors           " Enables truecolor support
+ set updatetime=300          " Wait 300 milliseconds for saving swap files and cursorhold autocommand
+ set wildmenu                " Better completion mode
+ set wildmode=full           " Complete to first word
+ syntax on                   " Syntax highlighting
+ 
+ autocmd FileType json syntax match Comment +\/\/.\+$+
+ 
+ " Check if working file is updated when entering that buffer
+ autocmd FocusGained,BufEnter * :silent! checktime
+ 
+ " Clear the jumplist once vim starts
+ autocmd VimEnter * clearjumps
+ 
+ " Filetype specific indentation
+ autocmd FileType rust setlocal tabstop=4
+ autocmd FileType javascript setlocal tabstop=2
+ autocmd FileType python setlocal tabstop=4 noexpandtab
+ autocmd FileType yaml setlocal tabstop=2
+ autocmd FileType html setlocal tabstop=2
+ 
+ " Key map
+ " ===============================
+ " Map leader 
+ let g:mapleader = "\<Space>"
+ let g:maplocalleader = ','
+ 
+ """ Witch Key
+ nnoremap <silent> <leader> :WhichKey '<Space>'<CR>
+ 
+ " Create map to add keys to
+ let g:which_key_map = {}
+ " Define a separator
+ let g:which_key_sep = '→'
+ " set timeoutlen=100
+ 
+ nmap <leader>ex :Files expand('%:p')<CR>
+ """ Keymap by Daniel Ohlsson 
+ """ https://github.com/DOhlsson/configs/blob/master/nvim/init.vim
+ 
+ " Remap s key as a delete without writing to cut register
+ noremap s "_d
+ noremap ss "_dd
+ noremap S "_D
+ 
+ " Remap x key so that it does not write to cut register
+ noremap x "_x
+ noremap X "_X
+ 
+ " Remap Y key to act as all the other capital letters
+ " Seriously, why is Y = yy when D = d$ and C = c$ ?!
+ noremap Y y$
+ 
+ " Use F12 to switch buffers
+ nnoremap <silent> <F12> :bn<CR>
+ nnoremap <silent> <S-F12> :bp<CR>
+ 
+ " Move vertically by visual line
+ nnoremap j gj
+ nnoremap k gk
+ 
+ " Use ctrl-k/ctrl-j as up/down
+ map <c-k> <c-p>
+ map <c-j> <c-n>
+ map! <c-k> <c-p>
+ map! <c-j> <c-n>
+ 
+ " Disable arrow-keys, use hjkl instead
+ noremap <Up> <NOP>
+ noremap <Down> <NOP>
+ noremap <Left> <NOP>
+ noremap <Right> <NOP>
+ inoremap <Up> <NOP>
+ inoremap <Down> <NOP>
+ inoremap <Left> <NOP>
+ inoremap <Right> <NOP>
+ 
+ " Disable PageUp/PageDown use ctrl-u/ctrl-d instead
+ noremap <PageUp> <NOP>
+ noremap <PageDown> <NOP>
+ 
+ " Get highlighting group under cursor
+ map <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
+       \ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+       \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
+ 
+ " I do this often enough it requires its own keymap =P
+ nmap <leader>ee :e ~/.dotfiles/nvim/init.vim<CR>
+ nmap <leader>es :source ~/.config/nvim/init.vim<CR>
+ nmap <leader>ep :pwd <CR>
+ " e is for editor config
+ let g:which_key_map.e = {
+       \ 'name' : '+Editor' ,
+       \ 'e' : [':e ~/.config/nvim/init.vim'     , 'config'],
+       \ 's' : [':source ~/.config/nvim/init.vim'     , 'reload'],
+       \ 'p' : [':pwd'     , 'pwd'],
+       \ } 
+ 
+ "
+ " Plugins
+ " ===============================
+ 
+ call plug#begin()
+ 
+ " Prettiness 
+ Plug 'gruvbox-community/gruvbox'
+ Plug 'vim-airline/vim-airline'
+ 
+ " Utils
+ Plug 'airblade/vim-rooter'   
+ Plug 'liuchengxu/vim-which-key'
+ Plug 'luochen1990/rainbow'
+ Plug 'tpope/vim-fugitive'   
+ 
+ " File management
+ Plug 'jeetsukumaran/vim-indentwise'
+ Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+ Plug 'junegunn/fzf.vim'
+ Plug 'preservim/nerdtree'
+ 
+ " Language
+ Plug 'neoclide/coc.nvim', {'branch': 'release'} 
+ Plug 'pangloss/vim-javascript'      
+ Plug 'rust-lang/rust.vim'           
+ 
+ call plug#end()
+ 
+ " Plugins Key Map
+ " ===============================
+ 
 " === Fzf
 nmap <leader>s/ :History/<CR>
 nmap <leader>s; :Commands<CR>
@@ -320,7 +318,7 @@ function! s:show_documentation()
 endfunction
 
 " Use tab for trigger completion with characters ahead and navigate
-   inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+   " inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
     inoremap <silent><expr> <C-x><C-z> coc#pum#visible() ? coc#pum#stop() : "\<C-x>\<C-z>"
     " remap for complete to use tab and <cr>
     inoremap <silent><expr> <TAB>
@@ -339,8 +337,6 @@ function! s:check_back_space() abort
 endfunction
 
 " End completion with CR in insert mode
-" inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
-inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<C-y>"
 " Highlight the symbol and its references when holding the cursor
 autocmd CursorHold * silent call CocActionAsync('highlight')
 
