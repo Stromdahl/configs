@@ -175,8 +175,8 @@ mode "$mode_system" {
 
 # ================================ Micellaneous ================================
 
-# TODO: remove eDP-1
-set $secondary_display eDP-1
+# TODO: remove eDP
+set $secondary_display eDP
 
 # workspace defaults
 workspace 1 output primary
