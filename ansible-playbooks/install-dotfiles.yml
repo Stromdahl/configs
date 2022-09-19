@@ -1,0 +1,49 @@
+- name: Installing dotfiles
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Make sure repo exists in ~/.dotfiles 
+      git:
+        repo: git@github.com:stromdahl/dotfiles
+        dest: ~/.dotfiles
+        version: ansible
+        clone: no
+        update: no
+    - name: install bashrc
+      file:
+        src: ~/.dotfiles/configs/bash/bashrc
+        dest: ~/.bashrc
+        state: link
+
+    - name: Install useful tools
+      become: yes
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        state: present
+        name:
+          - bc
+          - command-not-found
+          - dnsutils # for dig
+          - htop
+          - jq
+          - man-db
+          - ncdu # disk analyzer
+          - pv
+          - vim
+
+    - name: Update command-not-found
+      when: ansible_distribution != "Ubuntu"
+      become: yes
+      command: update-command-not-found
+      args:
+        creates: "/var/cache/command-not-found/*"
+
+    - name: Install neovim
+      include: neovim.yml
+
+    - name: install i3
+      file:
+        src: ~/.dotfiles/configs/i3
+        dest: ~/.config/i3
+        state: link

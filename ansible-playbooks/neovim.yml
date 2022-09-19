@@ -1,0 +1,17 @@
+---
+- name: Install neovim
+  become: yes
+  apt: 
+    update_cache: yes
+    cache_valid_time: 3600
+    state: present
+    name:
+      - neovim
+- name: link config
+  file:
+    src: ~/.dotfiles/configs/nvim
+    dest: ~/.config/nvim
+    state: link
+- name: Install plugins
+  command: nvim -c "PlugInstall" -c ":qa!"
+  register: nvim_install_plugins
