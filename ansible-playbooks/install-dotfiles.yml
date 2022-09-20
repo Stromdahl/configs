@@ -8,13 +8,18 @@
         dest: ~/.dotfiles
         version: main
         clone: no
-        update: yes
+        update: no
     - name: install bashrc
       file:
         src: ~/.dotfiles/configs/bash/bashrc
         dest: ~/.bashrc
         state: link
-
+    - name: install xsessionrc
+      file:
+        src: ~/.dotfiles/configs/misc/xsessionrc
+        dest: ~/.xsessionrc
+        state: link
+        force: yes
     - name: Install useful tools
       become: yes
       apt:
