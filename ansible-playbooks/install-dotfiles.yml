@@ -6,9 +6,9 @@
       git:
         repo: git@github.com:stromdahl/dotfiles
         dest: ~/.dotfiles
-        version: ansible
+        version: main
         clone: no
-        update: no
+        update: yes
     - name: install bashrc
       file:
         src: ~/.dotfiles/configs/bash/bashrc
