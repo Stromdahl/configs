@@ -1,0 +1,18 @@
+- name: Setup local
+  hosts: localhost
+  connection: local
+  vars:
+    - configs_path: "{{ playbook_dir }}/../config"
+  tasks:
+    - name: Make sure ~/bin exists
+      file:
+        path: ~/bin
+        state: directory
+    - name: 
+      debug:
+        msg: "{{configs_path}}/bash/bashrc"
+    - name: Install bashrc
+      copy:
+        src: "{{configs_path}}/bash/bashrc"
+        dest: "./"
+        

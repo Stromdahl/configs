@@ -218,10 +218,10 @@ alias to=". $HOME/dev/bash/to/to.sh"
 
 # WORK
 # Yggio
-if [ -f $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
-  source $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh
+if [ -f $HOME/work/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
+  source $HOME/work/sensative/yggio/tools/dev-scripts/yggiorc.sh
 fi
 
 # BEGIN ANSIBLE MANAGED BLOCK
-export KUBECONFIG=$HOME/.kube/config:/home/mattias/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:/home/mattias/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
+export KUBECONFIG=$HOME/.kube/config:/home/stroid/work/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:/home/stroid/work/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
 # END ANSIBLE MANAGED BLOCK
