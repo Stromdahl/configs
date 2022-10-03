@@ -253,6 +253,6 @@ bar {
 # blue gruvbox
 # class                 border    backgr.   text      indicator child_border
 client.focused          $blue     $blue     $darkgray $purple   $darkgray
-client.focused_inactive $darkgray $darkgray $yellow   $purple   $darkgray
+client.focused_inactive $blue     $darkgray $yellow   $purple   $darkgray
 client.unfocused        $darkgray $darkgray $yellow   $purple   $darkgray
 
