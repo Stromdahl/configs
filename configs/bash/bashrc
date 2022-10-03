@@ -146,6 +146,7 @@ alias mkdir='mkdir -pv'
 alias mv='mv -iv'
 alias rm='rm -iv'
 alias vi='${EDITOR}'
+alias ncal='ncal -wM3'
 
 # cd up dir
 alias ..='cd ..'

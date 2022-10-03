@@ -77,7 +77,7 @@ bindsym $mod+Shift+c reload
 bindsym $mod+Shift+r restart                                  
 
 # kill focused window
-bindsym $mod+Shift+q kill; 
+bindsym $mod+Shift+q mode "$mode_kill"
 
 # Change mode
 bindsym $mod+r mode "resize"
@@ -139,6 +139,16 @@ bindsym Ctrl+Shift+Print exec --no-startup-id maim --select | xclip -selection c
 
 # ================================ Modes ================================
 #
+
+set $mode_kill Press enter to kill window
+mode "$mode_kill" {
+
+  bindsym Return kill; mode "default"; 
+
+  # back to normal: Enter or Escape
+  bindsym Escape mode "default"
+
+}
 # resize window
 mode "resize" {
 
@@ -245,4 +255,4 @@ bar {
 client.focused          $blue     $blue     $darkgray $purple   $darkgray
 client.focused_inactive $darkgray $darkgray $yellow   $purple   $darkgray
 client.unfocused        $darkgray $darkgray $yellow   $purple   $darkgray
-client.urgent           $red      $red      $white    $red      $red
+
