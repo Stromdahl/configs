@@ -1,0 +1,9 @@
+#! /usr/bin/env BASH
+
+if [ -f $WORK/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
+  source $WORK/sensative/yggio/tools/dev-scripts/yggiorc.sh
+fi
+
+echo yggio
+export yggio=$WORK/sensative/yggio/
+export yggops=$WORK/sensative/dev-ops/
