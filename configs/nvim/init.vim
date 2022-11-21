@@ -27,6 +27,7 @@
  set backupcopy=yes          " Do not write new inode when saving file
  set cindent                 " Indent c-style syntax automatically
  set clipboard+=unnamedplus  " Always use system clipboard for cut/copy
+ set colorcolumn=100         " Color colorcolumn
  set cursorline              " Highlight the line the Cursor is on
  set expandtab               " Indent tabs as spaces
  set guifont=Hack:h10        " Font and size in GUI:s
@@ -40,7 +41,6 @@
  set shiftwidth=0            " Indent with cindent the same amount of characters as tabstop
  set shortmess-=S            " Display search hit count
  set showcmd                 " Show count of marked lines in bottom right
-" set signcolumn=number       " Add signs on top of number column
  set smartcase               " Search is case sensitive when searching for words with capital letters
  set softtabstop=-1          " Indent is removed with same amount of characters as tabstop
  set tabstop=2               " Indent with 2 spaces
@@ -49,6 +49,7 @@
  set wildmenu                " Better completion mode
  set wildmode=full           " Complete to first word
  syntax on                   " Syntax highlighting
+" set signcolumn=number       " Add signs on top of number column
  
  autocmd FileType json syntax match Comment +\/\/.\+$+
  
@@ -343,6 +344,9 @@ autocmd CursorHold * silent call CocActionAsync('highlight')
 
 " Plugin config 
 " ===============================
+""" vim-rooter
+let g:rooter_patterns = ['.git']
+
 """ Airline
 let g:airline_powerline_fonts = 1
 
