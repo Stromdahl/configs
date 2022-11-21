@@ -134,8 +134,12 @@ function mkcd () {
 # ===1 Aliases
 # ==============================================
 function cdgr() {
-  cd $(git rev-parse --show-toplevel)
+  inside_git_repo="$(git rev-parse --is-inside-work-tree 2>/dev/null)"
+  if [ "$inside_git_repo" ]; then
+    cd $(git rev-parse --show-toplevel)
+  fi
 }
+
 alias cl='clear'
 alias cp='cp -iv'
 alias l='ls -CF'
@@ -158,7 +162,7 @@ alias xci='xclip -in -selection clipboard'
 alias xco='xclip -out -selection clipboard'
 alias xcpi='xclip -in'
 alias xcpo='xclip -out'
-
+alias k='kubectl'
 # Aliases for kubectl
 kube() {
   case "$1" in
@@ -219,10 +223,10 @@ alias to=". $HOME/dev/bash/to/to.sh"
 
 # WORK
 # Yggio
-if [ -f $HOME/work/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
-  source $HOME/work/sensative/yggio/tools/dev-scripts/yggiorc.sh
+if [ -f $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
+  source $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh
 fi
 
 # BEGIN ANSIBLE MANAGED BLOCK
-export KUBECONFIG=$HOME/.kube/config:/home/stroid/work/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:/home/stroid/work/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
+export KUBECONFIG=$HOME/.kube/config:$WORK/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:$WORK/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
 # END ANSIBLE MANAGED BLOCK
