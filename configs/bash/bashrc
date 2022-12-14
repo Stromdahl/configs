@@ -163,6 +163,9 @@ alias xco='xclip -out -selection clipboard'
 alias xcpi='xclip -in'
 alias xcpo='xclip -out'
 alias k='kubectl'
+
+alias pubkey='xci $HOME/.ssh/id_ed25519.pub';
+
 # Aliases for kubectl
 kube() {
   case "$1" in
@@ -228,5 +231,5 @@ if [ -f $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
 fi
 
 # BEGIN ANSIBLE MANAGED BLOCK
-export KUBECONFIG=$HOME/.kube/config:$WORK/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:$WORK/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
+export KUBECONFIG=$HOME/.kube/config:$HOME/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:$HOME/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
 # END ANSIBLE MANAGED BLOCK
