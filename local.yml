@@ -1,0 +1,5 @@
+- hosts: all
+  tags: common
+  become: true
+  roles:
+    - base
