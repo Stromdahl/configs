@@ -1,2 +1,5 @@
 [server]
 linode-server-1
+
+[workstation]
+stroid-debian-desktop
