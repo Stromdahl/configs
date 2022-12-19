@@ -1,17 +1,17 @@
 ---
-- name: Ensure SELinux is set to enforcing mode
+- name: Ensure HandleLidSwitch
   ansible.builtin.lineinfile:
     path: /etc/systemd/logind.conf 
     regexp: 'HandleLidSwitch='
     line: HandleLidSwitch=suspend
 
-- name: Ensure SELinux is set to enforcing mode
+- name: Ensure HandleLidSwitchExternalPower
   ansible.builtin.lineinfile:
     path: /etc/systemd/logind.conf 
-    regexp: 'HandleLidSwitchDocked='
-    line: HHandleLidSwitchDocked=ignore
+    regexp: 'HandleLidSwitchExternalPower='
+    line: HHandleLidSwitchExternalPower=ignore
 
-- name: Ensure SELinux is set to enforcing mode
+- name: Ensure HandleLidSwitchDocked
   ansible.builtin.lineinfile:
     path: /etc/systemd/logind.conf 
     regexp: 'HandleLidSwitchDocked='
