@@ -1,9 +1,0 @@
-- name: Installing dotfiles
-  hosts: localhost
-  connection: local
-  vars:
-    CONFIGS: "{{SOURCE_FOLDER}}/configs/"
-  tasks:
-    #     - name: Make sure repo exists in ~/.dotfiles 
-    #       debug:
-    #         msg: "{{ ansible_distribution|lower}} {{ansible_distribution_release}}"
