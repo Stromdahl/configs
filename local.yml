@@ -1,5 +1,9 @@
 - hosts: all
   tags: all
-  become: true
+  roles:
+    - base
+
+- hosts: laptop
+  tags: laptop
   roles:
     - base
