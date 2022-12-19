@@ -6,4 +6,4 @@
 - hosts: laptop
   tags: laptop
   roles:
-    - base
+    - laptop
