@@ -1,4 +1,8 @@
 ---
+- name: laptop test
+  debug:
+    msg: laptop test
+
 - name: Ensure HandleLidSwitch
   ansible.builtin.lineinfile:
     path: /etc/systemd/logind.conf 
