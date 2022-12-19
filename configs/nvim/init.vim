@@ -232,8 +232,8 @@ let g:which_key_map.s = {
       \ }
 
 " b is for buffer
-nmap <leader>bq :bd<CR>
-nmap <leader>bQ :bd!<CR>
+nmap <leader>q :bd<CR>
+nmap <leader>Q :bd!<CR>
 
 " g is for GIT
 nmap <leader>gb :Git blame<CR>
@@ -246,7 +246,7 @@ nmap <leader>ff :NERDTreeFind<CR>
 nmap <leader>fl :NERDTreeFocus<CR>
 
 nmap <leader>w :w<CR>
-nmap <leader>Q :q<CR>
+" nmap <leader>Q :q<CR>
 
 map [- <Plug>(IndentWisePreviousLesserIndent)
 map [= <Plug>(IndentWisePreviousEqualIndent)
