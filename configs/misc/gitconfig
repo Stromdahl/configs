@@ -1,0 +1,5 @@
+[user]
+	email = mattias.stromdahl@sensative.com
+	name = Mattias Stromdahl
+[pull]
+	rebase = false
