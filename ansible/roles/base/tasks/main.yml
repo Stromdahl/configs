@@ -2,3 +2,27 @@
 - name: test
   debug:
     msg: System {{ inventory_hostname }} has gateway {{ ansible_default_ipv4.gateway }}
+
+- name: Install useful tools
+  become: yes
+  apt:
+    update_cache: yes
+    state: present
+    name:
+      - bc
+      - fzf
+      - gpg
+      - htop
+      - jq
+      - man-db
+      - molly-guard
+      - mosquitto-clients
+      - ncdu
+      - net-tools
+      - ntp
+      - pv
+      - ripgrep
+      - unattended-upgrades
+      - vim
+
+- import_tasks: unattended-upgrades.yml

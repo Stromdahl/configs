@@ -1,0 +1,6 @@
+
+- name: Activate Unattended Upgrades
+  become: yes
+  copy:
+    content: "APT::Periodic::Update-Package-Lists \"1\";\nAPT::Periodic::Unattended-Upgrade \"1\";"
+    dest: /etc/apt/apt.conf.d/02auto-upgrades

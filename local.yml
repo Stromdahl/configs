@@ -3,6 +3,11 @@
   roles:
     - base
 
+- hosts: workstation
+  tags: workstation
+  roles: 
+    - workstation
+
 - hosts: laptop
   tags: laptop
   roles:
