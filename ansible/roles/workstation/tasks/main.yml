@@ -1,18 +1,16 @@
 ---
-- name: test
-  debug:
-    msg: Workstation {{ansible_user_dir}}
-
 - name: Checkout dotfiles
   git:
+    force: false
+    update: false
     accept_hostkey: yes
     repo: git@github.com:Stromdahl/configs.git
     dest: '{{ dotfiles_dir }}/.dotfiles'
 
 - include_tasks: install_dotfiles.yml
   with_items:
-    - { src: 'bash/bashrc', dest: '', file: bashrc }
-    - { src: 'i3/config', dest: '.config/i3', file: 'config' }
-    - { src: 'i3status/config', dest: '.config/i3status', file: 'config' }
-    - { src: 'nvim/init.vim', dest: '.config/nvim', file: 'init.vim' }
-    - { src: 'nvim/coc-settings.json', dest: '.config/nvim', file: 'coc-settings.json' }
+    - { src: 'bash/bashrc', dest: '', file: '.bashrc' }
+    - { src: 'miscelanius/gitconfig', dest: '', file: '.gitconfig' }
+
+- include_tasks: i3wm/main.yml
+  when: i3wm is defined and i3wm == true
