@@ -217,6 +217,7 @@ set $bg       #282828
 set $red      #cc241d
 set $green    #98971a
 set $yellow   #d79921
+set $orange   #fe8019
 set $blue     #458588
 set $purple   #b16286
 set $aqua     #689d68
@@ -252,7 +253,7 @@ bar {
 
 # blue gruvbox
 # class                 border    backgr.   text      indicator child_border
-client.focused          $blue     $blue     $darkgray $purple   $darkgray
-client.focused_inactive $blue     $darkgray $yellow   $purple   $darkgray
-client.unfocused        $darkgray $darkgray $yellow   $purple   $darkgray
+client.focused          $darkgray $orange   $darkgray $purple   $bg
+client.focused_inactive $orange   $darkgray $yellow   $purple   $bg
+client.unfocused        $darkgray $darkgray $yellow   $purple   $bg
 
