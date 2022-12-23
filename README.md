@@ -2,7 +2,23 @@
 https://www.webpro.nl/articles/getting-started-with-dotfiles
 https://dotfiles.github.io/tutorials/
 
-# TODO
+## How to use
+
+### Localy
+``` bash
+ansible-playbook \
+--connection=local \ 
+--inventory host, \
+--limit host local.yml -i ansible/hosts --ask-become-pass
+```
+
+### Bootstrap
+```
+ansilbe-pull -U https://github.com/Stromdahl/configs.yml
+TODO
+```
+
+## TODO
 
 #### add this
 ```
