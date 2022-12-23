@@ -2,7 +2,7 @@
 - name: Checkout dotfiles
   git:
     force: false
-    update: false
+    update: true
     accept_hostkey: yes
     repo: git@github.com:Stromdahl/configs.git
     dest: '{{ dotfiles_dir }}/.dotfiles'
