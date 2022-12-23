@@ -14,8 +14,9 @@ ansible-playbook \
 
 ### Bootstrap
 ```
-ansilbe-pull -U https://github.com/Stromdahl/configs.yml
-TODO
+ansilbe-pull \
+    -U https://github.com/Stromdahl/configs.yml \
+    --aks-become-pass
 ```
 
 ## TODO
