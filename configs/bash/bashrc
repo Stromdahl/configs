@@ -128,7 +128,7 @@ fi
 function mkcd () {
   dirname=$1
   mkdir $dirname
-  cd $dirname 
+  cd $dirname
 }
 
 # ===1 Aliases
@@ -165,21 +165,6 @@ alias xcpo='xclip -out'
 alias k='kubectl'
 
 alias pubkey='xci $HOME/.ssh/id_ed25519.pub';
-
-# Aliases for kubectl
-kube() {
-  case "$1" in
-    gp)
-      kubectl get pods
-      ;;
-    sh)
-      kubectl exec $2 -it -- bash
-      ;;
-    *)
-    echo "Usage: $0 {gp|sh}"
-      ;;
-  esac
-}
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
