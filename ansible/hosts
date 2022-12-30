@@ -1,5 +1,8 @@
 [server]
-linode-server-1
+homer
+
+[homer]
+homer
 
 [workstation]
 zoidberg

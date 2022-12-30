@@ -12,3 +12,8 @@
   tags: laptop
   roles:
     - laptop
+
+- hosts: homer
+  tags: homer
+  roles:
+    - homer
