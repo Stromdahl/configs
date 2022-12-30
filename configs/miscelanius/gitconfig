@@ -1,5 +1,7 @@
 [user]
-	email = mattias.stromdahl@sensative.com
-	name = Mattias Stromdahl
+	email = mattias.stromdahl@gmail.com
+	name = Mattias Strömdahl
 [pull]
 	rebase = false
+[init]
+	defaultBranch = main
