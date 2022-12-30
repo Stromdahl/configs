@@ -1,11 +1,2 @@
 ---
 
-- name: Ensure pihole directory exists
-  file: 
-    path: pihole
-    state: directory
-   
-- name: Ensure pihole docker-compose
-  copy:
-    src: pihole-docker-compose.yml
-    dest: pihole/docker-compose.yml
