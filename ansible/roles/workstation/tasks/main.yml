@@ -2,7 +2,8 @@
 - name: Checkout dotfiles
   git:
     force: false
-    update: true
+      # TODO: fix update true when changes is made localy 
+    update: false
     accept_hostkey: yes
     repo: git@github.com:Stromdahl/configs.git
     dest: '{{ dotfiles_dir }}/.dotfiles'
@@ -11,6 +12,12 @@
   with_items:
     - { src: 'bash/bashrc', dest: '', file: '.bashrc' }
     - { src: 'miscelanius/gitconfig', dest: '', file: '.gitconfig' }
+    - { src: 'miscelanius/user-dirs.dirs', dest: '.config', file: 'user-dirs.dirs' }
 
 - include_tasks: i3wm/main.yml
   when: i3wm is defined and i3wm == true
+
+- include_tasks: nvim/main.yml
+  when: nvim is defined and nvim == true
+
+
