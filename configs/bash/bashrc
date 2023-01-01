@@ -212,8 +212,6 @@ fi
 
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
-source /usr/share/doc/fzf/examples/key-bindings.bash
-
 alias to=". $HOME/dev/bash/to/to.sh"
 
 # WORK
@@ -225,3 +223,6 @@ fi
 # BEGIN ANSIBLE MANAGED BLOCK
 export KUBECONFIG=$HOME/.kube/config:$HOME/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:$HOME/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
 # END ANSIBLE MANAGED BLOCK
+
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash

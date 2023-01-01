@@ -1,0 +1,11 @@
+---
+- name: Git checkout
+  git:
+    depth: 1
+    repo: 'https://github.com/junegunn/fzf.git'
+    dest: /tmp/fzf
+  
+- name: install fzf
+  script:
+    cmd: /tmp/fzf/install --no-zsh --no-fish --no-update-rc
+

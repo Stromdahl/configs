@@ -10,7 +10,7 @@
     state: present
     name:
       - bc
-      - fzf
+      - git
       - gpg
       - htop
       - jq
@@ -24,5 +24,9 @@
       - ripgrep
       - unattended-upgrades
       - vim
+
+# Installs latest fzf version (needed for nvim lua)
+# TODO: make this work
+# - import_tasks: fzf.yml
 
 - import_tasks: unattended-upgrades.yml
