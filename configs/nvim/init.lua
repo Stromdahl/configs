@@ -206,8 +206,8 @@ require('gitsigns').setup {
   },
 }
 
-vim.keymap.set('n', '<leader>ft', require('nvim-tree.api').tree.toggle, { desc = 'Open [f]ile [t]ee' })
--- vim.keymap.set('n', '<leader>ff', ':NvimTreeFindFile<CR>', { desc = '[f]ind [f]ile' })
+vim.keymap.set('n', '<leader>ft', ':NvimTreeToggle<CR>', { desc = 'Open [f]ile [t]ee' })
+vim.keymap.set('n', '<leader>ff', ':NvimTreeFindFileToggle<CR>', { desc = '[f]ind [f]ile' })
 
 
 vim.keymap.set('n', '<leader>s/', require('fzf-lua').search_history, { desc = '[S]earch history[/]' })
