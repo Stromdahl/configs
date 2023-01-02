@@ -207,6 +207,8 @@ exec --no-startup-id i3-msg 'workspace 10; exec slack;'
 # Move apps to workspace on startup 
 for_window [class="Slack"] move to workspace $ws10
 
+exec --no-startup-id mpris-proxy
+
 # keyboard layout setup TODO: remove this
 # exec_always --no-startup-id "setxkbmap -layout gb,se -option 'grp:lalt_lshift_toggle'"
 

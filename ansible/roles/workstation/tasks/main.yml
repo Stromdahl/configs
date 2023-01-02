@@ -17,6 +17,9 @@
     - { src: 'xfce4-terminal/terminalrc', dest: '.config/xfce4/terminal', file: 'terminalrc' }
     - { src: 'xfce4-terminal/gruvbox-dark-hard.theme', dest: '.local/share/xfce4/terminal/colorschemes', file: 'gruvbox-dark-hard.theme' }
 
+#   - include_tasks: hack-nerd-font/main.yml
+#     when: hack-nerd-font is defined and hack-nerd-font == true
+
 - include_tasks: i3wm/main.yml
   when: i3wm is defined and i3wm == true
 

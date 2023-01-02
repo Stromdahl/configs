@@ -206,7 +206,7 @@ require('gitsigns').setup {
   },
 }
 
-vim.keymap.set('n', '<leader>ft', ':NvimTreeToggle<CR>', { desc = 'Open [f]ile [t]ee' })
+vim.keymap.set('n', '<leader>ft', ':NvimTreeFindFileToggle<CR>', { desc = 'Open [f]ile [t]ee' })
 vim.keymap.set('n', '<leader>ff', ':NvimTreeFindFileToggle<CR>', { desc = '[f]ind [f]ile' })
 
 
@@ -364,6 +364,7 @@ local on_attach = function(_, bufnr)
 
   nmap('<leader>cr', vim.lsp.buf.rename, '[C]ode [R]ename')
   nmap('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+  nmap('<leader>cf', ':Format<CR>', '[C]ode [F]ormat')
 
   nmap('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
   nmap('gr', require('fzf-lua').lsp_references, '[G]oto [R]eferences')
