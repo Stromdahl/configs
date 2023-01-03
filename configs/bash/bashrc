@@ -79,7 +79,7 @@ returnvalue() {
 
 host_prompt() {
   if [ -n "$SSH_CLIENT" ]; then
-    echo "$GREEN\u@\h "
+    echo "$RED\u@\h "
   fi
 }
 
