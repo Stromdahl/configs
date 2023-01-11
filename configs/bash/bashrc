@@ -79,7 +79,7 @@ returnvalue() {
 
 host_prompt() {
   if [ -n "$SSH_CLIENT" ]; then
-    echo "$RED\u@\h "
+    echo "$GREEN\u@\h "
   fi
 }
 
@@ -151,6 +151,7 @@ alias mv='mv -iv'
 alias rm='rm -iv'
 alias vi='${EDITOR}'
 alias ncal='ncal -wM3'
+alias gs='git status'
 
 # cd up dir
 alias ..='cd ..'

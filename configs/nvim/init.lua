@@ -1,8 +1,8 @@
 local ensure_packer = function()
   local fn = vim.fn
-  local install_path = fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
+  local install_path = fn.stdpath('data') .. '/site/pack/packer/start/packer.nvim'
   if fn.empty(fn.glob(install_path)) > 0 then
-    fn.system({'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path})
+    fn.system({ 'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path })
     vim.cmd [[packadd packer.nvim]]
     return true
   end
@@ -47,12 +47,19 @@ require('packer').startup(function(use)
     after = 'nvim-treesitter',
   }
 
+  -- hop hop
+  -- why you no work
+  use {
+    'ggandor/leap.nvim',
+    config = function() require ('leap').set_default_keymaps() end
+  }
+
   -- Git related plugins
   use 'tpope/vim-fugitive'
   use 'lewis6991/gitsigns.nvim'
   use {
-      'notjedi/nvim-rooter.lua',
-      config = function() require'nvim-rooter'.setup() end
+    'notjedi/nvim-rooter.lua',
+    config = function() require 'nvim-rooter'.setup() end
   }
 
   use 'gruvbox-community/gruvbox'
@@ -104,34 +111,34 @@ vim.api.nvim_create_autocmd('BufWritePost', {
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
-vim.o.autoindent = true         -- Indent newlines automatically
-vim.o.breakindent = true        -- Enable break indent
-vim.o.clipboard = 'unnamedplus' -- Always use system clipboard for cut/copy
-vim.o.colorcolumn = '100'       -- color colorcolumn
-vim.o.cursorline = true         -- Highlight the line the Cursor is on
-vim.o.expandtab = true          -- Indent tabs as spaces
-vim.o.guifont = 'Hack:h10'      -- Font and size in GUI:s
-vim.o.hidden = true             -- Keep unsaved data and undo information when switching buffers
-vim.o.hlsearch = false          -- Set highlight on search
-vim.o.ignorecase = true         -- Search is not case-sensitive
-vim.o.linebreak = true          -- Break long lines by word-boundaries instead of in the middle of word 
-vim.o.mouse = 'a'               -- Enable mouse mode
-vim.o.number = true             -- Make line numbers default
+vim.o.autoindent     = true -- Indent newlines automatically
+vim.o.breakindent    = true -- Enable break indent
+vim.o.clipboard      = 'unnamedplus' -- Always use system clipboard for cut/copy
+vim.o.colorcolumn    = '100' -- color colorcolumn
+vim.o.cursorline     = true -- Highlight the line the Cursor is on
+vim.o.expandtab      = true -- Indent tabs as spaces
+vim.o.guifont        = 'Hack:h10' -- Font and size in GUI:s
+vim.o.hidden         = true -- Keep unsaved data and undo information when switching buffers
+vim.o.hlsearch       = false -- Set highlight on search
+vim.o.ignorecase     = true -- Search is not case-sensitive
+vim.o.linebreak      = true -- Break long lines by word-boundaries instead of in the middle of word
+vim.o.mouse          = 'a' -- Enable mouse mode
+vim.o.number         = true -- Make line numbers default
 vim.o.relativenumber = true
-vim.o.scrolloff=999             -- Cursor centered-ish
-vim.o.shiftwidth = 0            -- Indent with cindent the same amount of characters as tabstop
-vim.o.shiftwidth=0              -- Indent with cindent the same amount of characters as tabstop
-vim.o.showcmd = true            -- Show count of marked lines in bottom right
-vim.o.smartcase = true          -- Search is case sensitive when searching for words with capital letters
-vim.o.smartcase = true          -- Search is case sensitive when searching for words with capital letters
-vim.o.softtabstop=-1            -- Indent is removed with same amount of characters as tabstop
-vim.o.tabstop=2                 -- Indent with 2 spaces
-vim.o.termguicolors  = true     -- Enables truecolor support
-vim.o.termguicolors = true      -- set termguicolors to enable highlight groups
-vim.o.undofile = true           -- Save undo history
-vim.o.updatetime=300            -- Wait 300 milliseconds for saving swap files and cursorhold autocommand
-vim.o.wildmenu = true           -- Better completion mode
-vim.o.wildmode='full'           -- Complete to first word'
+vim.o.scrolloff      = 999 -- Cursor centered-ish
+vim.o.shiftwidth     = 0 -- Indent with cindent the same amount of characters as tabstop
+vim.o.shiftwidth     = 0 -- Indent with cindent the same amount of characters as tabstop
+vim.o.showcmd        = true -- Show count of marked lines in bottom right
+vim.o.smartcase      = true -- Search is case sensitive when searching for words with capital letters
+vim.o.smartcase      = true -- Search is case sensitive when searching for words with capital letters
+vim.o.softtabstop    = -1 -- Indent is removed with same amount of characters as tabstop
+vim.o.tabstop        = 2 -- Indent with 2 spaces
+vim.o.termguicolors  = true -- Enables truecolor support
+vim.o.termguicolors  = true -- set termguicolors to enable highlight groups
+vim.o.undofile       = true -- Save undo history
+vim.o.updatetime     = 300 -- Wait 300 milliseconds for saving swap files and cursorhold autocommand
+vim.o.wildmenu       = true -- Better completion mode
+vim.o.wildmode       = 'full' -- Complete to first word'
 
 -- Decrease update time
 vim.o.updatetime = 250
@@ -400,7 +407,7 @@ local servers = {
   -- clangd = {},
   -- gopls = {},
   -- pyright = {},
-  -- rust_analyzer = {},
+  rust_analyzer = {},
   tsserver = {},
 
   sumneko_lua = {
@@ -486,4 +493,3 @@ cmp.setup {
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
-
