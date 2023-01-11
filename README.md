@@ -19,6 +19,10 @@ ansilbe-pull \
     --aks-become-pass
 ```
 
+```
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap)"
+```
+
 ## TODO
 
 #### add this
