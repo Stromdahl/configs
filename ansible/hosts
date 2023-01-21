@@ -1,3 +1,5 @@
+neon
+
 [server]
 homer
 
@@ -7,7 +9,6 @@ homer
 [workstation]
 zoidberg
 bender
-neon
 
 [laptop]
 bender
