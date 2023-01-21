@@ -10,7 +10,7 @@ fi
 
 # show menu to the user
 PS3='Please enter your choice: '
-options=("install sudo" "add user" "ansible-pull" "Quit")
+options=("install sudo" "add user" "add user to sudoers" "ansible-pull" "Quit")
 select opt in "${options[@]}"
 do
     case $opt in
@@ -27,7 +27,19 @@ do
                 read -p "choose a password for $username: " password
                 useradd -m $username
                 echo "$username:$password" | chpasswd
-                usermod -ag sudo $username
+                adduser $username sudo
+                echo "user $username added to sudoers"
+            fi
+            ;;
+        "add user to sudoers")
+            read -p "enter username to add to sudoers ($default_username): " sudo_user
+            sudo_user=${sudo_user:-$default_username}
+            if id -u $sudo_user > /dev/null 2>&1; then
+                echo "user exists"
+                adduser $sudo_user sudo
+                echo "user $sudo_user added to sudoers"
+            else
+                echo "user does not exist"
             fi
             ;;
         "ansible-pull")
