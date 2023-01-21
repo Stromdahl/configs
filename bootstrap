@@ -1,5 +1,53 @@
-#! /usr/bin/env bash
+#!/bin/bash
 
-echo 'hello world'
-read varname
-echo $varname
+default_username="ms"
+github_link="https://github.com/stromdahl/configs.git"
+
+if [[ $EUID -ne 0 ]]; then
+   echo "this script must be run as root" 
+   exit 1
+fi
+
+# show menu to the user
+PS3='Please enter your choice: '
+options=("install sudo" "add user" "ansible-pull" "Quit")
+select opt in "${options[@]}"
+do
+    case $opt in
+        "install sudo")
+            apt-get -y install sudo
+            ;;
+        "add user")
+            read -p "enter username ($default_username): " username
+            username=${username:-$default_username}
+            if id -u $username > /dev/null 2>&1; then
+                echo "user exists"
+            else
+                echo "user does not exist"
+                read -p "choose a password for $username: " password
+                useradd -m $username
+                echo "$username:$password" | chpasswd
+                usermod -ag sudo $username
+            fi
+            ;;
+        "ansible-pull")
+            if ! command -v python3 &> /dev/null; then
+                echo installing python
+                apt-get -y install python3 > /dev/null 2>&1
+            else
+                echo python is already installed
+            fi
+            if ! command -v ansible &> /dev/null; then
+                echo installing ansible
+                apt-get -y install ansible > /dev/null 2>&1
+            else
+                echo ansible is already installed
+            fi
+            su $username -c "ansible-pull -U $github_link -K"
+            ;;
+        "Quit")
+            break
+            ;;
+        *) echo invalid option;;
+    esac
+done
