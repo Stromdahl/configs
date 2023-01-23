@@ -43,11 +43,19 @@ do
             fi
             ;;
         "ansible-pull")
+            apt update &> /dev/null
+
             if ! command -v python3 &> /dev/null; then
                 echo installing python
                 apt-get -y install python3 > /dev/null 2>&1
             else
                 echo python is already installed
+            fi
+            if ! command -v git &> /dev/null; then
+                echo installing installing git
+                apt-get -y install git > /dev/null 2>&1
+            else
+                echo git is already installed
             fi
             if ! command -v ansible &> /dev/null; then
                 echo installing ansible
