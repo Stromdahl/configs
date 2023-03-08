@@ -1,5 +1,0 @@
-- name: 'Install hack-nerd-font'
-  unarchive:
-    src: 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.2.2/Hack.zip'
-    dest: '/usr/share/fonts/hack-nerd-font'
-    remote_src: yes

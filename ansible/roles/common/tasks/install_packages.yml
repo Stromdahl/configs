@@ -1,8 +1,4 @@
 ---
-- name: test
-  debug:
-    msg: System {{ inventory_hostname }} has gateway {{ ansible_default_ipv4.gateway }}
-
 - name: Install useful tools
   become: yes
   apt:
@@ -24,9 +20,3 @@
       - ripgrep
       - unattended-upgrades
       - vim
-
-# Installs latest fzf version (needed for nvim lua)
-# TODO: make this work
-# - import_tasks: fzf.yml
-
-- import_tasks: unattended-upgrades.yml
