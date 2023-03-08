@@ -37,5 +37,5 @@ echo -- OK --
 echo ""
 
 echo "-- Running Ansible Playbook --"
-ansible-pull "ansbile/local.yml" --url "$github_url" --extra-vars "username=$username, password=$password"
+ansible-pull "./ansbile/local.yml" --url "$github_url" --extra-vars "username=$username, password=$password"
 echo -- OK --
