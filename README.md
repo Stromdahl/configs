@@ -1,6 +1,5 @@
-# dotfiles
-https://www.webpro.nl/articles/getting-started-with-dotfiles
-https://dotfiles.github.io/tutorials/
+# Configs
+My personal dev-ops repo for managing my servers and workstations
 
 ## How to use
 
@@ -20,7 +19,7 @@ ansilbe-pull \
 ```
 
 ```
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap)"
 ```
 
 ## TODO
