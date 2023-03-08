@@ -1,73 +1,37 @@
 #!/bin/bash
 
 default_username="ms"
-github_link="https://github.com/stromdahl/configs.git"
+packages="sudo python3 ansible git"
+github_url="https://github.com/stromdahl/configs.git"
 
 if [[ $EUID -ne 0 ]]; then
-   echo "this script must be run as root" 
-   exit 1
+    echo "this script must be run as root" 
+    exit 1
 fi
 
-# show menu to the user
-PS3='Please enter your choice: '
-options=("install sudo" "add user" "add user to sudoers" "ansible-pull" "Quit")
-select opt in "${options[@]}"
-do
-    case $opt in
-        "install sudo")
-            apt-get -y install sudo
-            ;;
-        "add user")
-            read -p "enter username ($default_username): " username
-            username=${username:-$default_username}
-            if id -u $username > /dev/null 2>&1; then
-                echo "user exists"
-            else
-                echo "user does not exist"
-                read -p "choose a password for $username: " password
-                useradd -m $username
-                echo "$username:$password" | chpasswd
-                adduser $username sudo
-                echo "user $username added to sudoers"
-            fi
-            ;;
-        "add user to sudoers")
-            read -p "enter username to add to sudoers ($default_username): " sudo_user
-            sudo_user=${sudo_user:-$default_username}
-            if id -u $sudo_user > /dev/null 2>&1; then
-                echo "user exists"
-                adduser $sudo_user sudo
-                echo "user $sudo_user added to sudoers"
-            else
-                echo "user does not exist"
-            fi
-            ;;
-        "ansible-pull")
-            apt update &> /dev/null
-
-            if ! command -v python3 &> /dev/null; then
-                echo installing python
-                apt-get -y install python3 > /dev/null 2>&1
-            else
-                echo python is already installed
-            fi
-            if ! command -v git &> /dev/null; then
-                echo installing installing git
-                apt-get -y install git > /dev/null 2>&1
-            else
-                echo git is already installed
-            fi
-            if ! command -v ansible &> /dev/null; then
-                echo installing ansible
-                apt-get -y install ansible > /dev/null 2>&1
-            else
-                echo ansible is already installed
-            fi
-            su $username -c "ansible-pull -U $github_link -K"
-            ;;
-        "Quit")
-            break
-            ;;
-        *) echo invalid option;;
-    esac
+echo "-- Install packages --"
+for package in $packages; do
+    echo "$package"
+    apt -y install $package > /dev/null 2>&1
 done
+echo -- OK --
+
+echo "-- Create User --"
+read -p "username: ($default_username): " username
+username=${username:-$default_username}
+while true; do
+    read -p "password: : " password
+    echo ""
+    read -p "repeat password: : " password_repeat
+    echo ""
+    if [ "$password" == "$password_repeat"]: then
+        break
+    else
+        echo "Passwords do not match. Please try again."
+    fi
+done
+echo -- OK --
+
+echo "-- Running Ansible Playbook --"
+ansible-playbook "local.yml"
+echo -- OK --

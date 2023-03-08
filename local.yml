@@ -1,19 +1,43 @@
-- hosts: all
-  tags: all
-  roles:
-    - base
+---
 
-- hosts: workstation
-  tags: workstation
-  roles: 
-    - workstation
+  - hosts: localhost
+    become: true
+    pre_tasks:
 
-- hosts: laptop
-  tags: laptop
-  roles:
-    - laptop
+      - name: install updates
+        apt:
+          upgrade: dist
+          update_cache: yes
 
-- hosts: homer
-  tags: homer
-  roles:
-    - homer
+  - hosts: localhost
+    become: true
+    tasks:
+
+      - name: Collect info 
+        block:
+          - name: Collect public ssh key from github
+            ansible.builtin.set_fact:
+              sshkeys: "{{ lookup('ansible.builtin.url', 'https://github.com/stromdahl.keys') }}"
+
+      - name: Add user
+        block:
+          - name: create user (ms)
+            tags: always
+            user:
+              name: ms
+              groups: root
+
+          - name: add ssh key for 'ms'
+            tags: always
+            authorized_key:
+              user: ms
+              key: "{{ sshkeys }}"
+
+          - name: add sudoers file for simone
+            tags: always
+            copy:
+              content: "ms ALL=(ALL) NOPASSWD: ALL"
+              dest: /etc/sudoers.d/ms
+              owner: root
+              group: root
+              mode: 0440
