@@ -152,7 +152,7 @@ alias rm='rm -iv'
 alias vi='${EDITOR}'
 alias ncal='ncal -wM3'
 alias gs='git status'
-
+alias :q='exit'
 # cd up dir
 alias ..='cd ..'
 alias ...='cd ../..'
@@ -215,12 +215,17 @@ export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
 alias to=". $HOME/dev/bash/to/to.sh"
 
+if [ ! -S ~/.ssh/ssh_auth_sock ]; then
+  eval `ssh-agent -t 3600` > /dev/null 2>&1
+  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+fi
+export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+
 # WORK
 # Yggio
 if [ -f $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
   source $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh
 fi
-
 # BEGIN ANSIBLE MANAGED BLOCK
 export KUBECONFIG=$HOME/.kube/config:$HOME/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:$HOME/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
 # END ANSIBLE MANAGED BLOCK

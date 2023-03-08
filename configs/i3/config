@@ -212,6 +212,10 @@ exec --no-startup-id mpris-proxy
 # keyboard layout setup TODO: remove this
 # exec_always --no-startup-id "setxkbmap -layout gb,se -option 'grp:lalt_lshift_toggle'"
 
+########### Autofloat for sensative ###########
+for_window [class="Wfica"] floating enable
+
+
 # ================================
 # Colors
 
