@@ -15,23 +15,27 @@ for package in $packages; do
     apt -y install $package > /dev/null 2>&1
 done
 echo -- OK --
+echo ""
 
 echo "-- Create User --"
 read -p "username: ($default_username): " username
 username=${username:-$default_username}
 while true; do
-    read -p "password: : " password
+    read -sp "password: " password
     echo ""
-    read -p "repeat password: : " password_repeat
+    read -sp "repeat password: " password_repeat
     echo ""
-    if [ "$password" == "$password_repeat"]: then
+
+    if [ "$password" == "$password_repeat" ]
+    then
         break
     else
         echo "Passwords do not match. Please try again."
     fi
 done
 echo -- OK --
+echo ""
 
 echo "-- Running Ansible Playbook --"
-ansible-playbook "local.yml"
+ansible-pull "ansbile/local.yml" --url "$github_url" --extra-vars "username=$username, password=$password"
 echo -- OK --
