@@ -19,7 +19,7 @@ ansilbe-pull \
 ```
 
 ```
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap)"
 ```
 
 ## TODO
