@@ -1,4 +1,5 @@
-# My personal dev-ops repo for managing my servers and workstations
+# Configs
+My personal dev-ops repo for managing my servers and workstations
 
 ## How to use
 
