@@ -1,6 +1,4 @@
-# dotfiles
-https://www.webpro.nl/articles/getting-started-with-dotfiles
-https://dotfiles.github.io/tutorials/
+# My personal dev-ops repo for managing my servers and workstations
 
 ## How to use
 
