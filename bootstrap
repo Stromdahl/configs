@@ -37,5 +37,5 @@ echo -- OK --
 echo ""
 
 echo "-- Running Ansible Playbook --"
-ansible-pull --url "$github_url" --extra-vars "username=$username, password=$password"
+ansible-pull --url "$github_url" --extra-vars "username=$username password=$password"
 echo -- OK --
