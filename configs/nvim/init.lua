@@ -244,6 +244,29 @@ vim.keymap.set('n', '<leader>sy', function() print('Not implemented yet') end, {
 vim.keymap.set('n', '<leader>sz', function() print('Not implemented yet') end, { desc = 'not implemented yet' }) -- [':FZF'          , 'FZF'],
 
 -- [[ Configure nvim-tree ]]
+local function open_nvim_tree(data)
+
+  -- buffer is a directory
+  local directory = vim.fn.isdirectory(data.file) == 1
+
+  if not directory then
+    return
+  end
+
+  -- create a new, empty buffer
+  vim.cmd.enew()
+
+  -- wipe the directory buffer
+  vim.cmd.bw(data.buf)
+
+  -- change to the directory
+  vim.cmd.cd(data.file)
+
+  -- open the tree
+  require("nvim-tree.api").tree.open()
+end
+
+vim.api.nvim_create_autocmd({"VimEnter"}, { callback = open_nvim_tree});
 require("nvim-tree").setup({
   sort_by = "case_sensitive",
   actions = {
@@ -410,12 +433,6 @@ local servers = {
   rust_analyzer = {},
   tsserver = {},
 
-  sumneko_lua = {
-    Lua = {
-      workspace = { checkThirdParty = false },
-      telemetry = { enable = false },
-    },
-  },
 }
 
 -- Setup neovim lua configuration
