@@ -51,9 +51,11 @@ require('packer').startup(function(use)
   -- why you no work
   use {
     'ggandor/leap.nvim',
-    config = function() require ('leap').set_default_keymaps() end
+    config = function() require('leap').set_default_keymaps() end
   }
 
+  -- Copilot
+  use 'github/copilot.vim'
   -- Git related plugins
   use 'tpope/vim-fugitive'
   use 'lewis6991/gitsigns.nvim'
@@ -150,6 +152,7 @@ vim.o.background = 'dark'
 if not packer_bootstrap then
   vim.cmd [[colorscheme gruvbox]]
 end
+
 
 -- Set completeopt to have a better completion experience
 vim.o.completeopt = 'menuone,noselect'
@@ -253,12 +256,6 @@ local function open_nvim_tree(data)
     return
   end
 
-  -- create a new, empty buffer
-  vim.cmd.enew()
-
-  -- wipe the directory buffer
-  vim.cmd.bw(data.buf)
-
   -- change to the directory
   vim.cmd.cd(data.file)
 
@@ -266,7 +263,7 @@ local function open_nvim_tree(data)
   require("nvim-tree.api").tree.open()
 end
 
-vim.api.nvim_create_autocmd({"VimEnter"}, { callback = open_nvim_tree});
+vim.api.nvim_create_autocmd({ "VimEnter" }, { callback = open_nvim_tree });
 require("nvim-tree").setup({
   sort_by = "case_sensitive",
   actions = {
@@ -433,6 +430,23 @@ local servers = {
   rust_analyzer = {},
   tsserver = {},
 
+}
+
+
+-- Copilot
+vim.g.copilot_no_tab_map = true
+vim.api.nvim_set_keymap("i", "<C-J>", 'copilot#Accept("<CR>")', { silent = true, expr = true })
+vim.g.copilot_filetypes = {
+  ["*"] = false,
+  ["javascript"] = true,
+  ["typescript"] = true,
+  ["lua"] = true,
+  ["rust"] = true,
+  ["c"] = true,
+  ["c#"] = true,
+  ["c++"] = true,
+  ["go"] = true,
+  ["python"] = true,
 }
 
 -- Setup neovim lua configuration
