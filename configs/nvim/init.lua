@@ -219,7 +219,6 @@ require('gitsigns').setup {
 vim.keymap.set('n', '<leader>ft', ':NvimTreeFindFileToggle<CR>', { desc = 'Open [f]ile [t]ee' })
 vim.keymap.set('n', '<leader>ff', ':NvimTreeFindFileToggle<CR>', { desc = '[f]ind [f]ile' })
 
-
 vim.keymap.set('n', '<leader>s/', require('fzf-lua').search_history, { desc = '[S]earch history[/]' })
 vim.keymap.set('n', '<leader>s;', require('fzf-lua').commands, { desc = '[S]earch commands[;]' })
 vim.keymap.set('n', '<leader>sb', require('fzf-lua').blines, { desc = '[S]earch current [b]uffer' })
@@ -246,6 +245,11 @@ vim.keymap.set('n', '<leader>sw', function() print('Not implemented yet') end, {
 vim.keymap.set('n', '<leader>sy', function() print('Not implemented yet') end, { desc = 'not implemented yet' }) -- [':Filetypes'    , 'file types'],
 vim.keymap.set('n', '<leader>sz', function() print('Not implemented yet') end, { desc = 'not implemented yet' }) -- [':FZF'          , 'FZF'],
 
+-- diagnostic keymap
+vim.keymap.set('n', '<leader>dn', ':lua vim.diagnostic.goto_next()<CR>', { desc = 'next diagnostic' })
+vim.keymap.set('n', '<leader>dp', ':lua vim.diagnostic.goto_prev()<CR>', { desc = 'previous diagnostic' })
+-- vim.api.nvim_set_keymap('n', '<leader>do', '<cmd>lua vim.diagnostic.open_float()<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<leader>do', ':lua vim.diagnostic.open_float()<CR>', { desc = 'open diagnostic' })
 -- [[ Configure nvim-tree ]]
 local function open_nvim_tree(data)
 
