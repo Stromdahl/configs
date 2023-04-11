@@ -151,6 +151,7 @@ alias mv='mv -iv'
 alias rm='rm -iv'
 alias vi='${EDITOR}'
 alias ncal='ncal -wM3'
+
 alias gs='git status'
 alias :q='exit'
 # cd up dir
@@ -165,7 +166,7 @@ alias xcpi='xclip -in'
 alias xcpo='xclip -out'
 alias k='kubectl'
 
-alias pubkey='xci $HOME/.ssh/id_ed25519.pub';
+alias pubkey='cat $HOME/.ssh/id_ed25519.pub';
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
@@ -226,9 +227,5 @@ export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
 if [ -f $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
   source $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh
 fi
-# BEGIN ANSIBLE MANAGED BLOCK
-export KUBECONFIG=$HOME/.kube/config:$HOME/sensative/dev-ops/kubeconfigs/kube_config_kna.yml:$HOME/sensative/dev-ops/kubeconfigs/kube_config_sto.yml:$KUBECONFIG
-# END ANSIBLE MANAGED BLOCK
-
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
