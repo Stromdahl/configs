@@ -1,0 +1,33 @@
+#!/bin/bash
+
+workmode_on() {
+    bash /home/ms/.screenlayout/work.sh
+}
+
+workmode_off() {
+    bash /home/ms/.screenlayout/laptop.sh
+}
+
+workmode_home() {
+    bash /home/ms/.screenlayout/home.sh
+}
+
+# run always
+bash /home/ms/.dotfiles/configs/miscelanius/xsessionrc
+
+case "$1" in
+    on)
+        workmode_on
+        ;;
+    off)
+        workmode_off
+        ;;
+    home)
+        workmode_home
+        ;;
+    *)
+        echo "Usage: $0 {on | off | home}"
+        exit 2
+esac
+
+exit 0
