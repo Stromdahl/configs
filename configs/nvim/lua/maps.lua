@@ -29,13 +29,6 @@ vim.keymap.set('n', '<leader>sw', function() print('Not implemented yet') end, {
 vim.keymap.set('n', '<leader>sy', function() print('Not implemented yet') end, { desc = 'not implemented yet' }) -- [':Filetypes'    , 'file types'],
 vim.keymap.set('n', '<leader>sz', function() print('Not implemented yet') end, { desc = 'not implemented yet' }) -- [':FZF'          , 'FZF'],
 
-
--- Diagnostic keymaps
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
-vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float)
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
-
 -- See `:help vim.keymap.set()`
 vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 
@@ -43,9 +36,7 @@ vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
--- Diagnostic keymaps
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
-vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float)
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
-
+-- diagnostic keymap
+vim.keymap.set('n', '<leader>dn', ':lua vim.diagnostic.goto_next()<CR>', { desc = 'next diagnostic' })
+vim.keymap.set('n', '<leader>dp', ':lua vim.diagnostic.goto_prev()<CR>', { desc = 'previous diagnostic' })
+vim.keymap.set('n', '<leader>do', ':lua vim.diagnostic.open_float()<CR>', { desc = 'open diagnostic' })

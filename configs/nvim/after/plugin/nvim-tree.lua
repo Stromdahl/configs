@@ -1,6 +1,4 @@
--- Description: Configuration for nvim-tree
-
-print('Loading nvim-tree.lua')
+-- [[ Configure nvim-tree ]]
 
 local function open_nvim_tree(data)
 
