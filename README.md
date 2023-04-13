@@ -13,9 +13,9 @@ ansible-playbook \
 
 ### Bootstrap
 ```
-ansilbe-pull \
+ansible-pull \
     -U https://github.com/Stromdahl/configs.yml \
-    --aks-become-pass
+    --ask-become-pass
 ```
 
 ```
