@@ -161,10 +161,11 @@ mode "resize" {
     bindsym j resize grow height 10 px or 10 ppt
     bindsym k resize shrink height 10 px or 10 ppt
     bindsym l resize grow width 10 px or 10 ppt
-    
+
     bindsym Return mode "default"
     bindsym Escape mode "default"
     bindsym $mod+r mode "default"
+
 }
 
 # system controll
@@ -194,6 +195,7 @@ workspace 2 output primary
 workspace 3 output primary
 workspace 4 output primary
 workspace 5 output primary
+
 # workspace 6 output primary
 # workspace 7 output primary
 # workspace 7 output primary
@@ -208,13 +210,6 @@ exec --no-startup-id i3-msg 'workspace 10; exec slack;'
 for_window [class="Slack"] move to workspace $ws10
 
 exec --no-startup-id mpris-proxy
-
-# keyboard layout setup TODO: remove this
-# exec_always --no-startup-id "setxkbmap -layout gb,se -option 'grp:lalt_lshift_toggle'"
-
-########### Autofloat for sensative ###########
-for_window [class="Wfica"] floating enable
-
 
 # ================================
 # Colors
