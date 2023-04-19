@@ -6,9 +6,9 @@ vim.g.copilot_filetypes = {
   ["javascript"] = true,
   ["typescript"] = true,
   ["lua"] = true,
-  ["rust"] = true,
-  ["c"] = true,
-  ["c++"] = true,
+--  ["rust"] = true,
+--  ["c"] = true,
+--  ["c++"] = true,
   ["python"] = true,
 }
 
