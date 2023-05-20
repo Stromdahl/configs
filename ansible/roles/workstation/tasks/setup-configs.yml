@@ -11,8 +11,8 @@
 - name: git status
   debug:
     msg: 'git repo updated localy, will NOT be updated from remote'
-  when: git_status.changed
-    
+  when: git_status.changed is true
+
 - name: git status
   debug:
     msg: 'git repo updated will be updated from remote'
