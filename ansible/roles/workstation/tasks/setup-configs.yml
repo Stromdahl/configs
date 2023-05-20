@@ -3,17 +3,20 @@
 - name: setup-configs | stat configs repo
   ansible.builtin.git:
     repo: '{{ git_configs_repo }}'
-    dest: /srv/checkout
+    dest: '{{ ansible_user_dir }}/.dotfiles/'
     clone: no
     update: no
   register: git_status
 
 - name: git status
   debug:
-    msg: 'git repo updated localy, will NOT be updated from remote'
-  when: git_status.changed is true
+    msg: 'git repo updated localy, will NOT be updated from remote {{ ansible_user_dir }}/.dotfiles/ {{ git_status }}'
+      # when: git_status.changed is true
 
-- name: git status
-  debug:
-    msg: 'git repo updated will be updated from remote'
-  when: git_status.changed is false
+    # - name: setup-configs | checkout configs repo
+    #   when: git_status.changed is false
+    #   ansible.builtin.git:
+    #     repo: '{{ git_configs_repo }}'
+    #     dest: '{{ ansible_user_dir }}/.dotfiles/'
+    #     clone: yes
+    #     update: yes
