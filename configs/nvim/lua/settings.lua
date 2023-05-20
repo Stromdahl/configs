@@ -8,6 +8,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 vim.g.loaded_netrw = 1 -- Disable netrw
+vim.o.title = true
 vim.g.loaded_netrwPlugin = 1 -- Disable netrw
 vim.o.autoindent     = true -- Indent newlines automatically
 vim.o.background = 'dark'

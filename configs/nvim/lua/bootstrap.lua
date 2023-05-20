@@ -20,5 +20,6 @@ vim.api.nvim_create_autocmd('BufWritePost', {
 
 -- Set colorscheme
 if not packer_bootstrap then
-  vim.cmd [[colorscheme gruvbox]]
+  vim.cmd [[set background=dark]]
+  vim.cmd [[colorscheme PaperColorSlim]]
 end

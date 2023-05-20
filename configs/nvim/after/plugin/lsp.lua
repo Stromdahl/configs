@@ -54,7 +54,8 @@ local servers = {
   -- gopls = {},
   -- pyright = {},
   rust_analyzer = {},
-  tsserver = {},
+  tsserver = {
+  }
 }
 
 -- Setup neovim lua configuration

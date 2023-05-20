@@ -1,0 +1,32 @@
+{
+    "workspace.library": [
+        "/home/ms/.local/share/nvim/site/pack/packer/start/neodev.nvim/types/nightly",
+        "/usr/share/nvim/runtime/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/opt/nvim-treesitter-textobjects/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/Comment.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/LuaSnip/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/cmp-buffer/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/cmp-cmdline/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/cmp-nvim-lsp/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/cmp-path/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/cmp_luasnip/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/copilot.vim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/fidget.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/fzf-lua/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/gitsigns.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/indent-blankline.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/leap.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/lualine.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/mason-lspconfig.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/mason.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/neodev.nvim/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/nvim-cmp/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/nvim-lspconfig/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/nvim-rooter.lua/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/nvim-tree.lua/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/nvim-treesitter/lua",
+        "/home/ms/.local/share/nvim/site/pack/packer/start/packer.nvim/lua",
+        "/home/ms/.dotfiles/configs/nvim/lua",
+        "${3rd}/luv/library"
+    ]
+}

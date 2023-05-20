@@ -21,10 +21,15 @@ require('packer').startup(function(use)
 	}
 
 	-- Autocompletion
-	use({
-		"hrsh7th/nvim-cmp",
-		event = "InsertEnter",
-	})
+	use 'neovim/nvim-lspconfig'
+	use 'hrsh7th/cmp-nvim-lsp'
+	use 'hrsh7th/cmp-buffer'
+	use 'hrsh7th/cmp-path'
+	use 'hrsh7th/cmp-cmdline'
+	use 'hrsh7th/nvim-cmp'
+
+	use 'L3MON4D3/LuaSnip'
+	use 'saadparwaiz1/cmp_luasnip'
 
 	use { -- Highlight, edit, and navigate code
 		'nvim-treesitter/nvim-treesitter',
@@ -53,13 +58,13 @@ require('packer').startup(function(use)
 	use 'tpope/vim-fugitive'
 	use 'lewis6991/gitsigns.nvim'
 
-	use {
-		'notjedi/nvim-rooter.lua',
-		config = function() require 'nvim-rooter'.setup() end
-	}
+	-- use {
+	-- 	'notjedi/nvim-rooter.lua',
+	-- 	config = function() require 'nvim-rooter'.setup() end
+	-- }
 
-	use 'gruvbox-community/gruvbox'
-	use 'nvim-lualine/lualine.nvim' -- Fancier statusline
+        use 'pappasam/papercolor-theme-slim'
+			use 'nvim-lualine/lualine.nvim' -- Fancier statusline
 	use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
 	use 'numToStr/Comment.nvim' -- "gc" to comment visual regions/lines
 	use 'tpope/vim-sleuth' -- Detect tabstop and shiftwidth automatically
@@ -69,9 +74,6 @@ require('packer').startup(function(use)
 
 	use {
 		'nvim-tree/nvim-tree.lua',
-		config = function()
-			require('configs.nvim-tree')
-		end
 	}
 
 	-- Add custom plugins to packer from ~/.config/nvim/lua/custom/plugins.lua
