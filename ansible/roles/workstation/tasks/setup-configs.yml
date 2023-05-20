@@ -1,0 +1,19 @@
+---
+
+- name: setup-configs | stat configs repo
+  ansible.builtin.git:
+    repo: '{{ git_configs_repo }}'
+    dest: /srv/checkout
+    clone: no
+    update: no
+  register: git_status
+
+- name: git status
+  debug:
+    msg: 'git repo updated localy, will NOT be updated from remote'
+  when: git_status.changed
+    
+- name: git status
+  debug:
+    msg: 'git repo updated will be updated from remote'
+  when: git_status.changed is false

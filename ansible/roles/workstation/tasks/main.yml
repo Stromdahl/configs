@@ -1,0 +1,8 @@
+---
+
+- name: Setup configs
+  include_tasks:
+    setup-configs.yml
+
+- name: Install i3wm
+  include_tasks: i3wm.yml

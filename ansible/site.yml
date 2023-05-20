@@ -21,3 +21,9 @@
     - server
   tags:
     - server
+
+- hosts: workstation
+  roles:
+    - workstation
+  tags:
+    - workstation
