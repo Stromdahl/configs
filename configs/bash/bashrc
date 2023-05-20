@@ -229,3 +229,6 @@ if [ -f $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
 fi
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+#[ -f "/home/ms/.ghcup/env" ] && source "/home/ms/.ghcup/env" # ghcup-env
+[ -f "/home/ms/.ghcup/env" ] && source "/home/ms/.ghcup/env" # ghcup-env
