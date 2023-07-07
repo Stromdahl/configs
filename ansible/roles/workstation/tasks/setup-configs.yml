@@ -1,22 +1,10 @@
 ---
-
-- name: setup-configs | stat configs repo
-  ansible.builtin.git:
-    repo: '{{ git_configs_repo }}'
-    dest: '{{ ansible_user_dir }}/.dotfiles/'
-    clone: no
-    update: no
-  register: git_status
-
-- name: git status
-  debug:
-    msg: 'git repo updated localy, will NOT be updated from remote {{ ansible_user_dir }}/.dotfiles/ {{ git_status }}'
-      # when: git_status.changed is true
-
-    # - name: setup-configs | checkout configs repo
-    #   when: git_status.changed is false
-    #   ansible.builtin.git:
-    #     repo: '{{ git_configs_repo }}'
-    #     dest: '{{ ansible_user_dir }}/.dotfiles/'
-    #     clone: yes
-    #     update: yes
+- include_tasks: install-dotfiles.yml
+  with_items:
+    - { src: 'bash/bashrc', dest: '', file: '.bashrc' }
+    - { src: 'i3', dest: '.config/i3', file: 'config' }
+    - { src: 'miscelanius/gitconfig', dest: '', file: '.gitconfig' }
+    - { src: 'miscelanius/user-dirs.dirs', dest: '.config', file: 'user-dirs.dirs' }
+      # - { src: 'xfce4-terminal/terminalrc', dest: '.config/xfce4/terminal', file: 'terminalrc' }
+      # - { src: 'xfce4-terminal', dest: '.local/share/xfce4/terminal', file: 'colorschemes' }
+    #  - { src: 'miscelanius/xsessionrc', dest: '', file: '.xsessionrc' }

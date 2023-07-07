@@ -19,9 +19,17 @@ require('packer').startup(function(use)
 			'folke/neodev.nvim',
 		},
 	}
+	
+	-- Markdown Preview
+	use({
+		"iamcco/markdown-preview.nvim",
+		run = function() vim.fn["mkdp#util#install"]() end,
+	})
+
+	use({ "iamcco/markdown-preview.nvim", run = "cd app && npm install",
+		setup = function() vim.g.mkdp_filetypes = { "markdown" } end, ft = { "markdown" }, })
 
 	-- Autocompletion
-	use 'neovim/nvim-lspconfig'
 	use 'hrsh7th/cmp-nvim-lsp'
 	use 'hrsh7th/cmp-buffer'
 	use 'hrsh7th/cmp-path'
@@ -58,16 +66,16 @@ require('packer').startup(function(use)
 	use 'tpope/vim-fugitive'
 	use 'lewis6991/gitsigns.nvim'
 
-	-- use {
-	-- 	'notjedi/nvim-rooter.lua',
-	-- 	config = function() require 'nvim-rooter'.setup() end
-	-- }
+	use {
+		'notjedi/nvim-rooter.lua',
+		config = function() require 'nvim-rooter'.setup() end
+	}
 
-        use 'pappasam/papercolor-theme-slim'
-			use 'nvim-lualine/lualine.nvim' -- Fancier statusline
+	use 'pappasam/papercolor-theme-slim'
+	use 'nvim-lualine/lualine.nvim'    -- Fancier statusline
 	use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
-	use 'numToStr/Comment.nvim' -- "gc" to comment visual regions/lines
-	use 'tpope/vim-sleuth' -- Detect tabstop and shiftwidth automatically
+	use 'numToStr/Comment.nvim'        -- "gc" to comment visual regions/lines
+	use 'tpope/vim-sleuth'             -- Detect tabstop and shiftwidth automatically
 
 	-- Fuzzy Finder (files, lsp, etc)
 	use { 'ibhagwan/fzf-lua' }

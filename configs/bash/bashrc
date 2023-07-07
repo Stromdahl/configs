@@ -172,8 +172,75 @@ alias pubkey='cat $HOME/.ssh/id_ed25519.pub';
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
+# ######
+# DOCKER
+# ######
+
+function find_container(){
+  local __id=$2
+  local hits=`docker ps -a --format "{{.ID}} {{.Image}} {{.Names}}" | grep $1`
+  SAVEIFS=$IFS
+  IFS=$'\n'
+  local hits=($hits)
+  IFS=$SAVEIFS
+
+  local amountHits=${#hits[@]}
+  if [ $amountHits == 0 ]; then
+    echo "Found no matches!"
+    unset id
+    return
+  fi
+  if [ $amountHits -gt 1 ]; then
+    local i
+    for ((i=0; i<amountHits; i++)); do
+      echo "$(($i+1))) ${hits[$i]}"
+    done
+    read -n 1 -s -r -p "Found multiple matches, please enter your choice:`echo $'\n> '`" REPLY
+    echo $REPLY
+    if [[ "$REPLY" -lt 1 || "$REPLY" -gt $amountHits ]]; then
+      REPLY=1
+    fi
+    find_container_hit=`echo "${hits[$REPLY - 1]}" | sed -e 's/ /   /g'`
+  else
+    find_container_hit=`echo "$hits" | head -n1 | sed -e 's/ /   /g'`
+  fi
+  local __cid=`echo $find_container_hit | awk '{print $1}'`
+  eval $__id="'$__cid'"
+}
+
+# Docker inspect IP
+function dip(){
+  find_container $1 id
+  if [[ $id ]]; then
+    docker inspect --format='{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $id | sed -e "s/<no value>//g"
+  fi
+}
+
+# Docker restart
+function drs(){
+  loop find_container "$*" id "Restarting"
+  if [[ $ids ]]; then
+    docker restart $ids
+  fi
+}
+
+# Docker shell
+function dsh(){
+  find_container $1 id
+  if [[ $id ]]; then
+    echo ">>>   $find_container_hit"
+    docker exec -it -e COLUMNS=$COLUMNS -e LINES=$LINES -e TERM=$TERM $id bash
+  fi
+}
+
 # change man display to unhyphenated and ragged-right
 MANOPT="--nh --nj"
+
+genpasswd() {
+	local l=$1
+       	[ "$l" == "" ] && l=20
+      	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${l} | xargs
+}
 
 # make less use colors, i. e. in man
 export LESS_TERMCAP_mb=$'\e[1;32m'

@@ -1,22 +1,22 @@
 ---
-- name: 'Create directory ({{item.src}})'
+- name: 'install dotfiles | Create directory ({{item.src}})'
   file: 
     path: '{{ ansible_user_dir }}/{{item.dest}}'
     state: directory
 
-- name: 'Stat dotfile ({{item.src}})'
+- name: 'install dotfiles | Stat ({{item.src}})'
   stat:
     path: '{{ansible_user_dir}}/{{item.dest}}/{{item.file}}'
   register: dotfile_stat
 
-- name: 'Delete original dotfile ({{item.src}})'
+- name: 'install dotfiles | Delete original ({{item.src}})'
   when: dotfile_stat.stat.isreg is defined and dotfile_stat.stat.isreg == True
   file:
     path: '{{ansible_user_dir}}/{{item.dest}}/{{item.file}}'
     state: absent
 
-- name: 'Symlink dotfile ({{item.src}})'
+- name: 'install dotfiles | Symlink ({{item.src}})'
   file:
-    src: '{{dotfiles_dir}}/.dotfiles/configs/{{item.src}}'
+    src: '{{ansible_user_dir}}/.dotfiles/configs/{{item.src}}'
     dest: '{{ansible_user_dir}}/{{item.dest}}/{{item.file}}'
     state: link

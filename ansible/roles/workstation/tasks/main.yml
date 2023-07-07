@@ -1,5 +1,13 @@
 ---
 
+- name: Checkout configs repo
+  ignore_errors: true
+  ansible.builtin.git:
+    repo: '{{ git_configs_repo }}'
+    dest: '{{ ansible_user_dir }}/.dotfiles/'
+    clone: yes
+    update: yes
+
 - name: Setup configs
   include_tasks:
     setup-configs.yml
