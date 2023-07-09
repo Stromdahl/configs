@@ -32,6 +32,7 @@ exec xinput set-prop "SYNA2B31:00 06CB:7F8B Touchpad" "libinput Natural Scrollin
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 exec --no-startup-id nm-applet                                            # NetworkManager
 exec --no-startup-id blueman-applet                                       # Bluetooth Manager
+exec --no-startup-id unclutter -idle 1                                    # Hide cursor when not in use
 
 # Use pactl to adjust volume in PulseAudio.
 set $refresh_i3status killall -SIGUSR1 i3status
