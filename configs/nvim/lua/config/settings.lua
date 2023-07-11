@@ -1,3 +1,4 @@
+-- [[ General vim settings ]]
 vim.g.mapleader = ' '                   -- map leader key
 vim.g.maplocalleader = ' '
 vim.g.loaded_netrw = 1                  -- Disable netrw
@@ -36,3 +37,15 @@ vim.o.wildmenu       = true             -- Better completion mode
 vim.o.wildmode       = 'full'           -- Complete to first word'
 
 vim.wo.signcolumn = 'yes'
+
+-- [[ Highlight on yank ]]
+-- See `:help vim.highlight.on_yank()`
+local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
+vim.api.nvim_create_autocmd('TextYankPost', {
+  callback = function()
+    vim.highlight.on_yank()
+  end,
+  group = highlight_group,
+  pattern = '*',
+})
+
