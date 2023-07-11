@@ -1,3 +1,10 @@
+-- https://smarttech101.com/nvim-lsp-configure-language-servers-shortcuts-highlights/
+-- LSP servers.
+local servers = {
+  rust_analyzer = {},
+  tsserver = {},
+}
+
 -- LSP settings.
 --  This function gets run when an LSP connects to a particular buffer.
 local on_attach = function(_, bufnr)
@@ -12,9 +19,11 @@ local on_attach = function(_, bufnr)
       desc = 'LSP: ' .. desc
     end
 
-    vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc })
+    vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc, noremap = true})
   end
 
+  local opts = { noremap = true, silent = true }
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
   nmap('<leader>cr', vim.lsp.buf.rename, '[C]ode [R]ename')
   nmap('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
   nmap('<leader>cf', ':Format<CR>', '[C]ode [F]ormat')
@@ -27,7 +36,7 @@ local on_attach = function(_, bufnr)
   nmap('<leader>ws', require('fzf-lua').lsp_live_workspace_symbols, '[W]orkspace [S]ymbols')
 
   -- See `:help K` for why this keymap
-  nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
+--  nmap('K', print("dalksdjlksajdlajsdlk"), 'Hover Documentation')
   nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
 
   -- Lesser used LSP functionality
@@ -49,6 +58,7 @@ return {
     -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
     dependencies = {
+      
       -- Automatically install LSPs to stdpath for neovim
       { 'williamboman/mason.nvim', config = true },
       'williamboman/mason-lspconfig.nvim',
@@ -62,14 +72,24 @@ return {
     },
     config = function ()
       local lspconfig = require('lspconfig')
-      lspconfig.rust_analyzer.setup {
-        on_attach = on_attach,
-        settings = {
-          ['rust-analyzer'] = {},
-        }
+      local capabilities = vim.lsp.protocol.make_client_capabilities()
+      capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
+
+      local mason_lspconfig = require 'mason-lspconfig'
+
+      mason_lspconfig.setup {
+        ensure_installed = vim.tbl_keys(servers),
       }
 
-      lspconfig.tsserver.setup {}
+      mason_lspconfig.setup_handlers {
+        function(server_name)
+          lspconfig[server_name].setup {
+            capabilities = capabilities,
+            on_attach = on_attach,
+            settings = servers[server_name],
+          }
+        end,
+      }
     end,
   },
 }
