@@ -2,6 +2,9 @@
 return {
   "folke/which-key.nvim",
   "folke/neodev.nvim",
+  { "iamcco/markdown-preview.nvim",
+    config = function() vim.fn["mkdp#util#install"]() end
+  },
   { "folke/neoconf.nvim", cmd = "Neoconf" },
 
   {
@@ -12,5 +15,18 @@ return {
       -- load the colorscheme here
       vim.cmd([[colorscheme PaperColor]])
     end,
+    opts = {
+    },
   },
+  {
+    "nvim-orgmode/orgmode",
+    lazy = false,
+    config = function()
+      require('orgmode').setup_ts_grammar()
+    end,
+    opts = {
+      org_agenda_files = {'~/documents/org/*', '~/documents/org/orgs/**/*'},
+      org_default_notes_file = '~/documents/org/refile.org',
+    }
+  }
 }

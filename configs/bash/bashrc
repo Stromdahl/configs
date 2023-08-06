@@ -166,6 +166,8 @@ alias xcpi='xclip -in'
 alias xcpo='xclip -out'
 alias k='kubectl'
 
+alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
+
 alias pubkey='cat $HOME/.ssh/id_ed25519.pub';
 
 # Add an "alert" alias for long running commands.  Use like so:

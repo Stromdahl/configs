@@ -1,4 +1,4 @@
-local M = { 
+local M = {
   "nvim-treesitter/nvim-treesitter",
   build = function()
     require("nvim-treesitter.install").update({ with_sync = true })
@@ -20,8 +20,11 @@ local M = {
         "vimdoc",
       },
       sync_install = false,
-      highlight = { enable = true },
-      indent = { enable = true }, 
+      highlight = {
+        enable = true,
+        additional_vim_regex_highlighting = {'org'},
+      },
+      indent = { enable = true },
     })
   end
 }
