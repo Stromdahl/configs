@@ -7,11 +7,9 @@
             - username is defined
             - password is defined
 
-
   - hosts: localhost
     become: true
     pre_tasks:
-
       - name: install updates
         apt:
           upgrade: dist
@@ -32,6 +30,7 @@
 
       - name: Add user
         block:
+
           - name: "create user '{{ username }}'"
             tags: always
             user:
