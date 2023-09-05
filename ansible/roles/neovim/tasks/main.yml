@@ -1,0 +1,8 @@
+---
+- name: Get installed neovim
+  ansible.builtin.command: 'nvim --version | head -n 1'
+  register: neovim_version
+
+- name: print version
+  ansible.builtin.debug:
+    msg: '{{ neovim_version }}'

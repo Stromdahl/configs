@@ -25,5 +25,7 @@
 - hosts: workstation
   roles:
     - workstation
+    - neovim
   tags:
     - workstation
+    - neovim
