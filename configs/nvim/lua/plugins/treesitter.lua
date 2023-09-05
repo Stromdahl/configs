@@ -9,6 +9,7 @@ local M = {
     configs.setup({
       ensure_installed = {
         "rust",
+        "markdown",
         "c",
         "heex",
         "html",

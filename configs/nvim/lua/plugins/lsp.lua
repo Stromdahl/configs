@@ -3,23 +3,43 @@
 local servers = {
   rust_analyzer = {},
   tsserver = {},
+  marksman = {},
+  lua_ls = {
+    runtime = {
+      -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
+      version = "LuaJIT",
+    },
+    diagnostics = {
+      -- Get the language server to recognize the `vim` global
+      globals = { "vim" },
+    },
+    workspace = {
+      -- Make the server aware of Neovim runtime files
+      library = vim.api.nvim_get_runtime_file("", true),
+    },
+    -- Do not send telemetry data containing a randomized but unique identifier
+    telemetry = {
+      enable = false,
+    },
+  },
 }
 
 -- LSP settings.
 --  This function gets run when an LSP connects to a particular buffer.
-local on_attach = function(_, bufnr)
+local on_attach = function(client, bufnr)
   -- NOTE: Remember that lua is a real programming language, and as such it is possible
   -- to define small helper and utility functions so you don't have to repeat yourself
   -- many times.
   --
   -- In this case, we create a function that lets us more easily define mappings specific
   -- for LSP related items. It sets the mode, buffer and description for us each time.
+
   local nmap = function(keys, func, desc)
     if desc then
       desc = 'LSP: ' .. desc
     end
 
-    vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc, noremap = true})
+  vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc, noremap = true})
   end
 
   local opts = { noremap = true, silent = true }

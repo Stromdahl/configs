@@ -1,3 +1,5 @@
 require('config.settings')
-require('config.keymaps')
 require('config.plugin-manager')
+require('config.keymaps')
+
+vim.cmd[[colorscheme tokyonight]]
