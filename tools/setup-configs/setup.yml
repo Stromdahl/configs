@@ -1,0 +1,10 @@
+---
+- name: Setup Development Environment for Work Machine
+  hosts: work_machine
+  become: yes
+
+  vars_files:
+    - vars/common.yml
+
+  roles:
+    - work_machine

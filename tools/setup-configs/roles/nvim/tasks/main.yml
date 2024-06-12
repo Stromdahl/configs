@@ -1,0 +1,69 @@
+---
+- name: Ensure necessary packages are installed
+  apt:
+    name:
+      - make
+      - gcc
+      - ripgrep
+      - unzip
+      - git
+      - xclip
+      - curl
+    state: present
+    update_cache: yes
+
+- name: Check if Neovim is installed
+  command: nvim --version
+  register: nvim_installed
+  ignore_errors: yes
+  changed_when:
+    - nvim_installed.rc != 0
+
+- name: Check installed Neovim version
+  shell: nvim --version | head -n 1 | awk '{print $2}'
+  register: nvim_version_installed
+  when: nvim_installed.rc == 0
+  changed_when: false
+
+- name: Set Neovim install required flag
+  set_fact:
+    nvim_install_required: "{{ nvim_version_installed.stdout != nvim_version }}"
+  when: nvim_installed.rc == 0
+
+- name: Set Neovim install required flag if not installed
+  set_fact:
+    nvim_install_required: true
+  when: nvim_installed.rc != 0
+
+- name: Remove existing Neovim directory
+  become: yes
+  file:
+    path: /opt/nvim-linux64
+    state: absent
+  when: nvim_install_required
+
+- name: Create Neovim directory
+  become: yes
+  file:
+    path: /opt/nvim-linux64
+    state: directory
+    mode: '0755'
+  when: nvim_install_required
+
+- name: Extract Neovim
+  become: yes
+  unarchive:
+    src: "https://github.com/neovim/neovim/releases/download/{{ nvim_version }}/nvim-linux64.tar.gz"
+    dest: /opt
+    remote_src: yes
+  when: nvim_install_required
+
+- name: Create symbolic link to /usr/local/bin
+  become: yes
+  file:
+    src: /opt/nvim-linux64/bin/nvim
+    dest: /usr/local/bin/nvim
+    state: link
+    force: yes
+  when: nvim_install_required
+

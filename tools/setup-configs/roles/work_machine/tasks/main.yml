@@ -1,0 +1,8 @@
+---
+- name: Include nvim role
+  include_role:
+    name: nvim
+
+- name: Include dotfiles role
+  include_role:
+    name: dotfiles

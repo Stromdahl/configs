@@ -1,0 +1,14 @@
+---
+- name: Ensure the dotfiles directory exists
+  file:
+    path: "{{ dotfiles_configs_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Create symbolic links for dotfiles
+  file:
+    src: "{{ dotfiles_configs_dir }}/{{ item.src }}"
+    dest: "{{ user_home_var }}/{{ item.dest }}"
+    state: link
+    force: yes
+  loop: "{{ dotfiles_files }}"

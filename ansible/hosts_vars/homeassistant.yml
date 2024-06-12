@@ -1,3 +1,0 @@
-homeassistant_version: "2023.8.1"
-homeassistant_process_owner: "homeassistant"
-homeassistant_process_group: "{{ homeassistant_process_owner }}"
