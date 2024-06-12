@@ -1,6 +1,7 @@
 ---
 - name: Setup Development Environment for Work Machine
   hosts: work_machine
+  connection: local
   become: yes
 
   vars_files:

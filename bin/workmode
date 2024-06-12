@@ -4,6 +4,10 @@ workmode_on() {
     bash /home/ms/.screenlayout/work.sh
 }
 
+workmode_work() {
+    bash /home/ms/.screenlayout/work2.sh
+}
+
 workmode_off() {
     bash /home/ms/.screenlayout/laptop.sh
 }
@@ -19,6 +23,9 @@ case "$1" in
     on)
         workmode_on
         ;;
+    work)
+        workmode_work
+        ;;
     off)
         workmode_off
         ;;
@@ -26,7 +33,7 @@ case "$1" in
         workmode_home
         ;;
     *)
-        echo "Usage: $0 {on | off | home}"
+        echo "Usage: $0 {on | work | off | home}"
         exit 2
 esac
 
