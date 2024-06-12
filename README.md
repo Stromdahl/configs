@@ -5,21 +5,7 @@ My personal dev-ops repo for managing my servers and workstations
 
 ### Localy
 ``` bash
-ansible-playbook \
---connection=local \ 
---inventory host, \
---limit host local.yml -i ansible/hosts --ask-become-pass
-```
-
-### Bootstrap
-```
-ansible-pull \
-    -U https://github.com/Stromdahl/configs.yml \
-    --ask-become-pass
-```
-
-```
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap)"
+ansible-playbook -i inventory setup.yml -l <hostname> --ask-become-pass
 ```
 
 ## TODO
