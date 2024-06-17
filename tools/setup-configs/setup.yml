@@ -8,4 +8,5 @@
     - vars/common.yml
 
   roles:
-    - work_machine
+    - dotfiles
+    - nvim

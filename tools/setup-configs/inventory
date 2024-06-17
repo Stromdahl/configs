@@ -1,2 +1,2 @@
 [work_machine]
-bender ansible_host=localhost 
+bender
