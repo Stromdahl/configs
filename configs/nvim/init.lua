@@ -1,11 +1,53 @@
-vim.o.expandtab = true
-vim.o.tabstop = 4
-vim.o.softtabstop = 2
-vim.o.shiftwidth = 2
+local opt = vim.opt
+local o = vim.o
+local g = vim.g
 
-vim.g.mapleader = " " -- Make sure to set `mapleader` before lazy so your mappings are correct
-vim.g.maplocalleader = "\\" -- Same for `maplocalleader`
+-------------------------------------- globals -----------------------------------------
+g.toggle_theme_icon = "   "
 
+-------------------------------------- options ------------------------------------------
+o.laststatus = 3
+o.showmode = false
+
+o.clipboard = "unnamedplus"
+o.cursorline = true
+o.cursorlineopt = "number"
+o.colorcolumn = "100"
+
+-- Indenting
+o.expandtab = true
+o.shiftwidth = 2
+o.smartindent = true
+o.tabstop = 2
+o.softtabstop = 2
+
+opt.fillchars = { eob = " " }
+o.ignorecase = true
+o.smartcase = true
+o.mouse = "a"
+
+-- Numbers
+o.number = true
+o.relativenumber = true
+
+o.numberwidth = 2
+o.ruler = true
+
+-- disable nvim intro
+opt.shortmess:append "sI"
+
+o.signcolumn = "yes"
+o.splitbelow = true
+o.splitright = true
+o.timeoutlen = 400
+o.undofile = true
+
+o.updatetime = 250
+
+g.mapleader = " "       -- Make sure to set `mapleader` before lazy so your mappings are correct
+g.maplocalleader = "\\" -- Same for `maplocalleader`
+
+-------------------------------------- Plugin Manager ------------------------------------
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   vim.fn.system({
@@ -19,67 +61,21 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-local plugins = {
-  { 
-    "catppuccin/nvim",
-    name = "catppuccin",
-    priority = 1000,
-    opts = {
-      term_colors = true,
-      transparent_background = false,
-      styles = {
-        comments = {},
-        conditionals = {},
-        loops = {},
-        functions = {},
-        keywords = {},
-        strings = {},
-        variables = {},
-        numbers = {},
-        booleans = {},
-        properties = {},
-        types = {},
-      },
-      color_overrides = {
-        mocha = {
-          base = "#000000",
-          mantle = "#000000",
-          crust = "#000000",
-        },
-      },
-      integrations = {
-        telescope = {
-            enabled = true,
-            style = "nvchad",
-        },
-        dropbar = {
-            enabled = true,
-            color_mode = true,
-        },
-      },
-    },
-  },
-  {
-    'nvim-telescope/telescope.nvim', tag = '0.1.6',
-    dependencies = { 'nvim-lua/plenary.nvim' }
-  },
-  {
-    "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate"
-  }
-}
+local opts = {}
 
-local opts = {
-	install = {
-	},
-}
+require("lazy").setup("plugins", opts)
 
-require("lazy").setup(plugins, opts)
+local builtin = require("telescope.builtin")
+-- find
+vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
+vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
+vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
 
-local builtin = require('telescope.builtin')
-vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
-vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
-vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
+vim.keymap.set("n", "gd", function() builtin.lsp_definitions({ reuse_win = true }) end)
+vim.keymap.set("n", "gr", "<cmd>Telescope lsp_references<cr>")
+vim.keymap.set("n", "gI", function() builtin.lsp_implementations({ reuse_win = true }) end)
+vim.keymap.set("n", "gy", function() builtin.lsp_type_definitions({ reuse_win = true }) end)
 
-vim.cmd.colorscheme "catppuccin"
+vim.keymap.set("n", "<leader>ee", ":Neotree filesystem reveal float<CR>")
 
+vim.cmd.colorscheme("tokyonight-night")
