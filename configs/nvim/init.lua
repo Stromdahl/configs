@@ -1,3 +1,5 @@
+require('autocmds')
+
 local opt = vim.opt
 local o = vim.o
 local g = vim.g
@@ -75,7 +77,6 @@ vim.keymap.set("n", "gd", function() builtin.lsp_definitions({ reuse_win = true 
 vim.keymap.set("n", "gr", "<cmd>Telescope lsp_references<cr>")
 vim.keymap.set("n", "gI", function() builtin.lsp_implementations({ reuse_win = true }) end)
 vim.keymap.set("n", "gy", function() builtin.lsp_type_definitions({ reuse_win = true }) end)
-
 vim.keymap.set("n", "<leader>ee", ":Neotree filesystem reveal float<CR>")
 
 vim.cmd.colorscheme("tokyonight-night")
