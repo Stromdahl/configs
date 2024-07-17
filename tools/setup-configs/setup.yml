@@ -10,3 +10,14 @@
   roles:
     - dotfiles
     - nvim
+
+- name: Setup Development Environment for Work Machine
+  hosts: swaywm
+  connection: local
+  become: yes
+
+  vars_files:
+    - vars/common.yml
+
+  roles:
+    - sway

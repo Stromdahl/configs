@@ -1,2 +1,6 @@
 [work_machine]
 bender
+neon
+
+[swaywm]
+neon
