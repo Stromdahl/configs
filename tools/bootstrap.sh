@@ -43,13 +43,29 @@ setup_sudo() {
     echo "User $username added to sudo group."
 }
 
-# Function to configure SSH
+# Function to configure SSH and fetch GitHub SSH key
 configure_ssh() {
     echo "Configuring SSH..."
     apt install -y openssh-server
     systemctl enable ssh
     systemctl start ssh
-    echo "SSH has been configured and started."
+    
+    read -p "Enter the username to configure SSH for: " username
+    home_dir=$(eval echo "~$username")
+    
+    # Create .ssh directory if it doesn't exist
+    mkdir -p $home_dir/.ssh
+    chmod 700 $home_dir/.ssh
+    
+    # Fetch the SSH key from GitHub and add it to authorized_keys
+    echo "Fetching SSH key from GitHub..."
+    curl -sSL https://github.com/stromdahl.keys -o $home_dir/.ssh/authorized_keys
+    
+    # Set the correct permissions
+    chmod 600 $home_dir/.ssh/authorized_keys
+    chown -R $username:$username $home_dir/.ssh
+    
+    echo "SSH has been configured with your GitHub SSH key for user $username."
 }
 
 # Function to setup UFW (Uncomplicated Firewall)
