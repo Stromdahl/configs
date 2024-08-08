@@ -10,7 +10,7 @@ opt.showmode = false
 
 opt.clipboard = "unnamedplus"
 opt.cursorline = true
-opt.cursorlineopt = "number"
+opt.cursorlineopt = "both"
 opt.colorcolumn = "100"
 opt.scrolloff = 999
 
