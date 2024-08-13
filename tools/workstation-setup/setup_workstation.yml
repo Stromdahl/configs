@@ -1,0 +1,117 @@
+---
+- name: Setup Debian Gaming Workstation with Sway and Wayland
+  hosts: workstation
+  become: true
+  #   become_user: ms
+  tasks:
+
+    - name: Update apt cache and upgrade packages
+      become: true
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install basic dependencies
+      become: true
+      apt:
+        name: 
+          - build-essential
+          - git
+          - curl
+          - wget
+          - unzip
+          - htop
+          - software-properties-common
+        state: present
+
+    - name: Install Sway and related packages
+      become: true
+      apt:
+        name:
+          - sway
+          - swaylock
+          - swayidle
+          - dmenu
+          - waybar
+          - light
+          - wl-clipboard
+          - xwayland
+          - grim
+          - slurp
+          - mako-notifier
+        state: present
+
+    - name: Install terminal and utilities
+      become: true
+      apt:
+        name:
+          - alacritty  # Terminal emulator
+          - vim
+          - ranger  # File manager
+          - neofetch  # System info
+        state: present
+
+    #    - name: Install gaming related packages
+    #      become: true
+    #      apt:
+    #        name:
+    #          #          - steam
+    #          - lutris
+    #          - wine
+    #          - winetricks
+    #          - dxvk
+    #          - proton
+    #        state: present
+
+    - name: Install graphics drivers
+      become: true
+      apt:
+        name:
+          - firmware-misc-nonfree
+          - libgl1-mesa-dri
+          - libgl1-mesa-glx
+          - vulkan-tools
+        state: present
+
+    - name: Install audio and Bluetooth packages
+      become: true
+      apt:
+        name:
+          - pipewire
+          - pipewire-pulse
+          - wireplumber
+          - pavucontrol
+          - bluez
+          - blueman
+        state: present
+
+    - name: Enable Bluetooth service
+      become: true
+      systemd:
+        name: bluetooth
+        enabled: yes
+        state: started
+
+    # - name: Copy Sway config file to user's home directory
+    #   copy:
+    #     src: /path/to/local/sway/config
+    #     dest: /home/{{ ansible_user }}/.config/sway/config
+    #     owner: "{{ ansible_user }}"
+    #     group: "{{ ansible_user }}"
+    #     mode: 0644
+
+    - name: Configure git
+      git_config:
+        name: "{{ item.name }}"
+        scope: global
+        value: "{{ item.value }}"
+      with_items:
+        - { name: user.name, value: "Mattias Strömdahl" }
+        - { name: user.email, value: "mattias.stromdahl@gmail.com" }
+
+    - name: Reboot the system
+      reboot:
+        msg: "Reboot initiated by Ansible for completing setup."
+        pre_reboot_delay: 10
+        reboot_timeout: 300
+        post_reboot_delay: 30
