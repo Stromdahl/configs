@@ -1,0 +1,36 @@
+---
+- name: Update all packages to the latest version
+  apt:
+    update_cache: yes
+    upgrade: dist
+  when: ansible_os_family == "Debian"
+
+- name: Install common packages
+  apt:
+    name:
+      - curl
+      - vim
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Ensure the firewall is enabled and configured
+  ufw:
+    state: enabled
+    allow: "OpenSSH"
+  when: ansible_os_family == "Debian"
+
+- name: Ensure users are present
+  user:
+    name: "{{ item.name }}"
+    comment: "{{ item.comment }}"
+    shell: "{{ item.shell }}"
+    state: present
+  loop: "{{ users }}"
+
+- name: Set up authorized keys for users
+  authorized_key:
+    user: "{{ item.name }}"
+    state: present
+    key: "{{ item.ssh_key }}"
+  loop: "{{ users }}"
+  when: item.ssh_key is defined

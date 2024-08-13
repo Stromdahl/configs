@@ -1,0 +1,5 @@
+users:
+  - name: ms
+    comment: It's-a me!
+    shell: /bin/bash
+    ssh_key: "{{ lookup('file', 'files/ms-id-ed25519.pub') }}"
