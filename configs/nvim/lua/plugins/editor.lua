@@ -1,5 +1,20 @@
 local M = {
   {
+    'phaazon/hop.nvim',
+    branch = "v2",
+    config = function ()
+      local hop = require'hop';
+      hop.setup();
+      -- local directions = require('hop.hint').HintDirection
+      vim.keymap.set('', '<leader>h', function()
+        hop.hint_char2({})
+      end, {remap=true})
+      vim.keymap.set('', '<leader>H', function()
+        hop.hint_char2({})
+      end, {remap=true})
+    end
+  },
+  {
     "nvim-telescope/telescope.nvim",
     cmd = "Telescope",
     version = false,
