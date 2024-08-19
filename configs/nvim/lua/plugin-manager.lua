@@ -18,6 +18,7 @@ require("lazy").setup("plugins", opts)
 local builtin = require("telescope.builtin")
 -- find
 vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
+vim.keymap.set('n', '<leader>fd', function() builtin.find_files({ cwd = vim.fn.expand('%:p:h:h') }) end)
 vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
 vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
 
