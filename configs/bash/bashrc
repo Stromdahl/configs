@@ -151,6 +151,7 @@ alias mv='mv -iv'
 alias rm='rm -iv'
 alias vi='${EDITOR}'
 alias ncal='ncal -wM3'
+alias isodate='date +"%Y-%m-%dT%H:%M:%S%:z"'
 
 alias gs='git status --short'
 alias gsi='git status --short --ignored'
