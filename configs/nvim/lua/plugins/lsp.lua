@@ -1,6 +1,6 @@
 local servers = {
   tsserver = {},
-  -- eslint = {},
+  eslint = {},
   lua_ls = {},
   rust_analyzer = {
     filetypes = {"rust"},
@@ -96,7 +96,6 @@ return {
           capabilities = capabilities,
         }
 
-
         -- TODO: Move server settings to seperate files
         -- local require_ok, conf_opts = pcall(require, "user.lsp.settings." .. server)
         -- if require_ok then
@@ -117,7 +116,7 @@ return {
     opts = function ()
       local ensure_installed = {}
       for server, _ in pairs(servers) do
-        table.insert(ensure_installed, server)
+          table.insert(ensure_installed, server)
       end
       return {
         ensure_installed=ensure_installed
@@ -125,5 +124,19 @@ return {
     end,
     config = true
   },
+{
+    "mfussenegger/nvim-lint",
+    event = {
+      "BufReadPre",
+      "BufNewFile",
+    },
+    config = function()
+      local lint = require("lint")
 
+      lint.linters_by_ft = {
+        javascript = { "eslint" },
+        typescript = { "eslint" },
+      }
+    end
+  },
 }
