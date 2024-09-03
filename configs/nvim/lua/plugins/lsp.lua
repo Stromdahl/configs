@@ -1,6 +1,6 @@
 local servers = {
   tsserver = {},
-  eslint = {},
+  -- eslint = {},
   lua_ls = {},
   rust_analyzer = {
     filetypes = {"rust"},
@@ -134,8 +134,8 @@ return {
       local lint = require("lint")
 
       lint.linters_by_ft = {
-        javascript = { "eslint" },
-        typescript = { "eslint" },
+        javascript = { "eslint_d" },
+        typescript = { "eslint_d" },
       }
     end
   },
