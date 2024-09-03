@@ -43,4 +43,11 @@ function M.bufremove(buf)
   end
 end
 
+-- Function to yank the current file path to the clipboard
+function M.yank_filepath()
+  local filepath = vim.fn.expand('%:p')
+  vim.fn.setreg('+', filepath)  -- Yank to the system clipboard ('+')
+  print('Yanked file path: ' .. filepath)
+end
+
 return M
