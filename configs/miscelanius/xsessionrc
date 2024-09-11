@@ -6,5 +6,6 @@ setxkbmap -layout gb,se -option 'grp:lalt_lshift_toggle'
 # Remap caps-lock to escape
 setxkbmap -option caps:escape
 
+echo "xmodmap ~/.Xmodmap" >> ~/.xsession
 
 . ~/.profile
