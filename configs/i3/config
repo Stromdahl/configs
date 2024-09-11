@@ -35,7 +35,7 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 exec --no-startup-id nm-applet                                            # NetworkManager
 exec --no-startup-id blueman-applet                                       # Bluetooth Manager
 exec --no-startup-id unclutter -idle 1                                    # Hide cursor when not in use
-
+exec --no-startup-id xsetroot -solid "#000000"                            # Set background color
 # Use pactl to adjust volume in PulseAudio.
 set $refresh_i3status killall -SIGUSR1 i3status
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10% && $refresh_i3status
@@ -46,6 +46,9 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 # Screen brightness controll
 bindsym XF86MonBrightnessDown exec light -U 10
 bindsym XF86MonBrightnessUp exec light -A 10
+
+# Media controll
+exec --no-startup-id mpris-proxy
 
 # =========================== Keybindings ===========================
 
@@ -216,7 +219,6 @@ for_window [class="Slack"] move to workspace $ws10
 for_window [class="Pavucontrol"] floating enable, sticky enable, resize set width 550 px height 600px, move position cursor, move down 35
 
 
-exec --no-startup-id mpris-proxy
 
 # ================================
 # Colors
