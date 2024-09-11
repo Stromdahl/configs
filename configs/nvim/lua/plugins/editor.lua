@@ -30,6 +30,12 @@ local M = {
     config = function ()
       local telescope = require('telescope')
       telescope.setup {
+        defaults = {
+          preview = {
+            treesitter = false
+          },
+          preview_cutoff = 120,
+        },
         ["ui-select"]  = {
           require("telescope.themes").get_dropdown {
           }
