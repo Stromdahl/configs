@@ -13,6 +13,7 @@ opt.cursorline = true
 opt.cursorlineopt = "both"
 opt.colorcolumn = "100"
 opt.scrolloff = 999
+opt.background = "dark"
 
 opt.virtualedit = 'block'
 opt.inccommand = "split"

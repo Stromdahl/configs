@@ -14,18 +14,3 @@ vim.opt.rtp:prepend(lazypath)
 local opts = {}
 
 require("lazy").setup("plugins", opts)
-
-local builtin = require("telescope.builtin")
--- find
-vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
-vim.keymap.set('n', '<leader>fd', function() builtin.find_files({ cwd = vim.fn.expand('%:p:h:h') }) end)
-vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
-vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
-
-vim.keymap.set("n", "gd", function() builtin.lsp_definitions({ reuse_win = true }) end)
-vim.keymap.set("n", "gr", "<cmd>Telescope lsp_references<cr>")
-vim.keymap.set("n", "gI", function() builtin.lsp_implementations({ reuse_win = true }) end)
-vim.keymap.set("n", "gy", function() builtin.lsp_type_definitions({ reuse_win = true }) end)
-vim.keymap.set("n", "<leader>ee", ":Neotree filesystem reveal float<CR>")
-
-vim.cmd.colorscheme("tokyonight-night")

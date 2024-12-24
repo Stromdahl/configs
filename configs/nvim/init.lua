@@ -1,5 +1,6 @@
 require('autocmds')
 require('options')
-require('keymaps')
 require('plugin-manager')
+require('keymaps')
 
+vim.cmd.colorscheme("gruvbox")
