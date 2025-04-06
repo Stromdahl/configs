@@ -172,6 +172,8 @@ alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
 
 alias pubkey='cat $HOME/.ssh/id_ed25519.pub';
 
+alias inode='docker build -f /home/ms/development/javascript/inode/Dockerfile . -q -t inode && docker run --rm -it inode'
+
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
@@ -325,3 +327,7 @@ fi
 
 #[ -f "/home/ms/.ghcup/env" ] && source "/home/ms/.ghcup/env" # ghcup-env
 [ -f "/home/ms/.ghcup/env" ] && source "/home/ms/.ghcup/env" # ghcup-env
+
+# Wasmer
+export WASMER_DIR="/home/ms/.wasmer"
+[ -s "$WASMER_DIR/wasmer.sh" ] && source "$WASMER_DIR/wasmer.sh"
