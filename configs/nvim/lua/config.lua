@@ -1,3 +1,5 @@
+vim.cmd.colorscheme("gruvbox")
+
 local opt = vim.opt
 local g = vim.g
 
@@ -47,6 +49,3 @@ opt.timeoutlen = 400
 opt.undofile = true
 
 opt.updatetime = 250
-
-g.mapleader = " "       -- Make sure to set `mapleader` before lazy so your mappings are correct
-g.maplocalleader = "\\" -- Same for `maplocalleader`

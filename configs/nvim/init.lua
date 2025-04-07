@@ -1,6 +1,4 @@
-require('autocmds')
-require('options')
-require('plugin-manager')
-require('keymaps')
-
-vim.cmd.colorscheme("gruvbox")
+-- -- --
+-- # Nothing to see here, check readme.md for information
+-- -- --
+require('system.start')
