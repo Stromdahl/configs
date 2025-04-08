@@ -8,7 +8,7 @@ return {
     },
     keymaps = {
       ["<ESC>"] = {"actions.close", opts = {mode= 'n'}},
-     -- ["-"] = {"actions.close", opts = {mode= 'n'}},
+      ["-"] = {"actions.close", opts = {mode= 'n'}},
       ["<BACKSPACE>"] = { "actions.parent", mode = "n" }
     }
   },

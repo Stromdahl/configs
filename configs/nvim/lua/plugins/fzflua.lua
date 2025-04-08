@@ -9,6 +9,11 @@ return {
       desc="[f]ind [f]files"
     },
     {
+      '<leader>ff',
+      function() require('fzf-lua').files() end,
+      desc="[f]ind [f]files"
+    },
+    {
       '<leader>fg',
       function() require('fzf-lua').live_grep() end,
       desc="[[f]ind files by [g]rep]"
