@@ -1,5 +1,2 @@
-local keymap = require 'keymap'
-
-
-vim.g.mapleader = keymap.general.leader
-vim.g.maplocalleader = keymap.general.localleader
+vim.g.mapleader = require('ms.keymap').leader.leader
+vim.g.maplocalleader = require('ms.keymap').leader.localleader

@@ -1,3 +1,3 @@
-require('config')
-require('keymap')
-require('autocmds')
+require('ms.options')
+require('ms.keymap')
+require('ms.autocmds')

@@ -1,12 +1,9 @@
-
-local function augroup(name)
-  return vim.api.nvim_create_augroup("stroidvim_" .. name, { clear = true })
-end
+local utils = require('ms.utils')
 
 -- Highlight on yank
 -- https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 vim.api.nvim_create_autocmd("TextYankPost", {
-  group = augroup("highlight_yank"),
+  group = utils.augroup("highlight_yank"),
   callback = function()
     vim.highlight.on_yank()
   end,
@@ -15,7 +12,7 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 -- resize splits if window got resized
 -- https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 vim.api.nvim_create_autocmd({ "VimResized" }, {
-  group = augroup("resize_splits"),
+  group = utils.augroup("resize_splits"),
   callback = function()
     local current_tab = vim.fn.tabpagenr()
     vim.cmd("tabdo wincmd =")
@@ -26,7 +23,7 @@ vim.api.nvim_create_autocmd({ "VimResized" }, {
 -- go to last loc when opening a buffer
 -- https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 vim.api.nvim_create_autocmd("BufReadPost", {
-  group = augroup("last_loc"),
+  group = utils.augroup("last_loc"),
   callback = function(event)
     local exclude = { "gitcommit" }
     local buf = event.buf
@@ -45,7 +42,7 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 -- Auto create dir when saving a file, in case some intermediate directory does not exist
 -- https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 vim.api.nvim_create_autocmd({ "BufWritePre" }, {
-  group = augroup("auto_create_dir"),
+  group = utils.augroup("auto_create_dir"),
   callback = function(event)
     if event.match:match("^%w%w+:[\\/][\\/]") then
       return
@@ -57,7 +54,7 @@ vim.api.nvim_create_autocmd({ "BufWritePre" }, {
 
 -- Toggle between relative numbers and absolute numbers based on mode
 vim.api.nvim_create_autocmd("ModeChanged", {
-  group = augroup("number_toggle"),
+  group = utils.augroup("number_toggle"),
   callback = function()
     local mode = vim.api.nvim_get_mode().mode
     if mode == 'i' then
