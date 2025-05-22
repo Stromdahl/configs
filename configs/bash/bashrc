@@ -168,19 +168,18 @@ alias xcpi='xclip -in'
 alias xcpo='xclip -out'
 alias k='kubectl'
 
+alias config_nvim='cd ~/.dotfiles/configs/nvim && nvim .'
+
+alias daily='nvim ~/notes/daily.md'
 alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
 
 alias pubkey='cat $HOME/.ssh/id_ed25519.pub';
 
-alias inode='docker build -f /home/ms/development/javascript/inode/Dockerfile . -q -t inode && docker run --rm -it inode'
+alias inode='node /home/ms/development/javascript/inode'
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-
-function mudhead() {
-  curl -s http://mudhead.se/lt.json | jq ".$(date +%a | awk '{print tolower($0)}')" | jq -rj '.[] | "\n-- ", .name, " --\n\t", (.menu | join("\n\t")), "\n"'
-}
 
 # ######
 # FZF
@@ -259,9 +258,9 @@ function dsh(){
 # change man display to unhyphenated and ragged-right
 MANOPT="--nh --nj"
 
-genpasswd() {
+rpw() {
 	local l=$1
-       	[ "$l" == "" ] && l=20
+       	[ "$l" == "" ] && l=32
       	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${l} | xargs
 }
 

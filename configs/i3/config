@@ -133,6 +133,12 @@ bindsym $mod+Shift+8 move container to workspace number $ws8
 bindsym $mod+Shift+9 move container to workspace number $ws9
 bindsym $mod+Shift+0 move container to workspace number $ws10
 
+# Show the first scratchpad window
+bindsym $mod+minus scratchpad show
+
+# Make the currently focused window a scratchpad
+bindsym $mod+Shift+minus move scratchpad
+
 # Screenshots
 bindsym Print exec --no-startup-id maim "/home/$USER/Pictures/$(date)"
 bindsym $mod+Print exec --no-startup-id maim --window $(xdotool getactivewindow) "/home/$USER/Pictures/$(date)"
@@ -199,28 +205,9 @@ mode "$mode_workmode" {
 
   # back to normal: Enter or Escape
   bindsym Escape mode "default"
-
 }
 
 # ================================ Micellaneous ================================
-
-# TODO: remove eDP
-set $secondary_display eDP
-
-# workspace defaults
-workspace 1 output primary
-workspace 2 output primary
-workspace 3 output primary
-workspace 4 output primary
-workspace 5 output primary
-
-# workspace 6 output primary
-# workspace 7 output primary
-# workspace 7 output primary
-
-workspace 8 output $secondary_display
-workspace 9 output $secondary_display
-workspace 10 output $secondary_display
 
 # autostart some apps on correct workspace 
 exec --no-startup-id i3-msg 'workspace 10; exec slack;'
