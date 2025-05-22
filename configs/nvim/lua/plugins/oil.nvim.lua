@@ -52,3 +52,4 @@ return {
   lazy = false,
   keys = require('ms.keymap').oil
 }
+-- :echo expand("%:p:h")
