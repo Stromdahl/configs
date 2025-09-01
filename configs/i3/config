@@ -88,7 +88,7 @@ bindsym $mod+Shift+q mode "$mode_kill"
 # Change mode
 bindsym $mod+r mode "resize"
 bindsym $mod+Shift+p mode "$mode_system"
-bindsym $mod+m mode "$mode_workmode"
+bindsym $mod+m exec workspace_set
 
 # change focus (vim)
 bindsym $mod+h focus left
@@ -101,6 +101,9 @@ bindsym $mod+Shift+h move left
 bindsym $mod+Shift+j move down
 bindsym $mod+Shift+k move up
 bindsym $mod+Shift+l move right
+
+bindsym $mod+Shift+Ctrl+h move workspace to output left
+bindsym $mod+Shift+Ctrl+l move workspace to output right
 
 # change container layout (stacked, tabbed, toggle split)
 bindsym $mod+s layout stacking
@@ -240,9 +243,9 @@ font pango:Hack 8
 # finds out, if available)
 bar {
   status_command i3status -c "~/.dotfiles/configs/i3status/config" 
+  # status_command i3blocks
   wheel_up_cmd nop
-  wheel_down_cmd nop
-  tray_output primary
+  wheel_down_cmd nop tray_output primary
 
   colors {
     # bar background color

@@ -1,0 +1,25 @@
+#!/bin/bash
+# Wrapper for ssh to ensure hardware key is loaded
+
+if [ ! -S ~/.ssh/ssh_auth_sock ]; then
+  eval `ssh-agent -t 28800` > /dev/null 2>&1
+  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+fi
+
+if ! lsusb | grep -q 1050:0407; then
+    echo "Hardware security key not found or no resident SSH key present!"
+    echo "Insert your hardware security key and try again."
+    exit 1
+fi
+
+if ! ssh-add -L 2>/dev/null | grep -q 'sk-'; then
+    SSH_ADD_OUTPUT=$(ssh-add -K 2>&1)
+    if [ $? -ne 0 ]; then
+        echo "Unable to load resident SSH key from hardware security key"
+        echo "Reason: $SSH_ADD_OUTPUT"
+        exit 1
+    fi
+fi
+
+printf "Touch your security key when blinking...\n">&2
+exec /usr/bin/ssh "$@"

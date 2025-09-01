@@ -1,0 +1,11 @@
+#!/bin/bash
+
+group=$(xset -q | awk '/LED mask/ {print $10}')
+
+case $group in
+    00000000|00000002) layout="🇬🇧" ;;  # UK flag
+    00001000|00001002) layout="🇸🇪" ;;  # Sweden flag
+    *) layout="❓" ;;
+esac
+
+echo "$layout"

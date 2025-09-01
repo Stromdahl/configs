@@ -1,0 +1,108 @@
+#!/bin/bash
+
+get_connected_connectors() {
+    for connector in /sys/class/drm/card*-*; do
+        if [[ -f "$connector/status" ]] && grep -q connected "$connector/status"; then
+            echo "$connector"
+        fi
+    done
+}
+
+get_concatenated_edids() {
+    local edid_concat=""
+    while read -r connector; do
+        local edid_file="$connector/edid"
+        if [[ -f "$edid_file" ]]; then
+            edid_concat+=$(xxd -p "$edid_file" | tr -d '\n')
+        fi
+    done < <(get_connected_connectors)
+    echo "$edid_concat"
+}
+
+get_display_fingerprint() {
+    local edids
+    edids=$(get_concatenated_edids)
+    if [[ -n "$edids" ]]; then
+        echo -n "$edids" | sha256sum -z | awk '{printf $1}'
+    else
+        echo ""
+    fi
+}
+
+function set_keyboard_layout () {
+  bash /home/ms/.dotfiles/configs/miscelanius/xsessionrc
+}
+
+workspace_work () {
+  xrandr \
+    --output eDP --off\
+    --output HDMI-A-0 --mode 1920x1200 --pos 2560x0 --rotate left\
+    --output DisplayPort-0 --primary --mode 2560x1440 --pos 0x240 --rotate normal\
+    --output DisplayPort-1 --off
+  sleep 0.2
+  i3-msg [workspace=7] move workspace to output nonprimary
+}
+
+workspace_home() {
+  xrandr\
+    --output eDP --off\
+    --output HDMI-A-0 --primary --mode 3440x1440 --pos 0x0 --rotate normal\
+    --output DisplayPort-0 --off\
+    --output DisplayPort-1 --off
+}
+
+workspace_laptop() {
+  xrandr \
+    --output eDP --primary --mode 1920x1080 --pos 0x0 --rotate normal\
+    --output HDMI-A-0 --off\
+    --output DisplayPort-0 --off\
+    --output DisplayPort-1 --off
+}
+
+function notify-display-setup () {
+  notify-send "Detected display setup: $1"
+}
+
+configure_setup() {
+    local fingerprint="$1"
+    case "$fingerprint" in
+       # WORK
+        "2585e7741e2f7378efcdb1dcf89ebd047206a8947cb92ef183a4cc278963338e")
+            notify-display-setup "WORK"
+            workspace_work
+            ;;
+
+        # HOME
+        "c2c5e70277656361907bdec58847dad1b36aac4764efa6545573172b61f71617")
+            notify-display-setup "HOME"
+            workspace_home
+            ;;
+
+        # LAPTOP
+        "75cc6afa9b04435593bf64901a22b1549c082ef7717a49fd236bfee351551632")
+            notify-display-setup "LAPTOP"
+            workspace_laptop
+            ;;
+
+        *)
+          notify-send "Unknown Workspace" "$(xrandr | grep 'connected' | awk '{print $1, $2}')"
+            workspace_laptop
+            exit 1
+            ;;
+    esac
+}
+
+# Entry point
+if [[ "$1" == "list" ]]; then
+    get_display_fingerprint
+    exit 0
+fi
+
+fingerprint=$(get_display_fingerprint)
+if [[ -z "$fingerprint" ]]; then
+    echo "No connected displays with valid EDID"
+    exit 1
+fi
+
+set_keyboard_layout
+configure_setup "$fingerprint"

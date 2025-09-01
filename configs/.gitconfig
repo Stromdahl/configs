@@ -1,0 +1,11 @@
+[user]
+	email = mattias.stromdahl@gmail.com
+	name = Mattias Strömdahl
+[pull]
+	rebase = false
+[init]
+	defaultBranch = main
+[alias]
+	gud = !echo \"OK\"
+[core]
+	sshCommand = ssh -i ~/.ssh/id_ed25519_git

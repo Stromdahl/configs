@@ -16,6 +16,7 @@ opt.cursorlineopt = "both"
 opt.colorcolumn = "100"
 opt.scrolloff = 999
 opt.background = "dark"
+opt.autoread = true
 
 opt.virtualedit = 'block'
 opt.inccommand = "split"

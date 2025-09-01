@@ -2,32 +2,37 @@
 
 set -e
 
-workmode_on() {
-    bash /home/ms/.screenlayout/work.sh
-}
-
 workmode_work() {
-    bash /home/ms/.screenlayout/work2.sh
+    xrandr \
+      --output eDP --off\
+      --output HDMI-A-0 --mode 1920x1200 --pos 2560x0 --rotate left\
+      --output DisplayPort-0 --off\
+      --output DisplayPort-1 --primary --mode 2560x1440 --pos 0x240 --rotate normal
     sleep 0.2
     i3-msg [workspace=7] move workspace to output nonprimary
     i3-msg workspace 7
 }
 
-workmode_off() {
-    bash /home/ms/.screenlayout/laptop.sh
+workmode_home() {
+  xrandr\
+    --output eDP --off\
+    --output HDMI-A-0 --primary --mode 3440x1440 --pos 0x0 --rotate normal\
+    --output DisplayPort-0 --off\
+    --output DisplayPort-1 --off
 }
 
-workmode_home() {
-    bash /home/ms/.screenlayout/home.sh
+workmode_off() {
+  xrandr \
+    --output eDP --primary --mode 1920x1080 --pos 0x0 --rotate normal\
+    --output HDMI-A-0 --off\
+    --output DisplayPort-0 --off\
+    --output DisplayPort-1 --off
 }
 
 # run always
 bash /home/ms/.dotfiles/configs/miscelanius/xsessionrc
 
 case "$1" in
-    on)
-        workmode_on
-        ;;
     work)
         workmode_work
         ;;
@@ -38,7 +43,7 @@ case "$1" in
         workmode_home
         ;;
     *)
-        echo "Usage: $0 {on | work | off | home}"
+        echo "Usage: $0 {work | home | off}"
         exit 2
 esac
 

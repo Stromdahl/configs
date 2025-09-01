@@ -1,6 +1,45 @@
 local utils = require('ms.utils')
 local keys = require('ms.utils.keys')
 
+-- vim.api.nvim_create_autocmd('VimEnter', {
+--   callback = function()
+--     local bufferPath = vim.fn.expand('%:p')
+--     if vim.fn.isdirectory(bufferPath) ~= 0 then
+--       local ts_builtin = require('telescope.builtin')
+--       vim.api.nvim_buf_delete(0, { force = true })
+--       if is_git_dir() == 0 then
+--         ts_builtin.git_files({ show_untracked = true })
+--       else
+--         ts_builtin.find_files()
+--       end
+--     end
+--   end,
+-- })
+-- 
+-- local is_git_dir = function()
+--   return os.execute('git rev-parse --is-inside-work-tree >> /dev/null 2>&1')
+-- end
+
+-- vim.api.nvim_create_autocmd('VimEnter', {
+--   callback = function ()
+--     local bufferPath = vim.fn.expand('%:p')
+--     if vim.fn.isdirectory(bufferPath) ~= 0 then
+--       local fzf = require('fzflua');
+--       vim.api.nvim_buf_delete(0, {force = true})
+--       fzf.files()
+--     end
+--   end
+-- })
+vim.api.nvim_create_autocmd('VimEnter', {
+  callback = function()
+    if vim.fn.argc() == 0 and vim.fn.empty(vim.fn.expand('%')) == 1 and vim.bo.buftype == '' then
+      vim.api.nvim_buf_delete(0, {force = true})
+      require('fzf-lua').files()
+      -- alternativt: require('fzf-lua').git_files() om du föredrar Git-filer
+    end
+  end,
+})
+
 -- Highlight on yank
 -- https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 utils.augroup('HilightYank', {
@@ -83,5 +122,13 @@ utils.augroup('AddTerminalMappings', {
       -- tnoremap('<S-Tab>', '<Cmd>bprev<CR>')
       -- tnoremap('<leader><Tab>', '<Cmd>close \\| :bnext<cr>')
     end
+  end,
+})
+
+utils.augroup('FormatOnSave', {
+  event = { 'BufWritePre' },
+  pattern = '*.rs',
+  command = function(args)
+    require("conform").format({ bufnr = args.buf })
   end,
 })

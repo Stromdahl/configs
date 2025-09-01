@@ -20,11 +20,17 @@ require('ms.lsp')
 require('ms.options')
 
 -- -- -- --
+-- Set autocmds keymaps
+-- -- -- --
+require('ms.autocmds')
+
+-- -- -- --
+-- Set cursomt user commands
+-- -- -- --
+require('ms.user_commands')
+
+-- -- -- --
 -- Set general keymaps
 -- -- -- --
 require('system.keys')
 
--- -- -- --
--- Set autocmds keymaps
--- -- -- --
-require('ms.autocmds')

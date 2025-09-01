@@ -11,7 +11,8 @@ return {
       if term.direction == 'horizontal' then
         return vim.o.lines * 0.25
       elseif term.direction == 'vertical' then
-        return vim.o.columns * 0.25
+        local cols = vim.o.columns * 0.25
+        return cols > 80 and cols or 80
       end
     end,
     open_mapping = [[<C-\>]],

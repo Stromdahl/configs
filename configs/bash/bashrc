@@ -1,268 +1,65 @@
-# ~/.bashrc: executed by bash(1) for non-login shells.
-# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
-# for examples
+# ~/.bashrc
 
-# If not running interactively, don't do anything
-case $- in
-  *i*) ;;
-  *) return;;
-esac
+# =============================================================================
+# - ENVIRONMENT SETUP
+# =============================================================================
 
-# don't put duplicate lines or lines starting with space in the history.
-# See bash(1) for more options
-HISTCONTROL=ignoreboth
+# Preferred editor
+export EDITOR=nvim
 
-# append to the history file, don't overwrite it
+# Default file permissions
+umask 022
+
+# Add custom local bin to PATH
+export PATH="$HOME/.local/bin:$PATH"
+
+# Less colors and options
+export LESS="-FRSX"
+
+# Enable color support for `ls` and other commands
+if [ -x /usr/bin/dircolors ]; then
+    eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# =============================================================================
+# - SHELL OPTIONS
+# =============================================================================
+
+# Make bash append to the history file instead of overwriting it
 shopt -s histappend
 
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=
-HISTFILESIZE=
-
-# check the window size after each command and, if necessary,
-# update the values of LINES and COLUMNS.
+# Check window size after each command and update LINES and COLUMNS
 shopt -s checkwinsize
 
-# If set, the pattern "**" used in a pathname expansion context will
-# match all files and zero or more directories and subdirectories.
-shopt -s globstar
+# Extended globbing
+shopt -s extglob
 
-# make less more friendly for non-text input files, see lesspipe(1)
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+# Case-insensitive globbing
+shopt -s nocaseglob
 
-# set variable identifying the chroot you work in (used in the prompt below)
-if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
-  debian_chroot=$(cat /etc/debian_chroot)
-fi
-
-# set a fancy prompt (non-color, unless we know we "want" color)
-case "$TERM" in
-  xterm-color|*-256color) color_prompt=yes;;
-esac
-
-# uncomment for a colored prompt, if the terminal has the capability; turned
-# off by default to not distract the user: the focus in a terminal window
-# should be on the output of commands, not on the prompt
-#force_color_prompt=yes
-
-if [ -n "$force_color_prompt" ]; then
-  if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-    # We have color support; assume it's compliant with Ecma-48
-    # (ISO/IEC-6429). (Lack of such support is extremely rare, and such
-    # a case would tend to support setf rather than setaf.)
-    color_prompt=yes
-  else
-    color_prompt=
-  fi
-fi
-
-# Prompt colors and special ansi codes
-RED="\[\033[91m\]"
-GREEN="\[\033[92m\]"
-YELLOW="\[\033[93m\]"
-BLUE="\[\033[94m\]"
-PURPLE="\[\033[95m\]"
-CYAN="\[\033[96m\]"
-GRAY="\[\033[37m\]"
-
-BELL="\[\a\]"
-RESET="\[\033[0m\]"
-BOLD="\[\033[1m\]"
-
-# Add returnvalue if command return != 0
-returnvalue() {
-  ret=$?
-  if [ $ret -ne 0 ]; then
-    echo "[$ret] "
-  fi
-}
-
-host_prompt() {
-  if [ -n "$SSH_CLIENT" ]; then
-    echo "$GREEN\u@\h "
-  fi
-}
-
-PROMPT_DIRTRIM=3
-if [ "$color_prompt" = yes ]; then
-  # PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]$(__git_ps1 "(%s)\[\033[00m\]:")\[\033[01;34m\]\w\[\033[00m\]\n\$ '
-  PS1="$BELL$BOLD$RED\$(returnvalue)$RESET$CYAN\# $(host_prompt)$BLUE\w$YELLOW\$(__git_ps1) \n$GRAY\$ $RESET"
-  else
-    PS1='$BLUE${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
-fi
-
-unset color_prompt force_color_prompt
-
-# If this is an xterm set the title to user@host:dir
-case "$TERM" in
-  xterm*|rxvt*)
-    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-    ;;
-  *)
-    ;;
-esac
-
-# enable color support of ls and also add handy aliases
-if [ -x /usr/bin/dircolors ]; then
-  test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-  alias ls='ls --color=auto'
-  #alias dir='dir --color=auto'
-  #alias vdir='vdir --color=auto'
-
-  alias grep='grep --color=auto'
-  alias fgrep='fgrep --color=auto'
-  alias egrep='egrep --color=auto'
-fi
-
-# colored GCC warnings and errors
-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
-
-# Set EDITOR depending to nvim or vim
-if command -v nvim &> /dev/null
-then
-  export EDITOR=nvim
-else
-  export EDITOR=vim
-fi
-
-function mkcd () {
-  dirname=$1
-  mkdir $dirname
-  cd $dirname
-}
-
-# ===1 Aliases
-# ==============================================
-function cdgr() {
-  inside_git_repo="$(git rev-parse --is-inside-work-tree 2>/dev/null)"
-  if [ "$inside_git_repo" ]; then
-    cd $(git rev-parse --show-toplevel)
-  fi
-}
-
-alias cl='clear'
-alias cp='cp -iv'
-alias l='ls -CF'
-alias la='ll -A'
-alias lc='cl && ll'
-alias ll='ls -hltF --time-style=long-iso --group-directories-first'
-alias mkdir='mkdir -pv'
-alias mv='mv -iv'
-alias rm='rm -iv'
-alias vi='${EDITOR}'
-alias ncal='ncal -wM3'
-alias isodate='date +"%Y-%m-%dT%H:%M:%S%:z"'
-
-alias gs='git status --short'
-alias gsi='git status --short --ignored'
-alias :q='exit'
-# cd up dir
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-
-# Aliases for xclip
-alias xci='xclip -in -selection clipboard'
-alias xco='xclip -out -selection clipboard'
-alias xcpi='xclip -in'
-alias xcpo='xclip -out'
-alias k='kubectl'
-
-alias config_nvim='cd ~/.dotfiles/configs/nvim && nvim .'
-
-alias daily='nvim ~/notes/daily.md'
-alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
-
-alias pubkey='cat $HOME/.ssh/id_ed25519.pub';
-
-alias inode='node /home/ms/development/javascript/inode'
-
-# Add an "alert" alias for long running commands.  Use like so:
-#   sleep 10; alert
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-
-# ######
-# FZF
-# ######
-
-# fbr - checkout git branch
-fbr() {
-  local branches branch
-  branches=$(git --no-pager branch -vv) &&
-  branch=$(echo "$branches" | fzf +m) &&
-  git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
-}
+# Enable command autocorrection (mild)
+shopt -s dirspell cdspell
 
 
-# ######
-# DOCKER
-# ######
+# =============================================================================
+# - HISTORY BEHAVIOR
+# =============================================================================
 
-function find_container(){
-  local __id=$2
-  local hits=`docker ps -a --format "{{.ID}} {{.Image}} {{.Names}}" | grep $1`
-  SAVEIFS=$IFS
-  IFS=$'\n'
-  local hits=($hits)
-  IFS=$SAVEIFS
+export HISTSIZE= #keep forever
+export HISTFILESIZE= #keep forever
+export HISTCONTROL=ignoredups:erasedups
+export HISTIGNORE="ls:cd:pwd:exit:clear"
 
-  local amountHits=${#hits[@]}
-  if [ $amountHits == 0 ]; then
-    echo "Found no matches!"
-    unset id
-    return
-  fi
-  if [ $amountHits -gt 1 ]; then
-    local i
-    for ((i=0; i<amountHits; i++)); do
-      echo "$(($i+1))) ${hits[$i]}"
-    done
-    read -n 1 -s -r -p "Found multiple matches, please enter your choice:`echo $'\n> '`" REPLY
-    echo $REPLY
-    if [[ "$REPLY" -lt 1 || "$REPLY" -gt $amountHits ]]; then
-      REPLY=1
-    fi
-    find_container_hit=`echo "${hits[$REPLY - 1]}" | sed -e 's/ /   /g'`
-  else
-    find_container_hit=`echo "$hits" | head -n1 | sed -e 's/ /   /g'`
-  fi
-  local __cid=`echo $find_container_hit | awk '{print $1}'`
-  eval $__id="'$__cid'"
-}
-
-# Docker inspect IP
-function dip(){
-  find_container $1 id
-  if [[ $id ]]; then
-    docker inspect --format='{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $id | sed -e "s/<no value>//g"
-  fi
-}
-
-# Docker restart
-function drs(){
-  loop find_container "$*" id "Restarting"
-  if [[ $ids ]]; then
-    docker restart $ids
-  fi
-}
-
-# Docker shell
-function dsh(){
-  find_container $1 id
-  if [[ $id ]]; then
-    echo ">>>   $find_container_hit"
-    docker exec -it -e COLUMNS=$COLUMNS -e LINES=$LINES -e TERM=$TERM $id bash
-  fi
-}
+# =============================================================================
+# - CUSTOM OPTIONS
+# =============================================================================
 
 # change man display to unhyphenated and ragged-right
 MANOPT="--nh --nj"
-
-rpw() {
-	local l=$1
-       	[ "$l" == "" ] && l=32
-      	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${l} | xargs
-}
 
 # make less use colors, i. e. in man
 export LESS_TERMCAP_mb=$'\e[1;32m'
@@ -273,60 +70,261 @@ export LESS_TERMCAP_so=$'\e[01;33m'
 export LESS_TERMCAP_ue=$'\e[0m'
 export LESS_TERMCAP_us=$'\e[1;4;31m'
 
-# Alias definitions.
-# You may want to put all your additions into a separate file like
-# ~/.bash_aliases, instead of adding them here directly.
-# See /usr/share/doc/bash-doc/examples in the bash-doc package.
+export TRASH_DIR="$HOME/.trash"
 
-if [ -f ~/.bash_aliases ]; then
-  . ~/.bash_aliases
+# =============================================================================
+# - PROMPT (PS1) CONFIGURATION
+# =============================================================================
+
+# Försök ladda git-prompt så __git_ps1 finns
+if [ -z "${__GIT_PROMPT_SOURCED:-}" ]; then
+  for f in /usr/share/git/completion/git-prompt.sh \
+           /etc/bash_completion.d/git-prompt \
+           /usr/local/etc/bash_completion.d/git-prompt; do
+    [ -r "$f" ] && . "$f" && __GIT_PROMPT_SOURCED=1 && break
+  done
 fi
 
-export PATH="$HOME/bin:$PATH"
-export PATH=$PATH:/sbin
+__prompt_command() {
+  local exit_code=$?
 
-# enable programmable completion features (you don't need to enable
-# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
-# sources /etc/bash.bashrc).
-if ! shopt -oq posix; then
-  if [ -f /usr/share/bash-completion/bash_completion ]; then
-    . /usr/share/bash-completion/bash_completion
-  elif [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
+  # Färger/sekvenser
+  local RED="\[\033[91m\]"
+  local GREEN="\[\033[92m\]"
+  local YELLOW="\[\033[93m\]"
+  local BLUE="\[\033[94m\]"
+  local PURPLE="\[\033[95m\]"
+  local CYAN="\[\033[96m\]"
+  local GRAY="\[\033[37m\]"
+  local RESET="\[\033[0m\]"
+  local BOLD="\[\033[1m\]"
+  local BELL="\[\a\]"
+
+  # Exitstatus
+  local status=""
+  if [ $exit_code -ne 0 ]; then
+    status="[$exit_code] "
   fi
-fi
 
-# cargo
-if [ -f $HOME/.cargo/env ]; then
-  . "$HOME/.cargo/env"
-fi
+  # Git-branch (färgad efter rent/smutsigt arbets­träd)
+  local branch=""
+  if type __git_ps1 >/dev/null 2>&1; then
+    branch="$(__git_ps1)"
+  else
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+      [ "$branch" = "HEAD" ] && branch="$(git describe --tags --always 2>/dev/null)"
+      [ -n "$branch" ] && branch="($branch)"
+    fi
+  fi
 
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+  local gitbranch=""
+  if [ -n "$branch" ]; then
+    if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+      gitbranch="${YELLOW}${branch}${RESET}"
+    else
+      gitbranch="${PURPLE}${branch}${RESET}"
+    fi
+  fi
 
-alias to=". $HOME/dev/bash/to/to.sh"
+  # Sökväg: relativt repo­roten i git, annars \w
+  local path=""
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    local git_root prefix repo
+    git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+    prefix="$(git rev-parse --show-prefix 2>/dev/null)"   # t.ex. "src/lib/"
+    repo="${git_root##*/}"                                # endast katalognamn
+    if [ -n "$prefix" ]; then
+      path="${repo}/${prefix%/}"                          # "repo/src/lib"
+    else
+      path="${repo}"                                      # "repo"
+    fi
+  else
+    path="\w"
+  fi
 
-if [ ! -S ~/.ssh/ssh_auth_sock ]; then
-  eval `ssh-agent -t 3600` > /dev/null 2>&1
-  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
-fi
-export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+  local count="\#"
+  local end="\$"
+  local TITLE="\[\e]0;\u@\h: \w\a\]"
 
-# WORK
-
-function ys() {
-  y_start --profile dev/$1
+  PS1="${TITLE}${RED}${status}${CYAN}${count}${gitbranch} ${BLUE}${path}\n${GRAY}${end}${RESET} "
 }
 
-# Yggio
-if [ -f $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh ]; then
-  source $HOME/sensative/yggio/tools/dev-scripts/yggiorc.sh
-fi
+PROMPT_DIRTRIM=3
+export PROMPT_COMMAND="__prompt_command"
 
+# =============================================================================
+# - CUSTOM FUNCTIONS
+# =============================================================================
+
+# Extract most common archive types
+function extract () {
+    if [ -f "$1" ]; then
+        case "$1" in
+            *.tar.bz2)   tar xjf "$1" ;;
+            *.tar.gz)    tar xzf "$1" ;;
+            *.bz2)       bunzip2 "$1" ;;
+            *.rar)       unrar x "$1" ;;
+            *.gz)        gunzip "$1" ;;
+            *.tar)       tar xf "$1" ;;
+            *.tbz2)      tar xjf "$1" ;;
+            *.tgz)       tar xzf "$1" ;;
+            *.zip)       unzip "$1" ;;
+            *.Z)         uncompress "$1" ;;
+            *.7z)        7z x "$1" ;;
+            *)           echo "Cannot extract '$1' - unknown archive type" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# Create directory and enter it
+function mkcd () {
+    mkdir -p "$1" && cd "$1"
+}
+
+# Search running processes
+function psearch () {
+    ps aux | grep -i "$1" | grep -v grep
+}
+
+
+function generate_password() {
+	local l=$1
+       	[ "$l" == "" ] && l=32
+      	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${l} | xargs
+}
+
+# Kill and Remove all docker containers
+function docker_kill() {
+  (docker stop $(docker ps -aq) 2>/dev/null && docker rm -f $(docker ps -aq) 2>/dev/null)
+}
+function __move_to_trash() {
+  mkdir -p "$TRASH_DIR"
+  for f in "$@"; do
+    if [ -e "$f" ]; then
+      mv -v "$f" "$TRASH_DIR/"
+    else
+      echo "tr: '$f' does not exist" >&2
+    fi
+  done
+}
+
+if [ ! -S ~/.ssh/ssh_auth_sock ]; then
+  eval `ssh-agent -t 28800` > /dev/null 2>&1
+  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+fi
+function __ssh-sk() {
+  if ! lsusb | grep -q 1050:0407; then
+      echo "Hardware security key not found or no resident SSH key present!"
+      echo "Insert your hardware security key and try again."
+      return
+  fi
+  
+  if ! ssh-add -L 2>/dev/null | grep -q 'sk-'; then
+      SSH_ADD_OUTPUT=$(ssh-add -K 2>&1)
+      if [ $? -ne 0 ]; then
+          echo "Unable to load resident SSH key from hardware security key"
+          echo "Reason: $SSH_ADD_OUTPUT"
+          return
+      fi
+  fi
+  
+  printf "Touch your security key when blinking...\n">&2
+  /usr/bin/ssh "$@"
+}
+
+function cdgr() {
+  local inside_git_repo="$(git rev-parse --is-inside-work-tree 2>/dev/null)"
+  if [ "$inside_git_repo" ]; then
+    cd $(git rev-parse --show-toplevel)
+  fi
+}
+
+# =============================================================================
+# - ALIASES
+# =============================================================================
+
+alias ....='cd ../../..'
+alias ...='cd ../..'
+alias ..='cd ..'
+alias la='ll -A'
+alias ll='ls -hltF --time-style=long-iso --group-directories-first'
+alias please='sudo !!'
+alias reload='source ~/.bashrc'
+alias ssh="__ssh-sk"
+alias update='sudo apt update && sudo apt upgrade -y'
+alias week='date +%V'
+alias rr='__move_to_trash'
+
+# Safer operations
+alias cp='cp -vi'
+alias mv='mv -vi'
+alias rm='rm -vi'
+# Networking
+alias ports='ss -ptunl | fzf'
+
+# Git shortcuts
+alias gs='git status --short'
+alias gsi='git status --short --ignored'
+alias glg='git log --graph --oneline --branches --tags --remotes'
+
+# Aliases for xclip
+alias xci='xclip -rmlastnl -in -selection  clipboard'
+alias xcie='xci <<<' # Works line "echo" but for clipboard
+alias xcif='xci <' # Reads a file to clipboard
+alias xco='xclip -out -selection clipboard'
+alias xcpi='xclip -in'
+alias xcpo='xclip -out'
+
+# Quality of life
+alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
+alias pubkey='cat $HOME/.ssh/id_ed25519_sk_rk.pub';
+# TODO: This should be moved to ~.dotfiles/bin/inode
+alias inode='node /home/ms/development/javascript/inode'
+
+alias compose="docker compose"
+
+# Work journal
+alias daily='nvim ~/notes/daily.md'
+
+#
+# =============================================================================
+# - FZF 
+# =============================================================================
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
-#[ -f "/home/ms/.ghcup/env" ] && source "/home/ms/.ghcup/env" # ghcup-env
-[ -f "/home/ms/.ghcup/env" ] && source "/home/ms/.ghcup/env" # ghcup-env
+# fbr - checkout git branch
+gbfzf() {
+  local branches branch
+  branches=$(git --no-pager branch -vv) &&
+  branch=$(echo "$branches" | fzf +m) &&
+  git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
+}
 
-# Wasmer
-export WASMER_DIR="/home/ms/.wasmer"
-[ -s "$WASMER_DIR/wasmer.sh" ] && source "$WASMER_DIR/wasmer.sh"
+# fbr - checkout git branch
+p() {
+  ps aux | fzf --tiebreak=length | awk '{print($2)}'
+}
+
+# =============================================================================
+# - DEVELOPER ENVIRONMENT
+# =============================================================================
+export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+
+# Rust (via rustup)
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Python virtual environments
+export WORKON_HOME=$HOME/.virtualenvs
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+[ -f /usr/local/bin/virtualenvwrapper.sh ] && source /usr/local/bin/virtualenvwrapper.sh
+
+# =============================================================================
+# - FINAL SETUP
+# =============================================================================
+
+# Source user local bashrc if it exists
+[ -f "$HOME/.bashrc.local" ] && source "$HOME/.bashrc.local"
+

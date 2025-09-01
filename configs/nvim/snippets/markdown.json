@@ -2,7 +2,7 @@
   "foo": {
     "prefix": "da",
     "body": [
-      "### $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE $CURRENT_DAY_NAME"
+      "### $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE $CURRENT_DAY_NAME, $CURRENT_WEEK"
     ]
   }
 }

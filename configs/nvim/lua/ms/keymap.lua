@@ -14,6 +14,7 @@ M.leader = {
 M.vim = {
   {"<C-g>d", function () require('ms.utils').definition_split() end, desc='open definition in split window', noremap = true, silent = true },
   {"tp", '<CMD>TermExec cmd="cd %:p:h" go_back=0<CR>'},
+  {"<leader>bd", '<CMD>CloseBufKeepWin<CR>'},
 }
 
 
@@ -22,10 +23,12 @@ M.lsp = {
 }
 
 M.oil = {
-  {"-", "<CMD>Oil --float<CR>", desc = "Open parent directory"}
+  -- {"-", "<CMD>Oil --float<CR>", desc = "Open parent directory"}
+  {"<leader>ft", "<CMD>Oil --float<CR>", desc = "Open parent directory"}
 }
 
 M.fzf_lua  = {
+    {"-", function() require('fzf-lua').files({cwd = '%:p:h'}) end, desc = "Open parent directory"},
     { '<leader><leader>', function() require('fzf-lua').files() end, desc="[f]ind [f]file" },
     { '<leader>ff', function() require('fzf-lua').files() end, desc="[f]ind [f]file"},
     { '<leader>fc', function() require('fzf-lua').files({cwd = '%:p:h'}) end, desc="[f]ind [f]file"},
