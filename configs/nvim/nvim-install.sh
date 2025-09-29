@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Config
-VERSION_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/nvim/nvim-version"
-PREFIX="$HOME/.local"
-BIN_DIR="$PREFIX/bin"
-BASE_DIR="$PREFIX/neovim"
+# =============================================================================
+# Configuration
+# =============================================================================
 
-# Read version tag
-if [[ ! -f "$VERSION_FILE" ]]; then
+readonly VERSION_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/nvim/nvim-version"
+readonly PREFIX="$HOME/.local"
+readonly BIN_DIR="$PREFIX/bin"
+readonly BASE_DIR="$PREFIX/neovim"
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+show_version_help() {
   cat >&2 <<EOF
 Error: missing version file: $VERSION_FILE
 
@@ -20,81 +26,154 @@ Create it with one line containing the desired Neovim release tag, e.g.:
   0.11.4
 
 EOF
-  exit 1
-fi
+}
 
-raw_ver="$(tr -d ' \t\n' < "$VERSION_FILE")"
-case "$raw_ver" in
-  stable|nightly|v[0-9]*.[0-9]*.*) TAG="$raw_ver" ;;
-  [0-9]*.[0-9]*.*) TAG="v$raw_ver" ;;
-  *) echo "invalid version in $VERSION_FILE: '$raw_ver'" >&2; exit 1 ;;
-esac
-INSTALL_DIR="$BASE_DIR/$TAG"
+validate_version() {
+  local raw_ver="$1"
+  case "$raw_ver" in
+    stable|nightly|v[0-9]*.[0-9]*.*)
+      echo "$raw_ver" ;;
+    [0-9]*.[0-9]*.*)
+      echo "v$raw_ver" ;;
+    *)
+      echo "invalid version in $VERSION_FILE: '$raw_ver'" >&2
+      return 1 ;;
+  esac
+}
 
-# Fast-path: already installed and linked
-if [[ -x "$BIN_DIR/nvim" ]] && command -v realpath >/dev/null 2>&1; then
-  target="$(realpath "$BIN_DIR/nvim" 2>/dev/null || true)"
-  if [[ -n "${target:-}" && "$target" == "$INSTALL_DIR/bin/nvim" && -x "$target" ]]; then
-    echo "nvim $TAG already installed at $INSTALL_DIR and linked at $BIN_DIR/nvim"
+is_already_installed() {
+  local install_dir="$1"
+
+  if [[ -x "$BIN_DIR/nvim" ]] && command -v realpath >/dev/null 2>&1; then
+    local target
+    target="$(realpath "$BIN_DIR/nvim" 2>/dev/null || true)"
+    if [[ -n "${target:-}" && "$target" == "$install_dir/bin/nvim" && -x "$target" ]]; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+create_symlink() {
+  local install_dir="$1"
+  mkdir -p "$BIN_DIR"
+  ln -sf "$install_dir/bin/nvim" "$BIN_DIR/nvim"
+}
+
+detect_platform() {
+  local os arch
+  os="$(uname -s)"
+  arch="$(uname -m)"
+
+  case "$os" in
+    Linux)
+      case "$arch" in
+        x86_64|amd64) echo "nvim-linux-x86_64" ;;
+        aarch64|arm64) echo "nvim-linux-arm64" ;;
+        *) echo "unsupported arch on Linux: $arch" >&2; return 1 ;;
+      esac
+      ;;
+    Darwin)
+      case "$arch" in
+        x86_64) echo "nvim-macos-x86_64" ;;
+        arm64)  echo "nvim-macos-arm64" ;;
+        *) echo "unsupported arch on macOS: $arch" >&2; return 1 ;;
+      esac
+      ;;
+    *)
+      echo "unsupported OS: $os" >&2
+      return 1 ;;
+  esac
+}
+
+download_with_checksum() {
+  local url="$1"
+  local output="$2"
+  local checksum_url="$3"
+
+  echo "→ fetching $url"
+  curl -fL --retry 3 -o "$output" "$url"
+
+  if curl -fsL -o "${output}.sha256sum" "$checksum_url" 2>/dev/null; then
+    echo "→ verifying checksum"
+    (cd "$(dirname "$output")" && sha256sum -c "$(basename "$output").sha256sum") || {
+      echo "warning: checksum mismatch; continuing" >&2
+    }
+  fi
+}
+
+show_completion_message() {
+  local bin_path="$1"
+
+  echo "✔ installed: $("$bin_path" --version | head -n1)"
+  echo "bin: $bin_path"
+
+  case ":$PATH:" in
+    *":$BIN_DIR:"*)
+      : ;;
+    *)
+      echo "add to PATH: export PATH=\"$BIN_DIR:\$PATH\"" ;;
+  esac
+}
+
+# =============================================================================
+# Main Installation Logic
+# =============================================================================
+
+main() {
+  # Read and validate version
+  if [[ ! -f "$VERSION_FILE" ]]; then
+    show_version_help
+    exit 1
+  fi
+
+  local raw_version tag install_dir
+  raw_version="$(tr -d ' \t\n' < "$VERSION_FILE")"
+  tag="$(validate_version "$raw_version")" || exit 1
+  install_dir="$BASE_DIR/$tag"
+
+  # Check if already installed and properly linked
+  if is_already_installed "$install_dir"; then
+    echo "nvim $tag already installed at $install_dir and linked at $BIN_DIR/nvim"
     exit 0
   fi
-fi
 
-# If installation exists but symlink not updated, just relink
-if [[ -x "$INSTALL_DIR/bin/nvim" ]]; then
-  mkdir -p "$BIN_DIR"
-  ln -sf "$INSTALL_DIR/bin/nvim" "$BIN_DIR/nvim"
-  echo "linked existing nvim $TAG -> $BIN_DIR/nvim"
-  exit 0
-fi
+  # If installation exists but symlink needs updating, just relink
+  if [[ -x "$install_dir/bin/nvim" ]]; then
+    create_symlink "$install_dir"
+    echo "linked existing nvim $tag -> $BIN_DIR/nvim"
+    exit 0
+  fi
 
-# Detect OS/arch and asset
-OS="$(uname -s)"; ARCH="$(uname -m)"
-case "$OS" in
-  Linux)
-    case "$ARCH" in
-      x86_64|amd64) ASSET_BASE="nvim-linux-x86_64" ;;
-      aarch64|arm64) ASSET_BASE="nvim-linux-arm64" ;;
-      *) echo "unsupported arch on Linux: $ARCH"; exit 1 ;;
-    esac
-    ;;
-  Darwin)
-    case "$ARCH" in
-      x86_64) ASSET_BASE="nvim-macos-x86_64" ;;
-      arm64)  ASSET_BASE="nvim-macos-arm64" ;;
-      *) echo "unsupported arch on macOS: $ARCH"; exit 1 ;;
-    esac
-    ;;
-  *) echo "unsupported OS: $OS"; exit 1 ;;
-esac
+  # Detect platform and prepare download URLs
+  local asset_base asset_tgz base_url url_tgz url_sha
+  asset_base="$(detect_platform)" || exit 1
+  asset_tgz="${asset_base}.tar.gz"
+  base_url="https://github.com/neovim/neovim/releases/download/${tag}"
+  url_tgz="${base_url}/${asset_tgz}"
+  url_sha="${url_tgz}.sha256sum"
 
-ASSET_TGZ="${ASSET_BASE}.tar.gz"
-BASE_URL="https://github.com/neovim/neovim/releases/download/${TAG}"
-URL_TGZ="${BASE_URL}/${ASSET_TGZ}"
-URL_SHA="${URL_TGZ}.sha256sum"   # optional
+  # Prepare workspace
+  mkdir -p "$BIN_DIR" "$BASE_DIR"
+  local work_dir
+  work_dir="$(mktemp -d)"
+  trap 'rm -rf "$work_dir"' EXIT
 
-# Prep
-mkdir -p "$BIN_DIR" "$BASE_DIR"
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+  # Download and verify
+  download_with_checksum "$url_tgz" "$work_dir/$asset_tgz" "$url_sha"
 
-# Download
-echo "→ fetching $URL_TGZ"
-curl -fL --retry 3 -o "$WORK/$ASSET_TGZ" "$URL_TGZ"
+  # Install
+  rm -rf "$install_dir"
+  mkdir -p "$install_dir"
+  tar -xzf "$work_dir/$asset_tgz" -C "$install_dir" --strip-components=1
+  create_symlink "$install_dir"
 
-# Optional checksum
-if curl -fsL -o "$WORK/${ASSET_TGZ}.sha256sum" "$URL_SHA"; then
-  echo "→ verifying checksum"
-  (cd "$WORK" && sha256sum -c "${ASSET_TGZ}.sha256sum") || {
-    echo "warning: checksum mismatch; continuing" >&2
-  }
-fi
+  # Show completion message
+  show_completion_message "$BIN_DIR/nvim"
+}
 
-# Install
-rm -rf "$INSTALL_DIR"
-mkdir -p "$INSTALL_DIR"
-tar -xzf "$WORK/$ASSET_TGZ" -C "$INSTALL_DIR" --strip-components=1
-ln -sf "$INSTALL_DIR/bin/nvim" "$BIN_DIR/nvim"
+# =============================================================================
+# Entry Point
+# =============================================================================
 
-echo "✔ installed: $("$BIN_DIR/nvim" --version | head -n1)"
-echo "bin: $BIN_DIR/nvim"
-case ":$PATH:" in *":$BIN_DIR:"*) : ;; *) echo "add to PATH: export PATH=\"$BIN_DIR:\$PATH\"" ;; esac
+main "$@"
