@@ -87,6 +87,41 @@ vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.s
 -- Utility Functions
 --------------------------------------
 
+-- Autocmd Wrapper API
+-- Usage:
+--   autocmd("BufEnter", { callback = function() print("Buffer entered") end })
+--   autocmd("FileType", { pattern = "lua", callback = "echom 'Lua file!'" })
+--   autocmd("BufWritePre", { 
+--     condition = function(ev) return vim.bo[ev.buf].buftype == "" end,
+--     callback = function() print("Writing regular file") end 
+--   })
+local function autocmd(event, opts)
+  local config = {
+    pattern = opts.pattern,
+    group = opts.group,
+    buffer = opts.buffer,
+    once = opts.once,
+    nested = opts.nested,
+    desc = opts.desc,
+  }
+  
+  if opts.condition then
+    config.callback = function(ev)
+      if opts.condition(ev) then
+        if type(opts.callback) == "function" then
+          opts.callback(ev)
+        elseif type(opts.callback) == "string" then
+          vim.cmd(opts.callback)
+        end
+      end
+    end
+  else
+    config.callback = opts.callback
+  end
+  
+  return vim.api.nvim_create_autocmd(event, config)
+end
+
 -- Buffer Management
 local function bclose_keep_layout()
   local cur = vim.api.nvim_get_current_buf()
@@ -215,10 +250,11 @@ local cargo_commands = {
 }
 
 for _, cmd in ipairs(cargo_commands) do
+  local nargs = (cmd[2] == "check" or cmd[2] == "clippy") and 0 or "*"
   vim.api.nvim_create_user_command(cmd[1], function(opts)
-    local args = cmd[2] == "check" or cmd[2] == "clippy" and "" or (opts.args ~= "" and " " .. opts.args or "")
+    local args = (cmd[2] == "check" or cmd[2] == "clippy") and "" or (opts.args ~= "" and " " .. opts.args or "")
     run_cargo_command(cmd[2] .. args)
-  end, { nargs = cmd[2] == "check" or cmd[2] == "clippy" and 0 or "*", desc = cmd[3] })
+  end, { nargs = nargs, desc = cmd[3] })
 end
 
 vim.api.nvim_create_user_command("CargoFmt", function()
@@ -231,12 +267,12 @@ end, { desc = "Run cargo fmt" })
 --------------------------------------
 
 -- Highlight on yank
-vim.api.nvim_create_autocmd("TextYankPost", {
+autocmd("TextYankPost", {
   callback = function() vim.highlight.on_yank({ timeout = 150 }) end,
 })
 
 -- Open fuzzy files on start
-vim.api.nvim_create_autocmd("VimEnter", {
+autocmd("VimEnter", {
   callback = function()
     if vim.fn.argc() == 0 and vim.fn.empty(vim.fn.expand("%")) == 1 and vim.bo.buftype == "" then
       if vim.bo.modified == false then
@@ -248,7 +284,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 })
 
 -- Restore cursor position
-vim.api.nvim_create_autocmd("BufReadPost", {
+autocmd("BufReadPost", {
   callback = function(ev)
     local mark = vim.api.nvim_buf_get_mark(ev.buf, '"')
     local lcount = vim.api.nvim_buf_line_count(ev.buf)
@@ -259,34 +295,38 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 })
 
 -- Close helpers with q
-vim.api.nvim_create_autocmd("FileType", {
+autocmd("FileType", {
   pattern = { "qf", "help", "man", "lspinfo" },
   callback = function() vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true }) end,
 })
 
 -- Window management
-vim.api.nvim_create_autocmd("VimResized", {
+autocmd("VimResized", {
   callback = function() vim.cmd("tabdo wincmd =") end
 })
 
 -- Cursorline only in active window
-vim.api.nvim_create_autocmd("WinEnter", {
+autocmd("WinEnter", {
   callback = function() vim.opt_local.cursorline = true end,
 })
-vim.api.nvim_create_autocmd("WinLeave", {
+autocmd("WinLeave", {
   callback = function() vim.opt_local.cursorline = false end,
 })
 
 -- Relative number toggle on insert
-vim.api.nvim_create_autocmd("InsertEnter", {
+autocmd("InsertEnter", {
   callback = function() vim.opt.relativenumber = false end
 })
-vim.api.nvim_create_autocmd("InsertLeave", {
+autocmd("InsertLeave", {
   callback = function() vim.opt.relativenumber = true end
 })
 
 -- File management
-vim.api.nvim_create_autocmd("BufWritePre", {
+autocmd("BufWritePre", {
+  condition = function(ev)
+    local bufname = vim.api.nvim_buf_get_name(ev.buf)
+    return vim.bo[ev.buf].buftype == "" and not bufname:match("^%w+://")
+  end,
   callback = function(ev)
     local dir = vim.fn.fnamemodify(ev.match, ":p:h")
     if vim.fn.isdirectory(dir) == 0 then vim.fn.mkdir(dir, "p") end
@@ -294,55 +334,59 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 })
 
 -- Trim trailing whitespace (except markdown/diff)
-vim.api.nvim_create_autocmd("BufWritePre", {
-  callback = function(ev)
+autocmd("BufWritePre", {
+  condition = function(ev)
     local ft = vim.bo[ev.buf].filetype
-    if ft ~= "markdown" and ft ~= "diff" then
-      local view = vim.fn.winsaveview()
-      vim.cmd([[%s/\s\+$//e]])
-      vim.fn.winrestview(view)
-    end
+    return ft ~= "markdown" and ft ~= "diff"
+  end,
+  callback = function(ev)
+    local view = vim.fn.winsaveview()
+    vim.cmd([[%s/\s\+$//e]])
+    vim.fn.winrestview(view)
   end,
 })
 
 -- Check for external file changes
-vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
-  callback = function()
-    if vim.o.modifiable then vim.cmd.checktime() end
-  end
+autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
+  condition = function() return vim.o.modifiable end,
+  callback = function() vim.cmd.checktime() end
 })
 
 -- Format options sanity
-vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+autocmd({ "BufEnter", "BufWinEnter" }, {
   callback = function()
     vim.opt_local.formatoptions = vim.opt_local.formatoptions - "t" - "o" - "2" + "c" + "q" + "r" + "n" + "j"
   end,
 })
 
--- Format on save via LSP (exclude tsserver)
-vim.api.nvim_create_autocmd("BufWritePre", {
+-- Format on save via LSP (exclude ts_ls)
+autocmd("BufWritePre", {
+  condition = function(ev)
+    local bufname = vim.api.nvim_buf_get_name(ev.buf)
+    return vim.bo[ev.buf].buftype == "" and not bufname:match("^%w+://")
+  end,
   callback = function(ev)
     pcall(vim.lsp.buf.format, {
       bufnr = ev.buf,
       async = false,
       timeout_ms = 1500,
       filter = function(client)
-        return client and client.name ~= "tsserver"
+        return client and client.name ~= "ts_ls"
       end,
     })
   end,
 })
 
 -- Document highlight when supported
-vim.api.nvim_create_autocmd("LspAttach", {
+autocmd("LspAttach", {
   callback = function(ev)
     local client = vim.lsp.get_client_by_id(ev.data.client_id)
     if client and client.supports_method("textDocument/documentHighlight") then
-      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+      autocmd({ "CursorHold", "CursorHoldI" }, {
         buffer = ev.buf,
         callback = vim.lsp.buf.document_highlight,
       })
-      vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "BufLeave" }, {
+      autocmd({ "CursorMoved", "CursorMovedI", "BufLeave" }, {
         buffer = ev.buf,
         callback = vim.lsp.buf.clear_references,
       })
@@ -351,17 +395,18 @@ vim.api.nvim_create_autocmd("LspAttach", {
 })
 
 -- Auto-enable inlay hints
-vim.api.nvim_create_autocmd("LspAttach", {
-  callback = function(ev)
+autocmd("LspAttach", {
+  condition = function(ev)
     local client = vim.lsp.get_client_by_id(ev.data.client_id)
-    if client and client.server_capabilities.inlayHintProvider then
-      vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
-    end
+    return client and client.server_capabilities.inlayHintProvider
+  end,
+  callback = function(ev)
+    vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
   end,
 })
 
 -- Rust-specific keybindings
-vim.api.nvim_create_autocmd("FileType", {
+autocmd("FileType", {
   pattern = "rust",
   callback = function()
     local opts = { buffer = true, silent = true }
@@ -463,8 +508,8 @@ vim.lsp.config["lua_ls"] = {
   },
 }
 
--- TypeScript Language Server
-vim.lsp.config["tsserver"] = {
+-- TypeScript Language Server (ts_ls)
+vim.lsp.config["ts_ls"] = {
   cmd = { "typescript-language-server", "--stdio" },
   root_markers = { "package.json", "tsconfig.json", "jsconfig.json", ".git" },
   filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
@@ -478,8 +523,13 @@ vim.lsp.config["clangd"] = {
   single_file_support = true,
 }
 
--- Enable LSP servers
-vim.lsp.enable({ "rust-analyzer", "lua_ls", "tsserver", "clangd" })
+-- Set global LSP defaults
+vim.lsp.config('*', {
+  root_markers = { '.git' },
+})
+
+-- Enable all configured LSP servers
+vim.lsp.enable({ 'rust-analyzer', 'lua_ls', 'ts_ls', 'clangd' })
 
 --------------------------------------
 -- Plugin Setup
@@ -499,6 +549,44 @@ vim.opt.rtp:prepend(lazypath)
 require("lazy").setup({
   -- LSP Support
   { "neovim/nvim-lspconfig",   cmd = { "LspInfo", "LspStart", "LspStop", "LspRestart" } },
+
+  -- Mason for LSP server management
+  {
+    "williamboman/mason.nvim",
+    cmd = "Mason",
+    keys = { { "<leader>cm", "<cmd>Mason<cr>", desc = "Mason" } },
+    build = ":MasonUpdate",
+    opts = {
+      ui = {
+        icons = {
+          package_installed = "✓",
+          package_pending = "➜",
+          package_uninstalled = "✗"
+        }
+      }
+    },
+  },
+
+  -- Mason-LSPConfig bridge
+  {
+    "williamboman/mason-lspconfig.nvim",
+    dependencies = { "williamboman/mason.nvim" },
+    opts = {
+      ensure_installed = {
+        "rust_analyzer",
+        "lua_ls", 
+        "ts_ls",
+        "clangd",
+      },
+      automatic_installation = true,
+    },
+    config = function(_, opts)
+      require("mason-lspconfig").setup(opts)
+      
+      -- Mason-lspconfig is only used for automatic installation
+      -- LSP servers are configured and enabled via native vim.lsp APIs above
+    end,
+  },
 
   -- Completion Engine
   {
@@ -705,14 +793,14 @@ require("lazy").setup({
 
       -- Language-specific debug snippets
       local debug_configs = {
-        javascript = { format = "console.log(`DEBUG [{}:{}] {} - {}`, {})" },
-        typescript = { format = "console.log(`DEBUG [{}:{}] {} - {}`, {})" },
+        javascript = { format = "console.log(`DEBUG [{}:{}] {} - ${{{}}}`);" },
+        typescript = { format = "console.log(`DEBUG [{}:{}] {} - ${{{}}}`);" },
         lua = { format = "print(string.format(\"DEBUG [%s:%s] %s - %s\", \"{}\", \"{}\", \"{}\", tostring({})))" },
-        rust = { format = "println!(\"DEBUG [{}:{}] {} - {{:?}}\", {})" },
-        go = { format = "fmt.Printf(\"DEBUG [{}:{}] {} - %+v\\n\", {})" },
+        rust = { format = "println!(\"DEBUG [{}:{}] {} - {{:?}}\", {});" },
+        go = { format = "fmt.Printf(\"DEBUG [{}:{}] {} - %+v\\n\", {});" },
         c = { format = "printf(\"DEBUG [{}:{}] {} - %s\\n\", {});" },
         cpp = { format = "std::cout << \"DEBUG [{}:{}] {} - \" << {} << std::endl;" },
-        python = { format = "print(f\"DEBUG [{}:{}] {} - {{}}\", {})" },
+        python = { format = "print(f\"DEBUG [{}:{}] {} - {{{}}}\");" },
       }
 
       for lang, config in pairs(debug_configs) do
@@ -762,4 +850,3 @@ tags: [{}]
 
   { "rafamadriz/friendly-snippets", lazy = true },
 })
-
