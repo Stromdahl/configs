@@ -28,6 +28,7 @@ o.scrolloff = 999
 o.background = "dark"
 o.signcolumn = "yes"
 o.fillchars = { eob = " " }
+o.winbar = "%f %m%r"
 
 -- Editing & Behavior
 o.clipboard = "unnamedplus"
@@ -91,9 +92,9 @@ vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.s
 -- Usage:
 --   autocmd("BufEnter", { callback = function() print("Buffer entered") end })
 --   autocmd("FileType", { pattern = "lua", callback = "echom 'Lua file!'" })
---   autocmd("BufWritePre", { 
+--   autocmd("BufWritePre", {
 --     condition = function(ev) return vim.bo[ev.buf].buftype == "" end,
---     callback = function() print("Writing regular file") end 
+--     callback = function() print("Writing regular file") end
 --   })
 local function autocmd(event, opts)
   local config = {
@@ -104,7 +105,7 @@ local function autocmd(event, opts)
     nested = opts.nested,
     desc = opts.desc,
   }
-  
+
   if opts.condition then
     config.callback = function(ev)
       if opts.condition(ev) then
@@ -118,7 +119,7 @@ local function autocmd(event, opts)
   else
     config.callback = opts.callback
   end
-  
+
   return vim.api.nvim_create_autocmd(event, config)
 end
 
@@ -574,7 +575,7 @@ require("lazy").setup({
     opts = {
       ensure_installed = {
         "rust_analyzer",
-        "lua_ls", 
+        "lua_ls",
         "ts_ls",
         "clangd",
       },
@@ -582,7 +583,7 @@ require("lazy").setup({
     },
     config = function(_, opts)
       require("mason-lspconfig").setup(opts)
-      
+
       -- Mason-lspconfig is only used for automatic installation
       -- LSP servers are configured and enabled via native vim.lsp APIs above
     end,
