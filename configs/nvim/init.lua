@@ -1,11 +1,26 @@
 -- Neovim Configuration - Single File Setup
--- Table of Contents:
--- 1. Core Configuration (Leaders, Options, Diagnostics)
--- 2. Utility Functions
--- 3. Keymaps & Commands
--- 4. Autocommands
--- 5. LSP Configuration
--- 6. Plugin Setup
+
+--------------------------------------
+-- Colorscheme
+--------------------------------------
+
+require("gruvbox").setup({
+  contrast = "hard",        -- or “soft”, “medium”, or empty
+  palette_overrides = {
+    dark0_hard = "#000000", -- override the hardest bg color to pure black
+    dark0 = "#1c1c1c",      -- or tweak the default dark background
+    dark0_soft = "#121212",
+    -- you can override other “darkN” palette entries too
+  },
+  -- optional: other overrides, e.g. for specific highlight groups
+  overrides = {
+    Normal = { bg = "#000000" }, -- force Normal’s background
+    SignColumn = { bg = "#0f0f0f" },
+    -- etc
+  },
+})
+vim.o.background = "dark"
+vim.cmd.colorscheme("gruvbox")
 
 --------------------------------------
 -- Core Configuration
@@ -198,7 +213,7 @@ local function get_time_info()
     iso_date = os.date("%Y-%m-%dT%H:%M:%S"),
     timestamp = os.date("%H:%M:%S"),
     full_timestamp = os.date("%Y-%m-%d %H:%M:%S"),
-    week_number = os.date("%U"),
+    week_number = os.date("%V"),
     day_of_week = os.date("%A"),
   }
 end
@@ -210,11 +225,23 @@ end
 -- General Keymaps
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 vim.keymap.set("n", "<leader>q", bclose_keep_layout, { desc = "Close buffer, keep layout" })
+vim.keymap.set("n", "<M-]>", "<cmd>cnext<CR>")
+vim.keymap.set("n", "<M-[>", "<cmd>cprevious<CR>")
+vim.keymap.set("n", "<C-b>", "<cmd>buffers<CR>")
+
+
+vim.keymap.set("n", "<M-h>", "<C-w>h");
+vim.keymap.set("n", "<M-j>", "<C-w>j");
+vim.keymap.set("n", "<M-k>", "<C-w>k");
+vim.keymap.set("n", "<M-l>", "<C-w>l");
+vim.keymap.set("n", "<M-s>", "<C-w>s");
+vim.keymap.set("n", "<M-v>", "<C-w>v");
+
 
 -- Diagnostic Keymaps
 vim.keymap.set("n", "<leader>dl", toggle_diagnostic_virtual_lines, { desc = "Toggle diagnostic virtual_lines" })
 vim.keymap.set("n", "<leader>dt", toggle_diagnostic_virtual_text, { desc = "Toggle diagnostic virtual_text" })
-vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float)
+vim.keymap.set("n", "<leader>df", vim.diagnostic.open_float, { desc = "Diagnostic float" })
 vim.keymap.set("n", "<leader>E", vim.diagnostic.setloclist)
 vim.keymap.set("n", "<leader>dd", vim.diagnostic.setqflist, { desc = "Diagnostics → quickfix" })
 vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Prev diagnostic" })
@@ -231,13 +258,18 @@ vim.keymap.set("n", "gi", lsp.implementation)
 vim.keymap.set("n", "gr", lsp.references)
 vim.keymap.set("n", "gsd", go_to_definition_split, { desc = "Go to definition in split" })
 vim.keymap.set("n", "gvd", go_to_definition_vsplit, { desc = "Go to definition in vsplit" })
-vim.keymap.set({ "n", "v" }, "<leader>ca", lsp.code_action)
 
 -- Inlay Hints
 vim.api.nvim_create_user_command("InlayHintsToggle", function()
   local b = vim.api.nvim_get_current_buf()
   local enabled = vim.lsp.inlay_hint.is_enabled({ bufnr = b })
-  vim.lsp.inlay_hint.enable(not enabled, { bufnr = b })
+  local ok, err = pcall(vim.lsp.inlay_hint.enable, not enabled, { bufnr = b })
+  if not ok then
+    vim.notify("Failed to toggle inlay hints: " .. tostring(err), vim.log.levels.WARN)
+  else
+    local status = enabled and "disabled" or "enabled"
+    vim.notify("Inlay hints " .. status, vim.log.levels.INFO)
+  end
 end, {})
 vim.keymap.set("n", "<leader>ih", "<cmd>InlayHintsToggle<cr>", { desc = "Toggle inlay hints" })
 
@@ -267,6 +299,16 @@ end, { desc = "Run cargo fmt" })
 -- Autocommands
 --------------------------------------
 
+-- Populate quickfix list with diagnostics
+autocmd("DiagnosticChanged", {
+  callback = function()
+    vim.diagnostic.setqflist({
+      open = false,
+      title = "Diagnostics",
+    })
+  end,
+})
+
 -- Highlight on yank
 autocmd("TextYankPost", {
   callback = function() vim.highlight.on_yank({ timeout = 150 }) end,
@@ -279,7 +321,7 @@ autocmd("VimEnter", {
       if vim.bo.modified == false then
         pcall(vim.api.nvim_buf_delete, 0, { force = true })
       end
-      pcall(function() require("fzf-lua").files() end)
+      pcall(function() require('fzf-lua').files() end)
     end
   end,
 })
@@ -395,16 +437,19 @@ autocmd("LspAttach", {
   end,
 })
 
--- Auto-enable inlay hints
-autocmd("LspAttach", {
-  condition = function(ev)
-    local client = vim.lsp.get_client_by_id(ev.data.client_id)
-    return client and client.server_capabilities.inlayHintProvider
-  end,
-  callback = function(ev)
-    vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
-  end,
-})
+-- Auto-enable inlay hints with error handling (disabled by default)
+-- autocmd("LspAttach", {
+--   condition = function(ev)
+--     local client = vim.lsp.get_client_by_id(ev.data.client_id)
+--     return client and client.server_capabilities.inlayHintProvider
+--   end,
+--   callback = function(ev)
+--     local ok, err = pcall(vim.lsp.inlay_hint.enable, true, { bufnr = ev.buf })
+--     if not ok then
+--       vim.notify("Failed to enable inlay hints: " .. tostring(err), vim.log.levels.WARN)
+--     end
+--   end,
+-- })
 
 -- Rust-specific keybindings
 autocmd("FileType", {
@@ -422,6 +467,40 @@ autocmd("FileType", {
     for _, map in ipairs(rust_maps) do
       vim.keymap.set("n", map[1], map[2], vim.tbl_extend("force", opts, { desc = map[3] }))
     end
+  end,
+})
+
+-- React/Frontend-specific settings
+autocmd("FileType", {
+  pattern = { "javascript", "typescript", "javascriptreact", "typescriptreact", "jsx", "tsx" },
+  callback = function()
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.tabstop = 2
+    vim.opt_local.softtabstop = 2
+
+    local opts = { buffer = true, silent = true }
+    local js_maps = {
+      { "<leader>jr", "<cmd>!npm run dev<cr>",    "Run dev server" },
+      { "<leader>jb", "<cmd>!npm run build<cr>",  "Build project" },
+      { "<leader>jt", "<cmd>!npm test<cr>",       "Run tests" },
+      { "<leader>jl", "<cmd>!npm run lint<cr>",   "Run linter" },
+      { "<leader>jf", "<cmd>!npm run format<cr>", "Format code" },
+      { "<leader>ji", "<cmd>!npm install<cr>",    "Install deps" },
+      { "<leader>js", "<cmd>!npm start<cr>",      "Start app" },
+    }
+    for _, map in ipairs(js_maps) do
+      vim.keymap.set("n", map[1], map[2], vim.tbl_extend("force", opts, { desc = map[3] }))
+    end
+  end,
+})
+
+-- HTML/CSS settings
+autocmd("FileType", {
+  pattern = { "html", "css", "scss", "sass" },
+  callback = function()
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.tabstop = 2
+    vim.opt_local.softtabstop = 2
   end,
 })
 
@@ -509,11 +588,43 @@ vim.lsp.config["lua_ls"] = {
   },
 }
 
--- TypeScript Language Server (ts_ls)
+-- TypeScript Language Server (ts_ls) with React/JSX support
 vim.lsp.config["ts_ls"] = {
   cmd = { "typescript-language-server", "--stdio" },
   root_markers = { "package.json", "tsconfig.json", "jsconfig.json", ".git" },
   filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+  settings = {
+    typescript = {
+      inlayHints = {
+        includeInlayParameterNameHints = "all",
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = false,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+      suggest = {
+        includeCompletionsForModuleExports = true,
+        includeCompletionsForImportStatements = true,
+      },
+    },
+    javascript = {
+      inlayHints = {
+        includeInlayParameterNameHints = "all",
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = false,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+      suggest = {
+        includeCompletionsForModuleExports = true,
+        includeCompletionsForImportStatements = true,
+      },
+    },
+  },
 }
 
 -- Clangd
@@ -524,13 +635,81 @@ vim.lsp.config["clangd"] = {
   single_file_support = true,
 }
 
+-- HTML Language Server
+vim.lsp.config["html"] = {
+  cmd = { "vscode-html-language-server", "--stdio" },
+  root_markers = { "package.json", ".git" },
+  filetypes = { "html" },
+  single_file_support = true,
+}
+
+-- CSS Language Server
+vim.lsp.config["cssls"] = {
+  cmd = { "vscode-css-language-server", "--stdio" },
+  root_markers = { "package.json", ".git" },
+  filetypes = { "css", "scss", "less" },
+  single_file_support = true,
+  settings = {
+    css = {
+      validate = true,
+      lint = {
+        unknownAtRules = "ignore",
+      },
+    },
+    scss = {
+      validate = true,
+      lint = {
+        unknownAtRules = "ignore",
+      },
+    },
+  },
+}
+
+-- Tailwind CSS Language Server
+vim.lsp.config["tailwindcss"] = {
+  cmd = { "tailwindcss-language-server", "--stdio" },
+  root_markers = { "tailwind.config.js", "tailwind.config.cjs", "tailwind.config.mjs", "tailwind.config.ts", "postcss.config.js", "postcss.config.cjs", "postcss.config.mjs", "postcss.config.ts", "package.json", ".git" },
+  filetypes = { "html", "css", "scss", "javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "svelte" },
+  settings = {
+    tailwindCSS = {
+      classAttributes = { "class", "className", "classList", "ngClass" },
+      lint = {
+        cssConflict = "warning",
+        invalidApply = "error",
+        invalidConfigPath = "error",
+        invalidScreen = "error",
+        invalidTailwindDirective = "error",
+        invalidVariant = "error",
+        recommendedVariantOrder = "warning",
+      },
+      validate = true,
+    },
+  },
+}
+
+-- Emmet Language Server
+vim.lsp.config["emmet_ls"] = {
+  cmd = { "emmet-ls", "--stdio" },
+  root_markers = { "package.json", ".git" },
+  filetypes = { "html", "css", "scss", "javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "svelte" },
+}
+
 -- Set global LSP defaults
 vim.lsp.config('*', {
   root_markers = { '.git' },
 })
 
 -- Enable all configured LSP servers
-vim.lsp.enable({ 'rust-analyzer', 'lua_ls', 'ts_ls', 'clangd' })
+vim.lsp.enable({ 'rust-analyzer', 'lua_ls', 'ts_ls', 'clangd', 'html', 'cssls', 'tailwindcss', 'emmet_ls' })
+
+-- Ensure LSP servers shut down cleanly on exit
+autocmd("VimLeavePre", {
+  callback = function()
+    for _, client in pairs(vim.lsp.get_clients()) do
+      client.stop()
+    end
+  end,
+})
 
 --------------------------------------
 -- Plugin Setup
@@ -578,6 +757,10 @@ require("lazy").setup({
         "lua_ls",
         "ts_ls",
         "clangd",
+        "html",
+        "cssls",
+        "tailwindcss",
+        "emmet_ls",
       },
       automatic_installation = true,
     },
@@ -688,7 +871,8 @@ require("lazy").setup({
     opts = {
       ensure_installed = {
         "lua", "vim", "vimdoc", "rust", "go", "c", "cpp",
-        "javascript", "typescript", "bash", "json", "toml", "yaml", "markdown"
+        "javascript", "typescript", "tsx", "bash", "json", "toml", "yaml", "markdown",
+        "html", "css", "scss"
       },
       highlight = { enable = true },
       indent = {
@@ -702,11 +886,76 @@ require("lazy").setup({
   -- Git Integration
   { "lewis6991/gitsigns.nvim", opts = {},                                               event = { "BufReadPre", "BufNewFile" } },
   { "tpope/vim-fugitive",      cmd = { "G", "Git", "Gdiffsplit", "Gblame" } },
+  {
+    "NeogitOrg/neogit",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "sindrets/diffview.nvim",
+      "ibhagwan/fzf-lua",
+    },
+    config = true,
+    keys = {
+      { "<leader>gg", "<cmd>Neogit<cr>",                          desc = "Open Neogit" },
+      { "<leader>gc", "<cmd>Neogit commit<cr>",                   desc = "Neogit commit" },
+      { "<leader>gd", "<cmd>DiffviewOpen<cr>",                    desc = "Open diffview" },
+      { "<leader>gh", "<cmd>DiffviewFileHistory<cr>",             desc = "File history" },
+      { "<leader>gb", "<cmd>DiffviewOpen origin/main...HEAD<cr>", desc = "Compare with main" },
+    },
+  },
 
   -- File Management
   {
     'stevearc/oil.nvim',
-    opts = {},
+    opts = {
+      watch_for_changes = true,
+      columns = {
+        "icon",
+        "permissions",
+        "size",
+        "mtime",
+      },
+      keymaps = {
+        ["gd"] = {
+          desc = "Toggle file detail view",
+          callback = function()
+            Detail = not Detail
+            if Detail then
+              require("oil").set_columns({ "icon", "permissions", "size", "mtime" })
+            else
+              require("oil").set_columns({ "icon" })
+            end
+          end,
+        },
+        ["<C-f>"] = function()
+          local oil = require("oil")
+          local dir = oil.get_current_dir()
+          if dir then
+            require("fzf-lua").files({ cwd = dir })
+          end
+        end,
+        ["<C-g>"] = function()
+          local oil = require("oil")
+          local dir = oil.get_current_dir()
+          if dir then
+            require("fzf-lua").live_grep({ cwd = dir })
+          end
+        end,
+        ["gy"] = function()
+          local oil = require("oil")
+          local entry = oil.get_cursor_entry()
+          if entry and entry.name then
+            local dir = oil.get_current_dir()
+            local filepath = dir and (dir .. entry.name) or entry.name
+            local relative_path = vim.fn.fnamemodify(filepath, ":.")
+            vim.fn.setreg("+", relative_path)
+            vim.notify("Copied: " .. relative_path)
+          end
+        end,
+      },
+    },
+    keys = {
+      { "-", function() require('oil').open() end }
+    },
     dependencies = { { "echasnovski/mini.icons", opts = {} } },
     lazy = false,
   },
@@ -715,14 +964,110 @@ require("lazy").setup({
   {
     "ibhagwan/fzf-lua",
     dependencies = { "echasnovski/mini.icons", "elanmed/fzf-lua-frecency.nvim" },
+    lazy = false,
     opts = {},
     keys = {
-      { "<leader>ff",       function() require("fzf-lua").files() end,                                 desc = "[f]ind [f]ile" },
+      { "<leader>n",        function() require('fzf-lua-frecency').frecency() end,                     desc = "[N]avigate to file" },
+      { "<leader>bb",       function() require('fzf-lua').buffers() end,                               desc = "[f]ind [f]ile" },
       { "<leader><leader>", function() require("fzf-lua").files() end,                                 desc = "[f]ind [f]ile" },
       { "=",                function() require("fzf-lua").files() end,                                 desc = "[f]ind [f]ile" },
       { "<leader>fp",       function() require("fzf-lua").files({ cwd = vim.fn.expand("%:p:h") }) end, desc = "[f]ind file in [p]ath" },
-      { "<leader>fg",       function() require("fzf-lua").live_grep() end,                             desc = "[f]ind by [g]rep" },
+      { "<leader>fg",       function() require("fzf-lua").live_grep({ hidden = true }) end,            desc = "[f]ind by [g]rep" },
+      { "<leader>ca",       function() require("fzf-lua").lsp_code_actions() end,                      desc = "[c]ode [a]ction" },
+      {
+        "<leader>fd",
+        function()
+          local fzf = require("fzf-lua")
+          fzf.fzf_exec("find . -type d -name '.git' -prune -o -type d -print", {
+            prompt = "Directories> ",
+            actions = {
+              ["default"] = function(selected)
+                if selected and selected[1] then
+                  require("oil").open(selected[1])
+                end
+              end,
+            },
+          })
+        end,
+        desc = "[f]ind [d]irectory and open with oil"
+      },
     }
+  },
+
+  -- Web Development Tools
+  {
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    config = function()
+      local autopairs = require("nvim-autopairs")
+      autopairs.setup({
+        check_ts = true,
+        ts_config = {
+          lua = { "string", "source" },
+          javascript = { "string", "template_string" },
+          java = false,
+        },
+        disable_filetype = { "TelescopePrompt", "spectre_panel" },
+        fast_wrap = {
+          map = "<M-e>",
+          chars = { "{", "[", "(", '"', "'" },
+          pattern = [=[[%'%"%)%>%]%)%}%,]]=],
+          offset = 0,
+          end_key = "$",
+          keys = "qwertyuiopzxcvbnmasdfghjkl",
+          check_comma = true,
+          highlight = "PmenuSel",
+          highlight_grey = "LineNr",
+        },
+      })
+
+      local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+      local cmp = require("cmp")
+      cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
+    end,
+  },
+
+  -- {
+  --   "windwp/nvim-ts-autotag",
+  --   ft = {
+  --     "html", "javascript", "typescript", "javascriptreact", "typescriptreact",
+  --     "svelte", "vue", "tsx", "jsx", "rescript", "xml", "php", "markdown",
+  --     "astro", "glimmer", "handlebars", "hbs"
+  --   },
+  --   config = function()
+  --     require("nvim-ts-autotag").setup({
+  --       opts = {
+  --         enable_close = true,
+  --         enable_rename = true,
+  --         enable_close_on_slash = false
+  --       },
+  --     })
+  --   end,
+  -- },
+
+  -- markdown preview
+  {
+    "iamcco/markdown-preview.nvim",
+    cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+    build = "cd app && yarn install",
+    init = function()
+      vim.g.mkdp_filetypes = { "markdown" }
+    end,
+    ft = { "markdown" },
+  },
+
+  -- CSS/Tailwind Support
+  {
+    "NvChad/nvim-colorizer.lua",
+    ft = { "css", "scss", "html", "javascript", "typescript", "javascriptreact", "typescriptreact" },
+    opts = {
+      user_default_options = {
+        tailwind = true,
+        sass = { enable = true, parsers = { "css" } },
+        mode = "background",
+        virtualtext = "■",
+      },
+    },
   },
 
   -- Snippets
@@ -777,7 +1122,6 @@ require("lazy").setup({
           f(file_info("filename")),
           f(file_info("line_number")),
           i(1, "message"),
-          i(2, "value")
         }))
       end
 
@@ -794,14 +1138,14 @@ require("lazy").setup({
 
       -- Language-specific debug snippets
       local debug_configs = {
-        javascript = { format = "console.log(`DEBUG [{}:{}] {} - ${{{}}}`);" },
-        typescript = { format = "console.log(`DEBUG [{}:{}] {} - ${{{}}}`);" },
-        lua = { format = "print(string.format(\"DEBUG [%s:%s] %s - %s\", \"{}\", \"{}\", \"{}\", tostring({})))" },
-        rust = { format = "println!(\"DEBUG [{}:{}] {} - {{:?}}\", {});" },
-        go = { format = "fmt.Printf(\"DEBUG [{}:{}] {} - %+v\\n\", {});" },
-        c = { format = "printf(\"DEBUG [{}:{}] {} - %s\\n\", {});" },
-        cpp = { format = "std::cout << \"DEBUG [{}:{}] {} - \" << {} << std::endl;" },
-        python = { format = "print(f\"DEBUG [{}:{}] {} - {{{}}}\");" },
+        javascript = { format = "console.log(`DEBUG [{}:{}] {}`);" },
+        typescript = { format = "console.log(`DEBUG [{}:{}] {}`);" },
+        lua = { format = "print(string.format(\"DEBUG [%s:%s] %s\", \"{}\", \"{}\", \"{}\"))" },
+        rust = { format = "println!(\"DEBUG [{}:{}] {}\");" },
+        go = { format = "fmt.Printf(\"DEBUG [{}:{}] {}\\n\");" },
+        c = { format = "printf(\"DEBUG [{}:{}] {}\\n\");" },
+        cpp = { format = "std::cout << \"DEBUG [{}:{}] {}\" << std::endl;" },
+        python = { format = "print(f\"DEBUG [{}:{}] {}\");" },
       }
 
       for lang, config in pairs(debug_configs) do
@@ -833,6 +1177,63 @@ tags: [{}]
         s("img", fmt("![{}]({})", { i(1, "alt text"), i(2, "url") })),
         s("code", fmt("```{}\n{}\n```", { i(1, "language"), i(2, "code") })),
       })
+
+      -- React/JSX snippets
+      local react_snippets = {
+        s("rfc", fmt([[
+import React from 'react';
+
+const {} = () => {{
+  return (
+    <div>
+      {}
+    </div>
+  );
+}};
+
+export default {};
+        ]], { i(1, "Component"), i(2, "Hello World"), rep(1) })),
+
+        s("rafce", fmt([[
+import React from 'react';
+
+const {} = () => {{
+  return (
+    <div>
+      {}
+    </div>
+  );
+}};
+
+export default {};
+        ]], { i(1, "Component"), i(2, "Hello World"), rep(1) })),
+
+        s("usestate", fmt("const [{}, set{}] = useState({});", {
+          i(1, "state"),
+          f(function(args) return args[1][1]:gsub("^%l", string.upper) end, { 1 }),
+          i(2, "initialValue")
+        })),
+
+        s("useeffect", fmt([[
+useEffect(() => {{
+  {}
+}}, [{}]);
+        ]], { i(1, "// effect logic"), i(2, "dependencies") })),
+
+        s("clg", fmt("console.log({});", { i(1, "value") })),
+
+        s("imp", fmt("import {} from '{}';", { i(1, "module"), i(2, "./path") })),
+
+        s("impr", fmt("import React from 'react';", {})),
+
+        s("exp", fmt("export default {};", { i(1, "module") })),
+
+        s("expn", fmt("export const {} = {};", { i(1, "name"), i(2, "value") })),
+      }
+
+      for _, lang in ipairs({ "javascript", "typescript", "javascriptreact", "typescriptreact" }) do
+        ls.add_snippets(lang, react_snippets)
+      end
 
       -- Copy shared snippets
       for _, lang in ipairs({ "typescript", "typescriptreact", "javascriptreact" }) do
