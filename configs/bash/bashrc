@@ -13,8 +13,22 @@ umask 022
 # Add custom local bin to PATH
 export PATH="$HOME/.local/bin:$PATH"
 
-# Less colors and options
-export LESS="-FRSX"
+# man options (must be exported)
+export MANOPT="--nh --nj"
+
+# less must allow ANSI escapes for termcap coloring
+export LESS='-R'
+export MANPAGER='less -R'
+export PAGER='less -R'
+
+# termcap styling for man -> less
+export LESS_TERMCAP_mb=$'\e[1;32m'
+export LESS_TERMCAP_md=$'\e[1;32m'
+export LESS_TERMCAP_me=$'\e[0m'
+export LESS_TERMCAP_se=$'\e[0m'
+export LESS_TERMCAP_so=$'\e[01;33m'
+export LESS_TERMCAP_ue=$'\e[0m'
+export LESS_TERMCAP_us=$'\e[1;4;31m'
 
 # Enable color support for `ls` and other commands
 if [ -x /usr/bin/dircolors ]; then
@@ -54,22 +68,6 @@ export HISTFILESIZE= #keep forever
 export HISTCONTROL=ignoredups:erasedups
 export HISTIGNORE="ls:cd:pwd:exit:clear"
 
-# =============================================================================
-# - CUSTOM OPTIONS
-# =============================================================================
-
-# change man display to unhyphenated and ragged-right
-MANOPT="--nh --nj"
-
-# make less use colors, i. e. in man
-export LESS_TERMCAP_mb=$'\e[1;32m'
-export LESS_TERMCAP_md=$'\e[1;32m'
-export LESS_TERMCAP_me=$'\e[0m'
-export LESS_TERMCAP_se=$'\e[0m'
-export LESS_TERMCAP_so=$'\e[01;33m'
-export LESS_TERMCAP_ue=$'\e[0m'
-export LESS_TERMCAP_us=$'\e[1;4;31m'
-
 export TRASH_DIR="$HOME/.trash"
 
 # =============================================================================
@@ -85,10 +83,54 @@ if [ -z "${__GIT_PROMPT_SOURCED:-}" ]; then
   done
 fi
 
+# Dynamic terminal title support
+__set_terminal_title() {
+  local title="$1"
+  case "$TERM" in
+    xterm*|rxvt*|screen*|tmux*)
+      printf '\e]0;%s\a' "$title"
+      ;;
+  esac
+}
+
+# Track running commands for terminal title
+__preexec() {
+  local cmd="$1"
+  # Extract just the command name (first word)
+  local cmd_name="${cmd%% *}"
+  __set_terminal_title "${cmd_name} - ${USER}@${HOSTNAME}: ${PWD/$HOME/~}"
+}
+
+# Set up command tracking
+__setup_preexec() {
+  # Only set up if not already done
+  if [[ -z "$__PREEXEC_SETUP" ]]; then
+    # Save original DEBUG trap if any
+    __ORIGINAL_DEBUG_TRAP=$(trap -p DEBUG | sed "s/trap -- '\(.*\)' DEBUG/\1/")
+
+    # Set up new DEBUG trap
+    trap '__preexec_invoke_exec "$BASH_COMMAND"' DEBUG
+    __PREEXEC_SETUP=1
+  fi
+}
+
+__preexec_invoke_exec() {
+  local cmd="$1"
+  # Skip if this is part of the prompt command or other internal commands
+  [[ "$cmd" == "__prompt_command" ]] && return
+  [[ "$cmd" =~ ^[[:space:]]*$ ]] && return
+  [[ "$cmd" == "PROMPT_COMMAND="* ]] && return
+
+  __preexec "$cmd"
+}
+
 __prompt_command() {
   local exit_code=$?
 
-  # Färger/sekvenser
+  # Reset title to show we're back at prompt
+  __set_terminal_title "${USER}@${HOSTNAME}: ${PWD/$HOME/~}"
+
+  # Colors
   local RED="\[\033[91m\]"
   local GREEN="\[\033[92m\]"
   local YELLOW="\[\033[93m\]"
@@ -145,13 +187,15 @@ __prompt_command() {
 
   local count="\#"
   local end="\$"
-  local TITLE="\[\e]0;\u@\h: \w\a\]"
 
-  PS1="${TITLE}${RED}${status}${CYAN}${count}${gitbranch} ${BLUE}${path}\n${GRAY}${end}${RESET} "
+  PS1="${RED}${status}${CYAN}${count}${gitbranch} ${BLUE}${path}\n${GRAY}${end}${RESET} "
 }
 
 PROMPT_DIRTRIM=3
 export PROMPT_COMMAND="__prompt_command"
+
+# Enable dynamic terminal titles
+__setup_preexec
 
 # =============================================================================
 # - CUSTOM FUNCTIONS
@@ -197,9 +241,14 @@ function generate_password() {
 }
 
 # Kill and Remove all docker containers
-function docker_kill() {
-  (docker stop $(docker ps -aq) 2>/dev/null && docker rm -f $(docker ps -aq) 2>/dev/null)
+alias docker_kill='(docker stop $(docker ps -aq) 2>/dev/null && docker rm -f $(docker ps -aq) 2>/dev/null)'
+
+function docker_nuke() {
+  docker_kill
+  docker system prune -af
+  docker volume prune -af
 }
+
 function __move_to_trash() {
   mkdir -p "$TRASH_DIR"
   for f in "$@"; do
@@ -215,25 +264,6 @@ if [ ! -S ~/.ssh/ssh_auth_sock ]; then
   eval `ssh-agent -t 28800` > /dev/null 2>&1
   ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
 fi
-function __ssh-sk() {
-  if ! lsusb | grep -q 1050:0407; then
-      echo "Hardware security key not found or no resident SSH key present!"
-      echo "Insert your hardware security key and try again."
-      return
-  fi
-  
-  if ! ssh-add -L 2>/dev/null | grep -q 'sk-'; then
-      SSH_ADD_OUTPUT=$(ssh-add -K 2>&1)
-      if [ $? -ne 0 ]; then
-          echo "Unable to load resident SSH key from hardware security key"
-          echo "Reason: $SSH_ADD_OUTPUT"
-          return
-      fi
-  fi
-  
-  printf "Touch your security key when blinking...\n">&2
-  /usr/bin/ssh "$@"
-}
 
 function cdgr() {
   local inside_git_repo="$(git rev-parse --is-inside-work-tree 2>/dev/null)"
@@ -251,12 +281,12 @@ alias ...='cd ../..'
 alias ..='cd ..'
 alias la='ll -A'
 alias ll='ls -hltF --time-style=long-iso --group-directories-first'
-alias please='sudo !!'
 alias reload='source ~/.bashrc'
-alias ssh="__ssh-sk"
 alias update='sudo apt update && sudo apt upgrade -y'
 alias week='date +%V'
 alias rr='__move_to_trash'
+alias trash='__move_to_trash'
+alias vim=nvim
 
 # Safer operations
 alias cp='cp -vi'
@@ -287,11 +317,14 @@ alias inode='node /home/ms/development/javascript/inode'
 alias compose="docker compose"
 
 # Work journal
-alias daily='nvim ~/notes/daily.md'
+alias daily="mkdir -p ~/notes && cd ~/notes && $EDITOR ~/notes/daily.md"
 
+# Docker
+alias dpsa='docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.RunningFor}}\t{{.Image}}" | (read -r; printf "%s\n" "$REPLY"; sort -k2,2r)'
+alias wdpsa='watch "docker ps -a --format \"table {{.Names}}\t{{.Status}}\t{{.RunningFor}}\" | (sed -u 1q; sort -t\"(\" -k2,2)"'
 #
 # =============================================================================
-# - FZF 
+# - FZF
 # =============================================================================
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
@@ -325,6 +358,13 @@ export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
 # - FINAL SETUP
 # =============================================================================
 
-# Source user local bashrc if it exists
-[ -f "$HOME/.bashrc.local" ] && source "$HOME/.bashrc.local"
+# Source all files in ~/.bashrc.d
+if [ -d "$HOME/.bashrc.d" ]; then
+  for f in "$HOME/.bashrc.d/"*.sh; do
+    [ -r "$f" ] && . "$f"
+  done
+fi
 
+
+# Added by Yarn Switch
+source "/home/ms/.yarn/switch/env"
