@@ -225,6 +225,7 @@ end
 -- General Keymaps
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 vim.keymap.set("n", "<leader>q", bclose_keep_layout, { desc = "Close buffer, keep layout" })
+vim.keymap.set("n", "<leader>w", "<cmd>:wa<CR>")
 vim.keymap.set("n", "<M-]>", "<cmd>cnext<CR>")
 vim.keymap.set("n", "<M-[>", "<cmd>cprevious<CR>")
 vim.keymap.set("n", "<C-b>", "<cmd>buffers<CR>")
@@ -593,6 +594,22 @@ vim.lsp.config["ts_ls"] = {
   cmd = { "typescript-language-server", "--stdio" },
   root_markers = { "package.json", "tsconfig.json", "jsconfig.json", ".git" },
   filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+  before_init = function(params, config)
+    local found = vim.fs.find(".yarnrc.yml", {
+      path = vim.uri_to_fname(params.rootUri),
+      upward = true,
+      type = "file",
+    })
+    if found and found[1] then
+      local tsdk = vim.fn.fnamemodify(found[1], ":h") .. "/.yarn/sdks/typescript/lib"
+      if vim.fn.isdirectory(tsdk) == 1 then
+        config.init_options = {
+          hostInfo = "neovim",
+          typescript = { tsdk = tsdk },
+        }
+      end
+    end
+  end,
   settings = {
     typescript = {
       inlayHints = {
@@ -861,6 +878,79 @@ require("lazy").setup({
         matching = { disallow_symbol_nonprefix_matching = false }
       })
     end,
+  },
+
+  -- Movement
+  {
+    "smoka7/hop.nvim",
+    version = "*",
+    opts = {
+      keys = "etovxqpdygfblzhckisuran",
+    },
+    keys = {
+      {
+        "<leader>f",
+        function()
+          require("hop").hint_words()
+        end,
+        mode = { "n", "x", "o" },
+        desc = "Hop to word",
+      },
+      {
+        "<leader><leader>l",
+        function()
+          require("hop").hint_lines()
+        end,
+        mode = { "n", "x", "o" },
+        desc = "Hop to line",
+      },
+      {
+        "<leader><leader>c",
+        function()
+          require("hop").hint_char1()
+        end,
+        mode = { "n", "x", "o" },
+        desc = "Hop to char",
+      },
+      {
+        "f",
+        function()
+          require("hop").hint_char1({ direction = require("hop.hint").HintDirection.AFTER_CURSOR })
+        end,
+        mode = { "n", "x", "o" },
+        desc = "Hop forward to char",
+      },
+      {
+        "F",
+        function()
+          require("hop").hint_char1({ direction = require("hop.hint").HintDirection.BEFORE_CURSOR })
+        end,
+        mode = { "n", "x", "o" },
+        desc = "Hop backward to char",
+      },
+      {
+        "t",
+        function()
+          require("hop").hint_char1({
+            direction = require("hop.hint").HintDirection.AFTER_CURSOR,
+            hint_offset = -1,
+          })
+        end,
+        mode = { "n", "x", "o" },
+        desc = "Hop before char (t)",
+      },
+      {
+        "T",
+        function()
+          require("hop").hint_char1({
+            direction = require("hop.hint").HintDirection.BEFORE_CURSOR,
+            hint_offset = 1,
+          })
+        end,
+        mode = { "n", "x", "o" },
+        desc = "Hop after char (T)",
+      },
+    },
   },
 
   -- Syntax Highlighting
