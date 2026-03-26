@@ -1,0 +1,17 @@
+#!/bin/bash
+# Fixed-width bandwidth in MB/s for waybar
+
+INTERVAL=2
+
+read_net() {
+    awk '/^\s*(en|wl)/ {rx += $2; tx += $10} END {print rx+0, tx+0}' /proc/net/dev
+}
+
+read prev_rx prev_tx <<< $(read_net)
+sleep $INTERVAL
+read curr_rx curr_tx <<< $(read_net)
+
+rx=$(awk -v d="$((curr_rx - prev_rx))" -v i="$INTERVAL" 'BEGIN { printf "%5.1f", d/i/1024/1024 }')
+tx=$(awk -v d="$((curr_tx - prev_tx))" -v i="$INTERVAL" 'BEGIN { printf "%5.1f", d/i/1024/1024 }')
+
+echo "󰁆${rx}MB 󰁞${tx}MB"

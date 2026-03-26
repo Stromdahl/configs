@@ -5,7 +5,8 @@ set -euo pipefail
 # Configuration
 # =============================================================================
 
-readonly VERSION_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/nvim/nvim-version"
+# readonly VERSION_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/nvim/nvim-version"
+readonly VERSION_FILE=/home/ms/.dotfiles/configs/nvim/nvim-version
 readonly PREFIX="$HOME/.local"
 readonly BIN_DIR="$PREFIX/bin"
 readonly BASE_DIR="$PREFIX/neovim"
@@ -157,6 +158,7 @@ main() {
   mkdir -p "$BIN_DIR" "$BASE_DIR"
   local work_dir
   work_dir="$(mktemp -d)"
+  echo $work_dir
   trap 'rm -rf "$work_dir"' EXIT
 
   # Download and verify

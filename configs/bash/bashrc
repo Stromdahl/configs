@@ -74,6 +74,8 @@ export TRASH_DIR="$HOME/.trash"
 # - PROMPT (PS1) CONFIGURATION
 # =============================================================================
 
+source /usr/share/bash-completion/completions/git
+
 # Försök ladda git-prompt så __git_ps1 finns
 if [ -z "${__GIT_PROMPT_SOURCED:-}" ]; then
   for f in /usr/share/git/completion/git-prompt.sh \
@@ -87,7 +89,7 @@ fi
 __set_terminal_title() {
   local title="$1"
   case "$TERM" in
-    xterm*|rxvt*|screen*|tmux*)
+    xterm*|rxvt*|screen*|tmux*|foot*)
       printf '\e]0;%s\a' "$title"
       ;;
   esac
@@ -189,6 +191,9 @@ __prompt_command() {
   local end="\$"
 
   PS1="${RED}${status}${CYAN}${count}${gitbranch} ${BLUE}${path}\n${GRAY}${end}${RESET} "
+
+  # Notify foot of current working directory (enables ctrl+shift+n to open at same path)
+  printf '\033]7;file://%s%s\033\\' "$HOSTNAME" "$PWD"
 }
 
 PROMPT_DIRTRIM=3
@@ -261,8 +266,9 @@ function __move_to_trash() {
 }
 
 if [ ! -S ~/.ssh/ssh_auth_sock ]; then
-  eval `ssh-agent -t 28800` > /dev/null 2>&1
+  eval $(ssh-agent -t 28800) > /dev/null 2>&1
   ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+  ssh-add
 fi
 
 function cdgr() {
@@ -327,6 +333,8 @@ alias wdpsa='watch "docker ps -a --format \"table {{.Names}}\t{{.Status}}\t{{.Ru
 # - FZF
 # =============================================================================
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && source /usr/share/doc/fzf/examples/key-bindings.bash
+[ -f /usr/share/doc/fzf/examples/completion.bash ] && source /usr/share/doc/fzf/examples/completion.bash
 
 # fbr - checkout git branch
 gbfzf() {
@@ -367,4 +375,9 @@ fi
 
 
 # Added by Yarn Switch
-source "/home/ms/.yarn/switch/env"
+[ -s "/home/ms/.yarn/switch/env" ] && source "/home/ms/.yarn/switch/env"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+source "/home/ms/yggio/master/tools/dev-scripts/yggiorc.sh"

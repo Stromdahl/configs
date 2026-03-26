@@ -13,4 +13,4 @@
 	wta = "!f(){ git fetch -p && git worktree add --guess-remote -b \"$1\" \"${2:-../$1}\"; }; f"
 	wtr = "!f(){ git worktree remove \"$1\"; }; f"
 [core]
-	sshCommand = "ssh -i ~/.ssh/id_ed25519_git"
+	sshCommand = "ssh -i ~/.ssh/id_ed25519"

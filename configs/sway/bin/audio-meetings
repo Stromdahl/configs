@@ -1,0 +1,24 @@
+#!/bin/bash
+# Meetings profile — BT headphones if connected, headset mic
+
+BT_SINK=$(pactl list sinks short | grep -i "bluez" | awk '{print $2}' | head -1)
+BT_SOURCE=$(pactl list sources short | grep -i "bluez" | awk '{print $2}' | head -1)
+HEADSET_SOURCE=$(pactl list sources short | grep "Headset" | awk '{print $2}')
+
+if [ -n "$BT_SINK" ]; then
+    pactl set-default-sink "$BT_SINK"
+    pactl set-sink-volume "$BT_SINK" 60%
+    notify-send "Audio" "Meetings — Bluetooth headphones"
+else
+    SINK=$(pactl list sinks short | grep "Speaker" | awk '{print $2}')
+    [ -n "$SINK" ] && pactl set-default-sink "$SINK" && pactl set-sink-volume "$SINK" 50%
+    notify-send -u normal "Audio" "Meetings — no Bluetooth found, using speakers"
+fi
+
+if [ -n "$BT_SOURCE" ]; then
+    pactl set-default-source "$BT_SOURCE"
+    pactl set-source-volume "$BT_SOURCE" 80%
+elif [ -n "$HEADSET_SOURCE" ]; then
+    pactl set-default-source "$HEADSET_SOURCE"
+    pactl set-source-volume "$HEADSET_SOURCE" 80%
+fi

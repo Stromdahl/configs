@@ -1,0 +1,87 @@
+* {
+	font-family: "Hack Nerd Font Mono", monospace;
+	font-size: 12px;
+	margin: 0;
+	padding: 0;
+	min-height: 0;
+}
+
+window#waybar {
+	background: #282828;
+	color: #ebdbb2;
+	min-height: 0;
+	padding: 3px 0;
+}
+
+#workspaces button {
+	padding: 0;
+	min-width: 18px;
+	color: #ebdbb2;
+	background: #1d2021;
+	border: none;
+	border-radius: 0;
+}
+
+#workspaces button.focused {
+	background: #689d68;
+	color: #1d2021;
+}
+
+#workspaces button.urgent {
+	background: #cc241d;
+	color: #282828;
+}
+
+#clock, #battery, #network, #pulseaudio, #language,
+#network-wifi, #network-ethernet,
+#idle-inhibitor, #bluetooth, #cpu, #temperature, #memory, #disk {
+	padding: 0 8px;
+	color: #ebdbb2;
+	border-left: 1px solid #3c3836;
+}
+
+#battery.warning {
+	color: #fe8019;
+}
+
+#battery.critical {
+	color: #cc241d;
+}
+
+#idle-inhibitor.activated {
+	color: #fe8019;
+}
+
+#bluetooth.connected {
+	color: #83a598;
+}
+
+#temperature.critical {
+	color: #cc241d;
+}
+
+#cpu.warning, #memory.warning {
+	color: #fe8019;
+}
+
+#cpu.critical, #memory.critical {
+	color: #cc241d;
+}
+
+#custom-bandwidth {
+	padding: 0 8px;
+	color: #ebdbb2;
+	border-left: 1px solid #3c3836;
+	font-family: "Hack Nerd Font Mono", monospace;
+}
+
+#custom-notification {
+	padding: 0 8px;
+	color: #ebdbb2;
+	border-left: 1px solid #3c3836;
+}
+
+#custom-notification.dnd-notification,
+#custom-notification.dnd-none {
+	color: #a89984;
+}

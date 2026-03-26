@@ -1,0 +1,22 @@
+#!/bin/bash
+# Headphones profile — BT headphones + digital mic fallback
+
+BT_SINK=$(pactl list sinks short | grep -i "bluez" | awk '{print $2}' | head -1)
+BT_SOURCE=$(pactl list sources short | grep -i "bluez" | awk '{print $2}' | head -1)
+MIC=$(pactl list sources short | grep "Digital" | awk '{print $2}')
+
+if [ -n "$BT_SINK" ]; then
+    pactl set-default-sink "$BT_SINK"
+    pactl set-sink-volume "$BT_SINK" 50%
+    notify-send "Audio" "Headphones — Bluetooth"
+else
+    notify-send -u critical "Audio" "No Bluetooth headphones found"
+    exit 1
+fi
+
+if [ -n "$BT_SOURCE" ]; then
+    pactl set-default-source "$BT_SOURCE"
+    pactl set-source-volume "$BT_SOURCE" 80%
+elif [ -n "$MIC" ]; then
+    pactl set-default-source "$MIC"
+fi

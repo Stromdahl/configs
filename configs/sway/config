@@ -1,0 +1,210 @@
+### MOD KEY
+set $mod Mod4
+
+
+### TERMINAL/LAUNCHER/BROWSER
+set $term foot
+set $menu wofi --show drun
+set $browser firefox
+set $lock swaylock -f -c 181818 --ring-color fe8019 --ring-ver-color 689d68 --ring-wrong-color cc241d --key-hl-color ebdbb2 --bs-hl-color fe8019 --line-color 00000000 --inside-color 1d202180 --inside-ver-color 1d202180 --inside-wrong-color 1d202180 --separator-color 00000000 --text-color ebdbb2 --text-ver-color ebdbb2 --text-wrong-color cc241d --indicator-radius 80 --indicator-thickness 8 --show-failed-attempts
+
+### SETTINGs
+
+floating_modifier $mod normal
+
+# This feature needs jesus
+focus_follows_mouse no
+workspace_auto_back_and_forth yes
+
+### OUTPUT
+# output * bg #1E1E1E solid_color
+output * bg #181818 solid_color
+output eDP-1 position 1920,0
+
+### INPUT
+input * {
+	xkb_layout "gb,se"
+	xkb_options "grp:alt_shift_toggle,caps:escape"
+}
+input "type:touchpad" {
+	tap enabled
+	natural_scroll enabled
+}
+
+### FONT
+font pango:Hack Nerd Font Mono 8
+titlebar_padding 5 2
+
+### LAUNCH KEYBINDINGS
+exec_always kanshi
+exec_always mako
+exec /usr/libexec/xdg-desktop-portal-wlr
+exec /usr/libexec/xdg-desktop-portal
+
+
+bindsym $mod+n exec makoctl dismiss
+bindsym $mod+Shift+n exec makoctl dismiss --all
+
+# Terminal
+bindsym $mod+Return exec $term
+
+# Lanucher
+bindsym $mod+d exec $menu
+
+# Browser
+bindsym $mod+b exec $browser
+
+### KEYBINDINGS
+# Volume
+bindsym --locked XF86AudioMute exec pactl set-sink-mute \@DEFAULT_SINK@ toggle
+bindsym --locked XF86AudioLowerVolume exec pactl set-sink-volume \@DEFAULT_SINK@ -5%
+bindsym --locked XF86AudioRaiseVolume exec pactl set-sink-volume \@DEFAULT_SINK@ +5%
+bindsym --locked XF86AudioMicMute exec pactl set-source-mute \@DEFAULT_SOURCE@ toggle
+
+# Brightness
+bindsym XF86MonBrightnessUp exec brightnessctl set 10%+
+bindsym XF86MonBrightnessDown exec brightnessctl set 10%-
+
+# Audio profiles
+bindsym $mod+F1 exec ~/.dotfiles/configs/sway/bin/audio-menu
+
+# Lock
+bindsym $mod+p exec $lock
+
+# Reload / exit
+bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'
+bindsym $mod+Shift+c reload
+
+# Switch to last workspace
+bindsym $mod+Tab workspace back_and_forth
+
+# Window switcher
+bindsym $mod+grave exec ~/.dotfiles/configs/sway/bin/window-switcher
+
+# Kill window
+bindsym $mod+Shift+q mode "exit_confirm"
+
+mode "exit_confirm" {
+	bindsym Return kill, mode "default"
+	bindsym Escape mode "default"
+}
+
+# FOCUS
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+bindsym $mod+a focus parent
+
+# MOVE
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+bindsym $mod+Shift+Ctrl+h move workspace to output left
+bindsym $mod+Shift+Ctrl+l move workspace to output right
+
+# LAYOUT
+bindsym $mod+s layout stacking toggle
+bindsym $mod+w layout tabbed toggle
+bindsym $mod+e layout toggle split
+bindsym $mod+f fullscreen toggle
+bindsym $mod+v split toggle
+
+# FLOATING
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+
+
+# WORKSPACES
+set $ws1 "1"
+set $ws2 "2"
+set $ws3 "3"
+set $ws4 "4"
+set $ws5 "5"
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
+set $ws10 "10"
+
+bindsym $mod+1 workspace number $ws1
+bindsym $mod+2 workspace number $ws2
+bindsym $mod+3 workspace number $ws3
+bindsym $mod+4 workspace number $ws4
+bindsym $mod+5 workspace number $ws5
+bindsym $mod+6 workspace number $ws6
+bindsym $mod+7 workspace number $ws7
+bindsym $mod+8 workspace number $ws8
+bindsym $mod+9 workspace number $ws9
+bindsym $mod+0 workspace number $ws10
+
+bindsym $mod+Shift+1 move container to workspace number $ws1
+bindsym $mod+Shift+2 move container to workspace number $ws2
+bindsym $mod+Shift+3 move container to workspace number $ws3
+bindsym $mod+Shift+4 move container to workspace number $ws4
+bindsym $mod+Shift+5 move container to workspace number $ws5
+bindsym $mod+Shift+6 move container to workspace number $ws6
+bindsym $mod+Shift+7 move container to workspace number $ws7
+bindsym $mod+Shift+8 move container to workspace number $ws8
+bindsym $mod+Shift+9 move container to workspace number $ws9
+bindsym $mod+Shift+0 move container to workspace number $ws10
+
+### SCREENSHOTS
+bindsym Print exec grimshot save screen
+bindsym $mod+Print exec grimshot save active
+bindsym Shift+Print exec grimshot save area
+bindsym Ctrl+Print exec grimshot copy screen
+bindsym Ctrl+$mod+Print exec grimshot copy active
+bindsym Ctrl+Shift+Print exec grimshot copy area
+
+### RESIZE MODE
+mode "resize" {
+	bindsym h resize shrink width 10 px or 10 ppt
+	bindsym j resize grow height 10 px or 10 ppt
+	bindsym k resize shrink height 10 px or 10 ppt
+	bindsym l resize grow width 10 px or 10 ppt
+
+	bindsym Ctrl+h resize shrink width 5 px or 5 ppt
+	bindsym Ctrl+j resize grow height 5 px or 5 ppt
+	bindsym Ctrl+k resize shrink height 5 px or 5 ppt
+	bindsym Ctrl+l resize grow width 5 px or 5 ppt
+
+	bindsym Return mode "default"
+	bindsym Escape mode "default"
+	bindsym $mod+r mode "default"
+}
+bindsym $mod+r mode "resize"
+
+### FLOATING WINDOWS
+for_window [app_id="pavucontrol"] floating enable, resize set 800 600, move position center
+for_window [app_id="blueman-manager"] floating enable, resize set 550 400, move position center
+
+### COLORS (gruvbox)
+set $bg       #282828
+set $red      #cc241d
+set $green    #98971a
+set $yellow   #d79921
+set $orange   #fe8019
+set $blue     #458588
+set $purple   #b16286
+set $aqua     #689d68
+set $gray     #a89984
+set $darkgray #1d2021
+
+# class                 border      backgr.     text        indicator   child_border
+client.focused          $darkgray   $orange     $darkgray   $purple     $bg
+client.focused_inactive $orange     $darkgray   $yellow     $purple     $bg
+client.unfocused        $darkgray   $darkgray   $yellow     $purple     $bg
+
+### BAR
+bar {
+	swaybar_command waybar
+}
+
+### LOCK / IDLE
+exec swayidle -w \
+	timeout 300 '$lock' \
+	timeout 600 'swaymsg "output * dpms off"' \
+	resume 'swaymsg "output * dpms on"' \
+	before-sleep '$lock'

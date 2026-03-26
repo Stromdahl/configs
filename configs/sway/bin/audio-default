@@ -1,0 +1,17 @@
+#!/bin/bash
+# Default profile — laptop speakers + digital mic
+
+SINK=$(pactl list sinks short | grep "Speaker" | awk '{print $2}')
+SOURCE=$(pactl list sources short | grep "Digital" | awk '{print $2}')
+
+if [ -n "$SINK" ]; then
+    pactl set-default-sink "$SINK"
+    pactl set-sink-volume "$SINK" 50%
+fi
+
+if [ -n "$SOURCE" ]; then
+    pactl set-default-source "$SOURCE"
+    pactl set-source-volume "$SOURCE" 100%
+fi
+
+notify-send -u low "Audio" "Default — laptop speakers"

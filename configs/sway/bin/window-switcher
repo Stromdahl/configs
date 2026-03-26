@@ -1,0 +1,18 @@
+#!/bin/bash
+# Window switcher using swaymsg + wofi
+
+WINDOWS=$(swaymsg -t get_tree | jq -r '
+  recurse(.nodes[]?, .floating_nodes[]?) |
+  select(.type == "con" and .name != null and .app_id != null) |
+  "\(.id)\t\(.app_id): \(.name)"
+')
+
+[ -z "$WINDOWS" ] && exit 0
+
+CHOICE=$(echo "$WINDOWS" | awk -F'\t' '{print $2}' | wofi --show dmenu --prompt "Window")
+
+[ -z "$CHOICE" ] && exit 0
+
+ID=$(echo "$WINDOWS" | grep -F "$CHOICE" | awk -F'\t' '{print $1}' | head -1)
+
+[ -n "$ID" ] && swaymsg "[con_id=$ID] focus"

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+CHOICE=$(printf "Default — laptop speakers\nMeetings — Bluetooth headphones\nHeadphones — Bluetooth" | wofi --show dmenu --prompt "Audio profile")
+
+case "$CHOICE" in
+    "Default — laptop speakers")
+        ~/.dotfiles/configs/sway/bin/audio-default ;;
+    "Meetings — Bluetooth headphones")
+        ~/.dotfiles/configs/sway/bin/audio-meetings ;;
+    "Headphones — Bluetooth")
+        ~/.dotfiles/configs/sway/bin/audio-headphones ;;
+esac
