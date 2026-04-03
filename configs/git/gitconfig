@@ -9,8 +9,10 @@
 	gud = !echo \"OK\"
 	wt = worktree
 	wtl = worktree list
-	wtp = !git worktree prune --expire=now -v
-	wta = "!f(){ git fetch -p && git worktree add --guess-remote -b \"$1\" \"${2:-../$1}\"; }; f"
-	wtr = "!f(){ git worktree remove \"$1\"; }; f"
+	wtp = !git worktree prune --expire=now
+	wts = "!git worktree list | while read -r path _ branch; do echo \"=== $branch ($path)\"; git -C \"$path\" status --short; done"
+	wta  = "!f(){ git fetch -p && git worktree add \"${2:-../$1}\" -b \"$1\"; }; f"
+	wtat = "!f(){ git fetch -p && git worktree add --guess-remote \"${2:-../$1}\" \"$1\"; }; f"
+	wtr  = "!f(){ git worktree remove \"$1\"; }; f"
 [core]
 	sshCommand = "ssh -i ~/.ssh/id_ed25519"

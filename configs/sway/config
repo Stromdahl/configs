@@ -3,10 +3,11 @@ set $mod Mod4
 
 
 ### TERMINAL/LAUNCHER/BROWSER
-set $term foot
-set $menu wofi --show drun
-set $browser firefox
-set $lock swaylock -f -c 181818 --ring-color fe8019 --ring-ver-color 689d68 --ring-wrong-color cc241d --key-hl-color ebdbb2 --bs-hl-color fe8019 --line-color 00000000 --inside-color 1d202180 --inside-ver-color 1d202180 --inside-wrong-color 1d202180 --separator-color 00000000 --text-color ebdbb2 --text-ver-color ebdbb2 --text-wrong-color cc241d --indicator-radius 80 --indicator-thickness 8 --show-failed-attempts
+set $term 'foot'
+set $menu 'wofi --show drun'
+set $browser 'MOZ_ENABLE_WAYLAND=1 firefox'
+# set $browser 'firefox'
+set $lock 'swaylock -f -c 181818 --ring-color fe8019 --ring-ver-color 689d68 --ring-wrong-color cc241d --key-hl-color ebdbb2 --bs-hl-color fe8019 --line-color 00000000 --inside-color 1d202180 --inside-ver-color 1d202180 --inside-wrong-color 1d202180 --separator-color 00000000 --text-color ebdbb2 --text-ver-color ebdbb2 --text-wrong-color cc241d --indicator-radius 80 --indicator-thickness 8 --show-failed-attempts'
 
 ### SETTINGs
 
@@ -30,6 +31,7 @@ input "type:touchpad" {
 	tap enabled
 	natural_scroll enabled
 }
+seat * hide_cursor 1000
 
 ### FONT
 font pango:Hack Nerd Font Mono 8

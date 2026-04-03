@@ -71,7 +71,7 @@
 	},
 
 	"memory": {
-		"format": "󰍛 {avail:0.1f}G free",
+		"format": "󰍛 {avail:0.1f}G",
 		"tooltip-format": "{used:0.1f}G used / {total:0.1f}G total",
 		"states": {
 			"warning": 70,
@@ -80,7 +80,7 @@
 	},
 
 	"disk": {
-		"format": "󰋊 {free} free",
+		"format": "󰋊 {free}",
 		"tooltip-format": "{used} used / {total} total",
 		"path": "/"
 	},
@@ -102,7 +102,7 @@
 
 	"network#wifi": {
 		"interface": "wl*",
-		"format": "󰤨 {ipaddr}",
+		"format": "󰤨 {essid} {ipaddr}",
 		"format-disconnected": "",
 		"tooltip-format": "{essid} {signalStrength}%"
 	},

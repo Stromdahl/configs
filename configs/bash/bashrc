@@ -76,7 +76,7 @@ export TRASH_DIR="$HOME/.trash"
 
 source /usr/share/bash-completion/completions/git
 
-# Försök ladda git-prompt så __git_ps1 finns
+# Load __git_ps1
 if [ -z "${__GIT_PROMPT_SOURCED:-}" ]; then
   for f in /usr/share/git/completion/git-prompt.sh \
            /etc/bash_completion.d/git-prompt \
@@ -85,122 +85,34 @@ if [ -z "${__GIT_PROMPT_SOURCED:-}" ]; then
   done
 fi
 
-# Dynamic terminal title support
-__set_terminal_title() {
-  local title="$1"
-  case "$TERM" in
-    xterm*|rxvt*|screen*|tmux*|foot*)
-      printf '\e]0;%s\a' "$title"
-      ;;
-  esac
-}
+# Git prompt indicators
+GIT_PS1_SHOWDIRTYSTATE=1
+GIT_PS1_SHOWSTASHSTATE=1
+GIT_PS1_SHOWUNTRACKEDFILES=1
 
-# Track running commands for terminal title
-__preexec() {
-  local cmd="$1"
-  # Extract just the command name (first word)
-  local cmd_name="${cmd%% *}"
-  __set_terminal_title "${cmd_name} - ${USER}@${HOSTNAME}: ${PWD/$HOME/~}"
-}
-
-# Set up command tracking
-__setup_preexec() {
-  # Only set up if not already done
-  if [[ -z "$__PREEXEC_SETUP" ]]; then
-    # Save original DEBUG trap if any
-    __ORIGINAL_DEBUG_TRAP=$(trap -p DEBUG | sed "s/trap -- '\(.*\)' DEBUG/\1/")
-
-    # Set up new DEBUG trap
-    trap '__preexec_invoke_exec "$BASH_COMMAND"' DEBUG
-    __PREEXEC_SETUP=1
-  fi
-}
-
-__preexec_invoke_exec() {
-  local cmd="$1"
-  # Skip if this is part of the prompt command or other internal commands
-  [[ "$cmd" == "__prompt_command" ]] && return
-  [[ "$cmd" =~ ^[[:space:]]*$ ]] && return
-  [[ "$cmd" == "PROMPT_COMMAND="* ]] && return
-
-  __preexec "$cmd"
-}
+# Colors — defined once
+_C_RED="\[\033[91m\]"
+_C_CYAN="\[\033[96m\]"
+_C_BLUE="\[\033[94m\]"
+_C_GRAY="\[\033[37m\]"
+_C_RST="\[\033[0m\]"
 
 __prompt_command() {
   local exit_code=$?
 
-  # Reset title to show we're back at prompt
-  __set_terminal_title "${USER}@${HOSTNAME}: ${PWD/$HOME/~}"
-
-  # Colors
-  local RED="\[\033[91m\]"
-  local GREEN="\[\033[92m\]"
-  local YELLOW="\[\033[93m\]"
-  local BLUE="\[\033[94m\]"
-  local PURPLE="\[\033[95m\]"
-  local CYAN="\[\033[96m\]"
-  local GRAY="\[\033[37m\]"
-  local RESET="\[\033[0m\]"
-  local BOLD="\[\033[1m\]"
-  local BELL="\[\a\]"
-
-  # Exitstatus
-  local status=""
-  if [ $exit_code -ne 0 ]; then
-    status="[$exit_code] "
-  fi
-
-  # Git-branch (färgad efter rent/smutsigt arbets­träd)
-  local branch=""
-  if type __git_ps1 >/dev/null 2>&1; then
-    branch="$(__git_ps1)"
-  else
-    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-      branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
-      [ "$branch" = "HEAD" ] && branch="$(git describe --tags --always 2>/dev/null)"
-      [ -n "$branch" ] && branch="($branch)"
-    fi
-  fi
-
-  local gitbranch=""
-  if [ -n "$branch" ]; then
-    if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
-      gitbranch="${YELLOW}${branch}${RESET}"
-    else
-      gitbranch="${PURPLE}${branch}${RESET}"
-    fi
-  fi
-
-  # Sökväg: relativt repo­roten i git, annars \w
-  local path=""
-  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    local git_root prefix repo
-    git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
-    prefix="$(git rev-parse --show-prefix 2>/dev/null)"   # t.ex. "src/lib/"
-    repo="${git_root##*/}"                                # endast katalognamn
-    if [ -n "$prefix" ]; then
-      path="${repo}/${prefix%/}"                          # "repo/src/lib"
-    else
-      path="${repo}"                                      # "repo"
-    fi
-  else
-    path="\w"
-  fi
-
-  local count="\#"
-  local end="\$"
-
-  PS1="${RED}${status}${CYAN}${count}${gitbranch} ${BLUE}${path}\n${GRAY}${end}${RESET} "
-
-  # Notify foot of current working directory (enables ctrl+shift+n to open at same path)
+  # Terminal title
+  printf '\033]0;%s@%s: %s\007' "$USER" "$HOSTNAME" "${PWD/$HOME/~}"
+  # foot OSC 7 (open new terminal in same dir with ctrl+shift+n)
   printf '\033]7;file://%s%s\033\\' "$HOSTNAME" "$PWD"
+
+  local status=""
+  [ $exit_code -ne 0 ] && status="${_C_RED}[$exit_code] "
+
+  PS1="${status}${_C_CYAN}\#$(__git_ps1 " ${_C_GRAY}(%s)") ${_C_BLUE}\w\n${_C_GRAY}\$${_C_RST} "
 }
 
 PROMPT_DIRTRIM=3
 export PROMPT_COMMAND="__prompt_command"
-
-# Enable dynamic terminal titles
-__setup_preexec
 
 # =============================================================================
 # - CUSTOM FUNCTIONS
@@ -266,16 +178,45 @@ function __move_to_trash() {
 }
 
 if [ ! -S ~/.ssh/ssh_auth_sock ]; then
-  eval $(ssh-agent -t 28800) > /dev/null 2>&1
+  eval $(ssh-agent) > /dev/null 2>&1
   ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
-  ssh-add
 fi
+export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
 
 function cdgr() {
   local inside_git_repo="$(git rev-parse --is-inside-work-tree 2>/dev/null)"
   if [ "$inside_git_repo" ]; then
     cd $(git rev-parse --show-toplevel)
   fi
+}
+
+wthelp() {
+  cat <<'EOF'
+Git Worktree Commands
+─────────────────────────────────────────────────────
+  wtl                    List all worktrees
+  wts                    Status (git status --short) for each worktree
+  wta  <branch> [path]   Add worktree with new local branch
+  wtat <branch> [path]   Add worktree tracking existing remote branch
+  wtr  <path>            Remove a worktree
+  wtp                    Prune stale worktree refs
+  wcd                    cd into a worktree (fzf)
+  wto                    Open a worktree in a new terminal (fzf)
+EOF
+}
+
+# cd into a worktree via fzf
+wcd() {
+  local wt
+  wt=$(git worktree list | fzf --with-nth=1 | awk '{print $1}')
+  [ -n "$wt" ] && cd "$wt"
+}
+
+# Open a worktree in a new foot terminal
+wto() {
+  local wt
+  wt=$(git worktree list | fzf --with-nth=1 | awk '{print $1}')
+  [ -n "$wt" ] && foot --working-directory="$wt" &
 }
 
 # =============================================================================
@@ -305,6 +246,15 @@ alias ports='ss -ptunl | fzf'
 alias gs='git status --short'
 alias gsi='git status --short --ignored'
 alias glg='git log --graph --oneline --branches --tags --remotes'
+
+# Git worktree shortcuts
+alias wt='git worktree'
+alias wtl='git worktree list'
+alias wtp='git worktree prune --expire=now'
+alias wts='git wts'
+alias wta='git wta'
+alias wtat='git wtat'
+alias wtr='git wtr'
 
 # Aliases for xclip
 alias xci='xclip -rmlastnl -in -selection  clipboard'
@@ -352,8 +302,6 @@ p() {
 # =============================================================================
 # - DEVELOPER ENVIRONMENT
 # =============================================================================
-export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
-
 # Rust (via rustup)
 export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -365,6 +313,9 @@ export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
 # =============================================================================
 # - FINAL SETUP
 # =============================================================================
+
+# Syncthing bash completion
+command -v syncthing &>/dev/null && complete -C /usr/bin/syncthing syncthing
 
 # Source all files in ~/.bashrc.d
 if [ -d "$HOME/.bashrc.d" ]; then

@@ -605,7 +605,7 @@ vim.lsp.config["ts_ls"] = {
       if vim.fn.isdirectory(tsdk) == 1 then
         config.init_options = {
           hostInfo = "neovim",
-          typescript = { tsdk = tsdk },
+          tsserver = { path = tsdk .. "/tsserver.js" },
         }
       end
     end

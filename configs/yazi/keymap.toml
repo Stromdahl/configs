@@ -1,0 +1,14 @@
+[[mgr.prepend_keymap]]
+on = "M"
+run = "plugin mount"
+desc = "Mount manager"
+
+[[mgr.prepend_keymap]]
+on = "."
+run = "hidden toggle"
+desc = "Toggle hidden files"
+
+[[mgr.prepend_keymap]]
+on = "<C-s>"
+run = "shell '$SHELL' --block --confirm"
+desc = "Open shell here"
