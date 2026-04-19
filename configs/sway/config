@@ -31,17 +31,32 @@ input "type:touchpad" {
 	tap enabled
 	natural_scroll enabled
 }
-seat * hide_cursor 1000
+seat * hide_cursor 5000
 
 ### FONT
 font pango:Hack Nerd Font Mono 8
 titlebar_padding 5 2
 
+### AUTOSTART
+exec /usr/libexec/xdg-desktop-portal-wlr
+exec /usr/libexec/xdg-desktop-portal
+
+# disc-manager
+exec udiskie --no-tray
+exec lxpolkit
+
+# Lock
+exec swayidle -w \
+	timeout 300 '$lock' \
+	timeout 600 'swaymsg "output * dpms off"' \
+	resume 'swaymsg "output * dpms on"' \
+	before-sleep '$lock'
+
+
 ### LAUNCH KEYBINDINGS
 exec_always kanshi
 exec_always mako
-exec /usr/libexec/xdg-desktop-portal-wlr
-exec /usr/libexec/xdg-desktop-portal
+exec_always ~/.dotfiles/configs/sway/bin/battery-notify
 
 
 bindsym $mod+n exec makoctl dismiss
@@ -71,6 +86,7 @@ bindsym XF86MonBrightnessDown exec brightnessctl set 10%-
 bindsym $mod+F1 exec ~/.dotfiles/configs/sway/bin/audio-menu
 
 # Lock
+bindswitch --reload --locked lid:on exec $lock
 bindsym $mod+p exec $lock
 
 # Reload / exit
@@ -204,9 +220,3 @@ bar {
 	swaybar_command waybar
 }
 
-### LOCK / IDLE
-exec swayidle -w \
-	timeout 300 '$lock' \
-	timeout 600 'swaymsg "output * dpms off"' \
-	resume 'swaymsg "output * dpms on"' \
-	before-sleep '$lock'

@@ -6,6 +6,7 @@
 	"modules-left": ["sway/workspaces", "sway/mode"],
 	"modules-center": ["clock"],
 	"modules-right": [
+		"custom/drives",
 		"idle_inhibitor",
 		"bluetooth",
 		"cpu",
@@ -20,6 +21,12 @@
 		"sway/language"
 	],
 
+	"custom/drives": {
+		"format": "󰋊",
+		"tooltip": "Mount/unmount drives",
+		"on-click": "~/.dotfiles/configs/sway/bin/drive-menu"
+	},
+
 	"clock": {
 		"format": "{:%Y-%m-%d  %H:%M}",
 		"tooltip-format": "<tt>{calendar}</tt>",
@@ -29,8 +36,8 @@
 			"on-scroll": 1,
 			"weeks-pos": "left",
 			"format": {
-				"today": "<span color='#fe8019'><b>{}</b></span>",
-				"weeks": "<span color='#a89984'>{:%V}</span>"
+				"today": "<span color='#fe8019'><b>{}</b>",
+				"weeks": "<span color='#a89984'>{:%V}"
 			}
 		}
 	},
@@ -97,6 +104,7 @@
 	"custom/bandwidth": {
 		"exec": "~/.dotfiles/configs/waybar/scripts/bandwidth",
 		"interval": 4,
+		"return-type": "json",
 		"format": "{}"
 	},
 

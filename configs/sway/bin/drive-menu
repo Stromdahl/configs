@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Check if a device descends from a USB disk
+is_usb() {
+    local dev="$1"
+    # Use lsblk -s to find the root disk in the ancestry
+    local root_disk
+    root_disk=$(lsblk -snpo NAME,TYPE "$dev" 2>/dev/null | awk '$2 == "disk" {print $1}')
+    [[ -z "$root_disk" ]] && return 1
+    root_disk=$(basename "$root_disk")
+    readlink -f "/sys/block/$root_disk/device" 2>/dev/null | grep -q usb
+}
+
+get_drives() {
+    lsblk -lnpo NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT | while read -r name size fstype label mountpoint; do
+        [[ -z "$fstype" ]] && continue
+        # Skip swap
+        [[ "$fstype" == "swap" ]] && continue
+        # Skip LVM2_member (intermediate layer)
+        [[ "$fstype" == "LVM2_member" ]] && continue
+
+        is_usb "$name" || continue
+
+        display="${label:-$(basename "$name")}"
+        if [[ -n "$mountpoint" ]]; then
+            echo "unmount  $name  $display ($size) [$mountpoint]"
+        elif [[ "$fstype" == "crypto_LUKS" ]]; then
+            # Check if already unlocked
+            if lsblk -ndo NAME "$name" 2>/dev/null | grep -q .; then
+                holders=$(ls "/sys/class/block/$(basename "$name")/holders/" 2>/dev/null)
+                if [[ -n "$holders" ]]; then
+                    echo "lock     $name  $display ($size) [unlocked]"
+                else
+                    echo "unlock   $name  $display ($size) [LUKS]"
+                fi
+            else
+                echo "unlock   $name  $display ($size) [LUKS]"
+            fi
+        else
+            echo "mount    $name  $display ($size)"
+        fi
+    done
+}
+
+drives=$(get_drives)
+
+if [[ -z "$drives" ]]; then
+    notify-send "Drives" "No removable drives found"
+    exit 0
+fi
+
+choice=$(echo "$drives" | wofi --show dmenu --prompt "Drives")
+[[ -z "$choice" ]] && exit 0
+
+action=$(echo "$choice" | awk '{print $1}')
+device=$(echo "$choice" | awk '{print $2}')
+
+case "$action" in
+    mount)
+        result=$(udisksctl mount -b "$device" 2>&1)
+        notify-send "Drives" "$result"
+        ;;
+    unmount)
+        result=$(udisksctl unmount -b "$device" 2>&1)
+        notify-send "Drives" "$result"
+        ;;
+    unlock)
+        result=$(udisksctl unlock -b "$device" 2>&1)
+        if [[ $? -eq 0 ]]; then
+            unlocked=$(echo "$result" | grep -oP '/dev/dm-\d+')
+            if [[ -n "$unlocked" ]]; then
+                mount_result=$(udisksctl mount -b "$unlocked" 2>&1)
+                notify-send "Drives" "$mount_result"
+            else
+                notify-send "Drives" "$result"
+            fi
+        else
+            notify-send "Drives" "$result"
+        fi
+        ;;
+    lock)
+        result=$(udisksctl lock -b "$device" 2>&1)
+        notify-send "Drives" "$result"
+        ;;
+esac

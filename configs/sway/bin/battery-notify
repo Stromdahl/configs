@@ -1,0 +1,29 @@
+#!/bin/sh
+# Poll BAT0 and notify on low/critical battery while discharging.
+
+BAT=/sys/class/power_supply/BAT0
+WARN=20
+CRIT=10
+INTERVAL=60
+last=""
+
+while :; do
+	status=$(cat "$BAT/status")
+	capacity=$(cat "$BAT/capacity")
+
+	if [ "$status" = "Discharging" ]; then
+		if [ "$capacity" -le "$CRIT" ] && [ "$last" != "crit" ]; then
+			notify-send -u critical -i battery-caution \
+				"Battery critical" "${capacity}% remaining — plug in now"
+			last=crit
+		elif [ "$capacity" -le "$WARN" ] && [ "$capacity" -gt "$CRIT" ] && [ "$last" != "warn" ]; then
+			notify-send -u normal -i battery-low \
+				"Battery low" "${capacity}% remaining"
+			last=warn
+		fi
+	else
+		last=""
+	fi
+
+	sleep "$INTERVAL"
+done

@@ -1,5 +1,0 @@
----
-- name: Setup servers
-  hosts: webservers
-  become: yes
-

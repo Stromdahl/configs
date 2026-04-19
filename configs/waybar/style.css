@@ -1,6 +1,6 @@
 * {
 	font-family: "Hack Nerd Font Mono", monospace;
-	font-size: 12px;
+	font-size: 14px;
 	margin: 0;
 	padding: 0;
 	min-height: 0;
@@ -8,7 +8,7 @@
 
 window#waybar {
 	background: #282828;
-	color: #ebdbb2;
+	color: #f9e2af;
 	min-height: 0;
 	padding: 3px 0;
 }
@@ -16,15 +16,20 @@ window#waybar {
 #workspaces button {
 	padding: 0;
 	min-width: 18px;
-	color: #ebdbb2;
+	color: #f9e2af;
 	background: #1d2021;
-	border: none;
+	border: 1px solid transparent;
 	border-radius: 0;
+}
+
+#workspaces button.visible {
+	border: 1px solid #689d68;
 }
 
 #workspaces button.focused {
 	background: #689d68;
 	color: #1d2021;
+	border: 1px solid #689d68;
 }
 
 #workspaces button.urgent {
@@ -32,12 +37,21 @@ window#waybar {
 	color: #282828;
 }
 
+#custom-drives,
 #clock, #battery, #network, #pulseaudio, #language,
 #network-wifi, #network-ethernet,
 #idle-inhibitor, #bluetooth, #cpu, #temperature, #memory, #disk {
 	padding: 0 8px;
-	color: #ebdbb2;
+	color: #f9e2af;
 	border-left: 1px solid #3c3836;
+}
+
+#battery.charging {
+	color: #b8bb26;
+}
+
+#battery.warning, #battery.charging {
+	color: #83a598;
 }
 
 #battery.warning {
@@ -70,14 +84,14 @@ window#waybar {
 
 #custom-bandwidth {
 	padding: 0 8px;
-	color: #ebdbb2;
+	color: #f9e2af;
 	border-left: 1px solid #3c3836;
 	font-family: "Hack Nerd Font Mono", monospace;
 }
 
 #custom-notification {
 	padding: 0 8px;
-	color: #ebdbb2;
+	color: #f9e2af;
 	border-left: 1px solid #3c3836;
 }
 

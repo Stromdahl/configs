@@ -11,7 +11,15 @@ read prev_rx prev_tx <<< $(read_net)
 sleep $INTERVAL
 read curr_rx curr_tx <<< $(read_net)
 
-rx=$(awk -v d="$((curr_rx - prev_rx))" -v i="$INTERVAL" 'BEGIN { printf "%5.1f", d/i/1024/1024 }')
-tx=$(awk -v d="$((curr_tx - prev_tx))" -v i="$INTERVAL" 'BEGIN { printf "%5.1f", d/i/1024/1024 }')
+rx_val=$(awk -v d="$((curr_rx - prev_rx))" -v i="$INTERVAL" 'BEGIN { printf "%.1f", d/i/1024/1024 }')
+tx_val=$(awk -v d="$((curr_tx - prev_tx))" -v i="$INTERVAL" 'BEGIN { printf "%.1f", d/i/1024/1024 }')
 
-echo "󰁆${rx}MB 󰁞${tx}MB"
+if awk "BEGIN { exit ($rx_val >= $tx_val) ? 0 : 1 }"; then
+    text="󰁆 ${rx_val}MB"
+else
+    text="󰁞 ${tx_val}MB"
+fi
+
+tooltip="󰁆 ${rx_val}MB  󰁞 ${tx_val}MB"
+
+printf '{"text": "%s", "tooltip": "%s"}\n' "$text" "$tooltip"

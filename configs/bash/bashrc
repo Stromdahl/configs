@@ -74,7 +74,8 @@ export TRASH_DIR="$HOME/.trash"
 # - PROMPT (PS1) CONFIGURATION
 # =============================================================================
 
-source /usr/share/bash-completion/completions/git
+# Load bash-completion (provides ssh, docker, systemctl, etc.)
+[ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
 
 # Load __git_ps1
 if [ -z "${__GIT_PROMPT_SOURCED:-}" ]; then
@@ -94,6 +95,7 @@ GIT_PS1_SHOWUNTRACKEDFILES=1
 _C_RED="\[\033[91m\]"
 _C_CYAN="\[\033[96m\]"
 _C_BLUE="\[\033[94m\]"
+_C_YELLOW="\[\033[93m\]"
 _C_GRAY="\[\033[37m\]"
 _C_RST="\[\033[0m\]"
 
@@ -108,7 +110,7 @@ __prompt_command() {
   local status=""
   [ $exit_code -ne 0 ] && status="${_C_RED}[$exit_code] "
 
-  PS1="${status}${_C_CYAN}\#$(__git_ps1 " ${_C_GRAY}(%s)") ${_C_BLUE}\w\n${_C_GRAY}\$${_C_RST} "
+  PS1="${status}${_C_CYAN}\#$(__git_ps1 " ${_C_YELLOW}(%s)") ${_C_BLUE}\w\n${_C_GRAY}\$${_C_RST} "
 }
 
 PROMPT_DIRTRIM=3
@@ -266,7 +268,7 @@ alias xcpo='xclip -out'
 
 # Quality of life
 alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
-alias pubkey='cat $HOME/.ssh/id_ed25519_sk_rk.pub';
+alias pubkey='cat $HOME/.ssh/pubkey';
 # TODO: This should be moved to ~.dotfiles/bin/inode
 alias inode='node /home/ms/development/javascript/inode'
 
@@ -280,7 +282,7 @@ alias dpsa='docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.RunningFor}
 alias wdpsa='watch "docker ps -a --format \"table {{.Names}}\t{{.Status}}\t{{.RunningFor}}\" | (sed -u 1q; sort -t\"(\" -k2,2)"'
 #
 # =============================================================================
-# - FZF
+# - FZF/YAZI
 # =============================================================================
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 [ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && source /usr/share/doc/fzf/examples/key-bindings.bash
@@ -297,6 +299,14 @@ gbfzf() {
 # fbr - checkout git branch
 p() {
   ps aux | fzf --tiebreak=length | awk '{print($2)}'
+}
+
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	command yazi "$@" --cwd-file="$tmp"
+	IFS= read -r -d '' cwd < "$tmp"
+	[ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+	rm -f -- "$tmp"
 }
 
 # =============================================================================

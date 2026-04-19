@@ -1044,7 +1044,8 @@ require("lazy").setup({
       },
     },
     keys = {
-      { "-", function() require('oil').open() end }
+      { "-", function() require('oil').open() end },
+      { "_", function() vim.cmd("vsplit"); require('oil').open() end },
     },
     dependencies = { { "echasnovski/mini.icons", opts = {} } },
     lazy = false,
