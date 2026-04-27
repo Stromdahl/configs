@@ -37,6 +37,6 @@ profile work-single {
 
 profile work-dual {
 	output 'Samsung Electric Company C27JG5x H4ZMA00788' enable position 0,240
-	output 'Hewlett Packard HP E241i CN45260KH9' enable position 2560,0 transform configs/kanshi/config90
+	output 'Hewlett Packard HP E241i CN45260KH9' enable position 2560,0 transform 90
 	output 'Samsung Display Corp. ATNA40KW01-0  Unknown' disable
 }
