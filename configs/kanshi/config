@@ -1,3 +1,31 @@
+# Kanshi auto-applies the first profile whose `output` lines all match
+# the connected displays. List profiles most-specific first.
+#
+# List connected outputs (name, make/model/serial, mode):
+#   swaymsg -t get_outputs | jq '.[] | {name, make, model, serial, current_mode, transform}'
+#
+# Identifier: connector name (eDP-1, HDMI-A-1) or 'Make Model Serial'
+# (quoted, stable across cables/docks). Prefer the latter for externals.
+#
+# Per-output options:
+#   enable | disable
+#   mode WxH@Hz           e.g. mode 2560x1440@60
+#   position X,Y          top-left in the global layout
+#   scale N               HiDPI, e.g. scale 1.5
+#   transform 90|180|270|flipped|flipped-90|...
+#   adaptive_sync on
+#
+# Apply changes:
+#   pkill -HUP -x kanshi      # reload config (re-applies on next output change)
+#   swaymsg 'output <NAME> transform 90'   # apply live to running session
+# To force re-eval immediately, replug a display or restart kanshi.
+#
+# Adding a profile:
+#   1. Plug in the desired setup, run the swaymsg/jq command above.
+#   2. Copy each output's identifier into a new `profile NAME { ... }` block.
+#   3. Set position/transform/scale to taste; disable outputs you don't want.
+#   4. SIGHUP kanshi (or replug) to apply.
+
 profile laptop {
 	output eDP-1 enable position 0,0
 }
@@ -9,6 +37,6 @@ profile work-single {
 
 profile work-dual {
 	output 'Samsung Electric Company C27JG5x H4ZMA00788' enable position 0,240
-	output 'Hewlett Packard HP E241i CN45260K5D' enable position 2560,0 transform 90
+	output 'Hewlett Packard HP E241i CN45260KH9' enable position 2560,0 transform configs/kanshi/config90
 	output 'Samsung Display Corp. ATNA40KW01-0  Unknown' disable
 }

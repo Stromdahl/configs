@@ -54,7 +54,10 @@ exec swayidle -w \
 
 
 ### LAUNCH KEYBINDINGS
+
+# configs/kanshi/config
 exec_always kanshi
+
 exec_always mako
 exec_always ~/.dotfiles/configs/sway/bin/battery-notify
 
