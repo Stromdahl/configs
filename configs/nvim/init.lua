@@ -468,6 +468,19 @@ autocmd("FileType", {
     for _, map in ipairs(rust_maps) do
       vim.keymap.set("n", map[1], map[2], vim.tbl_extend("force", opts, { desc = map[3] }))
     end
+
+    vim.keymap.set("n", "gx", function()
+      local params = vim.lsp.util.make_position_params(0, "utf-8")
+      vim.lsp.buf_request(0, "experimental/externalDocs", params, function(err, url)
+        local target = type(url) == "table" and (url.web or url["local"]) or url
+        if not err and target then
+          vim.ui.open(target)
+        else
+          local cfile = vim.fn.expand("<cfile>")
+          if cfile ~= "" then vim.ui.open(cfile) end
+        end
+      end)
+    end, vim.tbl_extend("force", opts, { desc = "Open docs.rs / URL" }))
   end,
 })
 
@@ -889,9 +902,19 @@ require("lazy").setup({
     },
     keys = {
       {
-        "<leader>f",
+        "<leader>j",
         function()
           require("hop").hint_words()
+        end,
+        mode = { "n", "x", "o" },
+        desc = "Hop to word",
+      },
+      {
+        "<leader>J",
+        function()
+          require("hop").hint_words({
+            hint_position = require('hop.hint').HintPosition.END
+          })
         end,
         mode = { "n", "x", "o" },
         desc = "Hop to word",
@@ -1073,7 +1096,7 @@ require("lazy").setup({
       { "<leader>bb",       function() require('fzf-lua').buffers() end,                               desc = "[f]ind [f]ile" },
       { "<leader><leader>", function() require("fzf-lua").files() end,                                 desc = "[f]ind [f]ile" },
       { "=",                function() require("fzf-lua").files() end,                                 desc = "[f]ind [f]ile" },
-      { "<leader>fp",       function() require("fzf-lua").files({ cwd = vim.fn.expand("%:p:h") }) end, desc = "[f]ind file in [p]ath" },
+      { "+",                function() require("fzf-lua").files({ cwd = vim.fn.expand("%:p:h") }) end, desc = "[f]ind file in [p]ath" },
       { "<leader>fg",       function() require("fzf-lua").live_grep({ hidden = true }) end,            desc = "[f]ind by [g]rep" },
       { "<leader>ca",       function() require("fzf-lua").lsp_code_actions() end,                      desc = "[c]ode [a]ction" },
       {
