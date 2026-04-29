@@ -3,7 +3,7 @@ set -e
 
 USER_NAME="${USER}"
 USER_ID=$(id -u)
-SCRIPT_PATH="$HOME/.dotfiles/bin/workspace_set"
+SCRIPT_PATH="$HOME/.dotfiles/bin/desktop/workspace_set"
 TRIGGER_SCRIPT="/usr/local/bin/trigger_workspace.sh"
 UDEV_RULE="/etc/udev/rules.d/99-display-connect.rules"
 
