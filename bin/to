@@ -1,6 +1,0 @@
-#! /usr/bin/env bash
-
-function to() {
-  echo hello world
-  builtin cd ..
-}
