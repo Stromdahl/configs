@@ -77,20 +77,6 @@ export TRASH_DIR="$HOME/.trash"
 # Load bash-completion (provides ssh, docker, systemctl, etc.)
 [ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
 
-# Load __git_ps1
-if [ -z "${__GIT_PROMPT_SOURCED:-}" ]; then
-  for f in /usr/share/git/completion/git-prompt.sh \
-           /etc/bash_completion.d/git-prompt \
-           /usr/local/etc/bash_completion.d/git-prompt; do
-    [ -r "$f" ] && . "$f" && __GIT_PROMPT_SOURCED=1 && break
-  done
-fi
-
-# Git prompt indicators
-GIT_PS1_SHOWDIRTYSTATE=1
-GIT_PS1_SHOWSTASHSTATE=1
-GIT_PS1_SHOWUNTRACKEDFILES=1
-
 # Colors — defined once
 _C_RED="\[\033[91m\]"
 _C_CYAN="\[\033[96m\]"
@@ -176,42 +162,6 @@ if [ ! -S ~/.ssh/ssh_auth_sock ]; then
 fi
 export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
 
-function cdgr() {
-  local inside_git_repo="$(git rev-parse --is-inside-work-tree 2>/dev/null)"
-  if [ "$inside_git_repo" ]; then
-    cd $(git rev-parse --show-toplevel)
-  fi
-}
-
-wthelp() {
-  cat <<'EOF'
-Git Worktree Commands
-─────────────────────────────────────────────────────
-  wtl                    List all worktrees
-  wts                    Status (git status --short) for each worktree
-  wta  <branch> [path]   Add worktree with new local branch
-  wtat <branch> [path]   Add worktree tracking existing remote branch
-  wtr  <path>            Remove a worktree
-  wtp                    Prune stale worktree refs
-  wcd                    cd into a worktree (fzf)
-  wto                    Open a worktree in a new terminal (fzf)
-EOF
-}
-
-# cd into a worktree via fzf
-wcd() {
-  local wt
-  wt=$(git worktree list | fzf --with-nth=1 | awk '{print $1}')
-  [ -n "$wt" ] && cd "$wt"
-}
-
-# Open a worktree in a new foot terminal
-wto() {
-  local wt
-  wt=$(git worktree list | fzf --with-nth=1 | awk '{print $1}')
-  [ -n "$wt" ] && foot --working-directory="$wt" &
-}
-
 # =============================================================================
 # - ALIASES
 # =============================================================================
@@ -236,22 +186,8 @@ alias rm='rm -vi'
 # Networking
 alias ports='ss -ptunl | fzf'
 
-# Git shortcuts
-alias gs='git -c color.status=always status --short | sort -r'
-alias gsi='git status --short --ignored'
-alias glg='git log --graph --oneline --branches --tags --remotes'
-
 # Calendar
 alias ncal='ncal -w -3 -M'
-
-# Git worktree shortcuts
-alias wt='git worktree'
-alias wtl='git worktree list'
-alias wtp='git worktree prune --expire=now'
-alias wts='git wts'
-alias wta='git wta'
-alias wtat='git wtat'
-alias wtr='git wtr'
 
 # Quality of life
 alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
