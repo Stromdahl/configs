@@ -73,3 +73,27 @@ cp hosts/krypton/modules.conf hosts/<hostname>/modules.conf
 Helpers available in every module (sourced by `install.sh`): `info`, `ok`,
 `warn`, `err`, `die`, `link`, `apt_ensure`, `apt_installed`. `DRY_RUN=1`
 is honored automatically by `link` and `apt_ensure`.
+
+### Shell snippets (~/.bashrc.d)
+
+`~/.bashrc.d/*.sh` is sourced at the end of `bashrc` (alphabetical order).
+Tools that need shell-side setup — env vars, completions, aliases, helper
+functions — drop a snippet there instead of bloating `bashrc`. The bash
+module pre-creates the directory; per-tool modules link their snippet:
+
+```bash
+# configs/<name>/<name>.sh — sourced into the user's shell
+alias something='...'
+export FOO=bar
+```
+
+```bash
+# modules/<name>/install.sh
+apt_ensure <pkg>
+link "configs/<name>/<name>.sh" "$HOME/.bashrc.d/<name>.sh"
+```
+
+See `modules/{node,rust,fzf,git,docker,...}/` for examples. If a module
+also ships a runtime config dir (e.g. yazi), keep them separate:
+`configs/<name>/config/` for the dir, `configs/<name>/<name>.sh` for the
+snippet, so the snippet doesn't leak into `~/.config/<name>/`.
