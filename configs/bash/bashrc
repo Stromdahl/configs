@@ -236,6 +236,7 @@ alias week='date +%V'
 alias rr='__move_to_trash'
 alias trash='__move_to_trash'
 alias vim=nvim
+alias fd=fdfind
 
 # Safer operations
 alias cp='cp -vi'
@@ -276,6 +277,7 @@ alias pubkey='cat $HOME/.ssh/pubkey';
 alias inode='node /home/ms/development/javascript/inode'
 
 alias compose="docker compose"
+alias ebrc="vim ~/.bashrc";
 
 # Work journal
 alias daily="mkdir -p ~/notes && cd ~/notes && $EDITOR ~/notes/daily.md"
