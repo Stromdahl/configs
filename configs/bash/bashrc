@@ -273,8 +273,6 @@ alias xcpo='xclip -out'
 # Quality of life
 alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
 alias pubkey='cat $HOME/.ssh/pubkey';
-# TODO: This should be moved to ~/.dotfiles/bin/inode
-alias inode='node /home/ms/development/javascript/inode'
 
 alias compose="docker compose"
 alias ebrc="vim ~/.bashrc";
