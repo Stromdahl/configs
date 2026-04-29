@@ -3,7 +3,7 @@
 # Only meaningful on X11; harmless on pure Wayland/sway hosts.
 set -euo pipefail
 
-readonly SRC="$DOTFILES_ROOT/configs/miscelanius/90-custom-xkb.conf"
+readonly SRC="$DOTFILES_ROOT/configs/miscellaneous/90-custom-xkb.conf"
 readonly DST="/etc/X11/xorg.conf.d/90-custom-xkb.conf"
 
 [[ -f "$SRC" ]] || die "missing $SRC"
