@@ -21,8 +21,8 @@ apt_installed() {
   dpkg-query -W -f='${Status}' -- "$pkg" 2>/dev/null | grep -q 'install ok installed'
 }
 
-# apt_install <pkg> [<pkg>...] — install only the missing ones, in one batch
-apt_install() {
+# apt_ensure <pkg> [<pkg>...] — install only the missing ones, in one batch
+apt_ensure() {
   local -a missing=()
   local p
   for p in "$@"; do

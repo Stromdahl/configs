@@ -2,7 +2,7 @@
 # Core packages every workstation needs, plus PATH linking for bin/ scripts.
 set -euo pipefail
 
-apt_install \
+apt_ensure \
   git curl ca-certificates jq fzf build-essential bash-completion \
   xclip ripgrep
 

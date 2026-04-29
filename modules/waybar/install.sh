@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-apt_install waybar
+apt_ensure waybar
 
 link "configs/waybar/config.jsonc" "$HOME/.config/waybar/config.jsonc"
 link "configs/waybar/style.css"    "$HOME/.config/waybar/style.css"

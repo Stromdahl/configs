@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-apt_install mako-notifier
+apt_ensure mako-notifier
 
 link "configs/mako/config" "$HOME/.config/mako/config"

@@ -65,12 +65,12 @@ cp hosts/krypton/modules.conf hosts/<hostname>/modules.conf
    ```bash
    #!/usr/bin/env bash
    set -euo pipefail
-   apt_install pkg1 pkg2
+   apt_ensure pkg1 pkg2
    link "configs/<name>/..." "$HOME/.config/<name>/..."
    ```
 3. `chmod +x modules/<name>/install.sh`
 4. Add `<name>` to the hosts that want it.
 
 Helpers available in every module (sourced by `install.sh`): `info`, `ok`,
-`warn`, `err`, `die`, `link`, `apt_install`, `apt_installed`. `DRY_RUN=1`
-is honored automatically by `link` and `apt_install`.
+`warn`, `err`, `die`, `link`, `apt_ensure`, `apt_installed`. `DRY_RUN=1`
+is honored automatically by `link` and `apt_ensure`.

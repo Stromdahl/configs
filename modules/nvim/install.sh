@@ -3,7 +3,7 @@
 # and symlink the config dir.
 set -euo pipefail
 
-apt_install build-essential
+apt_ensure build-essential
 
 link "configs/nvim" "$HOME/.config/nvim"
 
