@@ -315,8 +315,6 @@ function y() {
 # =============================================================================
 # - DEVELOPER ENVIRONMENT
 # =============================================================================
-# Rust (via rustup)
-export PATH="$HOME/.cargo/bin:$PATH"
 
 # Python virtual environments
 export WORKON_HOME=$HOME/.virtualenvs
