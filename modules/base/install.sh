@@ -4,7 +4,7 @@ set -euo pipefail
 
 apt_ensure \
   git curl ca-certificates jq build-essential bash-completion \
-  xclip ripgrep
+  ripgrep
 
 mkdir -p "$HOME/.local/bin"
 for f in "$DOTFILES_ROOT"/bin/*; do

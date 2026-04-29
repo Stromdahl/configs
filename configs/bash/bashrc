@@ -159,15 +159,6 @@ function generate_password() {
       	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${l} | xargs
 }
 
-# Kill and Remove all docker containers
-alias docker_kill='(docker stop $(docker ps -aq) 2>/dev/null && docker rm -f $(docker ps -aq) 2>/dev/null)'
-
-function docker_nuke() {
-  docker_kill
-  docker system prune -af
-  docker volume prune -af
-}
-
 function __move_to_trash() {
   mkdir -p "$TRASH_DIR"
   for f in "$@"; do
@@ -262,28 +253,14 @@ alias wta='git wta'
 alias wtat='git wtat'
 alias wtr='git wtr'
 
-# Aliases for xclip
-alias xci='xclip -rmlastnl -in -selection  clipboard'
-alias xcie='xci <<<' # Works line "echo" but for clipboard
-alias xcif='xci <' # Reads a file to clipboard
-alias xco='xclip -out -selection clipboard'
-alias xcpi='xclip -in'
-alias xcpo='xclip -out'
-
 # Quality of life
 alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
 alias pubkey='cat $HOME/.ssh/pubkey';
-
-alias compose="docker compose"
 alias ebrc="vim ~/.bashrc";
 
 # Work journal
 alias daily="mkdir -p ~/notes && cd ~/notes && $EDITOR ~/notes/daily.md"
 
-# Docker
-alias dpsa='docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.RunningFor}}\t{{.Image}}" | (read -r; printf "%s\n" "$REPLY"; sort -k2,2r)'
-alias wdpsa='watch "docker ps -a --format \"table {{.Names}}\t{{.Status}}\t{{.RunningFor}}\" | (sed -u 1q; sort -t\"(\" -k2,2)"'
-#
 # =============================================================================
 # - YAZI
 # =============================================================================
@@ -294,22 +271,6 @@ function y() {
 	[ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
 	rm -f -- "$tmp"
 }
-
-# =============================================================================
-# - DEVELOPER ENVIRONMENT
-# =============================================================================
-
-# Python virtual environments
-export WORKON_HOME=$HOME/.virtualenvs
-export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-[ -f /usr/local/bin/virtualenvwrapper.sh ] && source /usr/local/bin/virtualenvwrapper.sh
-
-# =============================================================================
-# - FINAL SETUP
-# =============================================================================
-
-# Syncthing bash completion
-command -v syncthing &>/dev/null && complete -C /usr/bin/syncthing syncthing
 
 # Source all files in ~/.bashrc.d
 if [ -d "$HOME/.bashrc.d" ]; then
