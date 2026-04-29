@@ -3,7 +3,7 @@
 set -euo pipefail
 
 apt_ensure \
-  git curl ca-certificates jq fzf build-essential bash-completion \
+  git curl ca-certificates jq build-essential bash-completion \
   xclip ripgrep
 
 mkdir -p "$HOME/.local/bin"

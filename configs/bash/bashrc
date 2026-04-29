@@ -285,25 +285,8 @@ alias dpsa='docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.RunningFor}
 alias wdpsa='watch "docker ps -a --format \"table {{.Names}}\t{{.Status}}\t{{.RunningFor}}\" | (sed -u 1q; sort -t\"(\" -k2,2)"'
 #
 # =============================================================================
-# - FZF/YAZI
+# - YAZI
 # =============================================================================
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
-[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && source /usr/share/doc/fzf/examples/key-bindings.bash
-[ -f /usr/share/doc/fzf/examples/completion.bash ] && source /usr/share/doc/fzf/examples/completion.bash
-
-# fbr - checkout git branch
-gbfzf() {
-  local branches branch
-  branches=$(git --no-pager branch -vv) &&
-  branch=$(echo "$branches" | fzf +m) &&
-  git checkout $(echo "$branch" | awk '{print $1}' | sed "s/.* //")
-}
-
-# fbr - checkout git branch
-p() {
-  ps aux | fzf --tiebreak=length | awk '{print($2)}'
-}
-
 function y() {
 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
 	command yazi "$@" --cwd-file="$tmp"
