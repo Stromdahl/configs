@@ -68,8 +68,7 @@ cp hosts/krypton/modules.conf hosts/<hostname>/modules.conf
    apt_ensure pkg1 pkg2
    link "configs/<name>/..." "$HOME/.config/<name>/..."
    ```
-3. `chmod +x modules/<name>/install.sh`
-4. Add `<name>` to the hosts that want it.
+3. Add `<name>` to the hosts that want it.
 
 Helpers available in every module (sourced by `install.sh`): `info`, `ok`,
 `warn`, `err`, `die`, `link`, `apt_ensure`, `apt_installed`. `DRY_RUN=1`
