@@ -40,3 +40,8 @@ profile work-dual {
 	output 'Hewlett Packard HP E241i CN45260KH9' enable position 2560,0 transform 90
 	output 'Samsung Display Corp. ATNA40KW01-0  Unknown' disable
 }
+
+profile home-single {
+	output 'AOC U34G2G4R3 0x00009082' enable mode 3440x1440@59.973Hz position 0,0
+	output 'Samsung Display Corp. ATNA40KW01-0  Unknown' disable
+}
