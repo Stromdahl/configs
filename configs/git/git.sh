@@ -56,14 +56,9 @@ wto() {
 
 # Status / log shortcuts
 alias gs='git -c color.status=always status --short | sort -r'
-alias gsi='git status --short --ignored'
-alias glg='git log --graph --oneline --branches --tags --remotes'
 
 # Worktree shortcuts
-alias wt='git worktree'
 alias wtl='git worktree list'
 alias wtp='git worktree prune --expire=now'
 alias wts='git wts'
 alias wta='git wta'
-alias wtat='git wtat'
-alias wtr='git wtr'
