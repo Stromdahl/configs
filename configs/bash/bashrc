@@ -68,8 +68,6 @@ export HISTFILESIZE= #keep forever
 export HISTCONTROL=ignoredups:erasedups
 export HISTIGNORE="ls:cd:pwd:exit:clear"
 
-export TRASH_DIR="$HOME/.trash"
-
 # =============================================================================
 # - PROMPT (PS1) CONFIGURATION
 # =============================================================================
@@ -145,17 +143,6 @@ function generate_password() {
       	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${l} | xargs
 }
 
-function __move_to_trash() {
-  mkdir -p "$TRASH_DIR"
-  for f in "$@"; do
-    if [ -e "$f" ]; then
-      mv -v "$f" "$TRASH_DIR/"
-    else
-      echo "tr: '$f' does not exist" >&2
-    fi
-  done
-}
-
 if [ ! -S ~/.ssh/ssh_auth_sock ]; then
   eval $(ssh-agent) > /dev/null 2>&1
   ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
@@ -166,16 +153,10 @@ export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
 # - ALIASES
 # =============================================================================
 
-alias ....='cd ../../..'
-alias ...='cd ../..'
-alias ..='cd ..'
 alias la='ll -A'
 alias ll='ls -hltF --time-style=long-iso --group-directories-first'
 alias reload='source ~/.bashrc'
 alias update='sudo apt update && sudo apt upgrade -y'
-alias week='date +%V'
-alias rr='__move_to_trash'
-alias trash='__move_to_trash'
 alias vim=nvim
 alias fd=fdfind
 
