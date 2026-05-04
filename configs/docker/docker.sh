@@ -2,8 +2,6 @@
 # Docker shortcuts.
 # Sourced from ~/.bashrc via ~/.bashrc.d/.
 
-alias compose="docker compose"
-
 # Kill and remove all docker containers
 alias docker_kill='(docker stop $(docker ps -aq) 2>/dev/null && docker rm -f $(docker ps -aq) 2>/dev/null)'
 
