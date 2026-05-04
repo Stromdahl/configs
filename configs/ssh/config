@@ -1,4 +1,5 @@
+include ~/sensative/dev-ops/configs/ssh_config
+
 Host homelab
   HostName 192.168.1.101
   User stroid
-
