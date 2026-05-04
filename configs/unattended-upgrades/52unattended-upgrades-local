@@ -1,0 +1,9 @@
+// Local overrides for unattended-upgrades.
+// Defaults live in /etc/apt/apt.conf.d/50unattended-upgrades; on Debian
+// those already restrict origins to *-security, which is what we want.
+
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+
+// Workstation: never reboot without the user asking.
+Unattended-Upgrade::Automatic-Reboot "false";
