@@ -1,0 +1,11 @@
+[Unit]
+Description=Waybar (managed by sway, dotfiles override)
+Documentation=https://github.com/Alexays/Waybar/wiki/
+ConditionEnvironment=WAYLAND_DISPLAY
+StartLimitIntervalSec=0
+
+[Service]
+ExecStart=/usr/bin/waybar
+ExecReload=/bin/kill -SIGUSR2 $MAINPID
+Restart=always
+RestartSec=2

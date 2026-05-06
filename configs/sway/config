@@ -60,7 +60,12 @@ exec_always kanshi
 
 exec_always mako
 exec_always ~/.dotfiles/configs/sway/bin/battery-notify
-exec_always pkill -x waybar; waybar
+
+# waybar is managed by the user systemd unit at
+# ~/.config/systemd/user/waybar.service (installed by modules/waybar).
+# Restart=always there handles boot races; here we just (re)start it after
+# importing sway's env so dbus-activated children see WAYLAND_DISPLAY.
+exec_always sh -c 'systemctl --user import-environment WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP && systemctl --user restart waybar.service'
 
 
 bindsym $mod+n exec makoctl dismiss
@@ -220,5 +225,5 @@ client.focused_inactive $orange     $darkgray   $yellow     $purple     $bg
 client.unfocused        $darkgray   $darkgray   $yellow     $purple     $bg
 
 ### BAR
-# waybar is launched via exec_always above; no built-in bar block needed.
+# waybar is launched via the user systemd unit; see exec_always lines above.
 
