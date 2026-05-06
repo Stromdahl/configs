@@ -1073,6 +1073,17 @@ require("lazy").setup({
             vim.notify("Copied: " .. relative_path)
           end
         end,
+        ["gY"] = function()
+          local oil = require("oil")
+          local entry = oil.get_cursor_entry()
+          if entry and entry.name then
+            local dir = oil.get_current_dir()
+            local filepath = dir and (dir .. entry.name) or entry.name
+            local full_path = vim.fn.fnamemodify(filepath, ":p")
+            vim.fn.setreg("+", full_path)
+            vim.notify("Copied: " .. full_path)
+          end
+        end,
       },
     },
     keys = {
