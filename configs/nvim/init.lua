@@ -95,10 +95,6 @@ vim.diagnostic.config({
   float = { border = "rounded" },
 })
 
--- LSP Handlers
-vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
-vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
-
 --------------------------------------
 -- Utility Functions
 --------------------------------------
@@ -187,7 +183,8 @@ end
 -- Cargo Commands
 local function run_cargo_command(cmd)
   vim.cmd("split")
-  vim.fn.termopen("cargo " .. cmd, {
+  vim.fn.jobstart({ "cargo", cmd }, {
+    term = true,
     cwd = vim.fn.getcwd(),
     on_exit = function(_, code)
       local level = code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
@@ -230,6 +227,29 @@ vim.keymap.set("n", "<M-]>", "<cmd>cnext<CR>")
 vim.keymap.set("n", "<M-[>", "<cmd>cprevious<CR>")
 vim.keymap.set("n", "<C-b>", "<cmd>buffers<CR>")
 
+local function open_cfile_or_url()
+  local cfile = vim.fn.expand("<cfile>")
+  if cfile == "" then return end
+  if cfile:match("^%a[%w+.-]*://") or cfile:match("^www%.") then
+    vim.ui.open(cfile)
+    return
+  end
+  local found = vim.fn.findfile(cfile, ".;")
+  if found == "" then
+    local rel = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":h") .. "/" .. cfile
+    if vim.fn.filereadable(rel) == 1 then found = rel end
+  end
+  if found ~= "" then
+    vim.cmd("edit " .. vim.fn.fnameescape(found))
+  else
+    vim.ui.open(cfile)
+  end
+end
+_G.open_cfile_or_url = open_cfile_or_url
+
+vim.keymap.set("n", "gx", open_cfile_or_url,
+  { desc = "Open file under cursor in nvim, URLs externally" })
+
 
 vim.keymap.set("n", "<M-h>", "<C-w>h");
 vim.keymap.set("n", "<M-j>", "<C-w>j");
@@ -245,8 +265,8 @@ vim.keymap.set("n", "<leader>dt", toggle_diagnostic_virtual_text, { desc = "Togg
 vim.keymap.set("n", "<leader>df", vim.diagnostic.open_float, { desc = "Diagnostic float" })
 vim.keymap.set("n", "<leader>E", vim.diagnostic.setloclist)
 vim.keymap.set("n", "<leader>dd", vim.diagnostic.setqflist, { desc = "Diagnostics → quickfix" })
-vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Prev diagnostic" })
-vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
+vim.keymap.set("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Prev diagnostic" })
+vim.keymap.set("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Next diagnostic" })
 
 -- LSP Keymaps
 local lsp = vim.lsp.buf
@@ -425,7 +445,7 @@ autocmd("BufWritePre", {
 autocmd("LspAttach", {
   callback = function(ev)
     local client = vim.lsp.get_client_by_id(ev.data.client_id)
-    if client and client.supports_method("textDocument/documentHighlight") then
+    if client and client:supports_method("textDocument/documentHighlight") then
       autocmd({ "CursorHold", "CursorHoldI" }, {
         buffer = ev.buf,
         callback = vim.lsp.buf.document_highlight,
@@ -470,17 +490,18 @@ autocmd("FileType", {
     end
 
     vim.keymap.set("n", "gx", function()
-      local params = vim.lsp.util.make_position_params(0, "utf-8")
-      vim.lsp.buf_request(0, "experimental/externalDocs", params, function(err, url)
+      local client = vim.lsp.get_clients({ bufnr = 0, name = "rust-analyzer" })[1]
+      if not client then _G.open_cfile_or_url(); return end
+      local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+      client:request("experimental/externalDocs", params, function(err, url)
         local target = type(url) == "table" and (url.web or url["local"]) or url
         if not err and target then
           vim.ui.open(target)
         else
-          local cfile = vim.fn.expand("<cfile>")
-          if cfile ~= "" then vim.ui.open(cfile) end
+          _G.open_cfile_or_url()
         end
-      end)
-    end, vim.tbl_extend("force", opts, { desc = "Open docs.rs / URL" }))
+      end, 0)
+    end, vim.tbl_extend("force", opts, { desc = "Open docs.rs / file under cursor" }))
   end,
 })
 
@@ -1093,14 +1114,16 @@ require("lazy").setup({
       end },
     },
     dependencies = { { "echasnovski/mini.icons", opts = {} } },
-    lazy = false,
+    -- Load eagerly only when nvim is launched with a directory argument,
+    -- so oil can hijack the netrw-style dir buffer; otherwise stay lazy.
+    lazy = not (vim.fn.argc(-1) == 1 and (vim.uv.fs_stat(vim.fn.argv(0)) or {}).type == "directory"),
   },
 
   -- Fuzzy Finder
   {
     "ibhagwan/fzf-lua",
     dependencies = { "echasnovski/mini.icons", "elanmed/fzf-lua-frecency.nvim" },
-    lazy = false,
+    cmd = "FzfLua",
     opts = {},
     keys = {
       { "<leader>n",        function() require('fzf-lua-frecency').frecency() end,                     desc = "[N]avigate to file" },
