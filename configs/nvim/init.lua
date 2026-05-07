@@ -77,6 +77,7 @@ o.splitright = true
 
 -- Completion & UI
 vim.o.winborder = "rounded"
+vim.o.pummaxwidth = 60
 vim.opt.completeopt = { "menuone", "noinsert", "noselect", "fuzzy" }
 vim.opt.shortmess:append "I"
 
@@ -342,10 +343,14 @@ autocmd("TextYankPost", {
 autocmd("VimEnter", {
   callback = function()
     if vim.fn.argc() == 0 and vim.fn.empty(vim.fn.expand("%")) == 1 and vim.bo.buftype == "" then
-      if vim.bo.modified == false then
-        pcall(vim.api.nvim_buf_delete, 0, { force = true })
-      end
+      local empty = vim.api.nvim_get_current_buf()
+      local was_modified = vim.bo[empty].modified
       pcall(function() require('fzf-lua').files() end)
+      vim.schedule(function()
+        if not was_modified and vim.api.nvim_buf_is_valid(empty) and empty ~= vim.api.nvim_get_current_buf() then
+          pcall(vim.api.nvim_buf_delete, empty, { force = true })
+        end
+      end)
     end
   end,
 })
@@ -400,11 +405,15 @@ autocmd("BufWritePre", {
   end,
 })
 
--- Trim trailing whitespace (except markdown/diff)
+-- Trim trailing whitespace (skip when an LSP formatter will run, plus markdown/diff)
 autocmd("BufWritePre", {
   condition = function(ev)
     local ft = vim.bo[ev.buf].filetype
-    return ft ~= "markdown" and ft ~= "diff"
+    if ft == "markdown" or ft == "diff" then return false end
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = ev.buf, method = "textDocument/formatting" })) do
+      if client.name ~= "ts_ls" then return false end
+    end
+    return true
   end,
   callback = function(ev)
     local view = vim.fn.winsaveview()
@@ -811,6 +820,7 @@ require("lazy").setup({
   {
     "williamboman/mason-lspconfig.nvim",
     dependencies = { "williamboman/mason.nvim" },
+    cmd = { "Mason", "MasonInstall", "MasonUpdate", "MasonUninstall" },
     opts = {
       ensure_installed = {
         "rust_analyzer",
@@ -1034,13 +1044,18 @@ require("lazy").setup({
     "NeogitOrg/neogit",
     dependencies = {
       "nvim-lua/plenary.nvim",
-      "sindrets/diffview.nvim",
       "ibhagwan/fzf-lua",
     },
     config = true,
     keys = {
-      { "<leader>gg", "<cmd>Neogit<cr>",                          desc = "Open Neogit" },
-      { "<leader>gc", "<cmd>Neogit commit<cr>",                   desc = "Neogit commit" },
+      { "<leader>gg", "<cmd>Neogit<cr>",        desc = "Open Neogit" },
+      { "<leader>gc", "<cmd>Neogit commit<cr>", desc = "Neogit commit" },
+    },
+  },
+  {
+    "sindrets/diffview.nvim",
+    cmd = { "DiffviewOpen", "DiffviewFileHistory", "DiffviewClose", "DiffviewToggleFiles", "DiffviewFocusFiles", "DiffviewRefresh" },
+    keys = {
       { "<leader>gd", "<cmd>DiffviewOpen<cr>",                    desc = "Open diffview" },
       { "<leader>gh", "<cmd>DiffviewFileHistory<cr>",             desc = "File history" },
       { "<leader>gb", "<cmd>DiffviewOpen origin/main...HEAD<cr>", desc = "Compare with main" },
