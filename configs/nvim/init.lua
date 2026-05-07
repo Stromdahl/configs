@@ -364,7 +364,7 @@ autocmd("BufReadPost", {
 -- Close helpers with q
 autocmd("FileType", {
   pattern = { "qf", "help", "man", "lspinfo" },
-  callback = function() vim.keymap.set("n", "q", "<cmd>close<cr>", { buf = true }) end,
+  callback = function() vim.keymap.set("n", "q", "<cmd>close<cr>", { buf = 0 }) end,
 })
 
 -- Window management
@@ -479,7 +479,7 @@ autocmd("LspAttach", {
 autocmd("FileType", {
   pattern = "rust",
   callback = function()
-    local opts = { buf = true, silent = true }
+    local opts = { buf = 0, silent = true }
     local rust_maps = {
       { "<leader>rr", "<cmd>CargoRun<cr>",    "Cargo run" },
       { "<leader>rt", "<cmd>CargoTest<cr>",   "Cargo test" },
@@ -522,7 +522,7 @@ autocmd("FileType", {
     vim.opt_local.tabstop = 2
     vim.opt_local.softtabstop = 2
 
-    local opts = { buf = true, silent = true }
+    local opts = { buf = 0, silent = true }
     local js_maps = {
       { "<leader>jr", "<cmd>!npm run dev<cr>",    "Run dev server" },
       { "<leader>jb", "<cmd>!npm run build<cr>",  "Build project" },
@@ -1009,6 +1009,7 @@ require("lazy").setup({
   -- Syntax Highlighting
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "master",
     build = ":TSUpdate",
     event = { "BufReadPost", "BufNewFile" },
     opts = {
