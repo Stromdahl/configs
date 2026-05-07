@@ -780,6 +780,32 @@ autocmd("VimLeavePre", {
   end,
 })
 
+-- Append per-session plugin-load record to ~/.local/state/nvim/plugin-usage.jsonl
+autocmd("VimLeavePre", {
+  callback = function()
+    local ok, lazy_cfg = pcall(require, "lazy.core.config")
+    if not ok then return end
+    local loaded, not_loaded = {}, {}
+    for name, plugin in pairs(lazy_cfg.plugins) do
+      if plugin._ and plugin._.loaded then
+        table.insert(loaded, name)
+      else
+        table.insert(not_loaded, name)
+      end
+    end
+    table.sort(loaded); table.sort(not_loaded)
+    local entry = vim.json.encode({
+      ts = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+      loaded = loaded,
+      not_loaded = not_loaded,
+    })
+    pcall(function()
+      local f = io.open(vim.fn.stdpath("state") .. "/plugin-usage.jsonl", "a")
+      if f then f:write(entry .. "\n"); f:close() end
+    end)
+  end,
+})
+
 --------------------------------------
 -- Plugin Setup
 --------------------------------------
