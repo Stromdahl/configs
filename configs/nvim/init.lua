@@ -265,8 +265,11 @@ vim.keymap.set("n", "<leader>dt", toggle_diagnostic_virtual_text, { desc = "Togg
 vim.keymap.set("n", "<leader>df", vim.diagnostic.open_float, { desc = "Diagnostic float" })
 vim.keymap.set("n", "<leader>E", vim.diagnostic.setloclist)
 vim.keymap.set("n", "<leader>dd", vim.diagnostic.setqflist, { desc = "Diagnostics → quickfix" })
-vim.keymap.set("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Prev diagnostic" })
-vim.keymap.set("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Next diagnostic" })
+local function jump_diag(count)
+  vim.diagnostic.jump({ count = count, on_jump = function() vim.diagnostic.open_float() end })
+end
+vim.keymap.set("n", "[d", function() jump_diag(-1) end, { desc = "Prev diagnostic" })
+vim.keymap.set("n", "]d", function() jump_diag(1) end, { desc = "Next diagnostic" })
 
 -- LSP Keymaps
 local lsp = vim.lsp.buf
@@ -361,7 +364,7 @@ autocmd("BufReadPost", {
 -- Close helpers with q
 autocmd("FileType", {
   pattern = { "qf", "help", "man", "lspinfo" },
-  callback = function() vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true }) end,
+  callback = function() vim.keymap.set("n", "q", "<cmd>close<cr>", { buf = true }) end,
 })
 
 -- Window management
@@ -476,7 +479,7 @@ autocmd("LspAttach", {
 autocmd("FileType", {
   pattern = "rust",
   callback = function()
-    local opts = { buffer = true, silent = true }
+    local opts = { buf = true, silent = true }
     local rust_maps = {
       { "<leader>rr", "<cmd>CargoRun<cr>",    "Cargo run" },
       { "<leader>rt", "<cmd>CargoTest<cr>",   "Cargo test" },
@@ -494,7 +497,13 @@ autocmd("FileType", {
       if not client then _G.open_cfile_or_url(); return end
       local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
       client:request("experimental/externalDocs", params, function(err, url)
-        local target = type(url) == "table" and (url.web or url["local"]) or url
+        local function nilify(v) return v ~= vim.NIL and v or nil end
+        local target
+        if type(url) == "table" then
+          target = nilify(url.web) or nilify(url["local"])
+        else
+          target = nilify(url)
+        end
         if not err and target then
           vim.ui.open(target)
         else
@@ -513,7 +522,7 @@ autocmd("FileType", {
     vim.opt_local.tabstop = 2
     vim.opt_local.softtabstop = 2
 
-    local opts = { buffer = true, silent = true }
+    local opts = { buf = true, silent = true }
     local js_maps = {
       { "<leader>jr", "<cmd>!npm run dev<cr>",    "Run dev server" },
       { "<leader>jb", "<cmd>!npm run build<cr>",  "Build project" },
