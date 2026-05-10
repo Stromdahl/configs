@@ -8,13 +8,15 @@ Personal workstation dotfiles and a bash-based installer for Debian/Ubuntu.
 wget -qO- https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap.sh | bash
 ```
 
-`bootstrap.sh` is the fetch-and-pipe entry point: it `apt install`s `git`,
-clones this repo to `~/.dotfiles`, then hands off to `install.sh`. (`wget`
-is used because a minimal Debian install ships it but not `curl`.) If this
-machine's hostname doesn't have `hosts/<hostname>/modules.conf` yet, the
-conservative `hosts/default/` profile is used for the first run — create a
-per-host file afterwards to tailor the machine (sway stack, battery-guardian
-on laptops, etc.).
+`bootstrap.sh` is the fetch-and-pipe entry point: it `apt install`s `git`
+and `curl`, clones this repo to `~/.dotfiles`, runs the `ssh` module first
+(so `authorized_keys` is in place before anything heavier can fail), then
+hands off to `install.sh`. (`wget` is used for the curl-pipe because a
+minimal Debian install ships it but not `curl`.) If this machine's hostname
+doesn't have `hosts/<hostname>/modules.conf` yet, the conservative
+`hosts/default/` profile is used for the first run — create a per-host file
+afterwards to tailor the machine (sway stack, battery-guardian on laptops,
+etc.).
 
 ## Already have the repo
 

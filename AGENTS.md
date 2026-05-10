@@ -27,7 +27,7 @@ invoked automatically anywhere; running it manually is fine but not required.
 
 Four layers, top-down:
 
-1. **`bootstrap.sh`** — fresh-machine entry point. apt-installs `git`, clones the repo to `~/.dotfiles`, then execs `install.sh` with all forwarded flags. Uses `wget` because a minimal Debian image ships `wget` but not `curl`.
+1. **`bootstrap.sh`** — fresh-machine entry point. apt-installs `git` + `curl`, clones the repo to `~/.dotfiles`, runs `install.sh --module ssh` early (so `authorized_keys` lands before any later module can fail and lock you out of the box over the network), then execs `install.sh` with all forwarded flags. Uses `wget` for the curl-pipe because a minimal Debian image ships `wget` but not `curl`.
 2. **`install.sh`** — the orchestrator. Resolves and exports `DOTFILES_ROOT`, sources every `lib/*.sh` once, parses flags, selects the module list from `hosts/<hostname>/modules.conf` (falling back to `hosts/default/modules.conf` with a warning), then runs each `modules/<name>/install.sh` **in a subshell** with `LOG_PREFIX=<name>` set. Continues past a failed module but exits non-zero overall if any failed.
 3. **`modules/<name>/install.sh`** — one unit of work per tool/feature. A module directory contains only this single file; config files, snippets, and other artifacts live under `configs/<name>/`.
 4. **`lib/`** — helpers sourced once by `install.sh` and inherited by every module's subshell:
