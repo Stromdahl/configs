@@ -21,10 +21,14 @@ fi
 # VA-API backend so Kodi/Firefox/mpv hardware-decode through NVDEC instead of CPU.
 apt_ensure nvidia-vaapi-driver
 
-# 32-bit GL + Vulkan stack for Steam / Proton. nvidia-driver pulls the Vulkan ICD
-# transitively for both amd64 and (via libnvidia-gl:i386) i386.
+# 32-bit GL + Vulkan stack for Steam / Proton.
+# - libgl1-nvidia-glvnd-glx:i386 is the NVIDIA i386 OpenGL library (pulls
+#   libnvidia-glcore:i386 etc. transitively).
+# - libvulkan1:i386 is the Khronos Vulkan loader for 32-bit apps; the NVIDIA
+#   Vulkan ICD is wired up by nvidia-driver on the amd64 side.
+# - mesa-* 32-bit are kept for the rare software-fallback / non-NVIDIA-path cases.
 apt_ensure libgl1-mesa-dri:i386 libglx-mesa0:i386 mesa-vulkan-drivers:i386 \
-           libnvidia-gl:i386 libnvidia-glcore:i386
+           libgl1-nvidia-glvnd-glx:i386 libvulkan1:i386
 
 # Survive kernel-only upgrades that would otherwise autoremove the headers.
 if [[ "${DRY_RUN:-0}" == 1 ]]; then
