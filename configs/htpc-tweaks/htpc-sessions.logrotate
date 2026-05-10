@@ -1,0 +1,7 @@
+/home/couch/.local/share/sddm/*.log /home/couch/.xsession-errors {
+  weekly
+  rotate 4
+  compress
+  missingok
+  notifempty
+}

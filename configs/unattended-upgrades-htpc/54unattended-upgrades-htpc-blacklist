@@ -1,0 +1,11 @@
+// Managed by ~/.dotfiles modules/unattended-upgrades-htpc.
+// Layered on top of /etc/apt/apt.conf.d/52unattended-upgrades-local (alphabetical).
+// Rationale: NVIDIA driver bumps + DKMS rebuilds + kernel-headers-vs-image skew
+// is the highest-risk auto-upgrade path on this box. Kodi major bumps break
+// add-ons silently. Let `ms` install these interactively over SSH.
+Unattended-Upgrade::Package-Blacklist {
+    "nvidia-";
+    "linux-image-";
+    "linux-headers-";
+    "kodi";
+};
