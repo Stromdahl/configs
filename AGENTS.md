@@ -34,7 +34,7 @@ Four layers, top-down:
    - `log.sh` — `info`, `ok`, `warn`, `err`, `die`, `dim`, `section` (color output, prefixed by `LOG_PREFIX`).
    - `platform.sh` — `require_debian`, `require_cmd <cmd...>`.
    - `symlink.sh` — `link <src> <dst>`. Relative `src` is resolved against `$DOTFILES_ROOT`. If `dst` is a real file/dir (not a matching symlink), it is moved to `<dst>.backup-<timestamp>` before the symlink is created. Honors `DRY_RUN`.
-   - `apt.sh` — `apt_ensure <pkg...>` (installs only the missing ones; runs `apt-get update` at most once per `install.sh` invocation via the `$_APT_UPDATED_FLAG` tempfile, which the trap in `install.sh` cleans up). Also `apt_installed <pkg>`. Honors `DRY_RUN`.
+   - `apt.sh` — `apt_ensure <pkg...>` (installs only the missing ones; runs `apt-get update` at most once per `install.sh` invocation via the `$_APT_UPDATED_FLAG` tempfile, which the trap in `install.sh` cleans up). Also `apt_installed <pkg>` and `apt_findable <pkg>` (true if the package exists in any configured apt source — used internally during `DRY_RUN` to warn on typos like `libnvidia-gl:i386` vs. the real `libgl1-nvidia-glvnd-glx:i386`). Honors `DRY_RUN`. Note: a "not findable in current sources" warning during a `--host X --dry-run` from a *different* host is expected for packages that need `apt-sources` (contrib/non-free/backports) to have already run on X — review whether the missing package matches one of those before treating it as a typo.
 
 `hosts/<hostname>/modules.conf` is a plain ordered list, one module per
 line, with `#` comments stripped. Order matters; modules do not declare
