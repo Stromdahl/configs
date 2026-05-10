@@ -4,4 +4,4 @@
 # couch is already in dialout+tty groups (modules/couch-user).
 set -euo pipefail
 
-apt_ensure cec-utils libcec6
+apt_ensure cec-utils libcec7
