@@ -2,8 +2,9 @@
 # Workstation installer. Reads hosts/<hostname>/modules.conf and runs each
 # listed module from modules/<name>/install.sh.
 #
-# Usually invoked by bootstrap.sh (the curl-pipe entry point), but can be
-# run directly when the repo is already cloned.
+# Run directly when the repo is already cloned. bootstrap.sh does prep only
+# (apt + clone + ssh keys) and then prints the install.sh command for the user
+# to run — it does NOT auto-invoke install.sh.
 set -euo pipefail
 
 DOTFILES_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,6 +30,9 @@ Usage: $(basename -- "$0") [--host NAME] [--module LIST] [--dry-run] [-h]
 
 New machine:
   wget -qO- https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap.sh | bash
+  # then, when bootstrap prints the next step:
+  cd ~/.dotfiles && ./install.sh --dry-run
+  cd ~/.dotfiles && ./install.sh
 EOF
 }
 

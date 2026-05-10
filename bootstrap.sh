@@ -8,8 +8,9 @@
 #   cd ~/.dotfiles && ./bootstrap.sh
 #
 # Steps: apt-install git+curl, clone (or update) the repo at $DOTFILES_DIR, run
-# the ssh module first (so authorized_keys is in place before anything heavier
-# can fail), then hand off to install.sh which reads hosts/$(hostname -s)/modules.conf.
+# the ssh module so authorized_keys is in place, then STOP and print the next
+# step. bootstrap does prep only; the user runs install.sh themselves so they
+# can dry-run, pick a module subset, or review what's about to change first.
 set -euo pipefail
 
 DOTFILES_REPO="${DOTFILES_REPO:-https://github.com/Stromdahl/configs.git}"
@@ -48,10 +49,20 @@ else
   git clone --branch "$DOTFILES_BRANCH" --single-branch -- "$DOTFILES_REPO" "$DOTFILES_DIR"
 fi
 
-# Drop SSH keys (and ~/.ssh/config) FIRST so a later module failure can't lock us
-# out of a remote box. Idempotent: re-runs are no-ops if content matches.
-say "running ssh module early (authorized_keys + config)"
+# Drop SSH keys (and ~/.ssh/config) so a future SSH session works even if the
+# user delays the main install. Idempotent: re-runs are no-ops if content matches.
+say "running ssh module (authorized_keys + config)"
 "$DOTFILES_DIR/install.sh" --module ssh
 
-say "handing off to install.sh"
-exec "$DOTFILES_DIR/install.sh" "$@"
+cat >&2 <<EOF
+
+==> bootstrap done.
+    repo:    $DOTFILES_DIR
+    host:    $(hostname -s)$([[ -f "$DOTFILES_DIR/hosts/$(hostname -s)/modules.conf" ]] || printf ' (no profile yet; will fall back to hosts/default/)')
+
+next step — run install.sh manually:
+
+    cd $DOTFILES_DIR && ./install.sh --dry-run   # preview every change
+    cd $DOTFILES_DIR && ./install.sh             # apply
+
+EOF

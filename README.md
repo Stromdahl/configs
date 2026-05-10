@@ -6,17 +6,20 @@ Personal workstation dotfiles and a bash-based installer for Debian/Ubuntu.
 
 ```bash
 wget -qO- https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap.sh | bash
+# then, when bootstrap prints the next step:
+cd ~/.dotfiles && ./install.sh --dry-run   # preview
+cd ~/.dotfiles && ./install.sh             # apply
 ```
 
-`bootstrap.sh` is the fetch-and-pipe entry point: it `apt install`s `git`
-and `curl`, clones this repo to `~/.dotfiles`, runs the `ssh` module first
-(so `authorized_keys` is in place before anything heavier can fail), then
-hands off to `install.sh`. (`wget` is used for the curl-pipe because a
-minimal Debian install ships it but not `curl`.) If this machine's hostname
-doesn't have `hosts/<hostname>/modules.conf` yet, the conservative
-`hosts/default/` profile is used for the first run — create a per-host file
-afterwards to tailor the machine (sway stack, battery-guardian on laptops,
-etc.).
+`bootstrap.sh` does prep only: it `apt install`s `git` and `curl`, clones
+this repo to `~/.dotfiles`, runs the `ssh` module so `authorized_keys` is
+in place, then **stops and prints the next step**. You run `install.sh`
+yourself — that lets you dry-run, pick a module subset, or eyeball the
+changes before applying. (`wget` is used for the curl-pipe because a
+minimal Debian install ships it but not `curl`.) If this machine's
+hostname doesn't have `hosts/<hostname>/modules.conf` yet, the conservative
+`hosts/default/` profile is used — create a per-host file afterwards to
+tailor the machine (sway stack, battery-guardian on laptops, etc.).
 
 ## Already have the repo
 
@@ -31,7 +34,7 @@ idempotent.
 ## Layout
 
 ```
-bootstrap.sh            # curl-pipe entry point: apt + clone, then calls install.sh
+bootstrap.sh            # curl-pipe entry point: apt + clone + ssh keys, then prints next step
 install.sh              # module runner (used locally after the repo is cloned)
 lib/                    # shared helpers (log, symlink, apt, platform)
 modules/<name>/         # one install.sh per unit of work
@@ -48,8 +51,8 @@ bin/                    # utility scripts; base module links them into ~/.local/
 ./install.sh --dry-run            # show what would change, touch nothing
 ```
 
-`bootstrap.sh` forwards any flags to `install.sh`, so e.g.
-`wget -qO- ... | bash -s -- --dry-run` works.
+`bootstrap.sh` does not run `install.sh`; pass flags to `install.sh` directly
+in the second step (e.g. `./install.sh --dry-run`).
 
 ## Adding a new host
 
