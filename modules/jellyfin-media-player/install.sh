@@ -4,7 +4,9 @@
 # Requires the flatpak module to have run first (flatpak + flathub remote).
 set -euo pipefail
 
-readonly APP_ID=com.github.iwalton3.JellyfinMediaPlayer
+# Flathub aliases com.github.iwalton3.jellyfin-media-player to this real id.
+# Use the real id so the idempotency check matches what `flatpak list` reports.
+readonly APP_ID=org.jellyfin.JellyfinDesktop
 
 # In dry-run, the flatpak module hasn't actually installed flatpak yet — report
 # what we'd do and exit clean instead of bailing.
