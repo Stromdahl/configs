@@ -88,6 +88,10 @@ run_module() {
   local script="$DOTFILES_ROOT/modules/$name/install.sh"
   [[ -f "$script" ]] || { err "module not found: $name ($script)"; return 1; }
   LOG_PREFIX="$name" section "module: $name"
+  # NOTE: do NOT call this function from an `if`/`&&`/`||` context. Bash silently
+  # disables `set -e` inside subshells launched in such contexts (including the
+  # subshell below), even when the subshell's script re-enables it. Use the
+  # set+e / capture-rc / set-e pattern in main() instead.
   # shellcheck source=/dev/null
   ( LOG_PREFIX="$name" . "$script" )
 }
@@ -114,9 +118,18 @@ main() {
   info "modules: ${modules[*]}"
 
   local -a failed=() succeeded=()
-  local m
+  local m rc
   for m in "${modules[@]}"; do
-    if run_module "$m"; then
+    # Run run_module OUTSIDE a conditional so `set -e` inside the module's
+    # subshell isn't silently suppressed (bash quirk: errexit is disabled in
+    # subshells launched in `if`/`&&`/`||` context, even if the script inside
+    # explicitly sets it). Disable parent errexit around the call so a failing
+    # module doesn't take down install.sh itself.
+    set +e
+    run_module "$m"
+    rc=$?
+    set -e
+    if (( rc == 0 )); then
       succeeded+=("$m")
     else
       failed+=("$m")
