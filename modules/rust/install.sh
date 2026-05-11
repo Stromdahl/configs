@@ -8,6 +8,7 @@ apt_ensure curl
 
 if [[ "${DRY_RUN:-0}" == 1 ]]; then
   info "would install or update rustup"
+  info "would ensure components: rust-analyzer rust-src"
   exit 0
 fi
 
@@ -20,3 +21,10 @@ else
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
   ok "rustup: installed"
 fi
+
+# rustup ships rust-analyzer as a proxy in ~/.cargo/bin, but the actual
+# component isn't in the default profile — without it, nvim's LSP gets
+# "Unknown binary 'rust-analyzer' in official toolchain". rust-src pairs
+# with it so rust-analyzer can resolve stdlib types. Idempotent.
+rustup component add rust-analyzer rust-src
+ok "rust components: rust-analyzer, rust-src"
