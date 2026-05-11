@@ -1052,7 +1052,7 @@ require("lazy").setup({
       ensure_installed = {
         "lua", "vim", "vimdoc", "rust", "go", "c", "cpp",
         "javascript", "typescript", "tsx", "bash", "json", "toml", "yaml", "markdown",
-        "html", "css", "scss"
+        "markdown_inline", "html", "css", "scss"
       },
       highlight = { enable = true },
       indent = {
@@ -1060,7 +1060,57 @@ require("lazy").setup({
         disable = function(_, buf) return vim.api.nvim_buf_line_count(buf) > 20000 end
       },
     },
-    config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
+    config = function(_, opts)
+      require("nvim-treesitter.configs").setup(opts)
+
+      -- nvim-treesitter's master branch is frozen and its custom directives
+      -- still pass match[id] as a single TSNode. In nvim 0.12 match[id] is a
+      -- list of nodes, so vim.treesitter.get_node_text(list) crashes with
+      -- "attempt to call method 'range' (a nil value)" on any markdown fence
+      -- with a language tag (and on bash/hcl/html injections). Re-register
+      -- the affected directives unwrapping the list.
+      local q = require("vim.treesitter.query")
+      local function first_node(match, id)
+        local n = match[id]
+        if type(n) == "table" then return n[1] end
+        return n
+      end
+
+      local info_aliases = { ex = "elixir", pl = "perl", sh = "bash", uxn = "uxntal", ts = "typescript" }
+      q.add_directive("set-lang-from-info-string!", function(match, _, bufnr, pred, metadata)
+        local node = first_node(match, pred[2])
+        if not node then return end
+        local alias = vim.treesitter.get_node_text(node, bufnr):lower()
+        metadata["injection.language"] =
+          vim.filetype.match({ filename = "a." .. alias }) or info_aliases[alias] or alias
+      end, { force = true })
+
+      local script_types = {
+        importmap = "json", module = "javascript",
+        ["application/ecmascript"] = "javascript",
+        ["text/ecmascript"] = "javascript",
+      }
+      q.add_directive("set-lang-from-mimetype!", function(match, _, bufnr, pred, metadata)
+        local node = first_node(match, pred[2])
+        if not node then return end
+        local value = vim.treesitter.get_node_text(node, bufnr)
+        if script_types[value] then
+          metadata["injection.language"] = script_types[value]
+        else
+          local parts = vim.split(value, "/", {})
+          metadata["injection.language"] = parts[#parts]
+        end
+      end, { force = true })
+
+      q.add_directive("downcase!", function(match, _, bufnr, pred, metadata)
+        local id = pred[2]
+        local node = first_node(match, id)
+        if not node then return end
+        local text = vim.treesitter.get_node_text(node, bufnr, { metadata = metadata[id] }) or ""
+        if not metadata[id] then metadata[id] = {} end
+        metadata[id].text = string.lower(text)
+      end, { force = true })
+    end,
   },
 
   -- Git Integration
