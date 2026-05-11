@@ -2,6 +2,6 @@
 Type=Application
 Name=Steam Big Picture
 Comment=Launch Steam in Big Picture mode on session login (HTPC autostart)
-Exec=sh -c 'sleep 5 && exec /usr/bin/steam -bigpicture -silent'
+Exec=sh -c 'sleep 5 && exec /usr/games/steam -bigpicture -silent'
 X-GNOME-Autostart-Delay=8
 OnlyShowIn=KDE;
