@@ -1,118 +1,59 @@
 #!/usr/bin/env bash
-# Enable contrib + non-free + non-free-firmware on Trixie's default deb822 sources
-# and add trixie-backports (needed for nvidia 550). Field-scoped Components edit;
-# whole-file rewrite would clobber Signed-By and brick apt.
+# Replace d-i's apt sources with an opinionated canonical layout:
+#   - main archive via the LTH Debian mirror (debian.lth.se)
+#   - security via security.debian.org (LTH doesn't carry security)
+#   - all four components: main contrib non-free non-free-firmware
+#   - trixie-backports added (NVIDIA 550 et al)
+# Backs up the d-i-written sources once on first overwrite.
 set -euo pipefail
 
-readonly DEB822_MAIN=/etc/apt/sources.list.d/debian.sources
-readonly LEGACY_LIST=/etc/apt/sources.list
-readonly BACKPORTS_DST=/etc/apt/sources.list.d/trixie-backports.sources
+readonly DEB822_MAIN_SRC="$DOTFILES_ROOT/configs/apt-sources/debian.sources"
+readonly DEB822_MAIN_DST=/etc/apt/sources.list.d/debian.sources
+readonly DEB822_MAIN_ORIG="${DEB822_MAIN_DST}.dotfiles-orig"
+
 readonly BACKPORTS_SRC="$DOTFILES_ROOT/configs/apt-sources/trixie-backports.sources"
-readonly REQUIRED_COMPONENTS="main contrib non-free non-free-firmware"
+readonly BACKPORTS_DST=/etc/apt/sources.list.d/trixie-backports.sources
+
+readonly LEGACY_LIST=/etc/apt/sources.list
 
 mutated=0
 
-# Returns 0 if the deb822 stanza already has all required components in Components:.
-deb822_components_ok() {
-  local file="$1"
-  awk -v want="$REQUIRED_COMPONENTS" '
-    BEGIN { ok = 1 }
-    /^Components:/ {
-      n = split(want, w, " ")
-      for (i = 1; i <= n; i++) {
-        if (index($0, w[i]) == 0) { ok = 0; exit }
-      }
-    }
-    END { exit ok ? 0 : 1 }
-  ' "$file"
-}
-
-rewrite_deb822_components() {
-  local file="$1"
-  local tmp
-  tmp="$(mktemp)"
-  awk -v want="$REQUIRED_COMPONENTS" '
-    /^Components:/ { print "Components: " want; next }
-    { print }
-  ' "$file" >"$tmp"
-  if cmp -s -- "$file" "$tmp"; then
-    rm -f -- "$tmp"
-    ok "deb822 components already correct: $file"
+# install_apt_source <src> <dst> [<orig-backup-path>]
+# cmp-then-install. If $orig-backup-path is given AND the dst exists AND no
+# backup yet, copy the existing dst to that backup path before overwriting.
+install_apt_source() {
+  local src="$1" dst="$2" orig="${3:-}"
+  if [[ -r "$dst" ]] && cmp -s -- "$src" "$dst"; then
+    ok "apt source already current: $dst"
     return 0
   fi
   if [[ "${DRY_RUN:-0}" == 1 ]]; then
-    rm -f -- "$tmp"
-    info "would: rewrite Components: in $file to '$REQUIRED_COMPONENTS'"
+    if [[ -n "$orig" ]] && [[ -f "$dst" ]] && [[ ! -e "$orig" ]]; then
+      info "would back up: $dst -> $orig"
+    fi
+    info "would install: $src -> $dst"
     return 0
   fi
-  sudo install -m 644 -o root -g root -- "$tmp" "$file" || { rm -f -- "$tmp"; die "failed to install $file"; }
-  rm -f -- "$tmp"
-  ok "updated: $file"
+  if [[ -n "$orig" ]] && [[ -f "$dst" ]] && [[ ! -e "$orig" ]]; then
+    sudo cp -a -- "$dst" "$orig"
+    ok "backed up original: $dst -> $orig"
+  fi
+  sudo install -m 644 -o root -g root -- "$src" "$dst" || die "failed to install $dst"
+  ok "installed: $dst"
   mutated=1
 }
 
-ensure_legacy_components() {
-  local file="$1"
-  local tmp
-  tmp="$(mktemp)"
-  awk -v want="$REQUIRED_COMPONENTS" '
-    /^deb(-src)?[[:space:]]+.*[[:space:]](trixie|trixie-security|trixie-updates)([[:space:]]|$)/ {
-      # Drop any current trailing components after the suite, replace with required set.
-      n = split($0, f, " ")
-      out = f[1] " " f[2] " " f[3]
-      for (i = 4; i <= n; i++) {
-        if (f[i] ~ /^(main|contrib|non-free|non-free-firmware)$/) continue
-        out = out " " f[i]
-      }
-      print out " " want
-      next
-    }
-    { print }
-  ' "$file" >"$tmp"
-  if cmp -s -- "$file" "$tmp"; then
-    rm -f -- "$tmp"
-    ok "legacy list already correct: $file"
-    return 0
-  fi
-  if [[ "${DRY_RUN:-0}" == 1 ]]; then
-    rm -f -- "$tmp"
-    info "would: rewrite trixie lines in $file to include '$REQUIRED_COMPONENTS'"
-    return 0
-  fi
-  sudo install -m 644 -o root -g root -- "$tmp" "$file" || { rm -f -- "$tmp"; die "failed to install $file"; }
-  rm -f -- "$tmp"
-  ok "updated: $file"
-  mutated=1
-}
+install_apt_source "$DEB822_MAIN_SRC" "$DEB822_MAIN_DST" "$DEB822_MAIN_ORIG"
+install_apt_source "$BACKPORTS_SRC"   "$BACKPORTS_DST"
 
-# Main sources (deb822 preferred on Trixie).
-if [[ -f "$DEB822_MAIN" ]]; then
-  if deb822_components_ok "$DEB822_MAIN"; then
-    ok "deb822 components already correct: $DEB822_MAIN"
-  else
-    rewrite_deb822_components "$DEB822_MAIN"
-  fi
-elif [[ -s "$LEGACY_LIST" ]]; then
-  ensure_legacy_components "$LEGACY_LIST"
-else
-  die "neither $DEB822_MAIN nor a non-empty $LEGACY_LIST exists — d-i must have produced one of these"
+# Legacy /etc/apt/sources.list — d-i on Trixie writes deb822, so this file is
+# usually empty / commented-out (just a cdrom line). If it has live `deb`/`deb-src`
+# entries, we'd end up with duplicate sources. Don't touch, but warn the user.
+if [[ -f "$LEGACY_LIST" ]] && grep -E '^[[:space:]]*deb(-src)?[[:space:]]' "$LEGACY_LIST" >/dev/null; then
+  warn "$LEGACY_LIST has uncommented deb lines that may shadow $DEB822_MAIN_DST — review manually"
 fi
 
-# Backports.
-if [[ -f "$BACKPORTS_DST" ]] && cmp -s -- "$BACKPORTS_SRC" "$BACKPORTS_DST"; then
-  ok "backports source already in place: $BACKPORTS_DST"
-else
-  if [[ "${DRY_RUN:-0}" == 1 ]]; then
-    info "would install: $BACKPORTS_SRC -> $BACKPORTS_DST"
-  else
-    sudo install -m 644 -o root -g root -- "$BACKPORTS_SRC" "$BACKPORTS_DST" \
-      || die "failed to install $BACKPORTS_DST"
-    ok "installed: $BACKPORTS_DST"
-    mutated=1
-  fi
-fi
-
-# If we changed anything, force the next apt_ensure to re-run apt-get update.
+# Force the next apt_ensure to re-run apt-get update against the new sources.
 if (( mutated )) && [[ -f "$_APT_UPDATED_FLAG" ]]; then
   rm -f -- "$_APT_UPDATED_FLAG"
   info "invalidated apt-update cache flag"
