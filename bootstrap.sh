@@ -28,6 +28,8 @@ case "${ID:-}:${ID_LIKE:-}" in
   *) die "unsupported distro: ID=${ID:-?}. This installer targets Debian/Ubuntu." ;;
 esac
 
+command -v sudo >/dev/null 2>&1 || die "sudo is not installed. Fix as root: apt install -y sudo && usermod -aG sudo $USER, then log out/in and re-run."
+
 need_pkg=()
 command -v git  >/dev/null 2>&1 || need_pkg+=(git)
 command -v curl >/dev/null 2>&1 || need_pkg+=(curl)
