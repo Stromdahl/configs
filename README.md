@@ -121,7 +121,7 @@ checks the working tree out into `/opt/<name>/` and runs `deploy.sh`:
 git push <name> main
 ```
 
-Currently provisioned: `jellyfin`. See `servers/home-assistant/` for Home
+Currently provisioned: `neon` (runs the Jellyfin media stack). See `servers/home-assistant/` for Home
 Assistant — HAOS is managed via REST/WS, not git-push (see
 `servers/home-assistant/AGENTS.md`).
 
@@ -158,7 +158,7 @@ encrypted to it.
 
 1. Provision the host (currently via `ansible/` in `~/projects/homelab-stack.archived`; porting to dotfiles modules is in progress).
 2. Append the server's age public key and a matching `creation_rule` to `.sops.yaml`.
-3. `mkdir servers/<name>`, add `docker-compose.yml`, `config.env`, `deploy.sh` (copy from `servers/jellyfin/`).
+3. `mkdir servers/<name>`, add `docker-compose.yml`, `config.env`, `deploy.sh` (copy from `servers/neon/`). Note: `<name>` must equal the server's `hostname -s` — the post-receive hook looks up the subdir from `hostname -s` at deploy time.
 4. Create secrets: `sops servers/<name>/secrets.env`.
 5. Add the deploy remote and push:
    ```bash
