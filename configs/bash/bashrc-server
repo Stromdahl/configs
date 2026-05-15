@@ -1,0 +1,87 @@
+# ~/.bashrc (server) — minimal shell ergonomics, no laptop assumptions.
+# Linked from ~/.dotfiles/modules/bash-server.
+
+# Bail on non-interactive shells (rsync subprocess, scp, ssh-with-command).
+case $- in *i*) ;; *) return;; esac
+
+# =============================================================================
+# - ENVIRONMENT
+# =============================================================================
+
+export EDITOR=nvim
+export PATH="$HOME/.local/bin:$PATH"
+umask 022
+
+# =============================================================================
+# - COLOR SUPPORT
+# =============================================================================
+
+if [ -x /usr/bin/dircolors ]; then
+    eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+fi
+
+# =============================================================================
+# - SHELL OPTIONS
+# =============================================================================
+
+shopt -s histappend checkwinsize extglob
+
+# =============================================================================
+# - HISTORY (capped — servers run long, infinite history grows the file)
+# =============================================================================
+
+export HISTSIZE=10000
+export HISTFILESIZE=20000
+export HISTCONTROL=ignoredups:erasedups
+export HISTIGNORE="ls:cd:pwd:exit:clear"
+
+# =============================================================================
+# - COMPLETION
+# =============================================================================
+
+[ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
+
+# =============================================================================
+# - PROMPT — user@host:cwd $ (red [N] prefix on non-zero exit)
+# =============================================================================
+
+__prompt_command() {
+  local exit_code=$?
+  printf '\033]0;%s@%s: %s\007' "$USER" "$HOSTNAME" "${PWD/$HOME/~}"
+  local status=""
+  [ $exit_code -ne 0 ] && status="\[\033[91m\][$exit_code]\[\033[0m\] "
+  PS1="${status}"'\[\033[96m\]\u@\h\[\033[0m\]:\[\033[94m\]\w\[\033[0m\]\$ '
+}
+PROMPT_DIRTRIM=3
+export PROMPT_COMMAND="__prompt_command"
+
+# =============================================================================
+# - FUNCTIONS
+# =============================================================================
+
+mkcd() { mkdir -p -- "$1" && cd -- "$1"; }
+psearch() { ps aux | grep -i -- "$1" | grep -v grep; }
+
+# =============================================================================
+# - ALIASES
+# =============================================================================
+
+alias ll='ls -hltF --time-style=long-iso --group-directories-first'
+alias la='ll -A'
+alias reload='source ~/.bashrc'
+
+alias cp='cp -vi'
+alias mv='mv -vi'
+alias rm='rm -vi'
+
+# =============================================================================
+# - SOURCE ~/.bashrc.d/*.sh
+# =============================================================================
+
+if [ -d "$HOME/.bashrc.d" ]; then
+  for f in "$HOME/.bashrc.d/"*.sh; do
+    [ -r "$f" ] && . "$f"
+  done
+fi
