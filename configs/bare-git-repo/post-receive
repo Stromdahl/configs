@@ -1,0 +1,41 @@
+#!/bin/bash
+# Homelab git-push deploy hook. Sparse-checks-out only the per-host subdir
+# (servers/$hostname/) into /opt/$hostname/, then runs that server's
+# deploy.sh. Single bare repo per host (homelab.git) — see modules/bare-git-repo.
+set -e
+
+SERVER_NAME="$(hostname -s)"
+DEPLOY_DIR="/opt/$SERVER_NAME"
+GIT_DIR="$HOME/homelab.git"
+SUBDIR="servers/$SERVER_NAME"
+
+if [ -z "$SERVER_NAME" ]; then
+  echo "ERROR: hostname -s returned empty" >&2
+  exit 1
+fi
+
+# Read ref updates from stdin; only act on main.
+while read -r _old _new ref; do
+  case "$ref" in
+    refs/heads/main) ;;
+    *) continue ;;
+  esac
+
+  echo "==> Sparse-checking out $SUBDIR into $DEPLOY_DIR..."
+
+  git --git-dir="$GIT_DIR" config core.sparseCheckout true
+  mkdir -p -- "$GIT_DIR/info"
+  printf '%s/\n' "$SUBDIR" > "$GIT_DIR/info/sparse-checkout"
+
+  mkdir -p -- "$DEPLOY_DIR"
+  git --git-dir="$GIT_DIR" --work-tree="$DEPLOY_DIR" checkout -f main
+
+  DEPLOY_SCRIPT="$DEPLOY_DIR/$SUBDIR/deploy.sh"
+  if [ -x "$DEPLOY_SCRIPT" ]; then
+    echo "==> Running deploy script for $SERVER_NAME..."
+    exec "$DEPLOY_SCRIPT"
+  else
+    echo "ERROR: $DEPLOY_SCRIPT not found or not executable" >&2
+    exit 1
+  fi
+done
