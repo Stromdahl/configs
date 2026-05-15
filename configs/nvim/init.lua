@@ -763,13 +763,26 @@ vim.lsp.config["emmet_ls"] = {
   filetypes = { "html", "css", "scss", "javascript", "javascriptreact", "typescript", "typescriptreact", "vue", "svelte" },
 }
 
+-- Bash Language Server (uses shellcheck for diagnostics if available on PATH)
+vim.lsp.config["bashls"] = {
+  cmd = { "bash-language-server", "start" },
+  root_markers = { ".git" },
+  filetypes = { "bash", "sh" },
+  single_file_support = true,
+  settings = {
+    bashIde = {
+      globPattern = "*@(.sh|.inc|.bash|.command)",
+    },
+  },
+}
+
 -- Set global LSP defaults
 vim.lsp.config('*', {
   root_markers = { '.git' },
 })
 
 -- Enable all configured LSP servers
-vim.lsp.enable({ 'rust-analyzer', 'lua_ls', 'ts_ls', 'clangd', 'html', 'cssls', 'tailwindcss', 'emmet_ls' })
+vim.lsp.enable({ 'rust-analyzer', 'lua_ls', 'ts_ls', 'clangd', 'html', 'cssls', 'tailwindcss', 'emmet_ls', 'bashls' })
 
 -- Ensure LSP servers shut down cleanly on exit
 autocmd("VimLeavePre", {
@@ -857,6 +870,7 @@ require("lazy").setup({
         "cssls",
         "tailwindcss",
         "emmet_ls",
+        "bashls",
       },
       automatic_installation = true,
     },
