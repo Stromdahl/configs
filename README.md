@@ -162,6 +162,6 @@ encrypted to it.
 4. Create secrets: `sops servers/<name>/secrets.env`.
 5. Add the deploy remote and push:
    ```bash
-   git remote add <name> deploy@<host>:homelab.git
+   git remote add <name> deploy@<host>:<name>.git   # bare repo name == hostname
    git push <name> main
    ```

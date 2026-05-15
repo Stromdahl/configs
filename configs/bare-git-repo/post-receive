@@ -1,14 +1,14 @@
 #!/bin/bash
 # Homelab git-push deploy hook. Sparse-checks-out only the per-host subdir
 # (servers/$hostname/) into /opt/$hostname/, then runs that server's
-# deploy.sh. Single bare repo per host (homelab.git) — see modules/bare-git-repo.
+# deploy.sh. Single bare repo per host ($hostname.git) — see modules/bare-git-repo.
 set -e
 
 SERVER_NAME="$(hostname -s)"
 DEPLOY_DIR="${DEPLOY_DIR:-/opt/$SERVER_NAME}"
 # git fires post-receive with GIT_DIR already in env; fall back to the
 # convention for direct invocation (testing, manual replay).
-GIT_DIR="${GIT_DIR:-$HOME/homelab.git}"
+GIT_DIR="${GIT_DIR:-$HOME/$SERVER_NAME.git}"
 SUBDIR="servers/$SERVER_NAME"
 
 if [ -z "$SERVER_NAME" ]; then

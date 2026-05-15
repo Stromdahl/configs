@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Server-side bare git repo + sparse-checkout post-receive hook. Workstation
-# pushes to deploy@host:homelab.git; the hook materializes only
+# pushes to deploy@host:<hostname>.git; the hook materializes only
 # servers/$(hostname -s)/ into /opt/$(hostname -s)/ then runs that server's
 # deploy.sh. Generates the deploy user's age key if missing.
 #
@@ -9,7 +9,10 @@
 set -euo pipefail
 
 readonly DEPLOY_USER="deploy"
-readonly BARE_NAME="homelab.git"
+host_short="$(hostname -s)"
+[[ -n "$host_short" ]] || die "hostname -s returned empty — refusing to derive bare repo name"
+BARE_NAME="${host_short}.git"
+readonly BARE_NAME
 
 if id -- "$DEPLOY_USER" >/dev/null 2>&1; then
   deploy_home="$(getent passwd -- "$DEPLOY_USER" | cut -d: -f6)"
