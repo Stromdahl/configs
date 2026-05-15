@@ -1,5 +1,37 @@
-.env
-.vault_password
+# Deny-by-default at the repo root. Add an `!/name` line below to track a
+# new top-level file or directory; everything else is ignored.
+/*
 
-# decrypted-secrets tmpfiles (produced by deploy.sh or manual sops -d)
-.secrets.env.*
+# Allowed top-level entries.
+!/.gitignore
+!/.sops.yaml
+!/AGENTS.md
+!/README.md
+!/bootstrap.sh
+!/install.sh
+!/bin/
+!/configs/
+!/hosts/
+!/lib/
+!/modules/
+!/servers/
+
+# Defense in depth — never track these patterns at any depth, even if a
+# parent dir is allowed. Override per-case with a more specific !pattern
+# in this file if you ever need to.
+**/.env
+**/.vault_password
+**/.secrets.env.*
+**/*.pem
+**/*.key
+**/id_rsa*
+**/id_ed25519*
+**/id_ecdsa*
+**/*.p12
+**/*.pfx
+**/*.kdbx
+**/.aws/
+**/.vagrant/
+**/kubeconfig
+**/*.tfstate
+**/*.tfstate.backup
