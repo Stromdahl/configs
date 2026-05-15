@@ -5,8 +5,10 @@
 set -e
 
 SERVER_NAME="$(hostname -s)"
-DEPLOY_DIR="/opt/$SERVER_NAME"
-GIT_DIR="$HOME/homelab.git"
+DEPLOY_DIR="${DEPLOY_DIR:-/opt/$SERVER_NAME}"
+# git fires post-receive with GIT_DIR already in env; fall back to the
+# convention for direct invocation (testing, manual replay).
+GIT_DIR="${GIT_DIR:-$HOME/homelab.git}"
 SUBDIR="servers/$SERVER_NAME"
 
 if [ -z "$SERVER_NAME" ]; then
