@@ -1,0 +1,332 @@
+{
+  "views": [
+    {
+      "type": "sections",
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "markdown",
+              "content": "# {{ states('sensor.temperature_median') }} <span>°C</span>\n\n**NOW · INDOORS** &nbsp;💧 {{ states('sensor.humidity_median') }}% &nbsp; ☁ {{ states('sensor.sonoff_snzb_02ld') }}°C outside &nbsp; ☀ Auto **{{ 'ON' if is_state('input_boolean.auto_brightness_on','on') else 'off' }}**",
+              "card_mod": {
+                "style": "ha-card {\n  padding: 24px 28px;\n  background: radial-gradient(ellipse at top right, rgba(215,178,109,0.18), transparent 60%), var(--card-background-color);\n  border-radius: 22px;\n}\nha-card h1 { font-size: 64px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin: 0 0 14px 0; font-variant-numeric: tabular-nums; }\nha-card h1 span { font-size: 22px; font-weight: 400; color: var(--secondary-text-color); letter-spacing: 0; vertical-align: top; margin-left: 4px; }\nha-card p { color: var(--secondary-text-color); font-size: 13px; margin: 0; line-height: 1.6; }\nha-card p strong:first-child { color: var(--secondary-text-color); letter-spacing: 0.16em; font-weight: 800; margin-right: 8px; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:account-group",
+              "heading": "People"
+            },
+            {
+              "type": "tile",
+              "entity": "person.mattias",
+              "name": "Mattias",
+              "color": "blue",
+              "vertical": false
+            },
+            {
+              "type": "tile",
+              "entity": "person.hanna",
+              "name": "Hanna",
+              "color": "orange",
+              "vertical": false
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:lightbulb-group",
+              "heading": "Lights"
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "scene.bright",
+                  "name": " ",
+                  "icon": "mdi:white-balance-sunny",
+                  "color": "amber",
+                  "hide_state": true,
+                  "vertical": false,
+                  "card_mod": {
+                    "style": "ha-card { aspect-ratio: 1 / 1; border-radius: 50% !important; padding: 0 !important; min-height: 0 !important; max-width: 56px; margin: 0 auto; }\nha-tile-info { display: none !important; }\n.container { padding: 0 !important; height: 100%; }\n.tile { padding: 0 !important; height: 100%; display: flex; align-items: center; justify-content: center; }\nha-tile-icon { --tile-icon-size: 100%; margin: 0 !important; }\n"
+                  },
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "scene.turn_on",
+                    "target": {
+                      "entity_id": "scene.bright"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "scene.movie",
+                  "name": " ",
+                  "icon": "mdi:movie-open",
+                  "color": "indigo",
+                  "hide_state": true,
+                  "vertical": false,
+                  "card_mod": {
+                    "style": "ha-card { aspect-ratio: 1 / 1; border-radius: 50% !important; padding: 0 !important; min-height: 0 !important; max-width: 56px; margin: 0 auto; }\nha-tile-info { display: none !important; }\n.container { padding: 0 !important; height: 100%; }\n.tile { padding: 0 !important; height: 100%; display: flex; align-items: center; justify-content: center; }\nha-tile-icon { --tile-icon-size: 100%; margin: 0 !important; }\n"
+                  },
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "scene.turn_on",
+                    "target": {
+                      "entity_id": "scene.movie"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "scene.evening",
+                  "name": " ",
+                  "icon": "mdi:weather-night",
+                  "color": "deep-purple",
+                  "hide_state": true,
+                  "vertical": false,
+                  "card_mod": {
+                    "style": "ha-card { aspect-ratio: 1 / 1; border-radius: 50% !important; padding: 0 !important; min-height: 0 !important; max-width: 56px; margin: 0 auto; }\nha-tile-info { display: none !important; }\n.container { padding: 0 !important; height: 100%; }\n.tile { padding: 0 !important; height: 100%; display: flex; align-items: center; justify-content: center; }\nha-tile-icon { --tile-icon-size: 100%; margin: 0 !important; }\n"
+                  },
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "scene.turn_on",
+                    "target": {
+                      "entity_id": "scene.evening"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.auto_brightness_on",
+                  "name": " ",
+                  "icon": "mdi:auto-mode",
+                  "color": "teal",
+                  "hide_state": true,
+                  "vertical": false,
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "input_boolean.turn_on",
+                    "target": {
+                      "entity_id": "input_boolean.auto_brightness_on"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "more-info"
+                  },
+                  "card_mod": {
+                    "style": "ha-card { aspect-ratio: 1 / 1; border-radius: 50% !important; padding: 0 !important; min-height: 0 !important; max-width: 56px; margin: 0 auto; }\nha-tile-info { display: none !important; }\n.container { padding: 0 !important; height: 100%; }\n.tile { padding: 0 !important; height: 100%; display: flex; align-items: center; justify-content: center; }\nha-tile-icon { --tile-icon-size: 100%; margin: 0 !important; }\n"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "scene.all_off",
+                  "name": " ",
+                  "icon": "mdi:power",
+                  "color": "red",
+                  "hide_state": true,
+                  "vertical": false,
+                  "card_mod": {
+                    "style": "ha-card { aspect-ratio: 1 / 1; border-radius: 50% !important; padding: 0 !important; min-height: 0 !important; max-width: 56px; margin: 0 auto; }\nha-tile-info { display: none !important; }\n.container { padding: 0 !important; height: 100%; }\n.tile { padding: 0 !important; height: 100%; display: flex; align-items: center; justify-content: center; }\nha-tile-icon { --tile-icon-size: 100%; margin: 0 !important; }\n"
+                  },
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "scene.turn_on",
+                    "target": {
+                      "entity_id": "scene.all_off"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "more-info"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "light.livingroom_lights",
+              "name": "Living room",
+              "icon": "mdi:sofa-outline",
+              "color": "amber",
+              "vertical": false,
+              "features": [
+                {
+                  "type": "light-brightness"
+                }
+              ],
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }\n"
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "light.office_lights",
+              "name": "Office",
+              "icon": "mdi:desk-lamp",
+              "color": "amber",
+              "vertical": false,
+              "features": [
+                {
+                  "type": "light-brightness"
+                }
+              ],
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }\n"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:home-thermometer",
+              "heading": "Rooms"
+            },
+            {
+              "type": "grid",
+              "columns": 2,
+              "square": false,
+              "cards": [
+                {
+                  "type": "markdown",
+                  "content": "**LIVING ROOM**\n# {{ states('sensor.sonoff_snzb_02d_temperature') }}°\n{{ states('sensor.sonoff_snzb_02d_humidity') }}% humidity",
+                  "card_mod": {
+                    "style": "ha-card {\n  padding: 16px 18px 14px 18px;\n  border-radius: 14px;\n  position: relative;\n  overflow: hidden;\n  min-height: 130px;\n}\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 8px 0; }\nha-card p:first-child strong { color: var(--primary-text-color); white-space: nowrap; }\nha-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 12px; margin: 0 0 12px 0; }\nha-card::after {\n  content: \"\";\n  position: absolute; left: 18px; right: 18px; bottom: 12px;\n  display: block;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(to right, var(--info-color) 0%, var(--info-color) {{ ((states('sensor.sonoff_snzb_02d_temperature') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) {{ ((states('sensor.sonoff_snzb_02d_temperature') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) 100%);\n}"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "**OFFICE**\n# {{ states('sensor.sonoff_snzb_02d_temperature_3') }}°\n{{ states('sensor.sonoff_snzb_02d_humidity_3') }}% humidity",
+                  "card_mod": {
+                    "style": "ha-card {\n  padding: 16px 18px 14px 18px;\n  border-radius: 14px;\n  position: relative;\n  overflow: hidden;\n  min-height: 130px;\n}\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 8px 0; }\nha-card p:first-child strong { color: var(--primary-text-color); white-space: nowrap; }\nha-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 12px; margin: 0 0 12px 0; }\nha-card::after {\n  content: \"\";\n  position: absolute; left: 18px; right: 18px; bottom: 12px;\n  display: block;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(to right, var(--info-color) 0%, var(--info-color) {{ ((states('sensor.sonoff_snzb_02d_temperature_3') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) {{ ((states('sensor.sonoff_snzb_02d_temperature_3') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) 100%);\n}"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "**BEDROOM**\n# {{ states('sensor.sonoff_snzb_02d_temperature_2') }}°\n{{ states('sensor.sonoff_snzb_02d_humidity_2') }}% humidity",
+                  "card_mod": {
+                    "style": "ha-card {\n  padding: 16px 18px 14px 18px;\n  border-radius: 14px;\n  position: relative;\n  overflow: hidden;\n  min-height: 130px;\n}\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 8px 0; }\nha-card p:first-child strong { color: var(--primary-text-color); white-space: nowrap; }\nha-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 12px; margin: 0 0 12px 0; }\nha-card::after {\n  content: \"\";\n  position: absolute; left: 18px; right: 18px; bottom: 12px;\n  display: block;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(to right, var(--info-color) 0%, var(--info-color) {{ ((states('sensor.sonoff_snzb_02d_temperature_2') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) {{ ((states('sensor.sonoff_snzb_02d_temperature_2') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) 100%);\n}"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "**BALCONY**\n# {{ states('sensor.sonoff_snzb_02ld') }}°\n&nbsp;",
+                  "card_mod": {
+                    "style": "ha-card {\n  padding: 16px 18px 14px 18px;\n  border-radius: 14px;\n  position: relative;\n  overflow: hidden;\n  min-height: 130px;\n}\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 8px 0; }\nha-card p:first-child strong { color: var(--primary-text-color); white-space: nowrap; }\nha-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 12px; margin: 0 0 12px 0; }\nha-card::after {\n  content: \"\";\n  position: absolute; left: 18px; right: 18px; bottom: 12px;\n  display: block;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(to right, var(--info-color) 0%, var(--info-color) {{ ((states('sensor.sonoff_snzb_02ld') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) {{ ((states('sensor.sonoff_snzb_02ld') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) 100%);\n}"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "media-control",
+              "entity": "media_player.vardagsrumtv",
+              "visibility": [
+                {
+                  "condition": "state",
+                  "entity": "media_player.vardagsrumtv",
+                  "state_not": [
+                    "off",
+                    "unavailable",
+                    "standby",
+                    "idle",
+                    "unknown"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "vacuum.leonardo",
+                  "name": "Leonardo",
+                  "icon": "mdi:robot-vacuum",
+                  "color": "green",
+                  "vertical": false,
+                  "card_mod": {
+                    "style": "ha-card { border-radius: 14px; }"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.waze_drive_to_work",
+                  "name": "Drive to work",
+                  "icon": "mdi:car",
+                  "color": "blue",
+                  "vertical": false,
+                  "card_mod": {
+                    "style": "ha-card { border-radius: 14px; }"
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "person.mattias",
+                      "state": "home"
+                    },
+                    {
+                      "condition": "time",
+                      "after": "06:00:00",
+                      "before": "12:00:00",
+                      "weekday": [
+                        "mon",
+                        "tue",
+                        "wed",
+                        "thu",
+                        "fri"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "markdown",
+                  "content": "### 🌙 Sunset\n\n# {% set t = states('sensor.sun_next_setting') | as_datetime %}{{ t.strftime('%H:%M') if t else '—' }}\n\n{% set t = states('sensor.sun_next_setting') | as_datetime %}{% if t %}{% set d = (t - now()).total_seconds() %}{% set h = (d/3600)|int %}{% set m = ((d%3600)/60)|int %}in {{ (h ~ 'h ') if h else '' }}{{ m }}m{% endif %}",
+                  "card_mod": {
+                    "style": "ha-card { background: var(--card-background-color); border: 1px solid var(--divider-color); border-right: 1px solid var(--divider-color); border-top-left-radius: 16px; border-bottom-left-radius: 16px; padding: 10px 4px 8px !important; min-height: 0 !important; text-align: center; }\nha-markdown { padding: 0 !important; }\nha-markdown h3 { font-size: 9px !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary-text-color) !important; font-weight: 800; margin: 0 0 4px 0 !important; }\nha-markdown h1 { font-size: 18px !important; font-weight: 800; color: var(--primary-text-color) !important; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; margin: 0 !important; }\nha-markdown p { font-size: 10px !important; color: var(--secondary-text-color) !important; margin: 2px 0 0 0 !important; }\n"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "### ☁ Outside\n\n# {{ states('sensor.sonoff_snzb_02ld') }}°\n\nbalcony",
+                  "card_mod": {
+                    "style": "ha-card { background: var(--card-background-color); border: 1px solid var(--divider-color); border-right: 1px solid var(--divider-color); border-radius: 0; padding: 10px 4px 8px !important; min-height: 0 !important; text-align: center; }\nha-markdown { padding: 0 !important; }\nha-markdown h3 { font-size: 9px !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary-text-color) !important; font-weight: 800; margin: 0 0 4px 0 !important; }\nha-markdown h1 { font-size: 18px !important; font-weight: 800; color: var(--primary-text-color) !important; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; margin: 0 !important; }\nha-markdown p { font-size: 10px !important; color: var(--secondary-text-color) !important; margin: 2px 0 0 0 !important; }\n"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "### 🏠 Indoor\n\n# {{ states('sensor.temperature_median') }}°\n\nmedian",
+                  "card_mod": {
+                    "style": "ha-card { background: var(--card-background-color); border: 1px solid var(--divider-color); border-right: 1px solid var(--divider-color); border-radius: 0; padding: 10px 4px 8px !important; min-height: 0 !important; text-align: center; }\nha-markdown { padding: 0 !important; }\nha-markdown h3 { font-size: 9px !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary-text-color) !important; font-weight: 800; margin: 0 0 4px 0 !important; }\nha-markdown h1 { font-size: 18px !important; font-weight: 800; color: var(--primary-text-color) !important; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; margin: 0 !important; }\nha-markdown p { font-size: 10px !important; color: var(--secondary-text-color) !important; margin: 2px 0 0 0 !important; }\n"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "### ❄ Fridge\n\n# {{ states('sensor.lumi_lumi_weather_temperature') }}°\n\nok",
+                  "card_mod": {
+                    "style": "ha-card { background: var(--card-background-color); border: 1px solid var(--divider-color);  border-top-right-radius: 16px; border-bottom-right-radius: 16px; padding: 10px 4px 8px !important; min-height: 0 !important; text-align: center; }\nha-markdown { padding: 0 !important; }\nha-markdown h3 { font-size: 9px !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary-text-color) !important; font-weight: 800; margin: 0 0 4px 0 !important; }\nha-markdown h1 { font-size: 18px !important; font-weight: 800; color: var(--primary-text-color) !important; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; margin: 0 !important; }\nha-markdown p { font-size: 10px !important; color: var(--secondary-text-color) !important; margin: 2px 0 0 0 !important; }\n"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "badges": []
+    }
+  ]
+}

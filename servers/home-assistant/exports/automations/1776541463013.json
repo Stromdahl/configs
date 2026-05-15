@@ -1,0 +1,26 @@
+{
+  "id": "1776541463013",
+  "alias": "Remote: Enable Light Auto",
+  "description": "",
+  "triggers": [
+    {
+      "device_id": "41b4cf0c71566bb1540dca24f0a2bcc3",
+      "domain": "zha",
+      "type": "remote_button_short_press",
+      "subtype": "turn_on",
+      "trigger": "device"
+    }
+  ],
+  "conditions": [],
+  "actions": [
+    {
+      "action": "input_boolean.turn_on",
+      "metadata": {},
+      "target": {
+        "entity_id": "input_boolean.auto_brightness_on"
+      },
+      "data": {}
+    }
+  ],
+  "mode": "single"
+}

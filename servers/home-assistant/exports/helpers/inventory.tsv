@@ -1,0 +1,7 @@
+input_boolean.auto_brightness_on	on	Auto brightness on
+input_button.leonardo_mark_emptied	2026-05-05T18:06:38.656347+00:00	Leonardo mark emptied
+input_number.leonardo_area_at_last_empty	22791.3	Leonardo area at last empty
+input_number.leonardo_empty_threshold	100.0	Leonardo empty threshold
+input_number.leonardo_trash_x	32438.0	Leonardo trash X
+input_number.leonardo_trash_y	26347.0	Leonardo trash Y
+input_number.max_auto_brightness	175.0	max auto brightness 

@@ -1,0 +1,23 @@
+{
+  "id": "1774049299284",
+  "alias": "Light Auto: Re-enable at 06:00",
+  "description": "",
+  "triggers": [
+    {
+      "trigger": "time",
+      "at": "06:00:00"
+    }
+  ],
+  "conditions": [],
+  "actions": [
+    {
+      "action": "input_boolean.turn_on",
+      "metadata": {},
+      "data": {},
+      "target": {
+        "entity_id": "input_boolean.auto_brightness_on"
+      }
+    }
+  ],
+  "mode": "single"
+}

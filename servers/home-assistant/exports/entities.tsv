@@ -1,0 +1,222 @@
+entity_id	state	friendly_name	device_class
+automation.auto_brightness_turn_on	on	Remote: Enable Light Auto	-
+automation.auto_light_brightness	on	Light Auto: Track ambient brightness	-
+automation.disable_auto_brightness_lockout_at_06_00	on	Light Auto: Re-enable at 06:00	-
+automation.leonardo_clean	on	Leonardo: Scheduled clean (Mon–Fri 14:00)	-
+automation.leonardo_go_to_trash_when_bin_needs_emptying	on	Leonardo: Go to trash when maintenance is due	-
+automation.leonardo_reset_area_on_mark_emptied	on	Leonardo: Reset bin counter on mark-emptied	-
+automation.office_manual_brightness_override_disable_auto	on	Light Auto: Disable on manual override	-
+automation.turn_off_all_lights	on	Remote: All lights off	-
+automation.turn_on_jellyfin_server_on_tv_start	on	Media: Wake servers on TV start	-
+binary_sensor.192_168_1_153	on	Neon Status	connectivity
+binary_sensor.leonardo_charging	on	Leonardo Charging	battery_charging
+binary_sensor.leonardo_cleaning	off	Leonardo Cleaning	running
+binary_sensor.leonardo_maintenance_due	off	Leonardo maintenance due	problem
+binary_sensor.leonardo_mop_attached	off	Leonardo Mop attached	connectivity
+binary_sensor.leonardo_needs_empty	off	Leonardo needs empty	problem
+binary_sensor.leonardo_water_box_attached	on	Leonardo Water box attached	connectivity
+binary_sensor.leonardo_water_shortage	off	Leonardo Water shortage	problem
+binary_sensor.radarr_health	unavailable	Health	problem
+button.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_identify	unknown	light_bulb_03 Identify	identify
+button.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_identify_2	unknown	light_bulb_04 Identify	identify
+button.ikea_of_sweden_tradfri_on_off_switch_identify	unknown	IKEA of Sweden TRADFRI on/off switch Identify	identify
+button.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_identify	unknown	light_boulb_02 Identify	identify
+button.light_bulb_01_identify	unknown	light_bulb_01 Identify	identify
+button.lumi_lumi_weather_identify	unknown	LUMI lumi.weather Identify	identify
+button.on_off_switch_01_identify	unknown	on_off_switch_01 Identify	identify
+button.sonoff_snzb_02d_identify	unknown	temp_hum_01 Identify	identify
+button.sonoff_snzb_02d_identify_2	unknown	SONOFF SNZB-02D Identify	identify
+button.sonoff_snzb_02d_identify_3	unknown	SONOFF SNZB-02D Identify	identify
+button.sonoff_snzb_02ld_identify	unknown	SONOFF SNZB-02LD Identify	identify
+button.test_favorite_current_song	unknown	Test Favorite current song	-
+button.vardagsrum_cast_favorite_current_song	unknown	Vardagsrum Cast Favorite current song	-
+button.vardagsrumtv_favorite_current_song	unknown	VardagsrumTV Favorite current song	-
+button.wake_on_lan_20_17_42_85_0b_20	2026-04-01T19:51:27.212880+00:00	TV	-
+button.wake_on_lan_70_8b_cd_a2_dd_2b	2026-05-06T04:32:53.844702+00:00	neon	-
+button.wake_on_lan_80_e8_2c_22_05_96	2026-05-06T04:32:53.844848+00:00	litium	-
+button.xiaomi_lumi_sen_ill_mgl01_identify	unknown	XIAOMI lumi.sen_ill.mgl01 Identify	identify
+calendar.radarr	unavailable	-	-
+conversation.home_assistant	unknown	Home Assistant	-
+device_tracker.cph2581	home	CPH2581	-
+device_tracker.sm_x920	home	SM-X920	-
+event.backup_automatic_backup	2026-05-06T03:33:29.039+00:00	Backup Automatic backup	-
+image.leonardo_map_0	2026-05-06T05:12:05.302450+00:00	Leonardo Map 0	-
+input_boolean.auto_brightness_on	on	Auto brightness on	-
+input_button.leonardo_mark_emptied	2026-05-05T18:06:38.656347+00:00	Leonardo mark emptied	-
+input_number.leonardo_area_at_last_empty	22791.3	Leonardo area at last empty	-
+input_number.leonardo_empty_threshold	100.0	Leonardo empty threshold	-
+input_number.leonardo_trash_x	32438.0	Leonardo trash X	-
+input_number.leonardo_trash_y	26347.0	Leonardo trash Y	-
+input_number.max_auto_brightness	175.0	max auto brightness 	-
+light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm	off	light_bulb_03	-
+light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_2	off	light_bulb_04	-
+light.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm	off	light_boulb_02	-
+light.light_auto	off	Light Auto	-
+light.light_bulb_01	off	light_bulb_01	-
+light.livingroom_lights	off	Livingroom lights	-
+light.office_lights	off	Office lights	-
+media_player.test	off	Test	speaker
+media_player.test_2	off	Test	speaker
+media_player.vardagsrum_cast	off	Vardagsrum Cast	-
+media_player.vardagsrum_cast_2	idle	Vardagsrum Cast	speaker
+media_player.vardagsrumtv	on	VardagsrumTV	tv
+media_player.vardagsrumtv_2	idle	VardagsrumTV	speaker
+number.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_on_level	255	light_bulb_03 On level	-
+number.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_on_level_2	255	light_bulb_04 On level	-
+number.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_on_off_transition_time	5	light_bulb_03 On/Off transition time	-
+number.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_on_off_transition_time_2	5	light_bulb_04 On/Off transition time	-
+number.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_power_on_level	255	light_bulb_03 Power-on level	-
+number.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_power_on_level_2	255	light_bulb_04 Power-on level	-
+number.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_start_up_color_temperature	65535	light_bulb_03 Start-up color temperature	-
+number.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_start_up_color_temperature_2	65535	light_bulb_04 Start-up color temperature	-
+number.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_on_level	255	light_boulb_02 On level	-
+number.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_on_off_transition_time	5	light_boulb_02 On/Off transition time	-
+number.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_power_on_level	255	light_boulb_02 Power-on level	-
+number.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_start_up_color_temperature	65535	light_boulb_02 Start-up color temperature	-
+number.leonardo_volume	55.0	Leonardo Volume	-
+number.light_bulb_01_on_level	255	light_bulb_01 On level	-
+number.light_bulb_01_on_off_transition_time	5	light_bulb_01 On/Off transition time	-
+number.light_bulb_01_power_on_level	255	light_bulb_01 Power-on level	-
+number.light_bulb_01_start_up_color_temperature	65535	light_bulb_01 Start-up color temperature	-
+number.sonoff_snzb_02d_comfort_humidity_max	60.0	temp_hum_01 Comfort humidity max	humidity
+number.sonoff_snzb_02d_comfort_humidity_max_2	60.0	SONOFF SNZB-02D Comfort humidity max	humidity
+number.sonoff_snzb_02d_comfort_humidity_max_3	60.0	SONOFF SNZB-02D Comfort humidity max	humidity
+number.sonoff_snzb_02d_comfort_humidity_min	40.0	temp_hum_01 Comfort humidity min	humidity
+number.sonoff_snzb_02d_comfort_humidity_min_2	40.0	SONOFF SNZB-02D Comfort humidity min	humidity
+number.sonoff_snzb_02d_comfort_humidity_min_3	40.0	SONOFF SNZB-02D Comfort humidity min	humidity
+number.sonoff_snzb_02d_comfort_temperature_max	27.0	temp_hum_01 Comfort temperature max	temperature
+number.sonoff_snzb_02d_comfort_temperature_max_2	27.0	SONOFF SNZB-02D Comfort temperature max	temperature
+number.sonoff_snzb_02d_comfort_temperature_max_3	27.0	SONOFF SNZB-02D Comfort temperature max	temperature
+number.sonoff_snzb_02d_comfort_temperature_min	19.0	temp_hum_01 Comfort temperature min	temperature
+number.sonoff_snzb_02d_comfort_temperature_min_2	19.0	SONOFF SNZB-02D Comfort temperature min	temperature
+number.sonoff_snzb_02d_comfort_temperature_min_3	19.0	SONOFF SNZB-02D Comfort temperature min	temperature
+number.sonoff_snzb_02d_humidity_offset	0.0	temp_hum_01 Humidity offset	humidity
+number.sonoff_snzb_02d_humidity_offset_2	0.0	SONOFF SNZB-02D Humidity offset	humidity
+number.sonoff_snzb_02d_humidity_offset_3	0.0	SONOFF SNZB-02D Humidity offset	humidity
+number.sonoff_snzb_02d_temperature_offset	0.0	temp_hum_01 Temperature offset	temperature_delta
+number.sonoff_snzb_02d_temperature_offset_2	0.0	SONOFF SNZB-02D Temperature offset	temperature_delta
+number.sonoff_snzb_02d_temperature_offset_3	0.0	SONOFF SNZB-02D Temperature offset	temperature_delta
+person.mattias	home	mattias	-
+select.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_power_on_behavior	On	light_bulb_03 Power-on behavior	-
+select.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_power_on_behavior_2	On	light_bulb_04 Power-on behavior	-
+select.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_power_on_behavior	On	light_boulb_02 Power-on behavior	-
+select.leonardo_mop_intensity	intense	Leonardo Mop intensity	-
+select.leonardo_mop_mode	standard	Leonardo Mop mode	-
+select.leonardo_selected_map	Map 0	Leonardo Selected map	-
+select.light_bulb_01_power_on_behavior	On	light_bulb_01 Power-on behavior	-
+select.sonoff_snzb_02d_display_unit	Celsius	temp_hum_01 Display unit	-
+select.sonoff_snzb_02d_display_unit_2	Celsius	SONOFF SNZB-02D Display unit	-
+select.sonoff_snzb_02d_display_unit_3	Celsius	SONOFF SNZB-02D Display unit	-
+sensor.backup_backup_manager_state	idle	Backup Backup Manager state	enum
+sensor.backup_last_attempted_automatic_backup	2026-05-06T03:33:28+00:00	Backup Last attempted automatic backup	timestamp
+sensor.backup_last_successful_automatic_backup	2026-05-06T03:33:29+00:00	Backup Last successful automatic backup	timestamp
+sensor.backup_next_scheduled_automatic_backup	2026-05-07T03:39:57+00:00	Backup Next scheduled automatic backup	timestamp
+sensor.brightness	0	brightness	-
+sensor.cph2581_battery_level	77	CPH2581 Battery level	battery
+sensor.cph2581_battery_state	discharging	CPH2581 Battery state	enum
+sensor.cph2581_charger_type	none	CPH2581 Charger type	enum
+sensor.home_assistant_core_cpu_percent	0.09	Home Assistant Core CPU percent	-
+sensor.home_assistant_core_memory_percent	13.93	Home Assistant Core Memory percent	-
+sensor.humidity_median	23.7	Humidity median	humidity
+sensor.ikea_of_sweden_tradfri_on_off_switch_battery	60.0	IKEA of Sweden TRADFRI on/off switch Battery	battery
+sensor.illumination	3761	Illumination	illuminance
+sensor.illumination_smooth	3575.46	Illumination Smooth	illuminance
+sensor.leonardo_battery	100	Leonardo Battery	battery
+sensor.leonardo_cleaning_area	0.0	Leonardo Cleaning area	-
+sensor.leonardo_cleaning_time	0.133333333333333	Leonardo Cleaning time	duration
+sensor.leonardo_current_room	Living room	Leonardo Current room	enum
+sensor.leonardo_filter_time_left	150.0	Leonardo Filter time left	duration
+sensor.leonardo_last_clean_begin	2026-05-05T16:17:04+00:00	Leonardo Last clean begin	timestamp
+sensor.leonardo_last_clean_end	2026-05-05T16:17:12+00:00	Leonardo Last clean end	timestamp
+sensor.leonardo_main_brush_time_left	300.0	Leonardo Main brush time left	duration
+sensor.leonardo_maintenance_message	OK	Leonardo maintenance message	-
+sensor.leonardo_sensor_time_left	30.0	Leonardo Sensor time left	duration
+sensor.leonardo_side_brush_time_left	200.0	Leonardo Side brush time left	duration
+sensor.leonardo_status	charging	Leonardo Status	enum
+sensor.leonardo_total_cleaning_area	22791.3	Leonardo Total cleaning area	-
+sensor.leonardo_total_cleaning_count	735	Leonardo Total cleaning count	-
+sensor.leonardo_total_cleaning_time	411.657777777778	Leonardo Total cleaning time	duration
+sensor.leonardo_vacuum_error	none	Leonardo Vacuum error	enum
+sensor.lumi_lumi_weather_battery	44.5	LUMI lumi.weather Battery	battery
+sensor.lumi_lumi_weather_humidity	65.11	LUMI lumi.weather Humidity	humidity
+sensor.lumi_lumi_weather_pressure	997	LUMI lumi.weather Pressure	pressure
+sensor.lumi_lumi_weather_temperature	4.9	LUMI lumi.weather Temperature	temperature
+sensor.on_off_switch_01_battery	16.0	on_off_switch_01 Battery	battery
+sensor.qbittorrent_active_torrents	0	qBittorrent Active torrents	-
+sensor.qbittorrent_all_time_download	1.12522138847362	qBittorrent All-time download	data_size
+sensor.qbittorrent_all_time_upload	0.786274872311878	qBittorrent All-time upload	data_size
+sensor.qbittorrent_all_torrents	82	qBittorrent All torrents	-
+sensor.qbittorrent_connection_status	connected	qBittorrent Connection status	enum
+sensor.qbittorrent_download_speed	0.0	qBittorrent Download speed	data_rate
+sensor.qbittorrent_errored_torrents	0	qBittorrent Errored torrents	-
+sensor.qbittorrent_global_ratio	0.69	qBittorrent Global ratio	-
+sensor.qbittorrent_inactive_torrents	3	qBittorrent Inactive torrents	-
+sensor.qbittorrent_paused_torrents	0	qBittorrent Paused torrents	-
+sensor.qbittorrent_status	idle	qBittorrent Status	enum
+sensor.qbittorrent_upload_speed	0.0	qBittorrent Upload speed	data_rate
+sensor.radarr_disk_space_movies	unavailable	Disk space movies	data_size
+sensor.radarr_movies	unavailable	Movies	-
+sensor.radarr_queue	unavailable	Queue	-
+sensor.sm_x920_battery_level	17	SM-X920 Battery level	battery
+sensor.sm_x920_battery_state	discharging	SM-X920 Battery state	enum
+sensor.sm_x920_charger_type	none	SM-X920 Charger type	enum
+sensor.sonarr_disk_space	unavailable	Disk space	data_size
+sensor.sonarr_queue	unavailable	Queue	-
+sensor.sonarr_shows	unavailable	Shows	-
+sensor.sonarr_upcoming	unavailable	Upcoming	-
+sensor.sonarr_wanted	unavailable	Wanted	-
+sensor.sonoff_snzb_02d_battery	100.0	temp_hum_01 Battery	battery
+sensor.sonoff_snzb_02d_battery_2	100.0	SONOFF SNZB-02D Battery	battery
+sensor.sonoff_snzb_02d_battery_3	100.0	SONOFF SNZB-02D Battery	battery
+sensor.sonoff_snzb_02d_humidity	23.7	temp_hum_01 Humidity	humidity
+sensor.sonoff_snzb_02d_humidity_2	26.5	SONOFF SNZB-02D Humidity	humidity
+sensor.sonoff_snzb_02d_humidity_3	23.7	SONOFF SNZB-02D Humidity	humidity
+sensor.sonoff_snzb_02d_temperature	23.0	temp_hum_01 Temperature	temperature
+sensor.sonoff_snzb_02d_temperature_2	18.7	SONOFF SNZB-02D Temperature	temperature
+sensor.sonoff_snzb_02d_temperature_3	22.3	SONOFF SNZB-02D Temperature	temperature
+sensor.sonoff_snzb_02ld	6.3	SONOFF SNZB-02LD	temperature
+sensor.sonoff_snzb_02ld_battery	100.0	SONOFF SNZB-02LD Battery	battery
+sensor.sun_next_dawn	2026-05-07T02:25:02+00:00	Sun Next dawn	timestamp
+sensor.sun_next_dusk	2026-05-06T19:41:38+00:00	Sun Next dusk	timestamp
+sensor.sun_next_midnight	2026-05-06T23:03:39+00:00	Sun Next midnight	timestamp
+sensor.sun_next_noon	2026-05-06T11:03:44+00:00	Sun Next noon	timestamp
+sensor.sun_next_rising	2026-05-07T03:11:56+00:00	Sun Next rising	timestamp
+sensor.sun_next_setting	2026-05-06T18:54:41+00:00	Sun Next setting	timestamp
+sensor.temperature_median	22.3	Temperaturen median	temperature
+sensor.xiaomi_lumi_sen_ill_mgl01_battery	unknown	XIAOMI lumi.sen_ill.mgl01 Battery	battery
+sun.sun	above_horizon	Sun	-
+switch.leonardo_do_not_disturb	on	Leonardo Do not disturb	-
+switch.leonardo_dock_child_lock	off	Leonardo Dock Child lock	-
+switch.leonardo_dock_status_indicator_light	on	Leonardo Dock Status indicator light	-
+switch.qbittorrent_alternative_speed	off	qBittorrent Alternative speed	-
+time.leonardo_do_not_disturb_begin	22:00:00	Leonardo Do not disturb begin	-
+time.leonardo_do_not_disturb_end	08:00:00	Leonardo Do not disturb end	-
+todo.shopping_list	1	Shopping List	-
+tts.google_translate_en_com	unknown	Google Translate en com	-
+update.card_mod_update	off	card-mod Update	-
+update.file_editor_update	off	File editor Update	-
+update.grocy_update	off	Grocy Update	-
+update.hacs_update	off	HACS Update	-
+update.home_assistant_connect_zbt_2_e072a1da6dc8_firmware	off	Home Assistant Connect ZBT-2 (E072A1DA6DC8) Firmware	firmware
+update.home_assistant_core_update	off	Home Assistant Core Update	-
+update.home_assistant_operating_system_update	off	Home Assistant Operating System Update	-
+update.home_assistant_supervisor_update	off	Home Assistant Supervisor Update	-
+update.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_firmware	unknown	light_bulb_03 Firmware	firmware
+update.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_firmware_2	unknown	light_bulb_04 Firmware	firmware
+update.ikea_of_sweden_tradfri_on_off_switch_firmware	unknown	IKEA of Sweden TRADFRI on/off switch Firmware	firmware
+update.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_firmware	unknown	light_boulb_02 Firmware	firmware
+update.let_s_encrypt_update	off	Let's Encrypt Update	-
+update.light_bulb_01_firmware	unknown	light_bulb_01 Firmware	firmware
+update.matter_server_update	off	Matter Server Update	-
+update.music_assistant_update	off	Music Assistant Update	-
+update.nginx_home_assistant_ssl_proxy_update	off	NGINX Home Assistant SSL proxy Update	-
+update.on_off_switch_01_firmware	unknown	on_off_switch_01 Firmware	firmware
+update.openthread_border_router_update	off	OpenThread Border Router Update	-
+update.sonoff_snzb_02d_firmware	off	temp_hum_01 Firmware	firmware
+update.sonoff_snzb_02d_firmware_2	off	SONOFF SNZB-02D Firmware	firmware
+update.sonoff_snzb_02d_firmware_3	off	SONOFF SNZB-02D Firmware	firmware
+update.sonoff_snzb_02ld_firmware	off	SONOFF SNZB-02LD Firmware	firmware
+update.terminal_ssh_update	off	Terminal & SSH Update	-
+vacuum.leonardo	docked	Leonardo	-
+weather.forecast_home	partlycloudy	Forecast Home	-
+zone.home	1	Home	-

@@ -1,0 +1,45 @@
+# Template entities. Loaded via `template: !include template.yaml` in configuration.yaml.
+#
+# vacuum.leonardo_smart — wraps the real vacuum.leonardo so that the standard
+# vacuum-commands tile feature's start_pause button calls our "clean enabled
+# rooms" script instead of vacuum.start. Dock, locate, pause, stop, and fan
+# speed pass through to the real entity unchanged.
+- vacuum:
+    - name: Leonardo Smart
+      unique_id: leonardo_smart_vacuum
+      state: "{{ states('vacuum.leonardo') }}"
+      fan_speed: "{{ state_attr('vacuum.leonardo', 'fan_speed') }}"
+      fan_speeds:
+        - quiet
+        - balanced
+        - turbo
+        - max
+        - "off"
+        - custom
+      attributes:
+        source_entity: vacuum.leonardo
+        status: "{{ states('sensor.leonardo_status') }}"
+      start:
+        action: script.leonardo_clean_enabled_rooms
+      pause:
+        action: vacuum.pause
+        target:
+          entity_id: vacuum.leonardo
+      stop:
+        action: vacuum.stop
+        target:
+          entity_id: vacuum.leonardo
+      return_to_base:
+        action: vacuum.return_to_base
+        target:
+          entity_id: vacuum.leonardo
+      locate:
+        action: vacuum.locate
+        target:
+          entity_id: vacuum.leonardo
+      set_fan_speed:
+        action: vacuum.set_fan_speed
+        target:
+          entity_id: vacuum.leonardo
+        data:
+          fan_speed: "{{ fan_speed }}"

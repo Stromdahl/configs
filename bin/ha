@@ -1,0 +1,287 @@
+#!/usr/bin/env node
+// ha — small CLI for poking the Home Assistant on home.stromdahl.tech.
+//
+//   ha state <entity_id>
+//   ha call <domain.service> '<json-data>'
+//   ha template '<jinja>'
+//   ha dash list
+//   ha dash get <url_path> [file]                # default: stdout
+//   ha dash save <url_path> <file>               # push file -> HA
+//   ha auto list
+//   ha auto get <id> [file]
+//   ha auto save <id> <file>
+//   ha auto delete <id>
+//   ha helper list
+//   ha helper create <type> '<json>'             # type: input_number / input_button / ...
+//   ha helper delete <type> <id>
+//   ha entities                                  # entity_id, state, friendly_name, device_class
+//   ha scene list
+//   ha scene get <id> [file]
+//   ha scene save <id> <file>                    # POST + scene.reload
+//   ha scene delete <id>
+//   ha device list                               # device_id, area_id, name_by_user, model
+//   ha device update <device_id> '<json>'        # e.g. {"area_id":"kitchen","name_by_user":"Fridge"}
+//   ha area list
+//   ha area create '<json>'                      # {"name":"Fridge","icon":"mdi:fridge"}
+//   ha area delete <area_id>
+//   ha ws '<json>'                               # raw WS command, prints result.result
+//
+// Auth: reads the bearer token from ~/.ha-token.json (the MCP-shaped file).
+// Host: home.stromdahl.tech (HTTPS for REST, WSS for WebSocket).
+
+const fs = require('fs');
+const path = require('path');
+
+const TOKEN_FILE = path.join(process.env.HOME, '.ha-token.json');
+const HOST = 'home.stromdahl.tech';
+
+function token() {
+  const j = JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf8'));
+  return j.headers.Authorization.replace(/^Bearer\s+/, '');
+}
+
+async function rest(method, path, body) {
+  const res = await fetch(`https://${HOST}/api${path}`, {
+    method,
+    headers: {
+      Authorization: 'Bearer ' + token(),
+      'Content-Type': 'application/json',
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${text}`);
+  }
+  if (!text) return null;
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+function wsClient() {
+  const ws = new WebSocket(`wss://${HOST}/api/websocket`);
+  let nextId = 1; const pending = new Map();
+  const ready = new Promise((res, rej) => {
+    ws.onmessage = (ev) => {
+      const m = JSON.parse(ev.data);
+      if (m.type === 'auth_required') return ws.send(JSON.stringify({ type: 'auth', access_token: token() }));
+      if (m.type === 'auth_ok') return res();
+      if (m.type === 'auth_invalid') return rej(new Error('auth_invalid'));
+      if (m.type === 'result') {
+        const p = pending.get(m.id); if (!p) return;
+        pending.delete(m.id);
+        if (m.success) p.res(m.result); else p.rej(new Error(JSON.stringify(m.error)));
+      }
+    };
+    ws.onerror = (e) => rej(new Error('WS ' + (e.message || e)));
+  });
+  return {
+    async send(msg) {
+      await ready;
+      return new Promise((res, rej) => {
+        const id = nextId++; pending.set(id, { res, rej });
+        ws.send(JSON.stringify({ ...msg, id }));
+      });
+    },
+    close: () => ws.close(),
+  };
+}
+
+async function withWs(fn) {
+  const c = wsClient();
+  try { return await fn(c); } finally { c.close(); }
+}
+
+const printJSON = (x) => console.log(typeof x === 'string' ? x : JSON.stringify(x, null, 2));
+const writeOrLog = (file, data) => file ? fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n') : printJSON(data);
+const readJSON = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+
+// ---------- subcommands ----------
+
+const cmds = {
+  async state([eid]) {
+    if (!eid) throw new Error('usage: ha state <entity_id>');
+    printJSON(await rest('GET', `/states/${eid}`));
+  },
+  async call([service, dataJson]) {
+    if (!service) throw new Error('usage: ha call <domain.service> [json]');
+    const [domain, svc] = service.split('.', 2);
+    const body = dataJson ? JSON.parse(dataJson) : {};
+    printJSON(await rest('POST', `/services/${domain}/${svc}`, body));
+  },
+  async template([tpl]) {
+    if (!tpl) throw new Error('usage: ha template <jinja>');
+    printJSON(await rest('POST', '/template', { template: tpl }));
+  },
+  async ws([json]) {
+    if (!json) throw new Error('usage: ha ws <json-message>');
+    const msg = JSON.parse(json);
+    await withWs(async (c) => printJSON(await c.send(msg)));
+  },
+  async entities() {
+    const states = await rest('GET', '/states');
+    const rows = states
+      .map((s) => `${s.entity_id}\t${s.state}\t${s.attributes.friendly_name ?? '-'}\t${s.attributes.device_class ?? '-'}`)
+      .sort();
+    console.log('entity_id\tstate\tfriendly_name\tdevice_class');
+    rows.forEach((r) => console.log(r));
+  },
+
+  dash: {
+    async list() {
+      await withWs(async (c) => {
+        const list = await c.send({ type: 'lovelace/dashboards/list' });
+        list.forEach((d) => console.log(`${d.url_path}\t${d.title}\t${d.icon ?? ''}`));
+      });
+    },
+    async get([urlPath, file]) {
+      if (!urlPath) throw new Error('usage: ha dash get <url_path> [file]');
+      await withWs(async (c) => {
+        const cfg = await c.send({ type: 'lovelace/config', url_path: urlPath });
+        writeOrLog(file, cfg);
+      });
+    },
+    async save([urlPath, file]) {
+      if (!urlPath || !file) throw new Error('usage: ha dash save <url_path> <file>');
+      const cfg = readJSON(file);
+      await withWs(async (c) => {
+        await c.send({ type: 'lovelace/config/save', url_path: urlPath, config: cfg });
+        console.log('saved');
+      });
+    },
+  },
+
+  auto: {
+    async list() {
+      const states = await rest('GET', '/states');
+      states
+        .filter((s) => s.entity_id.startsWith('automation.'))
+        .sort((a, b) => a.entity_id.localeCompare(b.entity_id))
+        .forEach((s) => console.log(`${s.attributes.id}\t${s.attributes.friendly_name}\t[${s.state}]`));
+    },
+    async get([id, file]) {
+      if (!id) throw new Error('usage: ha auto get <id> [file]');
+      writeOrLog(file, await rest('GET', `/config/automation/config/${id}`));
+    },
+    async save([id, file]) {
+      if (!id || !file) throw new Error('usage: ha auto save <id> <file>');
+      const cfg = readJSON(file);
+      await rest('POST', `/config/automation/config/${id}`, cfg);
+      await rest('POST', '/services/automation/reload');
+      console.log('saved + reloaded');
+    },
+    async delete([id]) {
+      if (!id) throw new Error('usage: ha auto delete <id>');
+      await rest('DELETE', `/config/automation/config/${id}`);
+      console.log('deleted');
+    },
+  },
+
+  scene: {
+    async list() {
+      const states = await rest('GET', '/states');
+      states
+        .filter((s) => s.entity_id.startsWith('scene.'))
+        .sort((a, b) => a.entity_id.localeCompare(b.entity_id))
+        .forEach((s) => console.log(`${s.attributes.id ?? s.entity_id.replace('scene.','')}\t${s.attributes.friendly_name ?? '-'}`));
+    },
+    async get([id, file]) {
+      if (!id) throw new Error('usage: ha scene get <id> [file]');
+      writeOrLog(file, await rest('GET', `/config/scene/config/${id}`));
+    },
+    async save([id, file]) {
+      if (!id || !file) throw new Error('usage: ha scene save <id> <file>');
+      const cfg = readJSON(file);
+      await rest('POST', `/config/scene/config/${id}`, cfg);
+      await rest('POST', '/services/scene/reload');
+      console.log('saved + reloaded');
+    },
+    async delete([id]) {
+      if (!id) throw new Error('usage: ha scene delete <id>');
+      await rest('DELETE', `/config/scene/config/${id}`);
+      console.log('deleted');
+    },
+  },
+
+  device: {
+    async list() {
+      await withWs(async (c) => {
+        const list = await c.send({ type: 'config/device_registry/list' });
+        list
+          .sort((a, b) => (a.area_id ?? '').localeCompare(b.area_id ?? '') || a.id.localeCompare(b.id))
+          .forEach((d) => console.log(`${d.id}\t${d.area_id ?? '-'}\t${d.name_by_user ?? d.name ?? '-'}\t${d.model ?? '-'}`));
+      });
+    },
+    async update([deviceId, json]) {
+      if (!deviceId || !json) throw new Error('usage: ha device update <device_id> <json>');
+      const payload = JSON.parse(json);
+      await withWs(async (c) => printJSON(await c.send({ type: 'config/device_registry/update', device_id: deviceId, ...payload })));
+    },
+  },
+
+  area: {
+    async list() {
+      await withWs(async (c) => {
+        const list = await c.send({ type: 'config/area_registry/list' });
+        list
+          .sort((a, b) => a.area_id.localeCompare(b.area_id))
+          .forEach((a) => console.log(`${a.area_id}\t${a.name}\t${a.icon ?? '-'}`));
+      });
+    },
+    async create([json]) {
+      if (!json) throw new Error('usage: ha area create <json>  (e.g. {"name":"Fridge","icon":"mdi:fridge"})');
+      const payload = JSON.parse(json);
+      await withWs(async (c) => printJSON(await c.send({ type: 'config/area_registry/create', ...payload })));
+    },
+    async delete([areaId]) {
+      if (!areaId) throw new Error('usage: ha area delete <area_id>');
+      await withWs(async (c) => printJSON(await c.send({ type: 'config/area_registry/delete', area_id: areaId })));
+    },
+  },
+
+  helper: {
+    async list() {
+      const states = await rest('GET', '/states');
+      states
+        .filter((s) =>
+          s.entity_id.startsWith('input_number.') ||
+          s.entity_id.startsWith('input_boolean.') ||
+          s.entity_id.startsWith('input_button.') ||
+          s.entity_id.startsWith('input_text.') ||
+          s.entity_id.startsWith('input_select.') ||
+          s.entity_id.startsWith('input_datetime.'))
+        .sort((a, b) => a.entity_id.localeCompare(b.entity_id))
+        .forEach((s) => console.log(`${s.entity_id}\t${s.state}\t${s.attributes.friendly_name ?? '-'}`));
+    },
+    async create([type, json]) {
+      if (!type || !json) throw new Error('usage: ha helper create <type> <json>  (type: input_number, input_button, ...)');
+      const payload = JSON.parse(json);
+      await withWs(async (c) => printJSON(await c.send({ type: `${type}/create`, ...payload })));
+    },
+    async delete([type, id]) {
+      if (!type || !id) throw new Error('usage: ha helper delete <type> <id>');
+      await withWs(async (c) => printJSON(await c.send({ type: `${type}/delete`, [`${type}_id`]: id })));
+    },
+  },
+};
+
+// ---------- dispatcher ----------
+(async () => {
+  const argv = process.argv.slice(2);
+  if (argv.length === 0) {
+    console.log("ha — Home Assistant CLI. See top of script for usage.");
+    process.exit(0);
+  }
+  let node = cmds;
+  let i = 0;
+  while (i < argv.length && node && typeof node === 'object' && !Array.isArray(node)) {
+    const next = node[argv[i]];
+    if (typeof next === 'function') {
+      await next(argv.slice(i + 1));
+      return;
+    }
+    if (typeof next !== 'object') break;
+    node = next; i++;
+  }
+  console.error(`unknown command: ${argv.join(' ')}`);
+  process.exit(2);
+})().catch((e) => { console.error(e.message || e); process.exit(1); });

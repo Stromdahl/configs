@@ -1,0 +1,34 @@
+{
+  "id": "1774984029952",
+  "alias": "Remote: All lights off",
+  "description": "",
+  "triggers": [
+    {
+      "device_id": "41b4cf0c71566bb1540dca24f0a2bcc3",
+      "domain": "zha",
+      "type": "remote_button_short_press",
+      "subtype": "turn_off",
+      "trigger": "device"
+    }
+  ],
+  "conditions": [],
+  "actions": [
+    {
+      "action": "light.turn_off",
+      "metadata": {},
+      "target": {
+        "entity_id": "light.light_auto"
+      },
+      "data": {}
+    },
+    {
+      "action": "input_boolean.turn_off",
+      "metadata": {},
+      "target": {
+        "entity_id": "input_boolean.auto_brightness_on"
+      },
+      "data": {}
+    }
+  ],
+  "mode": "single"
+}

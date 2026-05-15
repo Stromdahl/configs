@@ -1,0 +1,26 @@
+keys:
+  # Admin (workstation) keys — anyone who should be able to edit secrets.
+  # Add a new line and a new anchor for each new admin; reference them in
+  # every creation_rule so all admins can decrypt everything.
+  - &admin_ms age1duazmy5j6clvqkmnwtkjfnmk0n5kts0udac2qfeun5z2p6cw74kqa72z8f
+
+  # Server keys — one per host. The server can decrypt only its own secrets.
+  # Obtained from the `sops` Ansible role output; public key lives at
+  # /home/deploy/.config/sops/age/keys.txt on the host.
+  - &server_neon age1qzlvlkke2klmepmtdu76p7us94ls9w5g47m5dsa8yhuzrdfh933qvmeac8
+
+creation_rules:
+  # Per-server secrets: matches servers/<name>/secrets.env and any
+  # secrets.<suffix>.env under a server directory. Recipients are every
+  # admin key plus that server's own key.
+  - path_regex: ^servers/jellyfin/secrets(\.[^/]+)?\.env$
+    key_groups:
+      - age:
+          - *admin_ms
+          - *server_neon
+
+  # Shared (cross-server) secrets, if ever needed. Only admins can decrypt.
+  - path_regex: ^shared/secrets(\.[^/]+)?\.env$
+    key_groups:
+      - age:
+          - *admin_ms

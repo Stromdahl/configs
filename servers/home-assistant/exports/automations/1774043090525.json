@@ -1,0 +1,31 @@
+{
+  "id": "1774043090525",
+  "alias": "Light Auto: Disable on manual override",
+  "description": "",
+  "triggers": [
+    {
+      "trigger": "state",
+      "entity_id": [
+        "light.light_auto"
+      ]
+    }
+  ],
+  "conditions": [
+    {
+      "condition": "template",
+      "value_template": "{{ trigger.to_state is not none\n   and trigger.to_state.context.user_id is not none }}\n"
+    }
+  ],
+  "actions": [
+    {
+      "action": "input_boolean.turn_off",
+      "target": {
+        "entity_id": [
+          "input_boolean.auto_brightness_on"
+        ]
+      },
+      "data": {}
+    }
+  ],
+  "mode": "restart"
+}

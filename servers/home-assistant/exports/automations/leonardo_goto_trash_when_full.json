@@ -1,0 +1,52 @@
+{
+  "id": "leonardo_goto_trash_when_full",
+  "alias": "Leonardo: Go to trash when maintenance is due",
+  "description": "When a clean finishes (vacuum returning -> docked) and binary_sensor.leonardo_maintenance_due is on, drive vacuum to the trash position, snapshot total area so the bin counter resets, and notify.",
+  "triggers": [
+    {
+      "platform": "state",
+      "entity_id": "vacuum.leonardo",
+      "to": "docked",
+      "from": "returning"
+    }
+  ],
+  "conditions": [
+    {
+      "condition": "state",
+      "entity_id": "binary_sensor.leonardo_maintenance_due",
+      "state": "on"
+    }
+  ],
+  "actions": [
+    {
+      "delay": "00:00:20"
+    },
+    {
+      "target": {
+        "entity_id": "vacuum.leonardo"
+      },
+      "data": {
+        "x": "{{ states(\"input_number.leonardo_trash_x\") | int }}",
+        "y": "{{ states(\"input_number.leonardo_trash_y\") | int }}"
+      },
+      "action": "roborock.set_vacuum_goto_position"
+    },
+    {
+      "target": {
+        "entity_id": "input_number.leonardo_area_at_last_empty"
+      },
+      "data": {
+        "value": "{{ states(\"sensor.leonardo_total_cleaning_area\") | float(0) }}"
+      },
+      "action": "input_number.set_value"
+    },
+    {
+      "data": {
+        "title": "Leonardo at trash",
+        "message": "{{ states(\"sensor.leonardo_maintenance_message\") }}. Empty the bin — fill counter has been reset automatically."
+      },
+      "action": "persistent_notification.create"
+    }
+  ],
+  "mode": "single"
+}

@@ -1,0 +1,342 @@
+{
+  "views": [
+    {
+      "type": "sections",
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "tile",
+              "entity": "vacuum.leonardo_smart",
+              "name": "Quick start — clean enabled rooms",
+              "vertical": false,
+              "features": [
+                {
+                  "type": "vacuum-commands",
+                  "commands": [
+                    "start_pause",
+                    "return_home",
+                    "locate"
+                  ]
+                }
+              ],
+              "features_position": "bottom",
+              "card_mod": {
+                "style": "ha-card {\n  background: linear-gradient(135deg, #D7B26D 0%, #c79a4a 100%) !important;\n  --primary-text-color: #1A1208;\n  --secondary-text-color: rgba(26,18,8,0.7);\n  --tile-color: rgba(0,0,0,0.15);\n  border: 0;\n  border-radius: 22px;\n  padding: 12px;\n}\nha-card .name {\n  font-size: 18px !important;\n  font-weight: 800 !important;\n}\nha-tile-icon {\n  --tile-color: rgba(0,0,0,0.15);\n}"
+              },
+              "grid_options": {
+                "columns": 12,
+                "rows": 2
+              }
+            },
+            {
+              "type": "grid",
+              "columns": 2,
+              "square": false,
+              "cards": [
+                {
+                  "type": "picture-entity",
+                  "entity": "image.leonardo_map_0",
+                  "camera_view": "auto",
+                  "show_state": false,
+                  "show_name": false,
+                  "tap_action": {
+                    "action": "none"
+                  },
+                  "hold_action": {
+                    "action": "none"
+                  },
+                  "card_mod": {
+                    "style": "ha-card { border-radius: 22px; overflow: hidden; }"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "**● {{ states('sensor.leonardo_status') | replace('_',' ') | upper }}**\n\n## Leonardo · {{ states('sensor.leonardo_battery') }}%\n\nLast clean {{ relative_time(states.sensor.leonardo_last_clean_end.last_changed) }} ago · {{ states('sensor.leonardo_total_cleaning_count') }} total",
+                  "card_mod": {
+                    "style": "ha-card { padding: 22px; border-radius: 22px; }\nha-card p:first-child {\n  font-size: 11px;\n  text-transform: uppercase;\n  letter-spacing: 0.16em;\n  color: var(--success-color);\n  font-weight: 800;\n  margin: 0 0 8px 0;\n}\nha-card h2 {\n  font-size: 26px;\n  font-weight: 800;\n  letter-spacing: -0.02em;\n  margin: 0 0 8px 0;\n}\nha-card p:last-child {\n  font-size: 12px;\n  color: var(--secondary-text-color);\n  margin: 0;\n}"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:robot-vacuum-variant",
+              "heading": "Clean a room"
+            },
+            {
+              "type": "grid",
+              "columns": 3,
+              "square": false,
+              "cards": [
+                {
+                  "type": "button",
+                  "name": "Living room",
+                  "icon": "mdi:sofa",
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.send_command",
+                    "target": {
+                      "entity_id": "vacuum.leonardo"
+                    },
+                    "data": {
+                      "command": "app_segment_clean",
+                      "params": [
+                        19
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "button",
+                  "name": "Office",
+                  "icon": "mdi:desk",
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.send_command",
+                    "target": {
+                      "entity_id": "vacuum.leonardo"
+                    },
+                    "data": {
+                      "command": "app_segment_clean",
+                      "params": [
+                        21
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "button",
+                  "name": "Bedroom",
+                  "icon": "mdi:bed",
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.send_command",
+                    "target": {
+                      "entity_id": "vacuum.leonardo"
+                    },
+                    "data": {
+                      "command": "app_segment_clean",
+                      "params": [
+                        22
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "button",
+                  "name": "Kitchen",
+                  "icon": "mdi:silverware-fork-knife",
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.send_command",
+                    "target": {
+                      "entity_id": "vacuum.leonardo"
+                    },
+                    "data": {
+                      "command": "app_segment_clean",
+                      "params": [
+                        18
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "button",
+                  "name": "Hallway",
+                  "icon": "mdi:walk",
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.send_command",
+                    "target": {
+                      "entity_id": "vacuum.leonardo"
+                    },
+                    "data": {
+                      "command": "app_segment_clean",
+                      "params": [
+                        20
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "button",
+                  "name": "Entrance",
+                  "icon": "mdi:door",
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.send_command",
+                    "target": {
+                      "entity_id": "vacuum.leonardo"
+                    },
+                    "data": {
+                      "command": "app_segment_clean",
+                      "params": [
+                        16
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:robot-vacuum",
+              "heading": "Auto-clean rooms"
+            },
+            {
+              "type": "grid",
+              "columns": 2,
+              "square": false,
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.leonardo_auto_living_room",
+                  "name": "Living room",
+                  "icon": "mdi:sofa",
+                  "color": "amber",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.leonardo_auto_office",
+                  "name": "Office",
+                  "icon": "mdi:desk",
+                  "color": "amber",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.leonardo_auto_bedroom",
+                  "name": "Bedroom",
+                  "icon": "mdi:bed",
+                  "color": "amber",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.leonardo_auto_kitchen",
+                  "name": "Kitchen",
+                  "icon": "mdi:silverware-fork-knife",
+                  "color": "amber",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.leonardo_auto_hallway",
+                  "name": "Hallway",
+                  "icon": "mdi:walk",
+                  "color": "amber",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.leonardo_auto_entrance",
+                  "name": "Entrance",
+                  "icon": "mdi:door",
+                  "color": "amber",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:wrench-clock",
+              "heading": "Consumables (hours left)"
+            },
+            {
+              "type": "grid",
+              "columns": 2,
+              "square": false,
+              "cards": [
+                {
+                  "type": "gauge",
+                  "entity": "sensor.leonardo_main_brush_time_left",
+                  "name": "Main brush",
+                  "min": 0,
+                  "max": 300,
+                  "needle": true,
+                  "severity": {
+                    "green": 60,
+                    "yellow": 15,
+                    "red": 0
+                  }
+                },
+                {
+                  "type": "gauge",
+                  "entity": "sensor.leonardo_side_brush_time_left",
+                  "name": "Side brush",
+                  "min": 0,
+                  "max": 200,
+                  "needle": true,
+                  "severity": {
+                    "green": 40,
+                    "yellow": 10,
+                    "red": 0
+                  }
+                },
+                {
+                  "type": "gauge",
+                  "entity": "sensor.leonardo_filter_time_left",
+                  "name": "Filter",
+                  "min": 0,
+                  "max": 150,
+                  "needle": true,
+                  "severity": {
+                    "green": 30,
+                    "yellow": 7.5,
+                    "red": 0
+                  }
+                },
+                {
+                  "type": "gauge",
+                  "entity": "sensor.leonardo_sensor_time_left",
+                  "name": "Sensors",
+                  "min": 0,
+                  "max": 30,
+                  "needle": true,
+                  "severity": {
+                    "green": 6,
+                    "yellow": 1.5,
+                    "red": 0
+                  }
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "content": "**BIN · MAINTENANCE**\n\n## {{ 'NEEDS EMPTY' if is_state('binary_sensor.leonardo_needs_empty','on') else 'OK' }}\n\n{{ ((states('sensor.leonardo_total_cleaning_area') | float(0)) - (states('input_number.leonardo_area_at_last_empty') | float(0))) | round(1) }} m² since last empty · threshold {{ states('input_number.leonardo_empty_threshold') | int }} m²",
+              "card_mod": {
+                "style": "ha-card {\n  padding: 18px;\n  border-radius: 22px;\n  background:\n    {% if is_state('binary_sensor.leonardo_needs_empty','on') %}\n      rgba(224,122,111,0.10);\n    {% else %}\n      rgba(92,197,138,0.08);\n    {% endif %}\n}\nha-card p:first-child {\n  font-size: 11px;\n  text-transform: uppercase;\n  letter-spacing: 0.16em;\n  color: var(--secondary-text-color);\n  font-weight: 800;\n  margin: 0 0 6px 0;\n}\nha-card h2 {\n  font-size: 24px;\n  font-weight: 800;\n  margin: 0 0 6px 0;\n  color: {% if is_state('binary_sensor.leonardo_needs_empty','on') %}var(--error-color){% else %}var(--success-color){% endif %};\n}\nha-card p:last-child {\n  font-size: 12px;\n  color: var(--secondary-text-color);\n  margin: 0;\n}"
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "input_button.leonardo_mark_emptied",
+              "name": "Mark emptied",
+              "icon": "mdi:trash-can-outline",
+              "color": "green",
+              "tap_action": {
+                "action": "perform-action",
+                "perform_action": "input_button.press",
+                "target": {
+                  "entity_id": "input_button.leonardo_mark_emptied"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

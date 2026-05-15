@@ -1,0 +1,26 @@
+{
+  "id": "1776837269897",
+  "alias": "Leonardo: Scheduled clean (Mon–Fri 14:00)",
+  "description": "Mon–Fri 14:00 — calls leonardo_clean_enabled_rooms script which cleans only segments whose input_boolean.leonardo_auto_<room> is on.",
+  "triggers": [
+    {
+      "trigger": "time",
+      "at": "14:00:00",
+      "weekday": [
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri"
+      ]
+    }
+  ],
+  "conditions": [],
+  "actions": [
+    {
+      "action": "script.leonardo_clean_enabled_rooms",
+      "data": {}
+    }
+  ],
+  "mode": "single"
+}

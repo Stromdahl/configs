@@ -1,0 +1,29 @@
+{
+  "id": "1773989374663",
+  "alias": "Media: Wake servers on TV start",
+  "description": "",
+  "triggers": [
+    {
+      "device_id": "1f65942d67d8b9a2e703aadefdbc00cd",
+      "domain": "media_player",
+      "entity_id": "de07a220a0edc528e3af319308e38eb5",
+      "type": "turned_on",
+      "trigger": "device"
+    }
+  ],
+  "conditions": [],
+  "actions": [
+    {
+      "action": "button.press",
+      "metadata": {},
+      "target": {
+        "entity_id": [
+          "button.wake_on_lan_70_8b_cd_a2_dd_2b",
+          "button.wake_on_lan_80_e8_2c_22_05_96"
+        ]
+      },
+      "data": {}
+    }
+  ],
+  "mode": "single"
+}

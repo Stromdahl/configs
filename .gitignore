@@ -1,0 +1,5 @@
+.env
+.vault_password
+
+# decrypted-secrets tmpfiles (produced by deploy.sh or manual sops -d)
+.secrets.env.*

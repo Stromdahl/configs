@@ -82,3 +82,25 @@ When in doubt, copy the closest existing shape:
 - `modules/yazi/install.sh` — runtime config dir plus a separate snippet.
 - `modules/node/install.sh` — external installer (nvm) with explicit `DRY_RUN` handling.
 - `modules/unattended-upgrades/install.sh` — system files in `/etc` via `sudo install`, with a manual `cmp -s` idempotency check.
+
+## Homelab (`servers/`)
+
+Docker Compose services running on remote hosts. Each `servers/<name>/` has a
+`docker-compose.yml`, `config.env`, sops-encrypted `secrets.env`, and a
+`deploy.sh`. Deploys are git-push driven: a bare repo on the host's `deploy`
+user fires a post-receive hook that checks out the tree and runs `deploy.sh`.
+
+Per-service operational notes live in subdir `AGENTS.md` files
+(e.g. `servers/home-assistant/AGENTS.md` — HAOS-specific REST/WS reference,
+theme gotchas, vacuum recipes). Tools that walk up looking for `AGENTS.md`
+honor those.
+
+Server provisioning is mid-migration from Ansible (`~/projects/homelab-stack.archived/ansible/`)
+to dotfiles modules: see `project_monorepo_merge` memory. Until that's
+complete, fresh-host provisioning still uses the archived Ansible playbook;
+ongoing deploys go through the existing post-receive hook in this repo.
+
+Secrets live in `servers/<name>/secrets.env`, sops-encrypted with age. Paths
+are anchored at the repo root in `.sops.yaml`'s `creation_rules` — do not
+move `servers/` to a subdir without updating both `path_regex` entries and
+running `sops updatekeys` on every encrypted file.

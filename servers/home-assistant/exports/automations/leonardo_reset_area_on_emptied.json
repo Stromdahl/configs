@@ -1,0 +1,23 @@
+{
+  "id": "leonardo_reset_area_on_emptied",
+  "alias": "Leonardo: Reset bin counter on mark-emptied",
+  "description": "Snapshots current total cleaning area when the mark-emptied button is pressed.",
+  "triggers": [
+    {
+      "platform": "state",
+      "entity_id": "input_button.leonardo_mark_emptied"
+    }
+  ],
+  "actions": [
+    {
+      "target": {
+        "entity_id": "input_number.leonardo_area_at_last_empty"
+      },
+      "data": {
+        "value": "{{ states(\"sensor.leonardo_total_cleaning_area\") | float(0) }}"
+      },
+      "action": "input_number.set_value"
+    }
+  ],
+  "mode": "single"
+}
