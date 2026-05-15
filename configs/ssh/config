@@ -6,3 +6,7 @@ Host *
 Host homelab
   HostName 192.168.1.101
   User stroid
+
+Host titan
+  HostName 192.168.1.174
+  User ms
