@@ -94,7 +94,7 @@ __prompt_command() {
   local status=""
   [ $exit_code -ne 0 ] && status="${_C_RED}[$exit_code] "
 
-  PS1="${status}${_C_CYAN}\#$(__git_ps1 " ${_C_YELLOW}(%s)") ${_C_BLUE}\w\n${_C_GRAY}\$${_C_RST} "
+  PS1="${status}${_C_CYAN}\u@\h \#$(__git_ps1 " ${_C_YELLOW}(%s)") ${_C_BLUE}\w\n${_C_GRAY}\$${_C_RST} "
 }
 
 PROMPT_DIRTRIM=3
