@@ -3,10 +3,10 @@ include ~/sensative/dev-ops/configs/ssh_config
 Host *
   AddKeysToAgent yes
 
-Host homelab
-  HostName 192.168.1.101
-  User stroid
-
 Host titan
   HostName 192.168.1.174
+  User ms
+
+Host titan-100
+  HostName 192.168.1.176
   User ms
