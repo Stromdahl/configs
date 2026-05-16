@@ -21,6 +21,13 @@ ssh titan 'sudo cp /tmp/100.conf /etc/pve/nodes/titan/qemu-server/100.conf'
 - RTX 2060 PCI passthrough: `hostpci0: 0000:01:00.0,x-vga=1`
 - GPU USB-C controller: `hostpci1: 0000:01:00.2`
 - USB hub on host port 1-4 (Genesys Logic, 4 downstream ports) passed through
-  per-port — keyboard / Bluetooth / gamepad receivers + one free port for
-  hot-swap. `usb0..usb3: host=1-4.{1..4}`
+  per-port for keyboard / Bluetooth / hot-swap: `usb0=1-4.1`, `usb1=1-4.2`,
+  `usb3=1-4.4`. **Port 1-4.3 (the 8BitDo Pro 3 dock) is intentionally not
+  passed by-port** — QEMU's by-port slot loses the device when its VID/PID
+  changes (Pro 3 receiver flips between `2dc8:3109` idle and `2dc8:310b`
+  active on every controller wake/sleep), and by-port re-attach never
+  recovers without manual intervention. Instead the dock is passed by-id
+  in two slots: `usb2=2dc8:3109` and `usb4=2dc8:310b`. QEMU's 2s auto-poll
+  reattaches whichever PID is live; only one of the two is ever connected
+  at a time. See [[project-pve-usb-passthrough]].
 - qemu-guest-agent enabled, onboot=1, virtio scsi+net.

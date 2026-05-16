@@ -1,7 +1,0 @@
-# 8BitDo Pro 3 Receiver re-attach for VM 100 (titan-100).
-# The receiver re-enumerates with a different VID/PID on every controller
-# wake/sleep cycle (2dc8:3109 idle, 2dc8:310b active). QEMU's usb-host
-# backend does not follow PID changes — it loses the device handle and the
-# VM stops seeing it. Re-issue the by-port attach via `qm` whenever any
-# 2dc8:* device shows up on the host.
-ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="2dc8", RUN+="/usr/local/sbin/pve-vm100-8bitdo-reattach"
