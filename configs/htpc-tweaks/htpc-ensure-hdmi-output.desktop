@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=HTPC: ensure HDMI output enabled
+Comment=Re-enable any connected HDMI/DP after kscreen saves an all-disabled state
+Exec=/usr/local/bin/htpc-ensure-hdmi-output
+NoDisplay=true
+X-KDE-autostart-after=panel
+OnlyShowIn=KDE;

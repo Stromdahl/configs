@@ -5,7 +5,7 @@
 set -euo pipefail
 
 install_etc_file() {
-  local name="$1" dst="$2"
+  local name="$1" dst="$2" mode="${3:-644}"
   local src="$DOTFILES_ROOT/configs/htpc-tweaks/$name"
   if [[ -r "$dst" ]] && cmp -s -- "$src" "$dst"; then
     ok "etc ok: $dst"
@@ -15,7 +15,7 @@ install_etc_file() {
     info "would install: $src -> $dst"
     return 1
   fi
-  sudo install -D -m 644 -o root -g root -- "$src" "$dst" || die "failed to install $dst"
+  sudo install -D -m "$mode" -o root -g root -- "$src" "$dst" || die "failed to install $dst"
   ok "installed: $dst"
   return 0   # 0 == changed
 }
@@ -30,6 +30,11 @@ journald_changed=0
 install_etc_file 10-journald-htpc.conf /etc/systemd/journald.conf.d/10-htpc.conf && journald_changed=1 || true
 
 install_etc_file htpc-sessions.logrotate /etc/logrotate.d/htpc-sessions || true
+
+# Re-enable a connected HDMI/DP at Plasma startup — kscreen's saved state can
+# strand the connector disabled after a TV-off boot.
+install_etc_file ensure-hdmi-output.sh           /usr/local/bin/htpc-ensure-hdmi-output 755 || true
+install_etc_file htpc-ensure-hdmi-output.desktop /etc/xdg/autostart/htpc-ensure-hdmi-output.desktop || true
 
 # Mask sleep targets (idempotent — second run is a no-op).
 for unit in sleep.target suspend.target hibernate.target hybrid-sleep.target; do
