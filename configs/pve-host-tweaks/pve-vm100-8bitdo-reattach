@@ -1,0 +1,17 @@
+#!/bin/sh
+# Re-issue the QEMU usb-host attach for VM 100 after the 8BitDo Pro 3
+# receiver re-enumerates. Triggered by udev (see the matching .rules file).
+#
+# Forks into background so the udev RUN+= returns quickly, then sleeps so
+# udev has time to settle before we touch QEMU.
+set -eu
+
+VMID=100
+USB_SLOT=usb2
+HOST_PORT=1-4.3
+
+(
+  sleep 1
+  /usr/sbin/qm set "$VMID" --delete "$USB_SLOT" >/dev/null 2>&1 || true
+  /usr/sbin/qm set "$VMID" --"$USB_SLOT" "host=$HOST_PORT" >/dev/null 2>&1 || true
+) </dev/null >/dev/null 2>&1 &
