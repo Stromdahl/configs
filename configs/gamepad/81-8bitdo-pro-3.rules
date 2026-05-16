@@ -1,0 +1,9 @@
+# 8BitDo Pro 3 Receiver (controller + 2.4G dock-receiver).
+# Disable USB autosuspend on both enumerations: 2dc8:3109 (idle, controller
+# in dock or asleep) and 2dc8:310b (active, paired and awake). xhci tries to
+# cancel transfer rings on a suspending dongle while xpad still has IN URBs
+# queued, which triggers "Set TR Deq Ptr cmd failed" warnings and a USB
+# disconnect mid-game. Keeping the receiver always-on costs ~mW and prevents
+# the drop.
+SUBSYSTEM=="usb", ATTR{idVendor}=="2dc8", ATTR{idProduct}=="3109", ATTR{power/control}="on"
+SUBSYSTEM=="usb", ATTR{idVendor}=="2dc8", ATTR{idProduct}=="310b", ATTR{power/control}="on"
