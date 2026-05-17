@@ -20,14 +20,20 @@ ssh titan 'sudo cp /tmp/100.conf /etc/pve/nodes/titan/qemu-server/100.conf'
 
 - RTX 2060 PCI passthrough: `hostpci0: 0000:01:00.0,x-vga=1`
 - GPU USB-C controller: `hostpci1: 0000:01:00.2`
-- USB hub on host port 1-4 (Genesys Logic, 4 downstream ports) passed through
-  per-port for keyboard / Bluetooth / hot-swap: `usb0=1-4.1`, `usb1=1-4.2`,
-  `usb3=1-4.4`. **Port 1-4.3 (the 8BitDo Pro 3 dock) is intentionally not
-  passed by-port** — QEMU's by-port slot loses the device when its VID/PID
-  changes (Pro 3 receiver flips between `2dc8:3109` idle and `2dc8:310b`
-  active on every controller wake/sleep), and by-port re-attach never
-  recovers without manual intervention. Instead the dock is passed by-id
-  in two slots: `usb2=2dc8:3109` and `usb4=2dc8:310b`. QEMU's 2s auto-poll
-  reattaches whichever PID is live; only one of the two is ever connected
-  at a time. See [[project-pve-usb-passthrough]].
+- **Whole Intel xHCI controller (`00:14.0`) passed through as `hostpci2`.**
+  Replaces the older per-port `usbN: host=1-4.x` setup. Rationale: the
+  8BitDo Pro 3 dock-receiver re-enumerates with a different VID/PID on
+  every controller wake/sleep (`2dc8:3109` idle ↔ `2dc8:310b` active).
+  QEMU's `usb-host` backend handles each new enumeration by calling
+  `libusb_claim_interface`, which detaches the host's kernel driver
+  (xpad / hid-generic) and triggers a USB device reset. The reset
+  reliably broke the dongle's 2.4 GHz pairing with the controller, so
+  the VM saw the device wake for a few seconds and then drop. Passing
+  through the entire xHCI eliminates QEMU's USB layer entirely — the
+  guest kernel owns the controller and handles wake/sleep transitions
+  natively, exactly like bare metal. titan is a headless PVE server with
+  no other USB consumers, so giving up host USB costs nothing.
+  Implication: any device plugged into any port on this controller (the
+  4-port hub at `1-4` *and* unused root-hub ports) appears inside VM 100,
+  not on titan. See [[project-pve-usb-passthrough]].
 - qemu-guest-agent enabled, onboot=1, virtio scsi+net.
