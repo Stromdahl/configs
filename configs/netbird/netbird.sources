@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://pkgs.netbird.io/debian
+Suites: stable
+Components: main
+Signed-By: /usr/share/keyrings/netbird-archive-keyring.gpg
