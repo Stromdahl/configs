@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# OpenSSH server: key-only, no root. Rescue route when SDDM/Plasma break.
+# OpenSSH server: key-only, no root. Single profile for workstations and
+# servers — single-user box, so the workstation/server hardening distinction
+# isn't worth two modules.
 set -euo pipefail
 
 apt_ensure openssh-server
