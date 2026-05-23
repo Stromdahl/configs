@@ -26,6 +26,10 @@ vim.cmd.colorscheme("gruvbox")
 -- Core Configuration
 --------------------------------------
 
+-- Mason installs LSP servers under data/mason/bin; ensure they're on PATH
+-- even before mason.nvim has been loaded (it's lazy-loaded on :Mason).
+vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
+
 -- Leaders
 vim.g.mapleader = " "
 vim.g.maplocalleader = "//"
