@@ -1,0 +1,205 @@
+#!/usr/bin/env bash
+# Create an unprivileged Debian LXC on a Proxmox VE host and provision it
+# with the standard admin shell (ms user, NOPASSWD sudo, stromdahl.keys SSH
+# keys, en_US.UTF-8 locale). Run on the PVE host itself — needs `pct` and
+# sudo. After this script finishes, the CT is ready to ssh into and clone
+# the dotfiles for the per-host modules.
+#
+#   pve-ct-create --vmid 201 --hostname argon-hermes
+#
+# Defaults are tuned for small homelab services (a Python agent, a routing
+# peer, a single-purpose daemon). For different shapes, override the flags.
+
+set -euo pipefail
+
+# PVE tools (pct, pveam) live in /usr/sbin, which isn't on non-interactive
+# PATH for normal users on Debian. Prepend it so `command -v pct` works.
+export PATH="/usr/sbin:/sbin:$PATH"
+
+readonly SSH_KEYS_URL="https://github.com/stromdahl.keys"
+
+# Defaults — override via flags.
+VMID=""
+HOSTNAME=""
+MEMORY=2048
+SWAP=512
+CORES=2
+DISK=16
+FEATURES="nesting=1,keyctl=1"
+BRIDGE="vmbr0"
+STORAGE="local-lvm"
+TEMPLATE="auto"
+ADMIN_USER="ms"
+DRY_RUN=0
+
+usage() {
+  cat <<EOF
+Usage: $(basename -- "$0") --vmid N --hostname NAME [options]
+
+Required:
+  --vmid N              VMID (must not already exist)
+  --hostname NAME       CT hostname
+
+Options (with defaults):
+  --memory MIB          RAM in MiB              [$MEMORY]
+  --swap MIB            Swap in MiB             [$SWAP]
+  --cores N             vCPUs                   [$CORES]
+  --disk GIB            Root disk in GiB        [$DISK]
+  --features SPEC       LXC features            [$FEATURES]
+  --bridge NAME         Network bridge          [$BRIDGE]
+  --storage NAME        Storage pool            [$STORAGE]
+  --template auto|PATH  Template (auto = latest debian-13-standard) [$TEMPLATE]
+  --admin-user NAME     Admin user to create    [$ADMIN_USER]
+  --dry-run             Print what would happen, do nothing
+  -h, --help            Show this help
+
+Pinned policy:
+  - unprivileged only (no flag to escape this)
+  - SSH keys sourced from $SSH_KEYS_URL
+  - apt full-upgrade runs inside the CT before installing admin tools
+EOF
+}
+
+die() { printf 'pve-ct-create: %s\n' "$*" >&2; exit 1; }
+info() { printf '==> %s\n' "$*" >&2; }
+maybe() {
+  if (( DRY_RUN )); then
+    printf 'would: %s\n' "$*" >&2
+  else
+    eval "$@"
+  fi
+}
+
+while (($#)); do
+  case "$1" in
+    --vmid)        VMID="${2:-}"; shift 2 ;;
+    --hostname)    HOSTNAME="${2:-}"; shift 2 ;;
+    --memory)      MEMORY="${2:-}"; shift 2 ;;
+    --swap)        SWAP="${2:-}"; shift 2 ;;
+    --cores)       CORES="${2:-}"; shift 2 ;;
+    --disk)        DISK="${2:-}"; shift 2 ;;
+    --features)    FEATURES="${2:-}"; shift 2 ;;
+    --bridge)      BRIDGE="${2:-}"; shift 2 ;;
+    --storage)     STORAGE="${2:-}"; shift 2 ;;
+    --template)    TEMPLATE="${2:-}"; shift 2 ;;
+    --admin-user)  ADMIN_USER="${2:-}"; shift 2 ;;
+    --dry-run)     DRY_RUN=1; shift ;;
+    -h|--help)     usage; exit 0 ;;
+    *)             die "unknown flag: $1 (try --help)" ;;
+  esac
+done
+
+[[ -n "$VMID"     ]] || die "--vmid is required"
+[[ -n "$HOSTNAME" ]] || die "--hostname is required"
+[[ "$VMID" =~ ^[0-9]+$ ]] || die "--vmid must be numeric (got: $VMID)"
+command -v pct >/dev/null 2>&1 || die "pct not found — run this on a PVE host"
+
+# Refuse to overwrite an existing CT. pct config exits 0 if VMID exists.
+if sudo pct config "$VMID" >/dev/null 2>&1; then
+  die "VMID $VMID already exists — pick another or destroy it first (sudo pct destroy $VMID)"
+fi
+
+# Resolve template.
+if [[ "$TEMPLATE" == "auto" ]]; then
+  TEMPLATE=$(sudo pveam list local 2>/dev/null \
+    | awk '/debian-13-standard/ {print $1}' \
+    | sort -V | tail -1)
+  [[ -n "$TEMPLATE" ]] \
+    || die "no debian-13-standard template downloaded — run: sudo pveam update && sudo pveam download local debian-13-standard_<ver>_amd64.tar.zst"
+fi
+info "template: $TEMPLATE"
+info "target: VMID=$VMID hostname=$HOSTNAME ${MEMORY}MiB RAM / ${DISK}GiB disk / $CORES vCPU"
+
+# Stage SSH keys to a temp file (process substitution doesn't survive
+# sudo's PATH/fd handling reliably).
+KEYS=$(mktemp /tmp/stromdahl.keys.XXXXXX)
+trap 'rm -f -- "$KEYS"' EXIT
+if (( DRY_RUN )); then
+  info "would: curl -fsSL $SSH_KEYS_URL -o $KEYS"
+else
+  curl -fsSL "$SSH_KEYS_URL" -o "$KEYS" || die "failed to fetch $SSH_KEYS_URL"
+  [[ -s "$KEYS" ]] || die "no keys returned from $SSH_KEYS_URL"
+fi
+
+# Create the CT.
+maybe sudo pct create "$VMID" "$TEMPLATE" \
+  --hostname "$HOSTNAME" \
+  --cores "$CORES" --memory "$MEMORY" --swap "$SWAP" \
+  --rootfs "$STORAGE:$DISK" \
+  --net0 "name=eth0,bridge=$BRIDGE,ip=dhcp" \
+  --unprivileged 1 \
+  --features "$FEATURES" \
+  --ssh-public-keys "$KEYS" \
+  --onboot 1 --start 1
+
+# Wait for the CT to be exec-ready (~10-20s on first boot).
+if (( ! DRY_RUN )); then
+  info "waiting for CT to be reachable…"
+  for _ in $(seq 1 30); do
+    sudo pct exec "$VMID" -- true 2>/dev/null && break
+    sleep 2
+  done
+  sudo pct exec "$VMID" -- true 2>/dev/null \
+    || die "CT $VMID did not become exec-ready within 60s"
+fi
+
+# Provision the CT: full-upgrade, admin tools, ms user, sudoers, ssh keys, locale.
+# The script is sent inline via `bash -c '...' -- arg1 arg2 …` so arg substitution
+# happens INSIDE the CT, not on the host (no quoting hazards from $HOSTNAME etc.).
+read -r -d '' PROVISION <<'BASH' || true
+set -euo pipefail
+ADMIN_USER="$1"
+SSH_KEYS_URL="$2"
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get -y -qq full-upgrade
+apt-get -y -qq install sudo curl ca-certificates locales
+id "$ADMIN_USER" 2>/dev/null \
+  || useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
+install -d -m 700 -o "$ADMIN_USER" -g "$ADMIN_USER" "/home/$ADMIN_USER/.ssh"
+curl -fsSL "$SSH_KEYS_URL" \
+  | install -m 600 -o "$ADMIN_USER" -g "$ADMIN_USER" /dev/stdin "/home/$ADMIN_USER/.ssh/authorized_keys"
+printf '%s ALL=(ALL) NOPASSWD: ALL\n' "$ADMIN_USER" \
+  > "/etc/sudoers.d/10-$ADMIN_USER-nopasswd"
+chmod 440 "/etc/sudoers.d/10-$ADMIN_USER-nopasswd"
+visudo -c >/dev/null
+if grep -q '^# en_US.UTF-8 UTF-8' /etc/locale.gen; then
+  sed -i 's/^# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+  locale-gen >/dev/null
+  update-locale LANG=en_US.UTF-8 >/dev/null
+fi
+BASH
+
+if (( DRY_RUN )); then
+  info "would: sudo pct exec $VMID -- bash -c '<provision script>' -- $ADMIN_USER $SSH_KEYS_URL"
+else
+  info "provisioning CT…"
+  sudo pct exec "$VMID" -- bash -c "$PROVISION" -- "$ADMIN_USER" "$SSH_KEYS_URL"
+fi
+
+# Summary.
+if (( DRY_RUN )); then
+  info "dry-run complete — nothing changed"
+  exit 0
+fi
+
+IP=$(sudo pct exec "$VMID" -- ip -4 -o addr show eth0 2>/dev/null \
+  | awk '{print $4}' | cut -d/ -f1 | head -1)
+
+cat >&2 <<EOF
+
+CT ready:
+  VMID:      $VMID
+  Hostname:  $HOSTNAME
+  IP (DHCP): ${IP:-<not yet assigned>}
+  Admin:     $ADMIN_USER (NOPASSWD sudo, $SSH_KEYS_URL installed)
+
+Next:
+  ssh $ADMIN_USER@$HOSTNAME    # or @$IP if DNS isn't ready
+  git clone https://github.com/Stromdahl/configs ~/.dotfiles
+  cd ~/.dotfiles && ./install.sh --dry-run
+  cd ~/.dotfiles && ./install.sh
+
+Snapshot the CT config back to the repo when stable:
+  sudo pct config $VMID > /tmp/$VMID.conf   # then copy to hosts/<host>/lxc/
+EOF
