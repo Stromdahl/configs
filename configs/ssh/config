@@ -20,5 +20,5 @@ Host argon-101
   User ms
 
 Host argon-hermes
-  HostName 192.168.1.178
+  HostName 192.168.1.180
   User ms
