@@ -5,7 +5,7 @@
 # sudo. After this script finishes, the CT is ready to ssh into and clone
 # the dotfiles for the per-host modules.
 #
-#   pve-ct-create --vmid 201 --hostname argon-hermes
+#   pve-ct-create --vmid 201 --hostname argon-thing
 #
 # Defaults are tuned for small homelab services (a Python agent, a routing
 # peer, a single-purpose daemon). For different shapes, override the flags.
