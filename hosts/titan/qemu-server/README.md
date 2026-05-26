@@ -56,9 +56,13 @@ debian-13-vm.sh` recipe that produced `argon-101`.
 - `net0` has **no** `firewall=1` flag — PVE 9's NIC-level default-DROP
   policy would silently break every clone's network until an explicit
   allow rule was added. Clones can opt in per VM.
-- **Identity-less**: no user beyond locked-password root, no SSH host
-  keys, empty `/etc/machine-id`, no `ciuser`/`sshkeys`/`ipconfig0`.
-  All identity is injected at clone time (see "Cloning 9000" below).
+- **Disk image is identity-less**: no user baked in, no SSH host keys,
+  empty `/etc/machine-id`. Identity arrives via cloud-init at first boot.
+- **PVE config has homelab defaults pre-filled**: `ciuser: ms`,
+  `sshkeys: stromdahl.keys`, `ipconfig0: ip=dhcp`. Clones inherit these,
+  so the common case is `qm clone … && qm start …` with no `qm set` in
+  between. Override per-clone for static IP or a different user (see
+  "Cloning 9000").
 - Disk: 8 GiB (matches argon-101). Cloud-init `growpart`s the rootfs on
   first boot. Clones bump via `qm resize <id> scsi0 +<N>G`.
 
@@ -120,9 +124,14 @@ sudo qm guest exec 9000 --timeout 120 -- bash -c '
 '
 sudo qm shutdown 9000 --timeout 60
 
-# 6. Strip cloud-init identity and convert to template
+# 6. Convert to template, then bake in homelab cloud-init defaults so
+#    plain `qm clone 9000 <id> --full 1 && qm start <id>` is enough.
 sudo qm set 9000 --delete ipconfig0
 sudo qm template 9000
+sudo qm set 9000 \
+    --ciuser ms \
+    --sshkeys <(curl -fsSL https://github.com/stromdahl.keys) \
+    --ipconfig0 ip=dhcp
 
 # 7. Snapshot config back to dotfiles
 ssh titan 'sudo qm config 9000' > hosts/titan/qemu-server/9000.conf
@@ -147,27 +156,25 @@ Notes:
 
 ## Cloning 9000
 
-Pick a free VMID, clone full (template lives on `local-lvm`, so linked
-clones would lock to the same storage — full clones are flexible).
+The template's PVE config pre-fills `ciuser: ms`, `sshkeys`, and
+`ipconfig0: ip=dhcp`, so clones inherit them — no post-clone `qm set` is
+required for the common case. Full clone, not linked (template lives on
+`local-lvm`; linked clones would lock to the same storage).
 
 ```bash
-# DHCP variant
+# DHCP, default ms user (common case)
 sudo qm clone 9000 <NEW_VMID> --name <NEW_NAME> --full 1
-sudo qm set <NEW_VMID> \
-    --ciuser ms \
-    --sshkeys <(curl -fsSL https://github.com/stromdahl.keys) \
-    --ipconfig0 ip=dhcp
 sudo qm resize <NEW_VMID> scsi0 +<N>G   # optional, defaults to 8 GiB
 sudo qm set <NEW_VMID> --onboot 1       # if it should start at boot
 sudo qm start <NEW_VMID>
 ```
 
 ```bash
-# Static-IP variant (LAN 192.168.1.0/24, gateway .1)
+# Static-IP override (LAN 192.168.1.0/24, gateway .1) — overrides the
+# inherited ipconfig0=dhcp. Override --ciuser / --sshkeys the same way
+# for a non-default user.
 sudo qm clone 9000 <NEW_VMID> --name <NEW_NAME> --full 1
 sudo qm set <NEW_VMID> \
-    --ciuser ms \
-    --sshkeys <(curl -fsSL https://github.com/stromdahl.keys) \
     --ipconfig0 ip=192.168.1.<X>/24,gw=192.168.1.1 \
     --nameserver 192.168.1.1 \
     --searchdomain lan
