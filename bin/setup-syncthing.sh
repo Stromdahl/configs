@@ -15,6 +15,12 @@ else
     sudo apt install -y syncthing
 fi
 
+# Enable linger so user services keep running when the user isn't logged in
+# (syncthing is a user service; without linger, SSH-only servers stop syncing
+# the moment the SSH session ends). Idempotent: no-op if already enabled.
+echo "Enabling linger for $USER (so syncthing runs without an SSH session)..."
+sudo loginctl enable-linger "$USER"
+
 # Enable and start user service
 echo "Enabling syncthing user service..."
 systemctl --user enable syncthing.service
