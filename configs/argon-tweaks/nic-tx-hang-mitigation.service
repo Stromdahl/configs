@@ -1,0 +1,16 @@
+[Unit]
+# Workaround for Intel e1000e "Detected Hardware Unit Hang" on eno1.
+# First hit on argon: 2026-05-26 15:09:22 — TX queue stalled, NIC unrecoverable
+# without powercycle. Disabling segmentation/receive offloads is the canonical
+# mitigation (well-documented across kernel.org, Intel, Debian/Proxmox forums).
+Description=Disable TX/RX offloads on eno1 (e1000e Hardware Unit Hang workaround)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/ethtool -K eno1 tso off gso off gro off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
