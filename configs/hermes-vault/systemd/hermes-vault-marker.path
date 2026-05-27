@@ -1,0 +1,12 @@
+[Unit]
+Description=Keep the Syncthing marker present in ~/hermes-vault (Hermes agent deletes it)
+Documentation=https://docs.syncthing.net/users/foldertypes.html
+
+[Path]
+# Fires on any add/remove/rename in the vault dir — including the agent
+# deleting .stfolder during a memory reorg, and the dir being recreated.
+PathChanged=%h/hermes-vault
+Unit=hermes-vault-marker.service
+
+[Install]
+WantedBy=default.target

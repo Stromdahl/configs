@@ -39,3 +39,24 @@ while IFS= read -r -d '' rel; do
     ok "vault: seed $rel"
   fi
 done < <(cd "$SKEL" && find . -type f -printf '%P\0')
+
+# Marker guard — only on hosts running the Hermes agent. The agent
+# autonomously reorganizes the vault and deletes Syncthing's .stfolder marker,
+# which safety-halts the share until the marker is restored + a rescan runs. A
+# user path-unit watches the vault and does exactly that within seconds.
+if [[ -d "$HOME/.hermes" ]]; then
+  link "configs/hermes-vault/systemd/hermes-vault-marker.path" \
+       "$HOME/.config/systemd/user/hermes-vault-marker.path"
+  link "configs/hermes-vault/systemd/hermes-vault-marker.service" \
+       "$HOME/.config/systemd/user/hermes-vault-marker.service"
+  if [[ "${DRY_RUN:-0}" == 1 ]]; then
+    info "would: systemctl --user daemon-reload + enable --now hermes-vault-marker.path"
+  else
+    systemctl --user daemon-reload
+    systemctl --user enable --now hermes-vault-marker.path
+    "$DOTFILES_ROOT/bin/hermes-vault-ensure-marker.sh" || true
+    ok "hermes-vault marker guard active (hermes-vault-marker.path)"
+  fi
+else
+  dim "hermes-vault: no ~/.hermes — skipping agent marker guard"
+fi
