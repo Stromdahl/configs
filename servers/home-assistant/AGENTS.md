@@ -15,18 +15,40 @@
 `bin/ha` (symlinked to `~/.local/bin/ha` by the `base` module) wraps the patterns. Always prefer it over hand-rolled scripts.
 
 ```
-ha state <entity>                       # GET /states/<entity>
+ha state <entity>                       # GET /states/<entity> (slim: no last_*/context)
 ha call domain.service '<json>'         # POST service call
 ha template '<jinja>'                   # render Jinja
-ha entities                             # tab-separated dump (cached in exports/entities.tsv)
+ha entities [pattern]                   # glob (e.g. 'sensor.*temp*') or /regex/
+ha services [domain[.service]]          # introspect /api/services
 ha dash list|get|save                   # lovelace WS API
 ha auto list|get|save|delete            # /config/automation/config/<id> + reload
 ha scene list|get|save|delete           # /config/scene/config/<id> + reload
+ha entity list|get|update|remove|disable|enable  # config/entity_registry/* via WS
 ha device list|update                   # config/device_registry/{list,update} via WS
 ha area list|create|delete              # config/area_registry/{list,create,delete} via WS
 ha helper list|create|delete            # input_*/{create,delete} via WS
-ha ws '<json>'                          # raw WS command, prints result.result
+ha flow <handler> '<step1>' ['<step2>'…] # drive multi-step config_entries flow → create_entry
+ha entry list [domain]|get|delete|reload|flows  # config_entries CRUD + in-progress flows
+ha ws '<json>'                          # raw WS command, prints the result payload
 ```
+
+**Global flags** (any position):
+- `--pretty` — pretty-print JSON output. Default is compact single-line (smaller in transcripts).
+- `--quiet` / `-q` — silence "saved" / "deleted" / "saved + reloaded" chatter on writes.
+- `-o <key.path>` / `--output <key.path>` — extract a field from JSON output; print scalar if leaf is primitive. E.g. `ha state sensor.foo -o state` prints just the value; `ha flow … -o result` prints just the new entry_id.
+
+`HA_BASE` env var overrides the host. Default `https://home.stromdahl.tech`; set e.g. `HA_BASE=http://192.168.1.99:8123` from environments without public DNS (sandboxes, LAN-only hosts). `http://` switches WS to `ws://` automatically.
+
+`ha flow` is the verb for config-flow-based integrations and helpers (history_stats, utility_meter, derivative, threshold, integration, switch_as_x, …). Each positional arg is one step's JSON, submitted in order. Example:
+
+```
+ha flow history_stats \
+  '{"name":"Time at work today","entity_id":"person.mattias","type":"time"}' \
+  '{"state":["Work Mattias"]}' \
+  '{"start":"{{ today_at() }}","end":"{{ now() }}","state_class":"total_increasing"}'
+```
+
+`ha helper create input_*` still goes via WS (collection helpers); only config-flow helpers need `ha flow`. Manage the resulting config entries with `ha entry list <domain>` / `ha entry delete <entry_id>` / `ha entry reload <entry_id>`. Note: `options` (the per-entry config payload from a flow's `create_entry`) is not exposed by `entry get` — HA only surfaces it during an options flow.
 
 ### Where things live
 
@@ -50,6 +72,10 @@ ha ws '<json>'                          # raw WS command, prints result.result
 | Zones (storage-collection)            | WS `zone/{list,create,update,delete}` (note: `zone.home` is implicit from core lat/lng, not in the collection) |
 | Helpers (input_*) CRUD                | WS `input_number/create`, `input_button/delete`, etc. |
 | Template helpers (sensors, binary)    | REST config-flow at `/api/config/config_entries/flow` (handler=`template`, multi-step) |
+| Entity registry (rename, disable, reassign area) | WS `config/entity_registry/{list,get,update,remove}` |
+| Config entries (list/delete/reload)   | REST `/api/config/config_entries/entry[/<id>[/reload]]` — `entry/<id>` only supports `DELETE` |
+| In-progress config flows              | WS `config_entries/flow/progress` |
+| Service introspection                 | REST `GET /api/services` |
 | Reload themes                         | REST `POST /api/services/frontend/reload_themes` |
 
 Lovelace dashboard `url_path` **must contain a hyphen** (HA validation).
