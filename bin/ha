@@ -78,16 +78,23 @@ const WS_BASE = BASE.replace(/^http/, 'ws');
 
 const FLAGS = { pretty: false, quiet: false, output: null };
 
+// Returns the number of *additional* args consumed (0 or 1) when `a` is a flag,
+// or -1 when `a` is positional.
+function applyFlag(a, next) {
+  if (a === '--pretty')               { FLAGS.pretty = true; return 0; }
+  if (a === '--quiet' || a === '-q')  { FLAGS.quiet  = true; return 0; }
+  if (a === '-o' || a === '--output') { FLAGS.output = next; return 1; }
+  const eq = /^(?:--output|-o)=(.*)$/.exec(a);
+  if (eq)                              { FLAGS.output = eq[1]; return 0; }
+  return -1;
+}
+
 function parseArgs(argv) {
   const positional = [];
   for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--pretty') FLAGS.pretty = true;
-    else if (a === '--quiet' || a === '-q') FLAGS.quiet = true;
-    else if (a === '-o' || a === '--output') FLAGS.output = argv[++i];
-    else if (a.startsWith('--output=')) FLAGS.output = a.slice('--output='.length);
-    else if (a.startsWith('-o=')) FLAGS.output = a.slice('-o='.length);
-    else positional.push(a);
+    const adv = applyFlag(argv[i], argv[i + 1]);
+    if (adv < 0) positional.push(argv[i]);
+    else i += adv;
   }
   return positional;
 }
@@ -174,15 +181,20 @@ function pluck(obj, p) {
   return p.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 }
 
+function isPrimitive(v) {
+  return typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
+}
+
+function formatValue(v) {
+  if (isPrimitive(v)) return String(v);
+  return FLAGS.pretty ? JSON.stringify(v, null, 2) : JSON.stringify(v);
+}
+
 function printJSON(x) {
-  if (typeof x === 'string') { console.log(x); return; }
-  let v = x;
-  if (FLAGS.output) v = pluck(x, FLAGS.output);
-  if (v === undefined || v === null) return;
-  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
-    console.log(v); return;
-  }
-  console.log(FLAGS.pretty ? JSON.stringify(v, null, 2) : JSON.stringify(v));
+  if (typeof x === 'string') return console.log(x);
+  const v = FLAGS.output ? pluck(x, FLAGS.output) : x;
+  if (v == null) return;
+  console.log(formatValue(v));
 }
 
 const writeOrLog = (file, data) => file ? fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n') : printJSON(data);
@@ -468,30 +480,46 @@ const cmds = {
 };
 
 // ---------- dispatcher ----------
+
+function isCmdNode(x) {
+  return x != null && typeof x === 'object' && !Array.isArray(x);
+}
+
+// Walk the cmds tree. Returns either { fn, rest } when a leaf function is reached,
+// or { node, i } pointing at where the walk stopped.
+function walkCmd(argv) {
+  let node = cmds;
+  let i = 0;
+  while (i < argv.length && isCmdNode(node)) {
+    const next = node[argv[i]];
+    if (typeof next === 'function') return { fn: next, rest: argv.slice(i + 1) };
+    if (!isCmdNode(next)) return { node, i };
+    node = next; i++;
+  }
+  return { node, i };
+}
+
+function reportUnknown(argv, node, i) {
+  if (i > 0 && isCmdNode(node)) {
+    const prefix = `ha ${argv.slice(0, i).join(' ')}`;
+    const avail = Object.keys(node).join(', ');
+    const msg = i < argv.length
+      ? `${prefix}: unknown sub-verb '${argv[i]}'. Available: ${avail}`
+      : `${prefix}: subcommand required. Available: ${avail}`;
+    console.error(msg);
+  } else {
+    console.error(`unknown command: ${argv.join(' ')}`);
+  }
+  process.exit(2);
+}
+
 (async () => {
   const argv = parseArgs(process.argv.slice(2));
   if (argv.length === 0) {
     console.log("ha — Home Assistant CLI. See top of script for usage.");
     process.exit(0);
   }
-  let node = cmds;
-  let i = 0;
-  while (i < argv.length && node && typeof node === 'object' && !Array.isArray(node)) {
-    const next = node[argv[i]];
-    if (typeof next === 'function') {
-      await next(argv.slice(i + 1));
-      return;
-    }
-    if (typeof next !== 'object') break;
-    node = next; i++;
-  }
-  if (i > 0 && typeof node === 'object' && !Array.isArray(node)) {
-    const prefix = `ha ${argv.slice(0, i).join(' ')}`;
-    const avail = Object.keys(node).join(', ');
-    if (i < argv.length) console.error(`${prefix}: unknown sub-verb '${argv[i]}'. Available: ${avail}`);
-    else console.error(`${prefix}: subcommand required. Available: ${avail}`);
-    process.exit(2);
-  }
-  console.error(`unknown command: ${argv.join(' ')}`);
-  process.exit(2);
+  const { fn, rest, node, i } = walkCmd(argv);
+  if (fn) { await fn(rest); return; }
+  reportUnknown(argv, node, i);
 })().catch((e) => { console.error(e.message || e); process.exit(1); });
