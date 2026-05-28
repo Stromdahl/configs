@@ -1,0 +1,17 @@
+{
+  "name": "ha-cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "CLI wrapper for poking the Home Assistant REST + WS APIs. See ha for usage; see ../../servers/home-assistant/AGENTS.md for full docs.",
+  "bin": {
+    "ha": "./ha"
+  },
+  "scripts": {
+    "lint": "eslint ha",
+    "lint:fix": "eslint --fix ha"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0"
+  }
+}

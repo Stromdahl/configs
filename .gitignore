@@ -19,6 +19,7 @@
 # Defense in depth — never track these patterns at any depth, even if a
 # parent dir is allowed. Override per-case with a more specific !pattern
 # in this file if you ever need to.
+**/node_modules/
 **/.env
 **/.vault_password
 **/.secrets.env.*

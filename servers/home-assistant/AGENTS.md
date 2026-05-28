@@ -12,7 +12,7 @@
 
 ### `ha` CLI — use this first
 
-`bin/ha` (symlinked to `~/.local/bin/ha` by the `base` module) wraps the patterns. Always prefer it over hand-rolled scripts.
+`bin/ha` (symlink → `bin/ha-cli/ha`, then symlinked to `~/.local/bin/ha` by the `base` module) wraps the patterns. Always prefer it over hand-rolled scripts. The script lives in an isolated Node project at `bin/ha-cli/` with its own `package.json` + eslint (cyclomatic complexity capped at 8). Lint with `npm --prefix bin/ha-cli run lint`.
 
 ```
 ha state <entity>                       # GET /states/<entity> (slim: no last_*/context)
