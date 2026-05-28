@@ -9,8 +9,8 @@
   },
   "scripts": {
     "typecheck": "tsc",
-    "lint": "eslint ha.ts",
-    "lint:fix": "eslint --fix ha.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "check": "npm run -s typecheck && npm run -s lint"
   },
   "devDependencies": {

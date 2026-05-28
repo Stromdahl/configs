@@ -40,5 +40,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["ha.ts"]
+  "include": ["**/*.ts"]
 }
