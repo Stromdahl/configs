@@ -304,7 +304,8 @@ async function withWs<T>(fn: (c: WSClient) => Promise<T>): Promise<T> {
 
 // ---------- formatting ----------
 
-const STATE_NOISE: ReadonlySet<string> = new Set(['last_changed', 'last_reported', 'last_updated', 'context']);
+// Drops HA's noisy top-level state fields (last_changed, last_reported,
+// last_updated, context) — pure overhead in transcripts.
 function slim(s: HAState): HAStateSlim {
   return { entity_id: s.entity_id, state: s.state, attributes: s.attributes };
 }
@@ -691,7 +692,3 @@ main().catch((e: unknown) => {
   console.error(e instanceof Error ? e.message : String(e));
   process.exit(1);
 });
-
-// Suppress unused-warning for the bookkeeping constant that documents which
-// fields slim() strips. (Kept as a hint for future refactors.)
-void STATE_NOISE;
