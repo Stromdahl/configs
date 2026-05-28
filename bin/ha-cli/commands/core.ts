@@ -1,28 +1,37 @@
+import {
+  callService,
+  getServices,
+  getState,
+  getStates,
+  renderTemplate,
+  sendRaw,
+  startFlow,
+  submitFlowStep,
+} from '../api.ts';
 import { patternToRegex, printJSON, say, slim } from '../format.ts';
-import { rest, withWs } from '../transport.ts';
-import type { CmdFn, HAFlowResponse, HAServiceGroup, HAState } from '../types.ts';
+import type { CmdFn } from '../types.ts';
 
 export const state: CmdFn = async ([eid]) => {
   if (eid === undefined) throw new Error('usage: ha state <entity_id>');
-  printJSON(slim(await rest<HAState>('GET', `/states/${eid}`)));
+  printJSON(slim(await getState(eid)));
 };
 
 export const call: CmdFn = async ([service, dataJson]) => {
   if (service === undefined) throw new Error('usage: ha call <domain.service> [json]');
-  const [domain, svc] = service.split('.', 2);
+  const [domain, svc] = service.split('.', 2) as [string, string | undefined];
+  if (svc === undefined) throw new Error('usage: ha call <domain.service> [json]');
   const body: unknown = dataJson !== undefined ? JSON.parse(dataJson) : {};
-  printJSON(await rest('POST', `/services/${domain}/${svc}`, body));
+  printJSON(await callService(domain, svc, body));
 };
 
 export const template: CmdFn = async ([tpl]) => {
   if (tpl === undefined) throw new Error('usage: ha template <jinja>');
-  printJSON(await rest('POST', '/template', { template: tpl }));
+  printJSON(await renderTemplate(tpl));
 };
 
 export const ws: CmdFn = async ([json]) => {
   if (json === undefined) throw new Error('usage: ha ws <json-message>');
-  const msg = JSON.parse(json) as object;
-  await withWs(async (c) => { printJSON(await c.send(msg)); });
+  printJSON(await sendRaw(JSON.parse(json) as object));
 };
 
 export const flow: CmdFn = async ([handler, ...stepArgs]) => {
@@ -33,10 +42,10 @@ export const flow: CmdFn = async ([handler, ...stepArgs]) => {
     try { return JSON.parse(s) as unknown; }
     catch (e) { throw new Error(`step ${idx + 1} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`); }
   });
-  let resp = await rest<HAFlowResponse>('POST', '/config/config_entries/flow', { handler, show_advanced_options: false });
+  let resp = await startFlow(handler);
   for (let i = 0; i < steps.length; i++) {
     if (resp.type !== 'form') break;
-    resp = await rest<HAFlowResponse>('POST', `/config/config_entries/flow/${resp.flow_id}`, steps[i]);
+    resp = await submitFlowStep(resp.flow_id, steps[i]);
     if ('errors' in resp && resp.errors) throw new Error(`step ${i + 1} errors: ${JSON.stringify(resp.errors)}`);
   }
   if (resp.type === 'form') {
@@ -46,7 +55,7 @@ export const flow: CmdFn = async ([handler, ...stepArgs]) => {
 };
 
 export const entities: CmdFn = async ([pattern]) => {
-  const states = await rest<HAState[]>('GET', '/states');
+  const states = await getStates();
   const re = pattern !== undefined ? patternToRegex(pattern) : null;
   const rows = states
     .filter((s) => re === null || re.test(s.entity_id))
@@ -61,7 +70,7 @@ export const entities: CmdFn = async ([pattern]) => {
 };
 
 export const services: CmdFn = async ([filter]) => {
-  const list = await rest<HAServiceGroup[]>('GET', '/services');
+  const list = await getServices();
   if (filter === undefined) {
     const out: string[] = [];
     for (const d of list) for (const s of Object.keys(d.services)) out.push(`${d.domain}.${s}`);

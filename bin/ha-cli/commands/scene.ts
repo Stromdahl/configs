@@ -1,10 +1,10 @@
+import { deleteScene, getScene, getStates, reloadScenes, saveScene } from '../api.ts';
 import { readJSON, say, writeOrLog } from '../format.ts';
-import { rest } from '../transport.ts';
-import type { CmdTree, HAState } from '../types.ts';
+import type { CmdTree } from '../types.ts';
 
 export const scene: CmdTree = {
   list: async () => {
-    const states = await rest<HAState[]>('GET', '/states');
+    const states = await getStates();
     states
       .filter((s) => s.entity_id.startsWith('scene.'))
       .sort((a, b) => a.entity_id.localeCompare(b.entity_id))
@@ -18,18 +18,17 @@ export const scene: CmdTree = {
   },
   get: async ([id, file]) => {
     if (id === undefined) throw new Error('usage: ha scene get <id> [file]');
-    writeOrLog(file, await rest('GET', `/config/scene/config/${id}`));
+    writeOrLog(file, await getScene(id));
   },
   save: async ([id, file]) => {
     if (id === undefined || file === undefined) throw new Error('usage: ha scene save <id> <file>');
-    const cfg = readJSON(file);
-    await rest('POST', `/config/scene/config/${id}`, cfg);
-    await rest('POST', '/services/scene/reload');
+    await saveScene(id, readJSON(file));
+    await reloadScenes();
     say('saved + reloaded');
   },
   delete: async ([id]) => {
     if (id === undefined) throw new Error('usage: ha scene delete <id>');
-    await rest('DELETE', `/config/scene/config/${id}`);
+    await deleteScene(id);
     say('deleted');
   },
 };
