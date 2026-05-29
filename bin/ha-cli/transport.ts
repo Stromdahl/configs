@@ -32,6 +32,19 @@ export async function rest<T = unknown>(method: string, endpoint: string, body?:
   catch { return text as T; }
 }
 
+// Method-specific REST shortcuts. `del` because `delete` is a JS reserved word.
+export function get<T = unknown>(endpoint: string): Promise<T> {
+  return rest<T>('GET', endpoint);
+}
+
+export function post<T = unknown>(endpoint: string, body?: unknown): Promise<T> {
+  return rest<T>('POST', endpoint, body);
+}
+
+export function del<T = unknown>(endpoint: string): Promise<T> {
+  return rest<T>('DELETE', endpoint);
+}
+
 function makeWsClient(): WSClient {
   const ws = new WebSocket(`${WS_BASE}/api/websocket`);
   let nextId = 1;

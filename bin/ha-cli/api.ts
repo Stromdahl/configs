@@ -2,7 +2,7 @@
 // talk to has a named function here; command modules call these instead of
 // hand-rolling URLs / message types.
 
-import { rest, wsCall } from './transport.ts';
+import { del, get, post, wsCall } from './transport.ts';
 import type {
   HAAreaRegistryEntry,
   HAConfigEntry,
@@ -17,79 +17,79 @@ import type {
 // ---- REST: reads ----
 
 export function getStates(): Promise<HAState[]> {
-  return rest<HAState[]>('GET', '/states');
+  return get<HAState[]>('/states');
 }
 
 export function getState(entityId: string): Promise<HAState> {
-  return rest<HAState>('GET', `/states/${entityId}`);
+  return get<HAState>(`/states/${entityId}`);
 }
 
 export function getServices(): Promise<HAServiceGroup[]> {
-  return rest<HAServiceGroup[]>('GET', '/services');
+  return get<HAServiceGroup[]>('/services');
 }
 
 export function getConfigEntries(): Promise<HAConfigEntry[]> {
-  return rest<HAConfigEntry[]>('GET', '/config/config_entries/entry');
+  return get<HAConfigEntry[]>('/config/config_entries/entry');
 }
 
 export function getAutomation(id: string): Promise<unknown> {
-  return rest('GET', `/config/automation/config/${id}`);
+  return get(`/config/automation/config/${id}`);
 }
 
 export function getScene(id: string): Promise<unknown> {
-  return rest('GET', `/config/scene/config/${id}`);
+  return get(`/config/scene/config/${id}`);
 }
 
 // ---- REST: actions & writes ----
 
 export function callService(domain: string, svc: string, body: unknown): Promise<unknown> {
-  return rest('POST', `/services/${domain}/${svc}`, body);
+  return post(`/services/${domain}/${svc}`, body);
 }
 
 export function renderTemplate(jinja: string): Promise<unknown> {
-  return rest('POST', '/template', { template: jinja });
+  return post('/template', { template: jinja });
 }
 
 export async function saveAutomation(id: string, cfg: unknown): Promise<void> {
-  await rest('POST', `/config/automation/config/${id}`, cfg);
+  await post(`/config/automation/config/${id}`, cfg);
 }
 
 export async function deleteAutomation(id: string): Promise<void> {
-  await rest('DELETE', `/config/automation/config/${id}`);
+  await del(`/config/automation/config/${id}`);
 }
 
 export async function reloadAutomations(): Promise<void> {
-  await rest('POST', '/services/automation/reload');
+  await post('/services/automation/reload');
 }
 
 export async function saveScene(id: string, cfg: unknown): Promise<void> {
-  await rest('POST', `/config/scene/config/${id}`, cfg);
+  await post(`/config/scene/config/${id}`, cfg);
 }
 
 export async function deleteScene(id: string): Promise<void> {
-  await rest('DELETE', `/config/scene/config/${id}`);
+  await del(`/config/scene/config/${id}`);
 }
 
 export async function reloadScenes(): Promise<void> {
-  await rest('POST', '/services/scene/reload');
+  await post('/services/scene/reload');
 }
 
 export function deleteConfigEntry(entryId: string): Promise<unknown> {
-  return rest('DELETE', `/config/config_entries/entry/${entryId}`);
+  return del(`/config/config_entries/entry/${entryId}`);
 }
 
 export function reloadConfigEntry(entryId: string): Promise<unknown> {
-  return rest('POST', `/config/config_entries/entry/${entryId}/reload`);
+  return post(`/config/config_entries/entry/${entryId}/reload`);
 }
 
 // ---- REST: config flow (multi-step) ----
 
 export function startFlow(handler: string): Promise<HAFlowResponse> {
-  return rest<HAFlowResponse>('POST', '/config/config_entries/flow', { handler, show_advanced_options: false });
+  return post<HAFlowResponse>('/config/config_entries/flow', { handler, show_advanced_options: false });
 }
 
 export function submitFlowStep(flowId: string, payload: unknown): Promise<HAFlowResponse> {
-  return rest<HAFlowResponse>('POST', `/config/config_entries/flow/${flowId}`, payload);
+  return post<HAFlowResponse>(`/config/config_entries/flow/${flowId}`, payload);
 }
 
 // ---- WebSocket: escape hatch for `ha ws '<json>'` ----
