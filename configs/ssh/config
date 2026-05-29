@@ -18,3 +18,9 @@ Host argon
 Host argon-101
   HostName 192.168.1.177
   User ms
+
+Host titan-hermes-agent
+  HostName 192.168.1.189
+  User ms
+  ConnectTimeout 5
+  ConnectionAttempts 1
