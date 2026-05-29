@@ -1,6 +1,6 @@
 import type { Flags } from './types.ts';
 
-export const FLAGS: Flags = { pretty: false, quiet: false, output: null };
+export const FLAGS: Flags = { pretty: false, quiet: false, help: false, output: null };
 
 function applyEqFlag(a: string): number {
   const eq = /^(?:--output|-o)=(.*)$/.exec(a);
@@ -8,11 +8,21 @@ function applyEqFlag(a: string): number {
   return -1;
 }
 
+// Each handler returns the number of additional args consumed (0 or 1).
+const FLAG_HANDLERS = new Map<string, (next: string | undefined) => number>([
+  ['--help',   () => { FLAGS.help   = true; return 0; }],
+  ['-h',       () => { FLAGS.help   = true; return 0; }],
+  ['--pretty', () => { FLAGS.pretty = true; return 0; }],
+  ['--quiet',  () => { FLAGS.quiet  = true; return 0; }],
+  ['-q',       () => { FLAGS.quiet  = true; return 0; }],
+  ['-o',       (n) => { FLAGS.output = n ?? null; return 1; }],
+  ['--output', (n) => { FLAGS.output = n ?? null; return 1; }],
+]);
+
 // Returns number of additional args consumed (0 or 1), or -1 if not a flag.
 function applyFlag(a: string, next: string | undefined): number {
-  if (a === '--pretty')               { FLAGS.pretty = true; return 0; }
-  if (a === '--quiet' || a === '-q')  { FLAGS.quiet  = true; return 0; }
-  if (a === '-o' || a === '--output') { FLAGS.output = next ?? null; return 1; }
+  const h = FLAG_HANDLERS.get(a);
+  if (h) return h(next);
   return applyEqFlag(a);
 }
 

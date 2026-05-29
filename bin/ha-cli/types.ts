@@ -3,6 +3,7 @@
 export interface Flags {
   pretty: boolean;
   quiet: boolean;
+  help: boolean;
   output: string | null;
 }
 
