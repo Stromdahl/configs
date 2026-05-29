@@ -25,6 +25,13 @@ fi
 # Operator copies this to ~/.hermes/.env. We never auto-create .env.
 link "configs/hermes-agent/env.example" "$HOME/.hermes/env.example"
 
+# Morning-briefing data-gather script — declarative, symlinked into the hermes home.
+# (The cron job's prompt lives in configs/hermes-agent/morning-briefing.prompt.md and
+# is installed via Hermes, since ~/.hermes/cron/jobs.json is gateway-owned.)
+mkdir -p "$HOME/.hermes/scripts"
+link "configs/hermes-agent/morning_briefing.sh" "$HOME/.hermes/scripts/morning_briefing.sh"
+link "configs/hermes-agent/weekly_briefing.sh" "$HOME/.hermes/scripts/weekly_briefing.sh"
+
 # Next-steps banner — printed every run; purely informational.
 cat >&2 <<EOF
 
