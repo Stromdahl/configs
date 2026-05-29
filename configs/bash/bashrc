@@ -146,14 +146,11 @@ alias fd=fdfind
 alias cp='cp -vi'
 alias mv='mv -vi'
 alias rm='rm -vi'
-# Networking
-alias ports='ss -ptunl | fzf'
 
 # Calendar
 alias ncal='ncal -w -3 -M'
 
 # Quality of life
-alias publicip='curl -s http://ifconfig.me/all.json | jq -r .ip_addr'
 alias pubkey='cat $HOME/.ssh/pubkey';
 alias ebrc="vim ~/.bashrc";
 

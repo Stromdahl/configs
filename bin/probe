@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Fast reachability check: prints "host: up (Nms)" or "host: down (Nms)".
+set -u
+
+if [ $# -ne 1 ]; then
+    echo "usage: probe <host>" >&2
+    exit 2
+fi
+
+host=$1
+t0=$EPOCHREALTIME
+
+if ping -c1 -W0.3 -q "$host" >/dev/null 2>&1; then
+    status=up
+    rc=0
+else
+    status=down
+    rc=1
+fi
+
+ms=$(awk -v a="$EPOCHREALTIME" -v b="$t0" 'BEGIN{printf "%.0f", (a-b)*1000}')
+
+if [ "$status" = up ]; then
+    echo "$host: up (${ms}ms)"
+else
+    echo "$host: down (${ms}ms)" >&2
+fi
+exit $rc
