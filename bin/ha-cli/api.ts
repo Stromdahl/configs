@@ -2,7 +2,7 @@
 // talk to has a named function here; command modules call these instead of
 // hand-rolling URLs / message types.
 
-import { rest, withWs } from './transport.ts';
+import { rest, wsCall } from './transport.ts';
 import type {
   HAAreaRegistryEntry,
   HAConfigEntry,
@@ -95,39 +95,39 @@ export function submitFlowStep(flowId: string, payload: unknown): Promise<HAFlow
 // ---- WebSocket: escape hatch for `ha ws '<json>'` ----
 
 export function sendRaw(msg: object): Promise<unknown> {
-  return withWs((c) => c.send(msg));
+  return wsCall(msg);
 }
 
 // ---- WebSocket: dashboards ----
 
 export function listDashboards(): Promise<HALovelaceListEntry[]> {
-  return withWs((c) => c.send<HALovelaceListEntry[]>({ type: 'lovelace/dashboards/list' }));
+  return wsCall<HALovelaceListEntry[]>({ type: 'lovelace/dashboards/list' });
 }
 
 export function getDashboardConfig(urlPath: string): Promise<unknown> {
-  return withWs((c) => c.send({ type: 'lovelace/config', url_path: urlPath }));
+  return wsCall({ type: 'lovelace/config', url_path: urlPath });
 }
 
 export async function saveDashboardConfig(urlPath: string, config: unknown): Promise<void> {
-  await withWs((c) => c.send({ type: 'lovelace/config/save', url_path: urlPath, config }));
+  await wsCall({ type: 'lovelace/config/save', url_path: urlPath, config });
 }
 
 // ---- WebSocket: entity registry ----
 
 export function listEntities(): Promise<HAEntityRegistryEntry[]> {
-  return withWs((c) => c.send<HAEntityRegistryEntry[]>({ type: 'config/entity_registry/list' }));
+  return wsCall<HAEntityRegistryEntry[]>({ type: 'config/entity_registry/list' });
 }
 
 export function getEntity(entityId: string): Promise<unknown> {
-  return withWs((c) => c.send({ type: 'config/entity_registry/get', entity_id: entityId }));
+  return wsCall({ type: 'config/entity_registry/get', entity_id: entityId });
 }
 
 export function updateEntity(entityId: string, payload: object): Promise<unknown> {
-  return withWs((c) => c.send({ type: 'config/entity_registry/update', entity_id: entityId, ...payload }));
+  return wsCall({ type: 'config/entity_registry/update', entity_id: entityId, ...payload });
 }
 
 export function removeEntity(entityId: string): Promise<unknown> {
-  return withWs((c) => c.send({ type: 'config/entity_registry/remove', entity_id: entityId }));
+  return wsCall({ type: 'config/entity_registry/remove', entity_id: entityId });
 }
 
 export function disableEntity(entityId: string): Promise<unknown> {
@@ -141,39 +141,39 @@ export function enableEntity(entityId: string): Promise<unknown> {
 // ---- WebSocket: device registry ----
 
 export function listDevices(): Promise<HADeviceRegistryEntry[]> {
-  return withWs((c) => c.send<HADeviceRegistryEntry[]>({ type: 'config/device_registry/list' }));
+  return wsCall<HADeviceRegistryEntry[]>({ type: 'config/device_registry/list' });
 }
 
 export function updateDevice(deviceId: string, payload: object): Promise<unknown> {
-  return withWs((c) => c.send({ type: 'config/device_registry/update', device_id: deviceId, ...payload }));
+  return wsCall({ type: 'config/device_registry/update', device_id: deviceId, ...payload });
 }
 
 // ---- WebSocket: area registry ----
 
 export function listAreas(): Promise<HAAreaRegistryEntry[]> {
-  return withWs((c) => c.send<HAAreaRegistryEntry[]>({ type: 'config/area_registry/list' }));
+  return wsCall<HAAreaRegistryEntry[]>({ type: 'config/area_registry/list' });
 }
 
 export function createArea(payload: object): Promise<unknown> {
-  return withWs((c) => c.send({ type: 'config/area_registry/create', ...payload }));
+  return wsCall({ type: 'config/area_registry/create', ...payload });
 }
 
 export function deleteArea(areaId: string): Promise<unknown> {
-  return withWs((c) => c.send({ type: 'config/area_registry/delete', area_id: areaId }));
+  return wsCall({ type: 'config/area_registry/delete', area_id: areaId });
 }
 
 // ---- WebSocket: config-entry flows in progress ----
 
 export function listConfigEntryFlows(): Promise<unknown> {
-  return withWs((c) => c.send({ type: 'config_entries/flow/progress' }));
+  return wsCall({ type: 'config_entries/flow/progress' });
 }
 
 // ---- WebSocket: collection helpers (input_*) ----
 
 export function createHelper(helperType: string, payload: object): Promise<unknown> {
-  return withWs((c) => c.send({ type: `${helperType}/create`, ...payload }));
+  return wsCall({ type: `${helperType}/create`, ...payload });
 }
 
 export function deleteHelper(helperType: string, id: string): Promise<unknown> {
-  return withWs((c) => c.send({ type: `${helperType}/delete`, [`${helperType}_id`]: id }));
+  return wsCall({ type: `${helperType}/delete`, [`${helperType}_id`]: id });
 }

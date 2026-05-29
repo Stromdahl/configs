@@ -81,3 +81,10 @@ export async function withWs<T>(fn: (c: WSClient) => Promise<T>): Promise<T> {
   try { return await fn(c); }
   finally { c.close(); }
 }
+
+// Convenience: one-shot WS round-trip. Opens a connection, sends `msg`, waits
+// for the result, closes. For multi-message sessions on the same socket, use
+// `withWs` directly.
+export function wsCall<T = unknown>(msg: object): Promise<T> {
+  return withWs<T>((c) => c.send<T>(msg));
+}
