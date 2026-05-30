@@ -39,6 +39,7 @@ EOF
 HOST=""
 MODULE_OVERRIDE=""
 export DRY_RUN="${DRY_RUN:-0}"
+REPO_INTEGRITY_BAD=0
 
 while (($#)); do
   case "$1" in
@@ -83,6 +84,27 @@ list_known_hosts() {
   done
 }
 
+check_repo_integrity() {
+  # Surface a corrupt/incomplete checkout early instead of letting it rot until a
+  # deploy or `git pull` fails mid-emergency. Classic cause: a `.git` copied
+  # (rsync/cp) rather than cloned, which can silently truncate the object store
+  # (titan, 2026-05). Non-fatal — modules read the working tree, which may still
+  # be usable — so we warn rather than abort. connectivity-only fsck is fast and
+  # catches missing objects. Skips non-git deploys (e.g. neon's bare-repo push).
+  REPO_INTEGRITY_BAD=0
+  command -v git >/dev/null 2>&1 || return 0
+  git -C "$DOTFILES_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  if git -C "$DOTFILES_ROOT" fsck --connectivity-only >/dev/null 2>&1; then
+    return 0
+  fi
+  REPO_INTEGRITY_BAD=1
+  local url
+  url="$(git -C "$DOTFILES_ROOT" remote get-url origin 2>/dev/null || echo '<repo-url>')"
+  LOG_PREFIX=repo warn "git object store looks corrupt/incomplete (git fsck failed)"
+  LOG_PREFIX=repo warn "modules read the working tree so this run may still work, but 'git pull' will fail"
+  LOG_PREFIX=repo warn "fix by re-cloning fresh: back up $DOTFILES_ROOT, then 'git clone $url $DOTFILES_ROOT'"
+}
+
 run_module() {
   local name="$1"
   local script="$DOTFILES_ROOT/modules/$name/install.sh"
@@ -98,6 +120,7 @@ run_module() {
 
 main() {
   info "host=$HOST root=$DOTFILES_ROOT"
+  check_repo_integrity
   local -a modules=()
   local raw
   if ! raw="$(print_module_list)"; then
@@ -138,6 +161,9 @@ main() {
 
   section "summary"
   ok "succeeded: ${succeeded[*]:-none}"
+  if (( REPO_INTEGRITY_BAD )); then
+    LOG_PREFIX=repo warn "git store is corrupt/incomplete — re-clone before relying on 'git pull' (details above)"
+  fi
   if ((${#failed[@]})); then
     err "failed: ${failed[*]}"
     exit 1
