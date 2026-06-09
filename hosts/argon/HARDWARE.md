@@ -38,8 +38,22 @@ Home Assistant OS VM (100) and the `argon-101` Debian VM (101).
   **blink count + beep pattern** (HP encodes the failed subsystem there) before
   power-cycling. Usual suspects on aging mini-PCs: PSU/power-brick degrading,
   thermals (dust / failing fan), or a marginal RAM stick.
-
-## Refresh this doc
+- **2026-06-04 — blinking-red again; pattern captured: 4 red blinks, then white,
+  no beep.** HP blink scheme: red = major category, white = minor; **major 4 =
+  thermal** (4.2 CPU over-temp / 4.3 ambient / 4.4 — white count not captured).
+  So the 05-30 "transient" read is superseded: this is a recurring **thermal
+  trip**. Host did NOT come back after the first power-cycle — consistent with
+  the board re-tripping while still hot or with a dead/blocked fan. Action:
+  open the lid, check/clean blower fan + heatsink fins, verify fan spins at
+  POST; if it trips again cold+clean, count the white blinks and suspect
+  fan or thermal sensor/board.
+- **2026-06-09 — root cause confirmed: blower fan completely clogged.** Opened
+  the lid; the fan/heatsink was packed solid with dust. Cleaned it out. This
+  matches the major-4 thermal trips exactly — the board was over-temping because
+  airflow was choked, not a sensor/board fault. Now resolved. Watch for: temps
+  under load (`sensors` / `ssh argon 'sensor coretemp'`) should sit well below
+  the trip point; if a thermal blink recurs *with a clean fan*, escalate to fan
+  RPM/bearing or the thermal sensor. Add a recurring dust-clean to maintenance.
 
 ```bash
 ssh argon 'sudo dmidecode -t system -t baseboard -t bios -t processor -t memory; \
