@@ -413,7 +413,7 @@ autocmd("BufWritePre", {
 autocmd("BufWritePre", {
   condition = function(ev)
     local ft = vim.bo[ev.buf].filetype
-    if ft == "markdown" or ft == "diff" then return false end
+    if ft == "markdown" or ft == "diff" or ft == "csv" or ft == "tsv" then return false end
     for _, client in ipairs(vim.lsp.get_clients({ bufnr = ev.buf, method = "textDocument/formatting" })) do
       if client.name ~= "ts_ls" then return false end
     end
@@ -558,6 +558,17 @@ autocmd("FileType", {
     vim.opt_local.shiftwidth = 2
     vim.opt_local.tabstop = 2
     vim.opt_local.softtabstop = 2
+  end,
+})
+
+-- CSV: auto-enable the aligned grid view; <leader>cv toggles it (csvview.nvim).
+-- pcall guards the first launch on a machine where the plugin isn't installed yet.
+autocmd("FileType", {
+  pattern = { "csv", "tsv" },
+  callback = function(ev)
+    pcall(vim.cmd, "CsvViewEnable")
+    vim.keymap.set("n", "<leader>cv", "<cmd>CsvViewToggle<cr>",
+      { buffer = ev.buf, desc = "Toggle CSV view" })
   end,
 })
 
@@ -1131,6 +1142,20 @@ require("lazy").setup({
     end,
   },
 
+  -- Indent Guides (single dim bar)
+  {
+    "lukas-reineke/indent-blankline.nvim",
+    main = "ibl",
+    event = { "BufReadPost", "BufNewFile" },
+    config = function()
+      vim.api.nvim_set_hl(0, "IblIndent", { fg = "#3a3a3a" }) -- dim gray bar
+      require("ibl").setup({
+        indent = { char = "▏", highlight = "IblIndent" },
+        scope = { enabled = false },
+      })
+    end,
+  },
+
   -- Git Integration
   { "lewis6991/gitsigns.nvim", opts = {},                                               event = { "BufReadPre", "BufNewFile" } },
   { "tpope/vim-fugitive",      cmd = { "G", "Git", "Gdiffsplit", "Gblame" } },
@@ -1326,6 +1351,28 @@ require("lazy").setup({
         sass = { enable = true, parsers = { "css" } },
         mode = "background",
         virtualtext = "■",
+      },
+    },
+  },
+
+  -- CSV viewing/editing — aligned grid via virtual text; the buffer stays the
+  -- real file, so :w saves it byte-for-byte (no reparse, no corruption risk).
+  {
+    "hat0uma/csvview.nvim",
+    ft = { "csv", "tsv" },
+    cmd = { "CsvViewEnable", "CsvViewDisable", "CsvViewToggle" },
+    opts = {
+      parser = { comments = { "#", "//" } },
+      view = { display_mode = "border" }, -- draw │ separators (vs "highlight")
+      keymaps = {
+        -- Field text objects
+        textobject_field_inner = { "if", mode = { "o", "x" } },
+        textobject_field_outer = { "af", mode = { "o", "x" } },
+        -- Excel-like cell navigation (only active while the view is on)
+        jump_next_field_end = { "<Tab>", mode = { "n", "v" } },
+        jump_prev_field_end = { "<S-Tab>", mode = { "n", "v" } },
+        jump_next_row = { "<Enter>", mode = { "n", "v" } },
+        jump_prev_row = { "<S-Enter>", mode = { "n", "v" } },
       },
     },
   },
