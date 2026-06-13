@@ -1,5 +1,5 @@
 oled-black:
-  primary-color: "#FFFFFF"
+  primary-color: "#D7B26D"
   accent-color: "#D7B26D"
   app-header-background-color: "#000000"
   app-header-text-color: "#FFFFFF"
@@ -9,7 +9,7 @@ oled-black:
   card-background-color: "#0C0C0C"
   primary-text-color: "#FFFFFF"
   secondary-text-color: "rgba(255,255,255,0.6)"
-  text-primary-color: "#FFFFFF"
+  text-primary-color: "#1A1208"
   disabled-text-color: "rgba(255,255,255,0.35)"
   state-icon-color: "rgba(255,255,255,0.6)"
   state-icon-active-color: "#D7B26D"
@@ -32,6 +32,10 @@ oled-black:
   ha-card-border-color: "rgba(255,255,255,0.08)"
   ha-card-border-width: "1px"
   ha-card-box-shadow: "none"
+  # ha-tooltip (sidebar item labels etc.) — bg falls back to --ha-color-surface-default
+  # which is WHITE unless the frontend is in dark mode; pin it dark explicitly.
+  ha-tooltip-background-color: "#1A1A1A"
+  ha-tooltip-text-color: "#FFFFFF"
   # HA 2026.4+ form fields (ha-input / wa-input) — the mdc-* vars below are inert in current frontend
   ha-color-form-background: "#1A1A1A"
   ha-color-form-background-hover: "#222222"
@@ -62,7 +66,7 @@ oled-black:
   mdc-filled-text-field-disabled-container-color: "#0F0F0F"
   mdc-filled-text-field-disabled-input-text-color: "#5C5C5C"
   mdc-filled-text-field-disabled-label-text-color: "#5C5C5C"
-  rgb-primary-color: "255, 255, 255"
+  rgb-primary-color: "215, 178, 109"
   rgb-accent-color: "215, 178, 109"
   rgb-card-background-color: "12, 12, 12"
   rgb-primary-text-color: "255, 255, 255"
