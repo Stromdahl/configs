@@ -1,0 +1,8 @@
+[Unit]
+Description=bup backup of ~/notes (local repo)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/bup/bup-backup.sh
+Nice=10
+IOSchedulingClass=idle
