@@ -198,31 +198,495 @@
               "square": false,
               "cards": [
                 {
-                  "type": "markdown",
-                  "content": "**LIVING ROOM**\n# {{ states('sensor.sonoff_snzb_02d_temperature') }}°\n{{ states('sensor.sonoff_snzb_02d_humidity') }}% humidity",
-                  "card_mod": {
-                    "style": "ha-card {\n  padding: 16px 18px 14px 18px;\n  border-radius: 14px;\n  position: relative;\n  overflow: hidden;\n  min-height: 130px;\n}\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 8px 0; }\nha-card p:first-child strong { color: var(--primary-text-color); white-space: nowrap; }\nha-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 12px; margin: 0 0 12px 0; }\nha-card::after {\n  content: \"\";\n  position: absolute; left: 18px; right: 18px; bottom: 12px;\n  display: block;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(to right, var(--info-color) 0%, var(--info-color) {{ ((states('sensor.sonoff_snzb_02d_temperature') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) {{ ((states('sensor.sonoff_snzb_02d_temperature') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) 100%);\n}"
+                  "type": "custom:button-card",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/home-bold/living-room"
+                  },
+                  "hold_action": {
+                    "action": "none"
+                  },
+                  "show_icon": false,
+                  "show_name": false,
+                  "show_state": false,
+                  "show_label": false,
+                  "custom_fields": {
+                    "room": "[[[ return \"Living Room\" ]]]",
+                    "temp": "[[[ return `${states['sensor.sonoff_snzb_02d_temperature'].state}°` ]]]",
+                    "hum": "[[[ return `${states['sensor.sonoff_snzb_02d_humidity'].state}% humidity` ]]]",
+                    "bar": "[[[ const t = parseFloat(states['sensor.sonoff_snzb_02d_temperature'].state) || 0; const p = Math.max(0, Math.min(100, Math.round(t / 26 * 100))); return `<div style=\"height:6px;border-radius:999px;background:linear-gradient(to right,var(--info-color) 0%,var(--info-color) ${p}%,rgba(255,255,255,0.06) ${p}%,rgba(255,255,255,0.06) 100%);\"></div>`; ]]]"
+                  },
+                  "styles": {
+                    "card": [
+                      {
+                        "padding": "16px 18px 14px 18px"
+                      },
+                      {
+                        "border-radius": "14px"
+                      },
+                      {
+                        "min-height": "130px"
+                      },
+                      {
+                        "overflow": "hidden"
+                      }
+                    ],
+                    "grid": [
+                      {
+                        "grid-template-areas": "\"room\" \"temp\" \"hum\" \"bar\""
+                      },
+                      {
+                        "grid-template-rows": "min-content min-content min-content 1fr"
+                      },
+                      {
+                        "align-items": "start"
+                      },
+                      {
+                        "height": "100%"
+                      }
+                    ],
+                    "custom_fields": {
+                      "room": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "font-size": "11px"
+                        },
+                        {
+                          "text-transform": "uppercase"
+                        },
+                        {
+                          "letter-spacing": "0.16em"
+                        },
+                        {
+                          "color": "var(--secondary-text-color)"
+                        },
+                        {
+                          "font-weight": "800"
+                        },
+                        {
+                          "margin": "0 0 8px 0"
+                        }
+                      ],
+                      "temp": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "color": "var(--primary-text-color)"
+                        },
+                        {
+                          "font-size": "32px"
+                        },
+                        {
+                          "font-weight": "800"
+                        },
+                        {
+                          "letter-spacing": "-0.03em"
+                        },
+                        {
+                          "font-variant-numeric": "tabular-nums"
+                        },
+                        {
+                          "line-height": "1"
+                        },
+                        {
+                          "margin": "0 0 6px 0"
+                        }
+                      ],
+                      "hum": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "color": "var(--secondary-text-color)"
+                        },
+                        {
+                          "font-size": "12px"
+                        }
+                      ],
+                      "bar": [
+                        {
+                          "align-self": "end"
+                        },
+                        {
+                          "justify-self": "stretch"
+                        },
+                        {
+                          "width": "100%"
+                        },
+                        {
+                          "margin": "10px 0 0 0"
+                        }
+                      ]
+                    }
                   }
                 },
                 {
-                  "type": "markdown",
-                  "content": "**OFFICE**\n# {{ states('sensor.sonoff_snzb_02d_temperature_3') }}°\n{{ states('sensor.sonoff_snzb_02d_humidity_3') }}% humidity",
-                  "card_mod": {
-                    "style": "ha-card {\n  padding: 16px 18px 14px 18px;\n  border-radius: 14px;\n  position: relative;\n  overflow: hidden;\n  min-height: 130px;\n}\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 8px 0; }\nha-card p:first-child strong { color: var(--primary-text-color); white-space: nowrap; }\nha-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 12px; margin: 0 0 12px 0; }\nha-card::after {\n  content: \"\";\n  position: absolute; left: 18px; right: 18px; bottom: 12px;\n  display: block;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(to right, var(--info-color) 0%, var(--info-color) {{ ((states('sensor.sonoff_snzb_02d_temperature_3') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) {{ ((states('sensor.sonoff_snzb_02d_temperature_3') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) 100%);\n}"
+                  "type": "custom:button-card",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/home-bold/office"
+                  },
+                  "hold_action": {
+                    "action": "none"
+                  },
+                  "show_icon": false,
+                  "show_name": false,
+                  "show_state": false,
+                  "show_label": false,
+                  "custom_fields": {
+                    "room": "[[[ return \"Office\" ]]]",
+                    "temp": "[[[ return `${states['sensor.sonoff_snzb_02d_temperature_3'].state}°` ]]]",
+                    "hum": "[[[ return `${states['sensor.sonoff_snzb_02d_humidity_3'].state}% humidity` ]]]",
+                    "bar": "[[[ const t = parseFloat(states['sensor.sonoff_snzb_02d_temperature_3'].state) || 0; const p = Math.max(0, Math.min(100, Math.round(t / 26 * 100))); return `<div style=\"height:6px;border-radius:999px;background:linear-gradient(to right,var(--info-color) 0%,var(--info-color) ${p}%,rgba(255,255,255,0.06) ${p}%,rgba(255,255,255,0.06) 100%);\"></div>`; ]]]"
+                  },
+                  "styles": {
+                    "card": [
+                      {
+                        "padding": "16px 18px 14px 18px"
+                      },
+                      {
+                        "border-radius": "14px"
+                      },
+                      {
+                        "min-height": "130px"
+                      },
+                      {
+                        "overflow": "hidden"
+                      }
+                    ],
+                    "grid": [
+                      {
+                        "grid-template-areas": "\"room\" \"temp\" \"hum\" \"bar\""
+                      },
+                      {
+                        "grid-template-rows": "min-content min-content min-content 1fr"
+                      },
+                      {
+                        "align-items": "start"
+                      },
+                      {
+                        "height": "100%"
+                      }
+                    ],
+                    "custom_fields": {
+                      "room": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "font-size": "11px"
+                        },
+                        {
+                          "text-transform": "uppercase"
+                        },
+                        {
+                          "letter-spacing": "0.16em"
+                        },
+                        {
+                          "color": "var(--secondary-text-color)"
+                        },
+                        {
+                          "font-weight": "800"
+                        },
+                        {
+                          "margin": "0 0 8px 0"
+                        }
+                      ],
+                      "temp": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "color": "var(--primary-text-color)"
+                        },
+                        {
+                          "font-size": "32px"
+                        },
+                        {
+                          "font-weight": "800"
+                        },
+                        {
+                          "letter-spacing": "-0.03em"
+                        },
+                        {
+                          "font-variant-numeric": "tabular-nums"
+                        },
+                        {
+                          "line-height": "1"
+                        },
+                        {
+                          "margin": "0 0 6px 0"
+                        }
+                      ],
+                      "hum": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "color": "var(--secondary-text-color)"
+                        },
+                        {
+                          "font-size": "12px"
+                        }
+                      ],
+                      "bar": [
+                        {
+                          "align-self": "end"
+                        },
+                        {
+                          "justify-self": "stretch"
+                        },
+                        {
+                          "width": "100%"
+                        },
+                        {
+                          "margin": "10px 0 0 0"
+                        }
+                      ]
+                    }
                   }
                 },
                 {
-                  "type": "markdown",
-                  "content": "**BEDROOM**\n# {{ states('sensor.sonoff_snzb_02d_temperature_2') }}°\n{{ states('sensor.sonoff_snzb_02d_humidity_2') }}% humidity",
-                  "card_mod": {
-                    "style": "ha-card {\n  padding: 16px 18px 14px 18px;\n  border-radius: 14px;\n  position: relative;\n  overflow: hidden;\n  min-height: 130px;\n}\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 8px 0; }\nha-card p:first-child strong { color: var(--primary-text-color); white-space: nowrap; }\nha-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 12px; margin: 0 0 12px 0; }\nha-card::after {\n  content: \"\";\n  position: absolute; left: 18px; right: 18px; bottom: 12px;\n  display: block;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(to right, var(--info-color) 0%, var(--info-color) {{ ((states('sensor.sonoff_snzb_02d_temperature_2') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) {{ ((states('sensor.sonoff_snzb_02d_temperature_2') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) 100%);\n}"
+                  "type": "custom:button-card",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/home-bold/bedroom"
+                  },
+                  "hold_action": {
+                    "action": "none"
+                  },
+                  "show_icon": false,
+                  "show_name": false,
+                  "show_state": false,
+                  "show_label": false,
+                  "custom_fields": {
+                    "room": "[[[ return \"Bedroom\" ]]]",
+                    "temp": "[[[ return `${states['sensor.sonoff_snzb_02d_temperature_2'].state}°` ]]]",
+                    "hum": "[[[ return `${states['sensor.sonoff_snzb_02d_humidity_2'].state}% humidity` ]]]",
+                    "bar": "[[[ const t = parseFloat(states['sensor.sonoff_snzb_02d_temperature_2'].state) || 0; const p = Math.max(0, Math.min(100, Math.round(t / 26 * 100))); return `<div style=\"height:6px;border-radius:999px;background:linear-gradient(to right,var(--info-color) 0%,var(--info-color) ${p}%,rgba(255,255,255,0.06) ${p}%,rgba(255,255,255,0.06) 100%);\"></div>`; ]]]"
+                  },
+                  "styles": {
+                    "card": [
+                      {
+                        "padding": "16px 18px 14px 18px"
+                      },
+                      {
+                        "border-radius": "14px"
+                      },
+                      {
+                        "min-height": "130px"
+                      },
+                      {
+                        "overflow": "hidden"
+                      }
+                    ],
+                    "grid": [
+                      {
+                        "grid-template-areas": "\"room\" \"temp\" \"hum\" \"bar\""
+                      },
+                      {
+                        "grid-template-rows": "min-content min-content min-content 1fr"
+                      },
+                      {
+                        "align-items": "start"
+                      },
+                      {
+                        "height": "100%"
+                      }
+                    ],
+                    "custom_fields": {
+                      "room": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "font-size": "11px"
+                        },
+                        {
+                          "text-transform": "uppercase"
+                        },
+                        {
+                          "letter-spacing": "0.16em"
+                        },
+                        {
+                          "color": "var(--secondary-text-color)"
+                        },
+                        {
+                          "font-weight": "800"
+                        },
+                        {
+                          "margin": "0 0 8px 0"
+                        }
+                      ],
+                      "temp": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "color": "var(--primary-text-color)"
+                        },
+                        {
+                          "font-size": "32px"
+                        },
+                        {
+                          "font-weight": "800"
+                        },
+                        {
+                          "letter-spacing": "-0.03em"
+                        },
+                        {
+                          "font-variant-numeric": "tabular-nums"
+                        },
+                        {
+                          "line-height": "1"
+                        },
+                        {
+                          "margin": "0 0 6px 0"
+                        }
+                      ],
+                      "hum": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "color": "var(--secondary-text-color)"
+                        },
+                        {
+                          "font-size": "12px"
+                        }
+                      ],
+                      "bar": [
+                        {
+                          "align-self": "end"
+                        },
+                        {
+                          "justify-self": "stretch"
+                        },
+                        {
+                          "width": "100%"
+                        },
+                        {
+                          "margin": "10px 0 0 0"
+                        }
+                      ]
+                    }
                   }
                 },
                 {
-                  "type": "markdown",
-                  "content": "**BALCONY**\n# {{ states('sensor.sonoff_snzb_02ld') }}°\n&nbsp;",
-                  "card_mod": {
-                    "style": "ha-card {\n  padding: 16px 18px 14px 18px;\n  border-radius: 14px;\n  position: relative;\n  overflow: hidden;\n  min-height: 130px;\n}\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 8px 0; }\nha-card p:first-child strong { color: var(--primary-text-color); white-space: nowrap; }\nha-card h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 12px; margin: 0 0 12px 0; }\nha-card::after {\n  content: \"\";\n  position: absolute; left: 18px; right: 18px; bottom: 12px;\n  display: block;\n  height: 6px;\n  border-radius: 999px;\n  background: linear-gradient(to right, var(--info-color) 0%, var(--info-color) {{ ((states('sensor.sonoff_snzb_02ld') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) {{ ((states('sensor.sonoff_snzb_02ld') | float(0) / 26 * 100) | round(0)) }}%, rgba(255,255,255,0.06) 100%);\n}"
+                  "type": "custom:button-card",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/home-bold/balcony"
+                  },
+                  "hold_action": {
+                    "action": "none"
+                  },
+                  "show_icon": false,
+                  "show_name": false,
+                  "show_state": false,
+                  "show_label": false,
+                  "custom_fields": {
+                    "room": "[[[ return \"Balcony\" ]]]",
+                    "temp": "[[[ return `${states['sensor.sonoff_snzb_02ld'].state}°` ]]]",
+                    "bar": "[[[ const t = parseFloat(states['sensor.sonoff_snzb_02ld'].state) || 0; const p = Math.max(0, Math.min(100, Math.round(t / 26 * 100))); return `<div style=\"height:6px;border-radius:999px;background:linear-gradient(to right,var(--info-color) 0%,var(--info-color) ${p}%,rgba(255,255,255,0.06) ${p}%,rgba(255,255,255,0.06) 100%);\"></div>`; ]]]"
+                  },
+                  "styles": {
+                    "card": [
+                      {
+                        "padding": "16px 18px 14px 18px"
+                      },
+                      {
+                        "border-radius": "14px"
+                      },
+                      {
+                        "min-height": "130px"
+                      },
+                      {
+                        "overflow": "hidden"
+                      }
+                    ],
+                    "grid": [
+                      {
+                        "grid-template-areas": "\"room\" \"temp\" \"bar\""
+                      },
+                      {
+                        "grid-template-rows": "min-content min-content 1fr"
+                      },
+                      {
+                        "align-items": "start"
+                      },
+                      {
+                        "height": "100%"
+                      }
+                    ],
+                    "custom_fields": {
+                      "room": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "font-size": "11px"
+                        },
+                        {
+                          "text-transform": "uppercase"
+                        },
+                        {
+                          "letter-spacing": "0.16em"
+                        },
+                        {
+                          "color": "var(--secondary-text-color)"
+                        },
+                        {
+                          "font-weight": "800"
+                        },
+                        {
+                          "margin": "0 0 8px 0"
+                        }
+                      ],
+                      "temp": [
+                        {
+                          "justify-self": "start"
+                        },
+                        {
+                          "color": "var(--primary-text-color)"
+                        },
+                        {
+                          "font-size": "32px"
+                        },
+                        {
+                          "font-weight": "800"
+                        },
+                        {
+                          "letter-spacing": "-0.03em"
+                        },
+                        {
+                          "font-variant-numeric": "tabular-nums"
+                        },
+                        {
+                          "line-height": "1"
+                        },
+                        {
+                          "margin": "0 0 6px 0"
+                        }
+                      ],
+                      "bar": [
+                        {
+                          "align-self": "end"
+                        },
+                        {
+                          "justify-self": "stretch"
+                        },
+                        {
+                          "width": "100%"
+                        },
+                        {
+                          "margin": "10px 0 0 0"
+                        }
+                      ]
+                    }
                   }
                 }
               ]
@@ -254,6 +718,11 @@
                   "icon": "mdi:robot-vacuum",
                   "color": "green",
                   "vertical": false,
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/leonardo-bold"
+                  },
+                  "features_position": "bottom",
                   "card_mod": {
                     "style": "ha-card { border-radius: 14px; }"
                   }
@@ -295,30 +764,358 @@
               "cards": [
                 {
                   "type": "markdown",
-                  "content": "### 🌙 Sunset\n\n# {% set t = states('sensor.sun_next_setting') | as_datetime %}{{ t.strftime('%H:%M') if t else '—' }}\n\n{% set t = states('sensor.sun_next_setting') | as_datetime %}{% if t %}{% set d = (t - now()).total_seconds() %}{% set h = (d/3600)|int %}{% set m = ((d%3600)/60)|int %}in {{ (h ~ 'h ') if h else '' }}{{ m }}m{% endif %}",
+                  "content": "### <ha-icon icon=\"mdi:weather-sunset-down\"></ha-icon> Sunset\n# {% set t = states('sensor.sun_next_setting') | as_datetime %}{{ t.strftime('%H:%M') if t else '—' }}\n\n{% set t = states('sensor.sun_next_setting') | as_datetime %}{% if t %}{% set d = (t - now()).total_seconds() %}{% set h = (d/3600)|int %}{% set m = ((d%3600)/60)|int %}in {{ (h ~ 'h ') if h else '' }}{{ m }}m{% endif %}",
                   "card_mod": {
                     "style": "ha-card { background: var(--card-background-color); border: 1px solid var(--divider-color); border-right: 1px solid var(--divider-color); border-top-left-radius: 16px; border-bottom-left-radius: 16px; padding: 10px 4px 8px !important; min-height: 0 !important; text-align: center; }\nha-markdown { padding: 0 !important; }\nha-markdown h3 { font-size: 9px !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary-text-color) !important; font-weight: 800; margin: 0 0 4px 0 !important; }\nha-markdown h1 { font-size: 18px !important; font-weight: 800; color: var(--primary-text-color) !important; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; margin: 0 !important; }\nha-markdown p { font-size: 10px !important; color: var(--secondary-text-color) !important; margin: 2px 0 0 0 !important; }\n"
                   }
                 },
                 {
                   "type": "markdown",
-                  "content": "### ☁ Outside\n\n# {{ states('sensor.sonoff_snzb_02ld') }}°\n\nbalcony",
+                  "content": "\n### <ha-icon icon=\"mdi:weather-partly-cloudy\"></ha-icon> Outside\n\n# {{ states('sensor.sonoff_snzb_02ld') }}°\n\nbalcony",
                   "card_mod": {
                     "style": "ha-card { background: var(--card-background-color); border: 1px solid var(--divider-color); border-right: 1px solid var(--divider-color); border-radius: 0; padding: 10px 4px 8px !important; min-height: 0 !important; text-align: center; }\nha-markdown { padding: 0 !important; }\nha-markdown h3 { font-size: 9px !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary-text-color) !important; font-weight: 800; margin: 0 0 4px 0 !important; }\nha-markdown h1 { font-size: 18px !important; font-weight: 800; color: var(--primary-text-color) !important; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; margin: 0 !important; }\nha-markdown p { font-size: 10px !important; color: var(--secondary-text-color) !important; margin: 2px 0 0 0 !important; }\n"
                   }
                 },
                 {
                   "type": "markdown",
-                  "content": "### 🏠 Indoor\n\n# {{ states('sensor.temperature_median') }}°\n\nmedian",
+                  "content": "### <ha-icon icon=\"mdi:home\"></ha-icon> Indoor\n\n# {{ states('sensor.temperature_median') }}°\n\nmedian",
                   "card_mod": {
                     "style": "ha-card { background: var(--card-background-color); border: 1px solid var(--divider-color); border-right: 1px solid var(--divider-color); border-radius: 0; padding: 10px 4px 8px !important; min-height: 0 !important; text-align: center; }\nha-markdown { padding: 0 !important; }\nha-markdown h3 { font-size: 9px !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary-text-color) !important; font-weight: 800; margin: 0 0 4px 0 !important; }\nha-markdown h1 { font-size: 18px !important; font-weight: 800; color: var(--primary-text-color) !important; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; margin: 0 !important; }\nha-markdown p { font-size: 10px !important; color: var(--secondary-text-color) !important; margin: 2px 0 0 0 !important; }\n"
                   }
                 },
                 {
                   "type": "markdown",
-                  "content": "### ❄ Fridge\n\n# {{ states('sensor.lumi_lumi_weather_temperature') }}°\n\nok",
+                  "content": "### <ha-icon icon=\"mdi:snowflake\"></ha-icon> Fridge\n\n# {{ states('sensor.lumi_lumi_weather_temperature') }}°\n\nok",
                   "card_mod": {
                     "style": "ha-card { background: var(--card-background-color); border: 1px solid var(--divider-color);  border-top-right-radius: 16px; border-bottom-right-radius: 16px; padding: 10px 4px 8px !important; min-height: 0 !important; text-align: center; }\nha-markdown { padding: 0 !important; }\nha-markdown h3 { font-size: 9px !important; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary-text-color) !important; font-weight: 800; margin: 0 0 4px 0 !important; }\nha-markdown h1 { font-size: 18px !important; font-weight: 800; color: var(--primary-text-color) !important; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; margin: 0 !important; }\nha-markdown p { font-size: 10px !important; color: var(--secondary-text-color) !important; margin: 2px 0 0 0 !important; }\n"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "badges": []
+    },
+    {
+      "type": "sections",
+      "title": "Living Room",
+      "path": "living-room",
+      "icon": "mdi:sofa",
+      "subview": true,
+      "back_path": "/home-bold",
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "markdown",
+              "content": "**Living Room · Climate**\n# {{ states('sensor.sonoff_snzb_02d_temperature') }}°\n💧 {{ states('sensor.sonoff_snzb_02d_humidity') }}% humidity",
+              "card_mod": {
+                "style": "ha-card { padding: 22px 26px; background: radial-gradient(ellipse at top right, rgba(110,171,174,0.20), transparent 60%), var(--card-background-color); border-radius: 20px; }\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 10px 0; }\nha-card h1 { font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin: 0 0 10px 0; font-variant-numeric: tabular-nums; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 13px; margin: 0; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:thermometer",
+              "heading": "Climate"
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "24h trend",
+              "entities": [
+                {
+                  "entity": "sensor.sonoff_snzb_02d_temperature",
+                  "name": "Temp",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.sonoff_snzb_02d_humidity",
+                  "name": "Humidity",
+                  "color": "#D7B26D",
+                  "y_axis": "secondary",
+                  "show_state": true
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 2,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:lightbulb-group",
+              "heading": "Lights"
+            },
+            {
+              "type": "tile",
+              "entity": "light.livingroom_lights",
+              "name": "Living room",
+              "icon": "mdi:sofa-outline",
+              "color": "amber",
+              "features": [
+                {
+                  "type": "light-brightness"
+                }
+              ],
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }\n"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:television",
+              "heading": "Entertainment"
+            },
+            {
+              "type": "media-control",
+              "entity": "media_player.vardagsrumtv"
+            }
+          ]
+        }
+      ],
+      "badges": []
+    },
+    {
+      "type": "sections",
+      "title": "Office",
+      "path": "office",
+      "icon": "mdi:desk",
+      "subview": true,
+      "back_path": "/home-bold",
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "markdown",
+              "content": "**Office · Climate**\n# {{ states('sensor.sonoff_snzb_02d_temperature_3') }}°\n💧 {{ states('sensor.sonoff_snzb_02d_humidity_3') }}% humidity",
+              "card_mod": {
+                "style": "ha-card { padding: 22px 26px; background: radial-gradient(ellipse at top right, rgba(110,171,174,0.20), transparent 60%), var(--card-background-color); border-radius: 20px; }\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 10px 0; }\nha-card h1 { font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin: 0 0 10px 0; font-variant-numeric: tabular-nums; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 13px; margin: 0; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:thermometer",
+              "heading": "Climate"
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "24h trend",
+              "entities": [
+                {
+                  "entity": "sensor.sonoff_snzb_02d_temperature_3",
+                  "name": "Temp",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.sonoff_snzb_02d_humidity_3",
+                  "name": "Humidity",
+                  "color": "#D7B26D",
+                  "y_axis": "secondary",
+                  "show_state": true
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 2,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:lightbulb-group",
+              "heading": "Lights"
+            },
+            {
+              "type": "tile",
+              "entity": "light.office_lights",
+              "name": "Office",
+              "icon": "mdi:desk-lamp",
+              "color": "amber",
+              "features": [
+                {
+                  "type": "light-brightness"
+                }
+              ],
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }\n"
+              }
+            }
+          ]
+        }
+      ],
+      "badges": []
+    },
+    {
+      "type": "sections",
+      "title": "Bedroom",
+      "path": "bedroom",
+      "icon": "mdi:bed",
+      "subview": true,
+      "back_path": "/home-bold",
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "markdown",
+              "content": "**Bedroom · Climate**\n# {{ states('sensor.sonoff_snzb_02d_temperature_2') }}°\n💧 {{ states('sensor.sonoff_snzb_02d_humidity_2') }}% humidity",
+              "card_mod": {
+                "style": "ha-card { padding: 22px 26px; background: radial-gradient(ellipse at top right, rgba(110,171,174,0.20), transparent 60%), var(--card-background-color); border-radius: 20px; }\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 10px 0; }\nha-card h1 { font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin: 0 0 10px 0; font-variant-numeric: tabular-nums; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 13px; margin: 0; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:thermometer",
+              "heading": "Climate"
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "24h trend",
+              "entities": [
+                {
+                  "entity": "sensor.sonoff_snzb_02d_temperature_2",
+                  "name": "Temp",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.sonoff_snzb_02d_humidity_2",
+                  "name": "Humidity",
+                  "color": "#D7B26D",
+                  "y_axis": "secondary",
+                  "show_state": true
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 2,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:gauge",
+              "heading": "Details"
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "sensor.sonoff_snzb_02d_temperature_2",
+                  "name": "Temperature",
+                  "color": "teal",
+                  "card_mod": {
+                    "style": "ha-card { border-radius: 16px; }\n"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.sonoff_snzb_02d_humidity_2",
+                  "name": "Humidity",
+                  "color": "blue",
+                  "card_mod": {
+                    "style": "ha-card { border-radius: 16px; }\n"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.sonoff_snzb_02d_battery_2",
+                  "name": "Sensor",
+                  "color": "green",
+                  "card_mod": {
+                    "style": "ha-card { border-radius: 16px; }\n"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "badges": []
+    },
+    {
+      "type": "sections",
+      "title": "Balcony",
+      "path": "balcony",
+      "icon": "mdi:balcony",
+      "subview": true,
+      "back_path": "/home-bold",
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "markdown",
+              "content": "**Balcony · Outdoor**\n# {{ states('sensor.sonoff_snzb_02ld') }}°",
+              "card_mod": {
+                "style": "ha-card { padding: 22px 26px; background: radial-gradient(ellipse at top right, rgba(110,171,174,0.20), transparent 60%), var(--card-background-color); border-radius: 20px; }\nha-card p:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--secondary-text-color); font-weight: 800; margin: 0 0 10px 0; }\nha-card h1 { font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin: 0 0 10px 0; font-variant-numeric: tabular-nums; }\nha-card p:last-child { color: var(--secondary-text-color); font-size: 13px; margin: 0; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:thermometer",
+              "heading": "Climate"
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "24h trend",
+              "entities": [
+                {
+                  "entity": "sensor.sonoff_snzb_02ld",
+                  "name": "Temp",
+                  "color": "#6EABAE"
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 2,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:gauge",
+              "heading": "Details"
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "sensor.sonoff_snzb_02ld",
+                  "name": "Temperature",
+                  "color": "teal",
+                  "card_mod": {
+                    "style": "ha-card { border-radius: 16px; }\n"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.sonoff_snzb_02ld_battery",
+                  "name": "Sensor",
+                  "color": "green",
+                  "card_mod": {
+                    "style": "ha-card { border-radius: 16px; }\n"
                   }
                 }
               ]
