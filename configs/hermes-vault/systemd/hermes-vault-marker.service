@@ -1,6 +1,0 @@
-[Unit]
-Description=Ensure ~/hermes-vault Syncthing marker exists and trigger a rescan
-
-[Service]
-Type=oneshot
-ExecStart=%h/.dotfiles/bin/hermes-vault-ensure-marker.sh
