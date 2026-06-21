@@ -1370,7 +1370,25 @@ require("lazy").setup({
     ft = { "csv", "tsv" },
     cmd = { "CsvViewEnable", "CsvViewDisable", "CsvViewToggle" },
     opts = {
-      parser = { comments = { "#", "//" } },
+      parser = {
+        comments = { "#", "//" },
+        -- csvview's default forces ',' for the "csv" filetype, which breaks bank
+        -- exports that use ';' (and have ',' inside decimals, e.g. -310,00).
+        -- Detect per-file instead: pick the delimiter most frequent in the head.
+        delimiter = function(bufnr)
+          local lines = vim.api.nvim_buf_get_lines(bufnr, 0, 5, false)
+          local best, best_count = ",", -1
+          for _, d in ipairs({ ",", ";", "\t", "|" }) do
+            local count = 0
+            for _, l in ipairs(lines) do
+              local _, c = l:gsub(vim.pesc(d), "")
+              count = count + c
+            end
+            if count > best_count then best, best_count = d, count end
+          end
+          return best
+        end,
+      },
       view = { display_mode = "border" }, -- draw │ separators (vs "highlight")
       keymaps = {
         -- Field text objects
