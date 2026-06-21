@@ -1341,6 +1341,14 @@ require("lazy").setup({
     ft = { "markdown" },
   },
 
+  -- inline markdown rendering in the buffer (headings, tables, checkboxes, code)
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    ft = { "markdown" },
+    opts = {},
+  },
+
   -- CSS/Tailwind Support
   {
     "NvChad/nvim-colorizer.lua",
