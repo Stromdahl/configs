@@ -1,12 +1,12 @@
 ---
 name: decision-docs
-description: Capture a crystallized decision or sharpen domain terminology into whatever convention the current repo already uses — an ADR under docs/adr/, a glossary (glossary.md / CONTEXT.md), or a standalone decision-markdown doc. Use when explicitly recording an architectural decision, pinning down terminology, or when grill-with-docs needs to persist decisions as they crystallize. Do NOT auto-fire during ordinary edits.
+description: Capture a crystallized decision or sharpen domain terminology into whatever convention the current repo already uses — an ADR under docs/adr/, a glossary (glossary.md / CONTEXT.md), or a standalone decision-markdown doc. Use when explicitly recording an architectural decision, pinning down terminology, or when grill-context needs to persist decisions as they crystallize. Do NOT auto-fire during ordinary edits.
 ---
 
 # Decision docs
 
 Persist decisions and terminology *as they crystallize* — not in a batch at the
-end. This is the active discipline behind `grill-with-docs`: the moment a real
+end. This is the active discipline behind `grill-context`: the moment a real
 decision is settled or a fuzzy term is sharpened, write it down where this repo
 already keeps such things.
 

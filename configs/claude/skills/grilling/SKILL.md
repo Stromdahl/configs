@@ -1,6 +1,6 @@
 ---
 name: grilling
-description: Interview the user relentlessly about a plan or design until every branch of the decision tree is resolved. Use when the user explicitly wants to stress-test or sharpen a plan/design before building, or uses a 'grill' trigger phrase ("grill me", "grill this", "grill with docs"). The reusable loop behind grill-me and grill-with-docs. Do NOT auto-invoke during ordinary planning chat — only when alignment-before-building is clearly wanted.
+description: Interview the user relentlessly about a plan or design until every branch of the decision tree is resolved. Use when the user explicitly wants to stress-test or sharpen a plan/design before building, or uses a 'grill' trigger phrase ("grill me", "grill this", "grill context"). The reusable loop behind grill-me and grill-context. Do NOT auto-invoke during ordinary planning chat — only when alignment-before-building is clearly wanted.
 ---
 
 # Grilling
@@ -35,3 +35,6 @@ as a short plan** before any building begins — the decisions made, the chosen
 approach, and what's now out of scope. This synthesis is the output of a plain
 grilling session. (When `decision-docs` is also in play, it additionally persists
 the durable decisions to the repo's convention.)
+
+When the user wants a durable PRD out of this session, hand off to `to-prd` — it
+crystallizes the alignment into a formal doc without re-interviewing.

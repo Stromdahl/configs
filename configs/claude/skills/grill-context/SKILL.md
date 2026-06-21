@@ -1,6 +1,6 @@
 ---
-name: grill-with-docs
-description: A relentless interview to sharpen a plan or design that also captures crystallized decisions and terminology into the repo's existing convention (an ADR, a glossary, or a decision-doc) as you go. Type /grill-with-docs to start a grilling session with docs. Use for code/design work where decisions are worth keeping.
+name: grill-context
+description: A relentless interview to sharpen a plan or design that also captures crystallized decisions and terminology into the repo's existing convention (an ADR, a glossary, or a decision-doc) as you go. Type /grill-context to start a grilling session that persists context. Use for code/design work where decisions are worth keeping.
 disable-model-invocation: true
 ---
 
