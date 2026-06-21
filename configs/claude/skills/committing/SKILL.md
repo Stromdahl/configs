@@ -1,12 +1,12 @@
 ---
 name: committing
-description: The shared engine behind /commit and /commit-all — enumerates real changes, groups them into atomic commits, proposes one-line messages in the repo's convention, confirms, commits, and optionally pushes. Invoked by name from the commit / commit-all slash skills with a scope. Do NOT auto-invoke during ordinary work — committing is a deliberate, history-writing action that runs ONLY when the user explicitly asks to commit (via /commit or /commit-all).
+description: The shared engine behind /commit and /commit-all — enumerates real changes, groups them into atomic commits, writes one-line messages in the repo's convention, commits, and optionally pushes. No confirmation gate — it commits, then reports. Invoked by name from the commit / commit-all slash skills with a scope. Do NOT auto-invoke during ordinary work — committing is a deliberate, history-writing action that runs ONLY when the user explicitly asks to commit (via /commit or /commit-all).
 ---
 
 # Committing
 
 Turn the working tree into clean, atomic commits. The caller passes a **scope**;
-everything else — grouping, message style, the confirm gate, optional push — is
+everything else — grouping, message style, commit-then-report, optional push — is
 identical regardless of scope. This is the engine; `commit` and `commit-all` are
 thin wrappers that only choose the scope.
 
@@ -28,11 +28,11 @@ thin wrappers that only choose the scope.
    - **session** → *attribution filter*: of the actually-dirty paths, keep the
      ones this session edited or created (from this conversation's Edit / Write /
      Bash tool history, including new untracked files it wrote). If dirty paths
-     exist that the session has **no** memory of touching, do not silently
-     include or exclude them — list *those specific paths* and ask whether they
-     belong in this commit. (If the session history isn't in context at all —
-     fresh session, post-compaction — say so and offer `/commit-all` or an
-     explicit file list instead of guessing.)
+     exist that the session has **no** memory of touching, **leave them out** and
+     name them in the result — never sweep unknowns into a session commit. (If the
+     session history isn't in context at all — fresh session, post-compaction —
+     don't guess: commit nothing and tell the user to use `/commit-all` or pass an
+     explicit file list.)
    - **worktree** → take all dirty paths.
 
 3. **Group into atomic commits.** Partition the in-scope files into logical
@@ -42,16 +42,16 @@ thin wrappers that only choose the scope.
    split when the session clearly touched unrelated things. For **worktree**
    scope, expect several groups.
 
-4. **Propose, don't surprise.** Print the plan in one shot — for each commit, the
-   files it includes and its one-line subject. Then gate on the caller's
-   confirmation style:
-   - session → a quick one-line confirm ("commit this? / adjust?").
-   - worktree → present the full batch for review; let the user merge groups,
-     reword, drop a group, or move a file before anything is written.
+4. **No confirmation gate.** Don't ask before committing — for either scope,
+   proceed straight to execution. (The plan becomes a *report* of what was done,
+   printed after, not a request to proceed.)
 
-5. **Execute** each approved group in order: `git add -- <paths>` then
+5. **Execute, then report.** Run each group in order: `git add -- <paths>` then
    `git commit -m "<subject>"`. Stage explicitly per group (don't rely on or
-   disturb pre-existing staging beyond what each group needs).
+   disturb pre-existing staging beyond what each group needs). Then print the
+   result in one shot — for each commit, the files it included and its one-line
+   subject, plus push status if asked, and any in-scope-but-excluded paths (per
+   step 2).
 
 6. **Push only if asked.** If the caller's arguments contain the token `push`,
    push **after** all commits succeed: `git push` to the current branch's
