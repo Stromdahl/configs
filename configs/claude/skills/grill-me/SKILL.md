@@ -7,4 +7,5 @@ disable-model-invocation: true
 Invoke the `grilling` skill and run a relentless interview on the current plan or
 design — one question at a time, each with a recommended answer, exploring the repo
 to answer what it can — until you reach a shared understanding, then close with a
-synthesized plan.
+synthesized plan. Per `grilling`'s closing gate, never spin that synthesis into a
+PRD or issues (`to-prd` / `to-issues`) without explicit confirmation.

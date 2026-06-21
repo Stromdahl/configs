@@ -31,10 +31,20 @@ the user means and what would actually get built.
 ## Closing synthesis
 
 When the tree is resolved, stop interviewing and **restate the shared understanding
-as a short plan** before any building begins — the decisions made, the chosen
-approach, and what's now out of scope. This synthesis is the output of a plain
-grilling session. (When `decision-docs` is also in play, it additionally persists
-the durable decisions to the repo's convention.)
+as a short plan** — the decisions made, the chosen approach, and what's now out of
+scope. This synthesis is the output of a plain grilling session, and it is where the
+session **stops**.
 
-When the user wants a durable PRD out of this session, hand off to `to-prd` — it
-crystallizes the alignment into a formal doc without re-interviewing.
+**Never create durable artifacts off the back of a grill without explicit
+confirmation.** The synthesis is an offer, not a trigger: do **not** auto-invoke
+`to-prd` or `to-issues`, and do **not** write a PRD, issue files, or any other
+durable artifact, until the user has said they want it. Closing a grill means
+presenting the plan and naming the possible hand-offs — then waiting. Each hand-off
+is consent-based:
+
+- `to-prd` — crystallize the alignment into one durable PRD (no re-interviewing).
+- `to-issues` — decompose the plan into independently-grabbable issues.
+
+(`decision-docs` is separate: it persists decisions *as they crystallize during* the
+interview, proposing — never imposing — which is not the same as this end-of-grill
+gate on PRDs and issues.)

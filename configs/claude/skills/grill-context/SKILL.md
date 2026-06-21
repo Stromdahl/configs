@@ -9,4 +9,6 @@ design — one question at a time, each with a recommended answer, exploring the
 to answer what it can. As decisions and terminology crystallize during the
 interview, use the `decision-docs` skill to persist the durable ones into whatever
 convention this repo already uses (ADR / glossary / decision-doc), proposing rather
-than imposing where no convention exists. Close with a synthesized plan.
+than imposing where no convention exists. Close with a synthesized plan — and per
+`grilling`'s closing gate, never spin it into a PRD or issues (`to-prd` /
+`to-issues`) without explicit confirmation.
