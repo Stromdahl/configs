@@ -1178,8 +1178,61 @@ require("lazy").setup({
       { "<leader>gd", "<cmd>DiffviewOpen<cr>",                    desc = "Open diffview" },
       { "<leader>gh", "<cmd>DiffviewFileHistory<cr>",             desc = "File history" },
       { "<leader>gb", "<cmd>DiffviewOpen origin/main...HEAD<cr>", desc = "Compare with main" },
+      {
+        -- Pick any local/remote branch and review it (<base>...HEAD).
+        "<leader>gB",
+        function()
+          require("fzf-lua").fzf_exec(
+            "git for-each-ref --format='%(refname:short)' refs/heads refs/remotes | grep -v '^origin/HEAD$'",
+            {
+              prompt = "Diff base> ",
+              actions = {
+                ["default"] = function(selected)
+                  local ref = selected and selected[1]
+                  if ref and ref ~= "" then
+                    vim.cmd("DiffviewOpen " .. ref .. "...HEAD")
+                  end
+                end,
+              },
+            }
+          )
+        end,
+        desc = "Diffview vs branch",
+      },
     },
   },
+
+  -- GitHub PR/issue review (needs the `gh` CLI authenticated). Reuses fzf-lua
+  -- as the picker and mini.icons (mocked as nvim-web-devicons); the actual
+  -- diff/comment review runs through diffview above.
+  --   <leader>op  PR list      <leader>or  start review   <leader>oo  actions menu
+  -- Inside a review: <leader>ca add comment, ]q/[q next/prev file, then :Octo
+  -- review submit (or the actions menu) to approve / request changes / comment.
+  {
+    "pwntester/octo.nvim",
+    cmd = "Octo",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "ibhagwan/fzf-lua",
+      "echasnovski/mini.icons",
+    },
+    keys = {
+      { "<leader>op", "<cmd>Octo pr list<cr>",       desc = "Octo: PR list" },
+      { "<leader>oP", "<cmd>Octo pr search<cr>",     desc = "Octo: PR search" },
+      { "<leader>or", "<cmd>Octo review start<cr>",  desc = "Octo: start review" },
+      { "<leader>oR", "<cmd>Octo review resume<cr>", desc = "Octo: resume review" },
+      { "<leader>oi", "<cmd>Octo issue list<cr>",    desc = "Octo: issue list" },
+      { "<leader>oo", "<cmd>Octo actions<cr>",       desc = "Octo: actions menu" },
+    },
+    opts = {
+      picker = "fzf-lua",
+    },
+    config = function(_, opts)
+      require("mini.icons").mock_nvim_web_devicons()
+      require("octo").setup(opts)
+    end,
+  },
+
   -- File Management
   {
     "refractalize/oil-git-status.nvim",
