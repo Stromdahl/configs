@@ -1177,7 +1177,33 @@ require("lazy").setup({
     keys = {
       { "<leader>gd", "<cmd>DiffviewOpen<cr>",                    desc = "Open diffview" },
       { "<leader>gh", "<cmd>DiffviewFileHistory<cr>",             desc = "File history" },
-      { "<leader>gb", "<cmd>DiffviewOpen origin/main...HEAD<cr>", desc = "Compare with main" },
+      {
+        -- Review the current branch against the repo's default branch. Detect it
+        -- (origin/HEAD, else main/master, local or remote) instead of hardcoding
+        -- origin/main, which breaks on master repos or repos without an origin.
+        "<leader>gb",
+        function()
+          local function sh(cmd)
+            local out = vim.fn.systemlist(cmd)
+            return vim.v.shell_error == 0 and out[1] and out[1] ~= "" and out[1] or nil
+          end
+          local base = sh({ "git", "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD" })
+          if not base then
+            for _, c in ipairs({ "origin/main", "origin/master", "main", "master" }) do
+              if sh({ "git", "rev-parse", "--verify", "--quiet", c }) then
+                base = c
+                break
+              end
+            end
+          end
+          if not base then
+            vim.notify("Diffview: no default branch (main/master) found", vim.log.levels.WARN)
+            return
+          end
+          vim.cmd("DiffviewOpen " .. base .. "...HEAD")
+        end,
+        desc = "Compare with default branch",
+      },
       {
         -- Pick any local/remote branch and review it (<base>...HEAD).
         "<leader>gB",
