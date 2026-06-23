@@ -16,6 +16,10 @@ require("gruvbox").setup({
   overrides = {
     Normal = { bg = "#000000" }, -- force Normal’s background
     SignColumn = { bg = "#0f0f0f" },
+    -- Default gruvbox Cursor is `reverse`-only (no concrete color), which the
+    -- terminal renders invisibly over blank cells (empty lines / indentation).
+    -- Give it a solid high-contrast fill so the block cursor is always visible.
+    Cursor = { fg = "#1d2021", bg = "#fe8019" },
     -- etc
   },
 })
@@ -1149,6 +1153,13 @@ require("lazy").setup({
     event = { "BufReadPost", "BufNewFile" },
     config = function()
       vim.api.nvim_set_hl(0, "IblIndent", { fg = "#3a3a3a" }) -- dim gray bar
+      local hooks = require("ibl.hooks")
+      -- Don't draw a guide on the cursor's line: the thin '▏' otherwise hides the
+      -- block cursor when it sits over indentation. ibl debounce-refreshes on
+      -- CursorMoved(I), so the skipped line follows the cursor.
+      hooks.register(hooks.type.SKIP_LINE, function(_, _, row, _)
+        return row == vim.api.nvim_win_get_cursor(0)[1] - 1
+      end)
       require("ibl").setup({
         indent = { char = "▏", highlight = "IblIndent" },
         scope = { enabled = false },
@@ -1425,7 +1436,29 @@ require("lazy").setup({
     "MeanderingProgrammer/render-markdown.nvim",
     dependencies = { "nvim-treesitter/nvim-treesitter" },
     ft = { "markdown" },
-    opts = {},
+    -- Defaults paint full-width, diff-colored bars behind every heading
+    -- (H*Bg link to DiffAdd/Delete/Change), which clashes with gruvbox. Strip
+    -- the bars and signs; keep the useful rendering (icons, tables, checkboxes).
+    opts = {
+      heading = {
+        backgrounds = {}, -- no diff-colored heading bars; keep gruvbox heading fg
+        icons = {},       -- keep the literal '#' markers (legible) vs cryptic glyphs
+        sign = false,     -- no per-heading gutter glyph
+        width = "block",  -- hug the text rather than the whole window
+      },
+      code = {
+        width = "block",  -- code background hugs the code, not the full window
+        sign = false,
+        left_pad = 1,
+        right_pad = 1,
+        inline = false,   -- no background box on `inline code` (keeps gruvbox fg)
+      },
+      checkbox = {
+        unchecked = { icon = "□ " }, -- - [ ]
+        checked = { icon = "■ " },   -- - [X] / - [x]
+      },
+      sign = { enabled = false }, -- drop the sign column entirely
+    },
   },
 
   -- CSS/Tailwind Support
