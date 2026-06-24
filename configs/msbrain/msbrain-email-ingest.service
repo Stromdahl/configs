@@ -1,14 +1,21 @@
 [Unit]
 Description=msbrain — Proton email ingest into ~/notes/inbox (autonomous, personal-key)
-Documentation=https://github.com/ (msbrain repo: docs/model-governance.md)
-# The local Bridge IMAP must be up; pull it in but don't hard-require (the launcher
-# fails closed on its own if auth/IMAP is unavailable).
+Documentation=file:%h/projects/msbrain/docs/model-governance.md
+# Bridge must be serving local IMAP first. Wants+After orders startup, but After only
+# waits for the process to fork, not for IMAP to listen — so ExecStartPre below polls
+# the port. Bridge default is 127.0.0.1:1143 (matches ~/.config/msbrain/proton-bridge.env).
 Wants=protonmail-bridge.service
 After=protonmail-bridge.service
 
 [Service]
 Type=oneshot
-# Defaults inside the launcher: MSBRAIN_DIR=%h/projects/msbrain, NOTES_DIR=%h/notes,
+# systemd --user ships a minimal PATH without ~/.local/bin, where `claude` lives — so a
+# scheduled `claude -p` would be command-not-found without this. (python3 is in /usr/bin.)
+Environment=PATH=%h/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+# Wait (<=30s) for Bridge IMAP before ingesting, so an armed run can't race a not-yet-ready
+# Bridge and fail. Bounded; fails the unit cleanly if Bridge never comes up.
+ExecStartPre=/usr/bin/bash -c 'for i in $(seq 1 30); do (exec 3<>/dev/tcp/127.0.0.1/1143) 2>/dev/null && exit 0; sleep 1; done; echo "Bridge IMAP not ready on 127.0.0.1:1143 after 30s" >&2; exit 1'
+# Launcher defaults: MSBRAIN_DIR=%h/projects/msbrain, NOTES_DIR=%h/notes,
 # MSBRAIN_AUTH=personal-key (production, ADR 0002 — fails closed if the key is absent).
 ExecStart=%h/projects/msbrain/.claude/scripts/email-ingest-headless.sh
 Nice=10
