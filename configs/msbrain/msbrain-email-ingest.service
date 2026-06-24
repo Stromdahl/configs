@@ -1,5 +1,5 @@
 [Unit]
-Description=msbrain — Proton email ingest into ~/notes/inbox (autonomous, personal-key)
+Description=msbrain — Proton email ingest into ~/notes/inbox (autonomous; krypton interim auth)
 Documentation=file:%h/projects/msbrain/docs/model-governance.md
 # Bridge must be serving local IMAP first. Wants+After orders startup, but After only
 # waits for the process to fork, not for IMAP to listen — so ExecStartPre below polls
@@ -12,10 +12,17 @@ Type=oneshot
 # systemd --user ships a minimal PATH without ~/.local/bin, where `claude` lives — so a
 # scheduled `claude -p` would be command-not-found without this. (python3 is in /usr/bin.)
 Environment=PATH=%h/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+# krypton interim (ADR 0002 exception): bill the company-provided Claude subscription via
+# a `claude setup-token` token, not a personal API key. The override lives ONLY here — the
+# launcher default stays personal-key (the titan target), so a titan re-provision reverts
+# by simply not shipping these two lines. The token file is chmod 600, owner-created, never
+# committed (ADR 0007); absent/empty => the launcher falls back to the stored login.
+Environment=MSBRAIN_AUTH=oauth
+EnvironmentFile=-%h/.config/msbrain/oauth-token.env
 # Wait (<=30s) for Bridge IMAP before ingesting, so an armed run can't race a not-yet-ready
 # Bridge and fail. Bounded; fails the unit cleanly if Bridge never comes up.
 ExecStartPre=/usr/bin/bash -c 'for i in $(seq 1 30); do (exec 3<>/dev/tcp/127.0.0.1/1143) 2>/dev/null && exit 0; sleep 1; done; echo "Bridge IMAP not ready on 127.0.0.1:1143 after 30s" >&2; exit 1'
-# Launcher defaults: MSBRAIN_DIR=%h/projects/msbrain, NOTES_DIR=%h/notes,
-# MSBRAIN_AUTH=personal-key (production, ADR 0002 — fails closed if the key is absent).
+# Launcher resolves: MSBRAIN_DIR=%h/projects/msbrain, NOTES_DIR=%h/notes; MSBRAIN_AUTH=oauth
+# (set above) bills CLAUDE_CODE_OAUTH_TOKEN from the EnvironmentFile, else the stored login.
 ExecStart=%h/projects/msbrain/.claude/scripts/email-ingest-headless.sh
 Nice=10
