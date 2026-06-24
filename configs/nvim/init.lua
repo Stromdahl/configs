@@ -191,7 +191,7 @@ end
 
 -- Cargo Commands
 local function run_cargo_command(cmd)
-  vim.cmd("split")
+  vim.cmd("new") -- fresh empty buffer; jobstart{term=true} hijacks the current buf, so never :split onto a file
   vim.fn.jobstart({ "cargo", cmd }, {
     term = true,
     cwd = vim.fn.getcwd(),
@@ -201,6 +201,21 @@ local function run_cargo_command(cmd)
       vim.notify("Cargo " .. cmd .. " " .. status, level)
     end,
   })
+end
+
+-- Open a shell in `dir` (defaults to the current file's directory). When inside
+-- tmux, splits a real pane beside nvim (no terminal-mode friction); otherwise
+-- falls back to a built-in :terminal in a fresh split.
+local function shell_in(dir)
+  dir = (dir and dir ~= "") and dir or vim.fn.expand("%:p:h")
+  if dir == "" then dir = vim.fn.getcwd() end
+  if vim.env.TMUX then
+    vim.system({ "tmux", "split-window", "-h", "-c", dir })
+  else
+    vim.cmd("botright new")
+    vim.fn.jobstart(vim.o.shell, { term = true, cwd = dir })
+    vim.cmd.startinsert()
+  end
 end
 
 -- Snippet Helper Functions
@@ -266,6 +281,15 @@ vim.keymap.set("n", "<M-k>", "<C-w>k");
 vim.keymap.set("n", "<M-l>", "<C-w>l");
 vim.keymap.set("n", "<M-s>", "<C-w>s");
 vim.keymap.set("n", "<M-v>", "<C-w>v");
+
+-- Same window-nav from inside a terminal: escape terminal mode, then move.
+vim.keymap.set("t", "<M-h>", [[<C-\><C-n><C-w>h]]);
+vim.keymap.set("t", "<M-j>", [[<C-\><C-n><C-w>j]]);
+vim.keymap.set("t", "<M-k>", [[<C-\><C-n><C-w>k]]);
+vim.keymap.set("t", "<M-l>", [[<C-\><C-n><C-w>l]]);
+
+-- Open a shell in the current file's directory (tmux pane if inside tmux).
+vim.keymap.set("n", "<leader>t", function() shell_in() end, { desc = "[t]erminal in current dir" })
 
 
 -- Diagnostic Keymaps
@@ -378,6 +402,16 @@ autocmd("BufReadPost", {
 autocmd("FileType", {
   pattern = { "qf", "help", "man", "lspinfo" },
   callback = function() vim.keymap.set("n", "q", "<cmd>close<cr>", { buf = 0 }) end,
+})
+
+-- Terminal buffers: no gutter, start in insert mode
+autocmd("TermOpen", {
+  callback = function()
+    vim.opt_local.number = false
+    vim.opt_local.relativenumber = false
+    vim.opt_local.signcolumn = "no"
+    vim.cmd("startinsert")
+  end,
 })
 
 -- Window management
@@ -1316,6 +1350,9 @@ require("lazy").setup({
           if dir then
             require("fzf-lua").live_grep({ cwd = dir })
           end
+        end,
+        ["<C-t>"] = function()
+          shell_in(require("oil").get_current_dir())
         end,
         ["gy"] = function()
           local oil = require("oil")
