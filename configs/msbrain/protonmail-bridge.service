@@ -1,0 +1,17 @@
+[Unit]
+Description=Proton Mail Bridge (headless IMAP/SMTP for local mail clients)
+Documentation=https://proton.me/support/bridge-for-linux
+# Bridge keeps its credentials in a file-based vault (~/.config/protonmail/bridge-v3/
+# insecure/vault.enc), NOT the OS keyring — so this can start detached at boot under
+# `loginctl enable-linger` without needing an unlocked gnome-keyring/Secret Service.
+# No After=network-online.target: that target is unreliable in the user manager scope,
+# and Bridge retries connectivity internally.
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/protonmail-bridge --noninteractive
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

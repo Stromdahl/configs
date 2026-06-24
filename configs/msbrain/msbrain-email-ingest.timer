@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily msbrain Proton email ingest (morning, before /daily)
+
+[Timer]
+# Daily morning ingest so the inbox bus is populated before the owner's /daily
+# triage. Persistent=true => a run missed while the laptop was asleep fires on
+# resume (ADR 0005: krypton is a laptop, not always-on). RandomizedDelaySec
+# avoids a hard 07:00 spike.
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

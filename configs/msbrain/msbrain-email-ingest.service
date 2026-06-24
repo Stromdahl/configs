@@ -1,0 +1,14 @@
+[Unit]
+Description=msbrain — Proton email ingest into ~/notes/inbox (autonomous, personal-key)
+Documentation=https://github.com/ (msbrain repo: docs/model-governance.md)
+# The local Bridge IMAP must be up; pull it in but don't hard-require (the launcher
+# fails closed on its own if auth/IMAP is unavailable).
+Wants=protonmail-bridge.service
+After=protonmail-bridge.service
+
+[Service]
+Type=oneshot
+# Defaults inside the launcher: MSBRAIN_DIR=%h/projects/msbrain, NOTES_DIR=%h/notes,
+# MSBRAIN_AUTH=personal-key (production, ADR 0002 — fails closed if the key is absent).
+ExecStart=%h/projects/msbrain/.claude/scripts/email-ingest-headless.sh
+Nice=10
