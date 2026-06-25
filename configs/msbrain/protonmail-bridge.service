@@ -1,11 +1,15 @@
 [Unit]
 Description=Proton Mail Bridge (headless IMAP/SMTP for local mail clients)
 Documentation=https://proton.me/support/bridge-for-linux
-# Bridge keeps its credentials in a file-based vault (~/.config/protonmail/bridge-v3/
-# insecure/vault.enc), NOT the OS keyring — so this can start detached at boot under
-# `loginctl enable-linger` without needing an unlocked gnome-keyring/Secret Service.
-# No After=network-online.target: that target is unreliable in the user manager scope,
-# and Bridge retries connectivity internally.
+# Bridge stores its vault key in the OS keyring via Secret Service (gnome-keyring) — it
+# does NOT run keyring-free. It uses the *default* collection, which on krypton is the
+# `login` keyring (auto-unlocked by greetd's PAM at login). The default alias was repointed
+# from a locked `Default_keyring` to `login` on 2026-06-25 — that mismatch was the root
+# cause of Bridge loading no account (IMAP "no such user"). Consequence: Bridge works while
+# the owner is logged in; after a cold boot with NO login the keyring stays locked and Bridge
+# cannot load its vault — a laptop limitation, another reason titan stays long-term (ADR 0005).
+# (The alias fix is a runtime/keyring change, not yet captured in dotfiles — fungibility TODO.)
+# No After=network-online.target: unreliable in the user-manager scope; Bridge retries internally.
 
 [Service]
 Type=simple
