@@ -97,6 +97,7 @@ label. Check that first, so re-running a scope is **idempotent** and never dups.
 
 ## Composition
 
-`grilling` → `to-prd` *or* `to-issues`. `to-prd` crystallizes a conversation into one
-durable PRD; `to-issues` decomposes a plan into many grabbable slices. Both read the
+`grilling` → `to-prd` *or* `to-issues` → `to-tasks`. `to-prd` crystallizes a
+conversation into one durable PRD; `to-issues` decomposes a plan into many grabbable
+slices; `to-tasks` freezes each slice into an agent execution brief. All read the
 ADRs and glossary that `decision-docs` maintains and write in that vocabulary.
