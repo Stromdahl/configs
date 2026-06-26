@@ -47,9 +47,11 @@ first, so re-running a scope is **idempotent** and never dups.
    - **The decisions:** read any `docs/decisions/` ADRs and glossary; write the
      brief in that vocabulary and never contradict a locked decision.
    - **Existing tasks:** scan `tasks/` for which issues already have a task and for
-     the brief shape already in use. If there is **no `tasks/` dir**, *offer to
-     adopt it* — `mkdir tasks/`, write a short `tasks/README.md` documenting the
-     brief shape and the pickup protocol (below) — but don't impose it.
+     the brief shape in use — that repo's `tasks/README.md` is the format authority.
+     If there is **no `tasks/` dir**, *offer to adopt it* — `mkdir tasks/` and copy
+     the canonical spec shipped beside this skill,
+     `~/.claude/skills/to-tasks/tasks-README.md`, to `tasks/README.md` — but don't
+     impose it.
 
 2. **Triage out trivial issues.** If the issue is a one-line / one-file change an
    agent could do without discovery, **a brief costs more than it saves** — say so
@@ -73,8 +75,9 @@ first, so re-running a scope is **idempotent** and never dups.
    accumulate their context across issues — that re-introduces the marathon cost
    this skill exists to avoid.
 
-4. **Distill into the brief.** Compress the `Explore` return into the template
-   below. Carry the issue's acceptance criteria across verbatim as a checklist.
+4. **Distill into the brief.** Compress the `Explore` return into the brief shape the
+   repo's `tasks/README.md` defines (the canonical spec; see below). Carry the issue's
+   acceptance criteria across verbatim as a checklist.
    Suggest an agent tier (cheap model for mechanical work; escalate only for genuine
    reasoning). Keep it tight — a brief is a launchpad, not a transcript. **If
    discovery flagged human hands as needed, also flag it on the issue** (see
@@ -85,26 +88,15 @@ first, so re-running a scope is **idempotent** and never dups.
    never overwrite an existing task without saying so. Report each file written and
    any issue skipped (trivial, or already briefed).
 
-## Task brief template
+## Task brief format
 
-Keep it lean; the agent greps the anchors itself, so prose stays short.
-
-- **Source issue** — `issues/NNN-slug.md` (one-line restatement of the goal).
-- **Pickup protocol** — *first action:* set the source issue's `status` to
-  in-progress and commit that immediately (see Guardrails — bookkeeping lands on
-  `main`). *last action:* set it to done/closed per the repo spec and commit. *If
-  you hit a step that needs the user's hands:* flag the **issue** (blocked /
-  needs-human, per the repo idiom) and stop — don't silently work around it.
-- **Suggested agent** — model/agent tier and why (e.g. "Sonnet; mechanical").
-- **Human steps / blockers** — anything that needs the user's own hands (physical
-  access, a secret it lacks, an external-account/dashboard action, an approval,
-  manual/hardware testing). Omit only if there are genuinely none.
-- **Entry points** — files + grep-stable symbols to touch.
-- **Prior art to mirror** — the file(s) to copy the pattern from.
-- **Steps** — a short numbered plan of the change (the *how*, not full code).
-- **Verify** — the exact commands to run, and what passing looks like.
-- **Acceptance criteria** — the issue's ACs as a `- [ ]` checklist, verbatim.
-- **Out of scope / don't touch** — explicit boundaries.
+The canonical brief shape **and** the executing agent's pickup protocol live in
+`tasks/README.md` — shipped beside this skill as `tasks-README.md`, copied into a repo
+on first adoption (step 1). That file is the single source of truth; follow the repo's
+copy rather than restating it here. In short, each `tasks/NNN-slug.md` carries: source
+issue · pickup protocol · suggested agent · **human steps / blockers** · entry points ·
+prior art to mirror · steps · verify · acceptance-criteria checklist · out of scope.
+Keep briefs lean — the agent greps the anchors itself, so prose stays short.
 
 ## Guardrails
 
