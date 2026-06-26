@@ -42,16 +42,23 @@ grep-stable anchor costs the agent one cheap search and survives that drift.
 
 The task file is your entire prompt — execute from it alone.
 
-1. **Pick** a task whose source issue is still open (status not in-progress / done).
-   Issue status is the only coordination; you'll never collide with another session.
+1. **Pick** a task whose source issue is still open (status not in-progress / done)
+   and whose `Depends on` issues are all closed. Issue status is the only
+   coordination; that's how concurrent sessions avoid colliding.
 2. **Claim it — first action:** set the source issue's `status` to in-progress and
    **commit that immediately, directly on `main`.** Status is queue bookkeeping, not
    feature work — it's exempt from "branch first", and committing it now is what keeps
    the queue accurate for every other session.
-3. **Do the work** per the brief; grep the anchors to locate them.
-4. **Verify:** run the brief's Verify commands and tick every acceptance criterion.
+3. **Do the work** per the brief; grep the anchors to locate them. **Don't commit the
+   code yet.**
+4. **Verify before committing the code.** Run the brief's Verify commands and tick
+   every acceptance criterion. **Only once they pass** do you commit the change (a
+   coherent, atomic commit). If they fail and you can't fix it within the brief's
+   scope, **leave the change uncommitted, report, and stop** — the issue stays
+   in-progress. Never let an unverified change land.
 5. **Close it — last action:** set the issue's `status` to done/closed per this repo's
-   `issues/README.md` spec, and commit (again, fine on `main`).
+   `issues/README.md` spec, and commit (again, fine on `main`). On a PR-based repo,
+   close on merge — not while the code still sits on an open branch.
 6. **Blocked by something needing the user's hands?** Flag the **issue**
    (blocked / needs-human, per this repo's idiom) and **stop** — don't work around it.
    The user watches the issue queue, so that's where a blocker has to show.

@@ -30,42 +30,29 @@ fresh session or an isolated worktree per task, never one marathon.
 
 1. **Read ground truth first.**
    - **`issues/README.md`** — how `status` and closing work in this repo.
-   - **`tasks/README.md`** — the pickup protocol you will follow. It is authoritative;
-     this skill only drives it.
+   - **`tasks/README.md`** — the pickup protocol you will follow, step for step. It is
+     authoritative; this skill adds task *selection* and a hardened claim, then runs it.
    - **The task brief** for the in-scope task, and **its source issue** (ACs, labels,
-     `Depends on`). Confirm the issue is open and its dependencies are closed.
+     `Depends on`).
 
 2. **Select the task.** Default: the next ready task (above). Named: that one — but if
    it's already in-progress/closed, blocked, or has unmet dependencies, **say so and
    stop**, don't force it.
 
 3. **Claim it — best effort, fast.** Re-read the source issue's `status` *immediately*
-   before claiming; if still open, set it to in-progress and **commit that right away,
-   on `main`** (bookkeeping is exempt from "branch first"). This commit *is* the grab.
-   This is best-effort, not a hard lock: if a concurrent session already flipped it, or
-   you later hit a status conflict on pull/push, **yield** — pick the next ready task
-   (default scope) or stop (named scope).
+   before claiming; if still open, run the protocol's claim step (set in-progress,
+   commit on `main`) right away. This commit *is* the grab — but it's best-effort, not
+   a hard lock: if a concurrent session already flipped it, or you later hit a status
+   conflict on pull/push, **yield** — pick the next ready task (default scope) or stop
+   (named scope).
 
-4. **Execute from the brief.** Grep the brief's grep-stable anchors to locate the entry
-   points, mirror the named prior art, follow the Steps, and stay inside the brief's
-   Out-of-scope boundaries. Do the code work on whatever git workflow this repo uses
-   (straight to `main` where that's the repo's norm; else a branch) and commit it as a
-   coherent, atomic change.
+4. **Run the rest of the pickup protocol exactly as `tasks/README.md` specifies** —
+   work from the brief, **verify before committing the code, commit only on green**,
+   then close the issue; or, on a verify failure or a human-hands blocker, flag/stop
+   per that file. Don't deviate from the repo's protocol — where this skill and that
+   file differ, **the repo's file wins**.
 
-5. **Verify — don't claim done on faith.** Run the brief's exact Verify commands and
-   tick every acceptance criterion. If verification fails and you can't fix it within
-   the brief's scope, **leave the issue in-progress, report the failure, and stop** —
-   never close a task whose ACs don't pass.
-
-6. **Close, or flag a blocker.**
-   - All ACs pass → set the issue's `status` to done/closed per `issues/README.md` and
-     commit on `main`.
-   - A step needs the **user's own hands** (physical access, a secret you lack, an
-     external-account/dashboard action, an approval, manual/hardware testing) → flag
-     the **issue** (blocked / needs-human, per the repo idiom) with what's needed, and
-     **stop**. Don't work around it or fake completion.
-
-7. **Report.** What you did, the commits made, AC status, and any follow-up or blocker —
+5. **Report.** What you did, the commits made, AC status, and any follow-up or blocker —
    concisely, since the durable record is the issue and the commits.
 
 ## Guardrails
@@ -74,13 +61,12 @@ fresh session or an isolated worktree per task, never one marathon.
 - **Claiming is best-effort, not a lock.** File+git claims can race across concurrent
   sessions; the re-check-then-commit in step 3 minimises it, but on conflict you yield.
   Say this plainly rather than implying a guarantee.
-- **Don't close what you can't verify.** No verify commands in the brief, or they fail
-  → report and stop; closing stays gated on green ACs.
+- **Verify gates both the code commit and the close.** Never commit the change or close
+  the issue on red — on failure leave the change uncommitted and the issue in-progress,
+  report, and stop.
 - **Commit proactively; push is ask-first.** Land the work and the status commits
   (status always on `main`), but **do not push** unless the user asks — per global git
   rules.
-- **Blocked → flag the issue and stop.** A human-hands blocker belongs on the issue
-  (the surface the user watches), never silently worked around.
 - **Nothing ready?** No task whose issue is open with deps satisfied — say so and stop.
   If issues lack briefs, suggest `/to-tasks` first.
 
