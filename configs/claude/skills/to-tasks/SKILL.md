@@ -66,6 +66,9 @@ first, so re-running a scope is **idempotent** and never dups.
    - **Verify commands** — the *exact* test / lint / build / run commands this repo
      uses (from its `package.json`, `Makefile`, CI config, AGENTS.md, etc.).
    - **Gotchas & boundaries** — anything adjacent the agent must *not* touch.
+   - **Human hands needed?** — whether any part can't be done by an agent alone:
+     physical access, a secret/credential it lacks, an external-account or dashboard
+     action, an approval, or hardware/manual testing.
    Use a **separate** subagent per issue and do not let the authoring session
    accumulate their context across issues — that re-introduces the marathon cost
    this skill exists to avoid.
@@ -73,7 +76,9 @@ first, so re-running a scope is **idempotent** and never dups.
 4. **Distill into the brief.** Compress the `Explore` return into the template
    below. Carry the issue's acceptance criteria across verbatim as a checklist.
    Suggest an agent tier (cheap model for mechanical work; escalate only for genuine
-   reasoning). Keep it tight — a brief is a launchpad, not a transcript.
+   reasoning). Keep it tight — a brief is a launchpad, not a transcript. **If
+   discovery flagged human hands as needed, also flag it on the issue** (see
+   Guardrails) — the user watches the issue, not the brief.
 
 5. **Write `tasks/NNN-slug.md`, mirroring the issue ID, then report.** Reuse the
    issue's `NNN` and slug so task ↔ issue traceability is trivial. Idempotent:
@@ -87,8 +92,13 @@ Keep it lean; the agent greps the anchors itself, so prose stays short.
 - **Source issue** — `issues/NNN-slug.md` (one-line restatement of the goal).
 - **Pickup protocol** — *first action:* set the source issue's `status` to
   in-progress and commit that immediately (see Guardrails — bookkeeping lands on
-  `main`). *last action:* set it to done/closed per the repo spec and commit.
+  `main`). *last action:* set it to done/closed per the repo spec and commit. *If
+  you hit a step that needs the user's hands:* flag the **issue** (blocked /
+  needs-human, per the repo idiom) and stop — don't silently work around it.
 - **Suggested agent** — model/agent tier and why (e.g. "Sonnet; mechanical").
+- **Human steps / blockers** — anything that needs the user's own hands (physical
+  access, a secret it lacks, an external-account/dashboard action, an approval,
+  manual/hardware testing). Omit only if there are genuinely none.
 - **Entry points** — files + grep-stable symbols to touch.
 - **Prior art to mirror** — the file(s) to copy the pattern from.
 - **Steps** — a short numbered plan of the change (the *how*, not full code).
@@ -111,9 +121,19 @@ Keep it lean; the agent greps the anchors itself, so prose stays short.
   bookkeeping, not feature work — the executing agent commits them **promptly and
   directly on `main`** (exempt from the usual "branch first" rule) so other sessions
   see an accurate queue immediately. The brief must instruct this explicitly.
-- **Create-only.** This skill *writes briefs*. It does not change issue status,
-  close issues, or do the work — that's the executing agent's job, driven by the
-  brief. Authoring a task must not start the work.
+- **Work needing the user's hands must be visible on the issue.** If discovery (or
+  the executing agent, mid-work) finds the task can't be finished by an agent alone —
+  physical access, a secret/credential it lacks, an external-account or dashboard
+  action, an approval, or hardware/manual testing — that must show on the **issue**
+  (the surface the user watches), not just in the brief. Use the repo's idiom: a
+  `blocked` status / `needs-human` label if the spec has one, else a clearly marked
+  note in the issue body — invent no new label. List the exact human steps in the
+  brief too.
+- **Create-only — one carve-out.** This skill *writes briefs*. It does not change
+  issue status, close issues, or do the work — that's the executing agent's job,
+  driven by the brief. Authoring a task must not start the work. The *only* exception
+  is the human-hands flag above: annotating the issue so a blocker is visible is
+  allowed, because that visibility is the point.
 - **In-repo only.** Target the file-based `issues/` + `tasks/` convention. A `gh` /
   Linear backend is out of scope — note it as possible future work, don't branch.
 - **Nothing to brief?** Every open issue already has a task, or the only candidates
