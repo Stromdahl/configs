@@ -134,7 +134,8 @@ Keep briefs lean — the agent greps the anchors itself, so prose stays short.
 
 ## Composition
 
-`grilling` → `to-prd` *or* `to-issues` → `to-tasks`. `to-issues` decomposes a plan
-into grabbable work items (no paths, so they survive the project); `to-tasks` freezes
-each into an execution brief (paths in, consumed fresh) so an agent runs cheap. Both
+`grilling` → `to-prd` *or* `to-issues` → `to-tasks` → `grab`. `to-issues` decomposes a
+plan into grabbable work items (no paths, so they survive the project); `to-tasks`
+freezes each into an execution brief (paths in, consumed fresh) so an agent runs cheap;
+`grab` is the consumer that claims a brief and executes it. `to-issues` and `to-tasks`
 read the ADRs and glossary that `decision-docs` maintains and write in that vocabulary.
