@@ -1,0 +1,166 @@
+# helium — NAS + services homelab (PRD)
+
+> Build plan for `helium`, the consolidated NAS + services box on repurposed
+> titan hardware. Crystallized from a grilling session; this is the durable
+> spec the Ansible build follows. Decomposition into executable tasks is a
+> separate step (`to-issues` / `to-tasks`).
+
+## Problem Statement
+
+neon — the current Debian docker host running Jellyfin and the *arr stack — is
+out of disk: its 1.8 TB NVMe datastore is 100% full (~6 GB free), capping the
+media library and leaving no room for new services. titan has been decommissioned
+and its hardware is free to repurpose. The user wants a single consolidated
+NAS + services box that (a) holds a large, growing media library on spinning
+disks with fault tolerance, (b) adds self-hosted Immich (photos) and Paperless
+(documents), (c) keeps the noisy, hot, 7200 RPM enterprise HDDs idle as much as
+possible, and (d) is reachable only privately, never from the public internet.
+The current setup also has no backups, and is provisioned by a bespoke dotfiles
+module system the user wants to begin replacing with Ansible.
+
+## Solution
+
+Build `helium` as a bare-metal Debian box with a two-tier storage design: a fast,
+redundant SSD tier carrying the OS and all hot/precious data, and a large,
+dual-parity HDD tier carrying only the cold media library. All services run in
+Docker behind an internal-only Traefik and are reached exclusively over a NetBird
+mesh (nothing exposed to the internet). The box is provisioned by Ansible as a
+pilot — run from krypton — with the rest of the fleet left on the existing
+dotfiles modules. neon's library and *arr state migrate over, then neon retires.
+
+## User Stories
+
+1. As the operator, I want the media library on a pool that survives two
+   simultaneous drive failures, so that used enterprise drives of mixed age don't
+   cost me the library.
+2. As the operator, I want the HDDs spun down except during streams and the
+   nightly parity sync, so that the box is quiet, cool, and low-power.
+3. As a viewer, I want Jellyfin + Jellyseerr to keep working as they do on neon,
+   with the full library history intact after migration.
+4. As the user, I want Immich for my phone photos with on-box ML, so that I have
+   a private Google-Photos replacement.
+5. As the user, I want Paperless to ingest receipts, invoices, and legal
+   documents, so that my records are searchable and private.
+6. As the user, I want every service at a clean `*.home.stromdahl.tech` URL with
+   valid TLS, reachable only over my private mesh, so that nothing sensitive is
+   exposed to the internet.
+7. As the operator, I want this box provisioned by Ansible from krypton, so that
+   I can pilot a replacement for the custom dotfiles module system without
+   disrupting the other hosts.
+8. As the operator, I want secrets to keep using sops + age, so that I don't
+   fragment secret management across the fleet.
+
+## Implementation Decisions
+
+### Hardware / physical layout
+- Repurposed titan: Supermicro X11SCV-Q (Mini-ITX), i5-9400 with UHD 630 iGPU.
+  RAM stays at 16 GB initially; a bump to the board maximum of 32 GB is planned
+  later (both SO-DIMM slots get replaced, as both are populated).
+- The RTX 2060 stays in the single PCIe x16 slot (for Immich ML now and a future
+  local LLM). The LSI 9300-8i HBA (SAS3, native IT-mode) therefore sits on the
+  M.2→PCIe adapter at x4 — adequate bandwidth for four spinners. The pulled
+  970 EVO NVMe becomes a cold spare.
+- Two physical-build prerequisites: an **active fan on the HBA heatsink** (it is
+  passively cooled and will heat-soak on the ribbon beside the GPU), and an
+  **external power lead on the M.2 adapter** (the M.2 slot alone cannot power a
+  x8 HBA).
+
+### Storage
+- **SSD tier:** the two 500 GB SATA SSDs as a **btrfs raid1** mirror, carrying
+  OS/boot, all Docker appdata (configs + databases), the Immich library,
+  Paperless, lean downloads, and transcode cache. btrfs chosen for data
+  checksumming (the board is non-ECC, so this guards against silent bit-rot) and
+  cheap snapshots. Current hot data is small (~15 GB Immich, tiny Paperless), so
+  500 GB usable is ample and redundancy is the better use of the second SSD than
+  capacity.
+- **HDD tier:** the four 12 TB SAS drives via the HBA, as **SnapRAID with
+  2 parity + 2 data drives** (24 TB usable, dual-fault tolerant), pooled with
+  **mergerfs** using a fill-one-drive-at-a-time create policy. Holds only the
+  Jellyfin media library. Capacity is a non-issue (sub-1 TB library against
+  48 TB raw), so the two parity drives cost nothing real.
+- **Spin-down** is a best-effort bonus via sdparm / sg3utils (these are SAS;
+  `hdparm` does not apply). The load-bearing mechanism is architectural: the HDDs
+  are touched only by library reads and the nightly SnapRAID sync, so a single
+  disk spins for a stream while the others sleep.
+
+### Compute split
+- iGPU (UHD 630) → Jellyfin QuickSync transcoding.
+- RTX 2060 → Immich ML (CUDA), with a future local LLM as a second tenant.
+- CPU left free for Paperless OCR and the *arr stack. Jellyfin transcoding and
+  Immich ML never contend for the same silicon.
+
+### Services & access
+- Docker stack: Jellyfin, Jellyseerr, the *arr stack (radarr/sonarr/prowlarr/
+  bazarr/profilarr), qBittorrent behind **gluetun** (retained for ISP privacy),
+  Immich, Paperless, Traefik, NetBird client.
+- **No public exposure and no router port-forward.** Traefik runs internal-only,
+  obtaining real certificates via **Let's Encrypt DNS-01** using the existing
+  Cloudflare token (DNS-01 validates over the API and needs no inbound
+  connection). All services served at `*.home.stromdahl.tech`.
+- Access is over a **NetBird mesh** using NetBird's **cloud control plane** (free
+  personal tier) with **clients only** — the control plane is not self-hosted.
+  Service hostnames resolve to the box's mesh IP via NetBird DNS; when on-LAN,
+  NetBird makes a direct connection.
+
+### Configuration management
+- **Ansible pilot.** The Ansible tree lives inside the dotfiles repo; the custom
+  modules remain in place for krypton/argon/the PVE hosts.
+- Playbooks are **pushed from krypton over SSH** — the box holds no GitHub key
+  and no deploy key. This replaces the bare-git-repo pull pipeline for this host.
+- Secrets remain **sops + age**, consumed by Ansible via the community.sops
+  integration. krypton (which holds the age key) decrypts at run-time and
+  templates the rendered env onto the box; the box never holds the age key.
+- **Bootstrap split:** the Debian install with the btrfs raid1 root is a one-time
+  manual/preseed step (a raid1 root cannot be created from within the same
+  Ansible run). Ansible then performs base hardening, Docker, and the
+  NAS-specific roles: mergerfs; snapraid (with sync/scrub timers); SAS tooling
+  (sdparm/sg3utils/smartctl) plus spin-down timers; NetBird client; and a
+  compose-stack role that templates the env/secrets and brings the stack up.
+
+### Migration & cutover
+- **Parallel build:** stand up helium, rsync the ~932 GB media library to the HDD
+  pool while neon keeps serving, and **migrate the *arr Docker volumes** so
+  library history and quality profiles survive intact rather than being rebuilt.
+- **Start lean:** the ~600 GB of old completed seeds are dropped (ratio is not a
+  concern); only incomplete/recent downloads carry over and live on the SSD tier.
+- **Final delta sync**, then point `*.home.stromdahl.tech` at helium and remove
+  the old public `jellyfin.stromdahl.tech` record (the setup is now all-private).
+  After verification, neon retires and its 1.8 TB NVMe is freed (a candidate
+  local backup target).
+
+## Testing Decisions
+
+No meaningful unit-test surface — this is infrastructure/config. Validation is
+operational:
+- SnapRAID sync and scrub complete cleanly.
+- HDDs spin down and wake correctly; a single stream spins only one disk.
+- Each service is reachable at its `*.home.stromdahl.tech` URL over the mesh with
+  a valid TLS certificate.
+- Jellyfin transcodes on the iGPU; Immich ML runs on the 2060.
+- Migrated *arr instances show intact library history after cutover.
+
+## Out of Scope
+
+- **Backups** (deferred). Syncthing to phone/laptop is interim redundancy, not
+  backup. The planned offsite (a friend's storage) will be a **versioned
+  restic/borg target — explicitly not another Syncthing peer** — plus a local
+  restic repo on the HDD pool, scoped to Immich + Paperless + appdata. The media
+  library is excluded (SnapRAID-protected and re-acquirable).
+- The 32 GB RAM upgrade.
+- Ratio-based / private-tracker seeding (would require revisiting download
+  storage — a dedicated drive or accepting one HDD stays spinning).
+- A local LLM workload on the 2060.
+- Any public internet exposure.
+- Self-hosting the NetBird control plane (rejected in favor of the cloud tier).
+- Migrating the rest of the fleet off the custom dotfiles modules — this box is
+  a pilot only.
+
+## Further Notes
+
+- neon's urgency driver: its datastore is 100% full.
+- The drives are HPE-branded HGST Ultrastar He12 (MB012000JWDFD), 7200 RPM
+  enterprise SAS, manufactured 2019–2022. The mixed age and used provenance are
+  the rationale for dual parity.
+- The seeding decision is revisitable: joining ratio-based trackers later would
+  mean moving seed data to the HDD pool (accepting a spinning disk) or adding
+  dedicated storage.
