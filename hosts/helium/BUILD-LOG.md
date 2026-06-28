@@ -61,6 +61,23 @@ read/write errors, 30–32 °C.** Mixed age confirms the PRD's dual-parity ratio
 - **NVMe:** PASSED, 0 % wear, 100 % spare, 0 media errors, 40 °C, 1,486 POH.
   Healthy as the single non-redundant boot drive.
 
+### HBA cooling & temperature monitoring
+- **Active cooling confirmed:** a small **Noctua fan** is mounted on the SAS3008
+  heatsink. This satisfies the "HBA has active airflow" half of `issues/001`'s
+  acceptance criteria. (Essential — these cards thermally throttle/shut down when
+  passively cooled.)
+- **HBA temp is NOT software-readable in IT-mode.** The chip has an internal
+  thermal sensor + hardware shutdown threshold, but `mpt3sas` exposes no temp
+  (only `ioc_reset_count` on the scsi_host), there's no hwmon device for it, and
+  storcli/sas3ircu don't apply/aren't installed. So there's no temperature number
+  to alarm on.
+- **Monitor proxies instead:** `ioc_reset_count` (cat
+  `/sys/class/scsi_host/host0/ioc_reset_count`, should stay 0) and the drives'
+  non-medium error counts. The Noctua + visual "is it spinning" check is the
+  primary safeguard.
+- Drive temps (which *are* readable) under self-test read load: SAS 32–34 °C
+  (trip 60 °C), NVMe 40 °C (warn/crit 85 °C) — all cool.
+
 ### ⏳ In progress — DO NOT REBOOT until done
 - **Long self-tests launched on sda, sdb, sdc, sdd** at ~05:56 UTC.
   ETA ~23 h each → **~05:00 UTC Mon 2026-06-29** (drives quote conservatively).
