@@ -34,11 +34,12 @@ disk has been written.
 | Data tier | **2× 500 GB SATA SSD → btrfs raid1** | **NONE present** | ❌ |
 
 ### ❗ Blockers / things needing your hands
-1. **The two 500 GB SATA SSDs are not connected.** The SATA AHCI controller is
-   present but no SATA drive enumerates — only the 4 SAS disks, the NVMe, and the
-   Ventoy USB stick. `issues/001` (btrfs raid1 root) and the whole hot-data tier
-   are blocked until these are cabled/powered in. **Verify they're physically
-   installed before the next session.**
+1. **The two 500 GB SATA SSDs are not connected yet** — confirmed by user, *not*
+   a fault: they simply haven't been physically installed. The probe matched (SATA
+   AHCI controller present, but no SATA drive enumerates — only the 4 SAS disks,
+   the NVMe, and the Ventoy USB stick). `issues/001` (btrfs raid1 root) and the
+   whole hot-data tier are blocked until they're cabled/powered in. **Pending
+   build step: install + cable both SSDs before the OS install.**
 2. **The NVMe still holds titan's old Proxmox install** — full LVM stack
    (`pve-root`, `pve-data` thin pool, `pve-swap`) intact on `nvme0n1p3`. Must be
    wiped during the Debian install. Untouched so far.
