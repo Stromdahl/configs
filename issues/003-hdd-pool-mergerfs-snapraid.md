@@ -24,6 +24,13 @@ re-cabling.
 
 Depends on `issues/002` (Ansible foundation + a configured host).
 
+**Manual verification (human hands):** two acceptance criteria can't be completed
+by the Ansible run alone — *reboot reassembly* (a human reboots helium and confirms
+all mounts + timers return) and *simulated data-drive loss recovery* (a human
+simulates the loss at the console and verifies `snapraid fix` restores a canary
+from parity). Building the pool + timers is fully automatable from krypton. Briefed
+in `tasks/003`.
+
 ## Acceptance criteria
 
 - [ ] All four SAS drives are healthy under smartctl through the HBA.

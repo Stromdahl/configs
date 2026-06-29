@@ -47,6 +47,13 @@ assumed. Usable raid1 capacity ~447 GiB — ample (hot data is ~15 GB).
 
 Depends on `issues/002` (Ansible foundation + a configured host).
 
+**Manual verification (human hands):** two acceptance criteria can't be completed
+by the Ansible run alone — *reboot survival* (a human reboots helium and confirms
+the pool re-mounts) and *simulated single-drive loss* (a human offlines/pulls one
+SSD at the console, confirms a degraded mount with data intact, then re-adds and
+rebalances). Building the tier itself is fully automatable from krypton. Briefed in
+`tasks/011`.
+
 ## Acceptance criteria
 
 - [x] Both SSDs are healthy under smartctl and enumerate. **Done 2026-06-29:**
