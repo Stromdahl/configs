@@ -177,3 +177,66 @@ later rebuild (NVMe as OS+storage, via the rescue USB).
    (`lsblk -d -e7,11` → two ~447–500 GB `sata` drives).
 4. Proceed to `issues/001` / `issues/011`: wipe NVMe, single-disk Debian install,
    Ansible builds the btrfs **raid1** data pool across both SSDs in one shot.
+
+---
+
+## 2026-06-29 (later) — both data-tier SSDs installed + SMART-accepted
+
+**State at end of session:** both data-tier SSDs are now **physically installed,
+cabled, enumerating, and SMART-accepted**. Still in the `debian-rescue` OS
+(`ssh ms@192.168.1.174`); no installer has run, no disk written. The data tier is
+unblocked — next is `issues/001` (wipe NVMe + single-disk Debian) then `issues/011`
+(Ansible builds the raid1).
+
+### The two SSDs — both turned out to be identical Kingston SUV400 480 GB
+The "on-hand" SSD is the **same model** as the one pulled from neon, so this is a
+**matched pair**, not the "500 GB + 447 GB Kingston" mix the earlier notes assumed.
+Both are `KINGSTON SUV400S37480G`, 480 GB (447 GiB) — ideal for raid1.
+
+| Dev | Serial (`ata-…` id) | Model | Capacity |
+|---|---|---|---|
+| `sde` | `50026B767400167E` | KINGSTON SUV400S37480G | 480 GB / 447 GiB |
+| `sdf` | `50026B776705BF4D` | KINGSTON SUV400S37480G | 480 GB / 447 GiB |
+
+### SMART results — both PASSED, healthy, burn-in clean
+`smartctl 7.4` (present in the rescue image at `/usr/sbin/smartctl`).
+
+| Metric | `sde` (…167E) | `sdf` (…BF4D) |
+|---|---|---|
+| Overall-health | **PASSED** | **PASSED** |
+| Reallocated / Pending / Reported-uncorrect | 0 / 0 / 0 | 0 / 0 / 0 |
+| UDMA CRC errors | 0 | 0 |
+| Runtime bad blocks (raw / norm) | 17 / 96 | 18 / 99 |
+| **SSD life left** | **95 %** (5 % used) | **96 %** (4 % used) |
+| Power-on hours / cycles | 10 202 h / 1 501 | 17 443 h / 2 195 |
+| Host writes | ~10.8 TiB | ~13.6 TiB |
+| Temp now (min/max) | 30 °C (12/42) | 29 °C (14/43) |
+| Error log | empty | empty |
+| **Extended (long) self-test** | **Completed without error** | **Completed without error** |
+
+The `87543` triple on sde (Raw_Read_Error_Rate / Hardware_ECC_Recovered /
+Soft_ECC_Correction, all mirroring) is the known UV400 attribute quirk — normalized
+value 100, not damage; sdf reads 0 for the same fields. Both accepted for the tier.
+
+### ⚠️ Duplicate WWN — pin the raid1 by `ata-<serial>`, never `wwn-`
+Both drives report the **same malformed LU WWN** (`0 550380 440010000`, NAA=0) — a
+known Kingston UV400 firmware bug. Consequence: udev creates **no `wwn-*`
+`/dev/disk/by-id` link at all**, and if it did it would collide. Only the
+per-serial links are unique and safe:
+
+```
+/dev/disk/by-id/ata-KINGSTON_SUV400S37480G_50026B767400167E -> ../../sde
+/dev/disk/by-id/ata-KINGSTON_SUV400S37480G_50026B776705BF4D -> ../../sdf
+```
+
+`issues/011` says "reference drives by stable identifiers" — that identifier must be
+`ata-KINGSTON_SUV400S37480G_<serial>`. Applies to the Ansible mkfs/mount role,
+fstab, and any smartd / disk-replacement runbook. (btrfs tracks its own UUIDs once
+the array exists, so the array itself is unaffected — only the device references
+around it.)
+
+### Resume checklist (next session)
+1. `issues/001`: wipe the NVMe (still holds titan's old Proxmox LVM) + plain
+   single-disk Debian install on the NVMe.
+2. `issues/011`: Ansible builds the btrfs **raid1** data pool across `sde`+`sdf`,
+   addressed by their `ata-<serial>` ids, in one shot (no degraded window).

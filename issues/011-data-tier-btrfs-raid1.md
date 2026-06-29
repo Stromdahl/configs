@@ -24,7 +24,12 @@ longer being a btrfs raid1 means this pool is built cleanly by Ansible as a NAS
 storage role (sibling to the HDD-pool role), not carved out during the install.
 
 Drives should be referenced by stable identifiers so the mirror survives reboots
-and re-cabling.
+and re-cabling. **Use `ata-KINGSTON_SUV400S37480G_<serial>`, not `wwn-*`:** both
+SSDs share an identical malformed WWN (`0 550380 440010000`, NAA=0 — a known
+Kingston UV400 firmware bug), so no usable `/dev/disk/by-id/wwn-*` link exists. The
+per-serial `ata-*` links are the only unique, safe identifiers (sde =
+`…50026B767400167E`, sdf = `…50026B776705BF4D`). Applies to the mkfs/mount role,
+fstab, and any smartd / disk-replacement runbook.
 
 **Human prerequisite:** both data-tier SSDs must be physically installed and
 cabled. As of 2026-06-29 **both are now available** and the tier builds raid1 in
@@ -36,14 +41,18 @@ neon's games + media library stay safe on its NVMe. See the BUILD-LOG entry for
 otherwise only be freed at neon retirement (`issues/009`), downstream of this
 issue — neon no longer needs to keep serving, so its SSD is freed up front.
 
-Note: the Kingston is 447 GB, so a raid1 across it and a 500 GB SSD yields usable
-capacity capped to the smaller drive (~447 GB) — still ample (hot data is ~15 GB).
+Note: on install, **both** SSDs turned out to be the same `KINGSTON SUV400S37480G`
+480 GB (447 GiB) — a matched pair, not the "500 GB + 447 GB" mix earlier notes
+assumed. Usable raid1 capacity ~447 GiB — ample (hot data is ~15 GB).
 
 Depends on `issues/002` (Ansible foundation + a configured host).
 
 ## Acceptance criteria
 
-- [ ] Both 500 GB SSDs are healthy under smartctl and enumerate.
+- [x] Both SSDs are healthy under smartctl and enumerate. **Done 2026-06-29:**
+      both `KINGSTON SUV400S37480G` 480 GB — overall-health PASSED, 0 reallocated/
+      pending/uncorrectable, ~95–96 % life left, extended self-test completed
+      without error. See the BUILD-LOG entry for 2026-06-29.
 - [ ] A btrfs raid1 filesystem spans both SSDs and survives a reboot, mounted at a
       stable location.
 - [ ] Precious subvolumes (appdata, Immich, Paperless) carry full CoW + checksums;
