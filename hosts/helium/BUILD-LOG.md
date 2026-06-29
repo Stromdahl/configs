@@ -252,3 +252,58 @@ safe: writes land in free clusters, leaving the live root's `.img` extents intac
    holds titan's old Proxmox LVM), plain single-disk Debian install on the NVMe.
 2. `issues/011`: Ansible builds the btrfs **raid1** data pool across `sde`+`sdf`,
    addressed by their `ata-<serial>` ids, in one shot (no degraded window).
+
+---
+
+## 2026-06-29 (later still) — Debian installed on the NVMe (UEFI); `issues/001` done
+
+**State at end of session:** **`issues/001` is complete.** helium runs a clean,
+native-**UEFI** Debian 13.5 (trixie) off the NVMe and is reachable over key-auth
+SSH. No installer media needed anymore. Next is `issues/002` (Ansible foundation).
+
+### Access (changed)
+- **IP is now `192.168.1.191`** — the installed OS pulled a *new* DHCP lease;
+  `192.168.1.174` was the rescue OS's lease (now stale). **TODO:** pin a static
+  lease/reservation for the Ansible inventory.
+- **SSH:** `ssh ms@192.168.1.191`, key-auth working (the standard `stromdahl`
+  ed25519, deployed via `ssh-copy-id` from krypton). `ms` is in `sudo`.
+- The installed-system sudo password is the one set during install (NOT `rescue`).
+
+### The UEFI install saga (and the fix)
+First install came up **BIOS/legacy-only** — the NVMe was visible only after
+enabling CSM. Diagnosed from the rescue OS: MBR (`dos`) table, `grub-pc` /
+`/boot/grub/i386-pc`, **no ESP** — i.e. the Ventoy USB had been booted via the
+firmware's *legacy* path, so d-i installed a BIOS GRUB. No in-place EFI fix was
+possible (nothing to fall back to).
+
+Fix: wiped `nvme0n1` clean from the rescue OS (`wipefs` + `sgdisk --zap-all` + zero
+first 10 MiB), then **set firmware to UEFI-only (CSM/Legacy disabled)** and
+reinstalled. d-i then ran in UEFI mode and laid down GPT + ESP + `grub-efi` (shim)
+automatically.
+
+**Lesson for any future bare-metal install here:** disable CSM / boot the install
+media via its **UEFI** entry, or Debian silently installs `grub-pc` and the disk
+only boots in legacy mode.
+
+### Verification (all `issues/001` criteria pass)
+| Check | Result |
+|---|---|
+| UEFI boot | `BootCurrent 000A → \EFI\DEBIAN\SHIMX64.EFI`; `/sys/firmware/efi` present |
+| Disk layout | GPT: `nvme0n1p1` ESP (vfat→`/boot/efi`), `p2` ext4 `/`, `p3` swap |
+| Bootloader | `grub-efi-amd64` 2.12; `/boot/grub/x86_64-efi`; no `grub-pc`/`i386-pc` |
+| Disks enumerate | 4× SAS (sda–sdd) + 2× Kingston SSD (sde/sdf) + nvme0n1 |
+| `pve-*` remnants | none — clean |
+| Admin SSH | `ms` (sudo group), key-auth from krypton |
+
+### Loose ends (non-blocking)
+- **Stale UEFI NVRAM entries:** `efibootmgr` shows leftover `debian` entries
+  (`000B`/`000C`) pointing at ESP GUIDs from the wiped installs. Harmless (live
+  `000A` boots first); prune with `efibootmgr -B <id>` if tidiness is wanted.
+- Static IP reservation still TODO (see Access above).
+
+### Resume checklist (next session)
+1. `issues/002`: scaffold the Ansible tree in the repo (inventory entry for helium
+   @ `192.168.1.191`, host playbook, base-hardening + docker roles, sops/age wired
+   in), then `ansible-playbook` from krypton → hardened, docker-ready host.
+2. Then `issues/003` (HDD pool) and `issues/011` (SSD btrfs raid1, by `ata-<serial>`)
+   unblock in parallel.
