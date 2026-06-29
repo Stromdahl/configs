@@ -235,8 +235,20 @@ fstab, and any smartd / disk-replacement runbook. (btrfs tracks its own UUIDs on
 the array exists, so the array itself is unaffected — only the device references
 around it.)
 
+### Debian installer staged on the Ventoy stick
+The **Debian 13.5.0 amd64 netinst** (`debian-13.5.0-amd64-netinst.iso`, sha256
+`95838884…49d2a`, verified) is now on the rescue stick's exFAT data partition, so
+`issues/001` needs no second USB — boot helium and pick it from the Ventoy menu.
+
+Gotcha for adding files to the stick *while booted from it*: vtoyboot holds the raw
+partition (`/dev/sdg1`, 8:97) `O_EXCL` via device-mapper, so a direct
+`mount /dev/sdg1` fails ("Can't open blockdev"). Ventoy also exposes a 1:1 linear
+passthrough at **`/dev/mapper/sdg1`** — mount *that* (`sudo mount -t exfat
+/dev/mapper/sdg1 /mnt/...`) to read/write the data partition live. Adding files is
+safe: writes land in free clusters, leaving the live root's `.img` extents intact.
+
 ### Resume checklist (next session)
-1. `issues/001`: wipe the NVMe (still holds titan's old Proxmox LVM) + plain
-   single-disk Debian install on the NVMe.
+1. `issues/001`: boot the staged netinst from the Ventoy menu, wipe the NVMe (still
+   holds titan's old Proxmox LVM), plain single-disk Debian install on the NVMe.
 2. `issues/011`: Ansible builds the btrfs **raid1** data pool across `sde`+`sdf`,
    addressed by their `ata-<serial>` ids, in one shot (no degraded window).
