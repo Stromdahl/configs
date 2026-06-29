@@ -79,7 +79,7 @@ read/write errors, 30–32 °C.** Mixed age confirms the PRD's dual-parity ratio
 - Drive temps (which *are* readable) under self-test read load: SAS 32–34 °C
   (trip 60 °C), NVMe 40 °C (warn/crit 85 °C) — all cool.
 
-### ⏳ In progress — DO NOT REBOOT until done
+### ⏳ Burn-in launched — DO NOT REBOOT until done *(resolved 2026-06-29, see below)*
 - **Long self-tests launched on sda, sdb, sdc, sdd** at ~05:56 UTC.
   ETA ~23 h each → **~05:00 UTC Mon 2026-06-29** (drives quote conservatively).
 - NVMe short self-test launched (a prior short test already shows
@@ -87,13 +87,45 @@ read/write errors, 30–32 °C.** Mixed age confirms the PRD's dual-parity ratio
 - A reboot / shutdown / starting the installer **aborts an in-progress SAS long
   test.** The box must stay booted in the rescue OS until they finish.
 
+---
+
+## 2026-06-29 — burn-in complete (clean); SATA SSDs still not installed
+
+**State at end of session:** the SAS long self-tests finished. The "do not
+reboot" constraint above is **lifted** — the box can now be safely shut down /
+rebooted / sent to the installer. Build is **still blocked** on the two SATA
+SSDs not being physically present (unchanged from 2026-06-28).
+
+### SMART long self-test — all four PASSED
+Read via the resume-checklist command. All four: `Background long … Completed`,
+`LBA_first_err = -`, sense `[- - -]` → entire surface read, **zero failed LBAs**.
+Power-on hours advanced ~20 h vs. the burn-in-start readings, confirming the
+tests ran to completion rather than aborting:
+
+| Drive | POH at start (06-28) | POH at finish (06-29) |
+|---|---|---|
+| sda | 43,907 | 43,927 |
+| sdb | 25,841 | 25,860 |
+| sdc | 44,698 | 44,716 |
+| sdd | 25,841 | 25,861 |
+
+### Bus health — the 06-28 watch-item cleared
+- `ioc_reset_count` on the HBA scsi_host is **still 0** after a full day of
+  self-test read load. The elevated non-medium error counts (2,559–3,327) did
+  **not** produce any HBA resets → confirmed benign interface noise, not a
+  failing SAS cable / HBA seating. No action needed.
+- NVMe: no self-test in progress; prior short test passed.
+
+### Still blocked — unchanged
+- **The two 500 GB SATA SSDs are still not connected.** `lsblk -d -e7,11` shows
+  only the 4 SAS disks, the USB stick (`sde`), and the NVMe. `issues/001` and the
+  whole data tier remain blocked until both SSDs are cabled/powered in.
+
 ### Resume checklist (next session)
-1. Check the tests finished clean:
-   ```bash
-   ssh ms@192.168.1.174 'for d in sda sdb sdc sdd; do printf "%s: " $d; echo rescue | sudo -S smartctl -l selftest /dev/$d 2>/dev/null | grep -m2 -iE "status|Completed|in progress"; done'
-   ```
-   Pass = `Completed`, no failing LBA. Any failing LBA on a used drive → consider
-   swapping it before building the pool.
-2. Confirm the **two SATA SSDs** now enumerate (`lsblk -d -e7,11`).
-3. Then proceed to `issues/001` — wipe the NVMe + Debian install with btrfs raid1
-   root across the two SSDs.
+1. ~~Check the SAS long tests finished clean~~ — **done, all PASSED (above).**
+2. **Install + cable the two SATA SSDs**, then confirm they enumerate
+   (`lsblk -d -e7,11` should show two ~500 GB `sata` drives).
+3. Then proceed to `issues/001` — wipe the NVMe (still holds titan's old Proxmox
+   LVM stack) + plain single-disk Debian install on the NVMe; Ansible then builds
+   the btrfs raid1 **data** pool across the two SSDs (per the revised PRD, the
+   root is no longer raid1).
