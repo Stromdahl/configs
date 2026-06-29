@@ -1,6 +1,6 @@
 ---
 title: Ansible foundation — bring helium to a hardened, docker-ready host from krypton
-status: open
+status: in-progress
 priority: high
 created: 2026-06-27
 closed: null
