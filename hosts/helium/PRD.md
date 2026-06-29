@@ -112,20 +112,46 @@ dotfiles modules. neon's library and *arr state migrate over, then neon retires.
 - **No public exposure and no router port-forward.** Traefik runs internal-only,
   obtaining real certificates via **Let's Encrypt DNS-01** using the existing
   Cloudflare token (DNS-01 validates over the API and needs no inbound
-  connection). All services served at `*.home.stromdahl.tech`.
-- Access is over a **NetBird mesh** using NetBird's **cloud control plane** (free
-  personal tier) with **clients only** — the control plane is not self-hosted.
-  Service hostnames resolve to the box's mesh IP via NetBird DNS; when on-LAN,
-  NetBird makes a direct connection.
+  connection).
+- Access is **private but not internet-exposed**, reachable two ways: over the
+  **NetBird mesh** (NetBird cloud control plane, free personal tier, clients only
+  — the control plane is not self-hosted) for roaming and remote devices, and
+  **directly over the trusted LAN** for appliance devices that cannot run a
+  NetBird client (smart TV, Chromecast, consoles). "Private" means no router
+  port-forward and no public DNS record — **not mesh-only**.
+- All services are served at `*.home.stromdahl.tech`. The name resolves to
+  helium's **mesh IP** for mesh clients (NetBird DNS) and to its **LAN IP** for
+  on-LAN clients (a public A record returning the RFC1918 address, or local DNS);
+  the Let's Encrypt wildcard certificate is valid by name regardless of which
+  address is used.
 
 ### Configuration management
-- **Ansible pilot.** The Ansible tree lives inside the dotfiles repo; the custom
-  modules remain in place for krypton/argon/the PVE hosts.
-- Playbooks are **pushed from krypton over SSH** — the box holds no GitHub key
-  and no deploy key. This replaces the bare-git-repo pull pipeline for this host.
-- Secrets remain **sops + age**, consumed by Ansible via the community.sops
-  integration. krypton (which holds the age key) decrypts at run-time and
-  templates the rendered env onto the box; the box never holds the age key.
+- **Ansible pilot.** A new Ansible tree inside the dotfiles repo (mirroring the
+  archived homelab-stack layout: inventory, host playbook, roles); the custom
+  bash modules stay the standard for krypton/argon/the PVE hosts. This box is the
+  pilot only.
+- Playbooks are **pushed from krypton over SSH** as the `ms` admin user — the box
+  holds no GitHub key and no deploy key, and never runs the dotfiles installer.
+  This **drops the prior deploy-user + bare-git/post-receive pull pipeline** for
+  this host.
+- Secrets remain **sops + age**, but decryption happens **on krypton**: the box
+  never holds an age key, and — unlike the other servers — it has **no per-host
+  key**, so only the admin key can decrypt its secrets. Two secret homes by
+  consumer: Ansible-consumed values (the sudo/become password now; role tokens
+  later) are sops-encrypted **YAML loaded as variables** and **consumed at
+  run-time without ever landing on the box**; the Docker compose environment is a
+  sops-encrypted **dotenv rendered to disk** (mode 0600) when the service stack
+  is deployed. Making the become password a sops variable also keeps runs
+  non-interactive and idempotent. **Drops the prior role that generated a
+  per-host age key.**
+- **Hardening matches the fleet.** The base role reproduces what the dotfiles
+  hardening modules produce — key-only SSH with no root login, ufw default-deny
+  allowing 22/80/443, a fail2ban sshd jail, and unattended security upgrades with
+  no automatic reboot — so helium's posture stays consistent with the rest of the
+  fleet. Docker is **docker-ce from the official repository** (current engine +
+  compose v2), installed via the geerlingguy.docker role.
+- helium is addressed by a **pinned DHCP reservation** (keyed to its NIC MAC) — a
+  one-time manual router step the Ansible inventory depends on.
 - **Bootstrap:** a plain single-disk Debian install on the NVMe. The boot drive is
   no longer a btrfs raid1 root, so the earlier "raid1 root can't be built from
   within the same Ansible run" constraint is gone — Ansible now does everything
