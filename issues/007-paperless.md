@@ -19,7 +19,8 @@ searchable.
 Documents and database live on the redundant SSD tier (the future backup work,
 out of scope here, will cover this irreplaceable data).
 
-Depends on `issues/005` (Traefik internal + NetBird mesh + compose-stack role).
+Depends on `issues/005` (Traefik internal + NetBird mesh + compose-stack role) and
+`issues/011` (the data-tier mirror the documents and database live on).
 
 ## Acceptance criteria
 

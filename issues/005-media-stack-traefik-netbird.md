@@ -28,8 +28,9 @@ Stand the stack up with fresh config here; migrating real library data and *arr
 state is a separate cutover slice. Jellyfin reads its media from the HDD pool
 mount; downloads/transcode cache live on the SSD tier.
 
-Depends on `issues/002` (docker host) and `issues/003` (the pool the media mount
-comes from).
+Depends on `issues/002` (docker host), `issues/003` (the pool the media mount
+comes from), and `issues/011` (the data-tier mirror the downloads/transcode cache
+and appdata live on).
 
 ## Acceptance criteria
 
