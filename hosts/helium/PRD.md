@@ -20,9 +20,9 @@ module system the user wants to begin replacing with Ansible.
 
 ## Solution
 
-Build `helium` as a bare-metal Debian box with a two-tier storage design: a fast,
-redundant SSD tier carrying the OS and all hot/precious data, and a large,
-dual-parity HDD tier carrying only the cold media library. All services run in
+Build `helium` as a bare-metal Debian box with a three-tier storage design: an
+NVMe boot drive for the OS, a redundant SATA-SSD mirror carrying all hot/precious
+data, and a large, dual-parity HDD tier carrying only the cold media library. All services run in
 Docker behind an internal-only Traefik and are reached exclusively over a NetBird
 mesh (nothing exposed to the internet). The box is provisioned by Ansible as a
 pilot — run from krypton — with the rest of the fleet left on the existing
@@ -56,23 +56,36 @@ dotfiles modules. neon's library and *arr state migrate over, then neon retires.
 - Repurposed titan: Supermicro X11SCV-Q (Mini-ITX), i5-9400 with UHD 630 iGPU.
   RAM stays at 16 GB initially; a bump to the board maximum of 32 GB is planned
   later (both SO-DIMM slots get replaced, as both are populated).
-- The RTX 2060 stays in the single PCIe x16 slot (for Immich ML now and a future
-  local LLM). The LSI 9300-8i HBA (SAS3, native IT-mode) therefore sits on the
-  M.2→PCIe adapter at x4 — adequate bandwidth for four spinners. The pulled
-  970 EVO NVMe becomes a cold spare.
-- Two physical-build prerequisites: an **active fan on the HBA heatsink** (it is
-  passively cooled and will heat-soak on the ribbon beside the GPU), and an
-  **external power lead on the M.2 adapter** (the M.2 slot alone cannot power a
-  x8 HBA).
+- The board offers only two usable PCIe positions: one CPU-direct **PCIe 3.0 x16**
+  slot and one chipset **M.2 M-key (x4)** slot (the second M.2 is a 2230 E-key,
+  WiFi-only). That is one slot short of the three cards on hand, so the **RTX 2060
+  is pulled** — Immich ML moves to the CPU and the local-LLM idea stays out of
+  scope.
+- The **LSI 9300-8i HBA** (SAS3, native IT-mode) goes in the **x16 slot**: native
+  x8 lanes, full 75 W slot power, and normal card-position airflow. This deletes
+  both M.2-adapter hacks the earlier plan required — an external power lead (the
+  M.2 slot cannot feed an x8 HBA) and a bolted-on fan against the GPU's heat.
+- The repurposed **970 EVO Plus 250 GB NVMe** goes in the M.2 M-key slot as the
+  **boot/OS drive**. It was already titan's boot disk, so it is proven on this
+  board; a SMART check is worthwhile since it is a used drive.
 
 ### Storage
-- **SSD tier:** the two 500 GB SATA SSDs as a **btrfs raid1** mirror, carrying
-  OS/boot, all Docker appdata (configs + databases), the Immich library,
-  Paperless, lean downloads, and transcode cache. btrfs chosen for data
-  checksumming (the board is non-ECC, so this guards against silent bit-rot) and
-  cheap snapshots. Current hot data is small (~15 GB Immich, tiny Paperless), so
-  500 GB usable is ample and redundancy is the better use of the second SSD than
-  capacity.
+- **Boot tier:** the 970 EVO Plus 250 GB NVMe carries the **OS/boot only**, kept
+  lean. It is a single non-redundant drive — an acceptable trade because the OS is
+  fully Ansible-reproducible: a failure means reinstall + re-run, with all data
+  intact on the redundant tiers below.
+- **Data tier:** the two 500 GB SATA SSDs as a **btrfs raid1** mirror, carrying all
+  Docker appdata (configs + databases), the Immich library, Paperless, plus the
+  lean downloads and transcode cache. btrfs is chosen for data checksumming (the
+  board is non-ECC, so this guards against silent bit-rot) and cheap snapshots.
+  The precious subvolumes keep full CoW + checksums; the **scratch subvolumes
+  (downloads, transcode cache) get `chattr +C` / nodatacow** to avoid CoW
+  fragmentation (important for torrents) and pointless checksumming of throwaway
+  data. These workloads are not disk-bound — a SATA SSD is far faster than either
+  needs — so they live here rather than on the boot NVMe, keeping the single used
+  boot drive lean. Current hot data is small (~15 GB Immich, tiny Paperless)
+  against 500 GB, so 500 GB usable is ample and redundancy is the better use of
+  the second SSD than capacity.
 - **HDD tier:** the four 12 TB SAS drives via the HBA, as **SnapRAID with
   2 parity + 2 data drives** (24 TB usable, dual-fault tolerant), pooled with
   **mergerfs** using a fill-one-drive-at-a-time create policy. Holds only the
@@ -84,10 +97,13 @@ dotfiles modules. neon's library and *arr state migrate over, then neon retires.
   disk spins for a stream while the others sleep.
 
 ### Compute split
-- iGPU (UHD 630) → Jellyfin QuickSync transcoding.
-- RTX 2060 → Immich ML (CUDA), with a future local LLM as a second tenant.
-- CPU left free for Paperless OCR and the *arr stack. Jellyfin transcoding and
-  Immich ML never contend for the same silicon.
+- iGPU (UHD 630) → Jellyfin QuickSync transcoding (unaffected by pulling the 2060).
+- CPU (i5-9400, 6C/6T) → Immich ML, Paperless OCR, and the *arr stack. Immich ML
+  on CPU is fine for a small personal library — a one-time bulk job on import plus
+  trivial incrementals; only the initial run is slower.
+- No discrete GPU. The 2060/CUDA path and the future local LLM are dropped (see
+  Hardware / physical layout); re-adding the 2060 later would mean revisiting the
+  slot allocation.
 
 ### Services & access
 - Docker stack: Jellyfin, Jellyseerr, the *arr stack (radarr/sonarr/prowlarr/
@@ -110,19 +126,23 @@ dotfiles modules. neon's library and *arr state migrate over, then neon retires.
 - Secrets remain **sops + age**, consumed by Ansible via the community.sops
   integration. krypton (which holds the age key) decrypts at run-time and
   templates the rendered env onto the box; the box never holds the age key.
-- **Bootstrap split:** the Debian install with the btrfs raid1 root is a one-time
-  manual/preseed step (a raid1 root cannot be created from within the same
-  Ansible run). Ansible then performs base hardening, Docker, and the
-  NAS-specific roles: mergerfs; snapraid (with sync/scrub timers); SAS tooling
-  (sdparm/sg3utils/smartctl) plus spin-down timers; NetBird client; and a
-  compose-stack role that templates the env/secrets and brings the stack up.
+- **Bootstrap:** a plain single-disk Debian install on the NVMe. The boot drive is
+  no longer a btrfs raid1 root, so the earlier "raid1 root can't be built from
+  within the same Ansible run" constraint is gone — Ansible now does everything
+  else, **including building the btrfs raid1 data pool** on the two SATA SSDs: base
+  hardening, Docker, and the NAS-specific roles — the btrfs raid1 data filesystem
+  (with the nodatacow scratch subvolumes); mergerfs; snapraid (with sync/scrub
+  timers); SAS tooling (sdparm/sg3utils/smartctl) plus spin-down timers; NetBird
+  client; and a compose-stack role that templates the env/secrets and brings the
+  stack up.
 
 ### Migration & cutover
 - **Parallel build:** stand up helium, rsync the ~932 GB media library to the HDD
   pool while neon keeps serving, and **migrate the *arr Docker volumes** so
   library history and quality profiles survive intact rather than being rebuilt.
 - **Start lean:** the ~600 GB of old completed seeds are dropped (ratio is not a
-  concern); only incomplete/recent downloads carry over and live on the SSD tier.
+  concern); only incomplete/recent downloads carry over and live on the data-tier
+  mirror.
 - **Final delta sync**, then point `*.home.stromdahl.tech` at helium and remove
   the old public `jellyfin.stromdahl.tech` record (the setup is now all-private).
   After verification, neon retires and its 1.8 TB NVMe is freed (a candidate
@@ -136,7 +156,7 @@ operational:
 - HDDs spin down and wake correctly; a single stream spins only one disk.
 - Each service is reachable at its `*.home.stromdahl.tech` URL over the mesh with
   a valid TLS certificate.
-- Jellyfin transcodes on the iGPU; Immich ML runs on the 2060.
+- Jellyfin transcodes on the iGPU; Immich ML runs on the CPU.
 - Migrated *arr instances show intact library history after cutover.
 
 ## Out of Scope
@@ -149,7 +169,8 @@ operational:
 - The 32 GB RAM upgrade.
 - Ratio-based / private-tracker seeding (would require revisiting download
   storage — a dedicated drive or accepting one HDD stays spinning).
-- A local LLM workload on the 2060.
+- A discrete-GPU / local-LLM workload — the RTX 2060 is pulled (see Hardware /
+  physical layout).
 - Any public internet exposure.
 - Self-hosting the NetBird control plane (rejected in favor of the cloud tier).
 - Migrating the rest of the fleet off the custom dotfiles modules — this box is
