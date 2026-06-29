@@ -1,0 +1,35 @@
+---
+# Mirrors modules/ufw: default deny incoming / allow outgoing, plus 22/80/443.
+- name: Install ufw
+  become: true
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Default deny incoming
+  become: true
+  community.general.ufw:
+    direction: incoming
+    policy: deny
+
+- name: Default allow outgoing
+  become: true
+  community.general.ufw:
+    direction: outgoing
+    policy: allow
+
+- name: Allow ssh/http/https
+  become: true
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "22"
+    - "80"
+    - "443"
+
+- name: Enable ufw
+  become: true
+  community.general.ufw:
+    state: enabled

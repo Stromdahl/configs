@@ -1,0 +1,34 @@
+---
+# Mirrors modules/unattended-upgrades: flip the periodic switches on and add a
+# local override. Debian's own 50unattended-upgrades already restricts origins
+# to *-security; no automatic reboot.
+- name: Install unattended-upgrades
+  become: true
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+
+- name: Configure periodic apt (auto update + upgrade)
+  become: true
+  ansible.builtin.copy:
+    src: unattended-upgrades/20auto-upgrades
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Local unattended-upgrades overrides (no auto-reboot)
+  become: true
+  ansible.builtin.copy:
+    src: unattended-upgrades/52unattended-upgrades-local
+    dest: /etc/apt/apt.conf.d/52unattended-upgrades-local
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable and start unattended-upgrades
+  become: true
+  ansible.builtin.systemd_service:
+    name: unattended-upgrades
+    enabled: true
+    state: started

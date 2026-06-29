@@ -6,6 +6,7 @@
 !/.gitignore
 !/.sops.yaml
 !/AGENTS.md
+!/ansible/
 !/README.md
 !/bootstrap.sh
 !/install.sh
@@ -20,6 +21,7 @@
 # Defense in depth — never track these patterns at any depth, even if a
 # parent dir is allowed. Override per-case with a more specific !pattern
 # in this file if you ever need to.
+/ansible/galaxy/
 **/node_modules/
 **/.env
 **/.vault_password

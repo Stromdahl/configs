@@ -1,0 +1,13 @@
+---
+# Plain (non-secret) variables for helium. The become password lives encrypted
+# in secrets.sops.yml alongside this file.
+helium_hostname: helium
+helium_timezone: Europe/Stockholm
+
+# geerlingguy.docker: install docker-ce engine + compose v2 plugin from the
+# official repo. The role derives the apt suite from ansible_distribution_release
+# (trixie), which Docker publishes.
+docker_install_compose_plugin: true
+docker_install_compose: false
+docker_users:
+  - "{{ ansible_user }}"

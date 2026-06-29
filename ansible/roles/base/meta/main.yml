@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: base
+  description: Fleet-consistent base hardening for the helium pilot.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []

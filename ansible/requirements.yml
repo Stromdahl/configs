@@ -1,0 +1,17 @@
+---
+# Galaxy dependencies for the helium pilot. Install into the repo-local
+# galaxy/ tree (gitignored) so the control node is reproducible:
+#   cd ansible
+#   ansible-galaxy collection install -r requirements.yml -p galaxy/collections
+#   ansible-galaxy role install -r requirements.yml -p galaxy/roles
+collections:
+  - name: community.sops
+    version: ">=2.2.2"
+  - name: community.general
+    version: ">=11.0.0"
+  - name: ansible.posix
+    version: ">=2.1.0"
+
+roles:
+  - name: geerlingguy.docker
+    version: "8.0.0"

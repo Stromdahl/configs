@@ -20,6 +20,14 @@ creation_rules:
           - *admin_ms
           - *server_neon
 
+  # Ansible-consumed secrets for the helium pilot (host/group_vars *.sops.yml).
+  # Admin key ONLY — helium has no per-host age key, so only the admin can
+  # decrypt; values are consumed on krypton at run-time and never land on the box.
+  - path_regex: ^ansible/(host_vars|group_vars)/.*\.sops\.ya?ml$
+    key_groups:
+      - age:
+          - *admin_ms
+
   # Shared (cross-server) secrets, if ever needed. Only admins can decrypt.
   - path_regex: ^shared/secrets(\.[^/]+)?\.env$
     key_groups:

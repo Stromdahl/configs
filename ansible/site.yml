@@ -1,0 +1,15 @@
+---
+# helium pilot: one playbook run from krypton → hardened, docker-ready host.
+#   cd ansible && ansible-playbook site.yml
+#
+# Idempotent: a clean second run reports no changes. The become password is the
+# sops-encrypted ansible_become_password loaded from host_vars/helium/secrets.sops.yml
+# at run-time; it is never written to the target.
+- name: Bring helium to a hardened, docker-ready state
+  hosts: nas
+  become: true
+  roles:
+    - role: base
+      tags: [base]
+    - role: geerlingguy.docker
+      tags: [docker]
