@@ -17,6 +17,7 @@
 !/lib/
 !/modules/
 !/servers/
+!/tasks/
 
 # Defense in depth — never track these patterns at any depth, even if a
 # parent dir is allowed. Override per-case with a more specific !pattern
