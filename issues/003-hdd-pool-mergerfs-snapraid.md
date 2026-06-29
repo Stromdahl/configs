@@ -1,6 +1,6 @@
 ---
 title: HDD pool — mergerfs + SnapRAID (2 parity + 2 data) over the HBA
-status: open
+status: in-progress
 priority: high
 created: 2026-06-27
 closed: null
