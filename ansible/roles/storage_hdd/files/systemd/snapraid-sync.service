@@ -1,0 +1,11 @@
+[Unit]
+Description=SnapRAID sync (update parity from the data drives)
+# Don't run if the pool isn't assembled — a sync against missing data drives
+# would compute parity over empty mountpoints.
+RequiresMountsFor=/mnt/disk1 /mnt/disk2 /mnt/parity1 /mnt/parity2
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/usr/bin/snapraid sync

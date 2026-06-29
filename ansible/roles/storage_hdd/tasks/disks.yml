@@ -1,0 +1,18 @@
+---
+# Make an ext4 filesystem on each raw SAS device (no partition table — standard
+# for snapraid/mergerfs). community.general.filesystem with force: false is
+# idempotent and SAFE: it refuses to reformat a device that already has a
+# filesystem, so a re-run never destroys data. -m 0 reclaims the ~5% reserved
+# blocks (these are data disks, not system), -L sets the label.
+#
+# Drives are addressed by their stable wwn-* by-id symlink, never /dev/sdX.
+- name: Create ext4 on each data and parity drive
+  become: true
+  community.general.filesystem:
+    dev: "/dev/disk/by-id/{{ item.id }}"
+    fstype: ext4
+    force: false
+    opts: "-m 0 -L {{ item.label }}"
+  loop: "{{ hdd_data_drives + hdd_parity_drives }}"
+  loop_control:
+    label: "{{ item.label }} ({{ item.id }})"

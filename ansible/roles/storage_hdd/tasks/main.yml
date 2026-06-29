@@ -1,0 +1,27 @@
+---
+# HDD pool role for helium: four 12 TB SAS drives → a fault-tolerant media pool.
+# Each drive is an independent ext4 filesystem; mergerfs unions the two data
+# drives into /srv/media (fill-one-drive-first via category.create=lfs); SnapRAID
+# gives 2 parity + 2 data (dual-fault) with sync/scrub on systemd timers.
+#
+# Drives are referenced by stable wwn-* by-id symlinks so pool membership
+# survives reboots and re-cabling. mkfs is idempotent via
+# community.general.filesystem (force: false) — it never reformats a drive that
+# already carries a filesystem.
+- name: SAS tooling (smartmontools / sg3-utils / sdparm / lsscsi)
+  ansible.builtin.import_tasks: sas_tools.yml
+
+- name: Format the four SAS drives (ext4, idempotent)
+  ansible.builtin.import_tasks: disks.yml
+
+- name: Mount the data and parity filesystems (by-id, nofail)
+  ansible.builtin.import_tasks: mounts.yml
+
+- name: mergerfs union over the data drives
+  ansible.builtin.import_tasks: mergerfs.yml
+
+- name: SnapRAID config (2 parity + 2 data)
+  ansible.builtin.import_tasks: snapraid.yml
+
+- name: SnapRAID sync/scrub systemd timers
+  ansible.builtin.import_tasks: timers.yml

@@ -11,3 +11,18 @@ docker_install_compose_plugin: true
 docker_install_compose: false
 docker_users:
   - "{{ ansible_user }}"
+
+# storage_hdd: the four 12 TB SAS drives behind the LSI 9300-8i HBA. Referenced
+# by stable wwn-* by-id symlinks (unique here, unlike the Kingston SSDs). Two
+# data drives unioned by mergerfs, two parity drives for SnapRAID dual-fault.
+# Role assignment among four identical drives is arbitrary; fixed here.
+hdd_data_drives:
+  - { id: "wwn-0x5000cca2918cb694", mount: "/mnt/disk1", label: "disk1" }
+  - { id: "wwn-0x5000cca294541ed4", mount: "/mnt/disk2", label: "disk2" }
+hdd_parity_drives:
+  - { id: "wwn-0x5000cca26fc04138", mount: "/mnt/parity1", label: "parity1" }
+  - { id: "wwn-0x5000cca2945424c4", mount: "/mnt/parity2", label: "parity2" }
+hdd_union_mount: "/srv/media"
+# category.create=lfs is load-bearing: fill one data drive before touching the
+# other (keeps the second spun down). See roles/storage_hdd/tasks/mergerfs.yml.
+hdd_mergerfs_opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=lfs,moveonenospc=true,minfreespace=50G,fsname=mergerfs"

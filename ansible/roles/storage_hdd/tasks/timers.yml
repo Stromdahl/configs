@@ -1,0 +1,31 @@
+---
+# Drop the SnapRAID sync/scrub units and enable the TIMERS (not the services —
+# the services are oneshot, triggered by their timers). daemon-reload runs via
+# handler after the unit files change.
+- name: Install SnapRAID systemd units
+  become: true
+  ansible.builtin.copy:
+    src: "systemd/{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - snapraid-sync.service
+    - snapraid-sync.timer
+    - snapraid-scrub.service
+    - snapraid-scrub.timer
+  notify: Reload systemd
+
+- name: Reload systemd now (before enabling the timers)
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the SnapRAID timers
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - snapraid-sync.timer
+    - snapraid-scrub.timer

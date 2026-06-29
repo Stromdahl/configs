@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: storage_hdd
+  description: HDD pool for helium — mergerfs union + SnapRAID (2 parity + 2 data).
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []

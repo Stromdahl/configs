@@ -1,0 +1,15 @@
+---
+# SAS health + management tooling. smartctl reads the drives natively through the
+# LSI 9300-8i HBA (IT mode) — no -d sat. sdparm/sg3-utils are installed here for
+# the spin-down work in issue 004; this role configures no spin-down policy.
+- name: Install SAS tooling
+  become: true
+  ansible.builtin.apt:
+    name:
+      - smartmontools
+      - sg3-utils
+      - sdparm
+      - lsscsi
+    state: present
+    update_cache: true
+    cache_valid_time: 3600

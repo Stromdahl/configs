@@ -1,0 +1,38 @@
+---
+# Union the two data drives into a single library mount at /srv/media.
+#
+# category.create=lfs (least-free-space) is the load-bearing choice: it keeps
+# writing to the most-full data drive that still has room (>= minfreespace), so
+# disk1 fills before disk2 is touched and the other drive stays idle/spun-down.
+# mfs (most-free-space) would balance writes across both → spins both up → fails
+# the "fill one drive first" goal. moveonenospc relocates a write that hits a
+# full branch.
+#
+# Boot ordering: /srv/media is NOT nested under /mnt/disk*, so systemd will not
+# order the union after the data mounts on its own. Without that, at boot
+# mergerfs could union the empty /mnt/disk* mountpoint dirs (or start before the
+# ext4 mounts), leaving /srv/media backed by the boot drive and silently leaking
+# library writes onto root. x-systemd.requires=<each data mount> forces the
+# union to wait for both ext4 filesystems first.
+- name: Install mergerfs
+  become: true
+  ansible.builtin.apt:
+    name: mergerfs
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Mount the mergerfs union over the data drives
+  become: true
+  ansible.posix.mount:
+    path: "{{ hdd_union_mount }}"
+    src: "{{ hdd_data_drives | map(attribute='mount') | join(':') }}"
+    fstype: fuse.mergerfs
+    opts: >-
+      {{ hdd_mergerfs_opts }},{{
+        hdd_data_drives
+        | map(attribute='mount')
+        | map('regex_replace', '^(.*)$', 'x-systemd.requires=\1')
+        | join(',')
+      }}
+    state: mounted

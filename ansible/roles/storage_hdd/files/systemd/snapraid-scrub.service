@@ -1,0 +1,11 @@
+[Unit]
+Description=SnapRAID scrub (verify a portion of the parity for silent corruption)
+RequiresMountsFor=/mnt/disk1 /mnt/disk2 /mnt/parity1 /mnt/parity2
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+# Scrub 8% of the array, skipping blocks scrubbed in the last 10 days — so the
+# whole array rolls over roughly monthly without ever doing a heavy full pass.
+ExecStart=/usr/bin/snapraid scrub -p 8 -o 10

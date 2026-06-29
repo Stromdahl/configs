@@ -1,0 +1,28 @@
+---
+# Mount each data/parity filesystem at /mnt/<label> by its stable by-id path.
+# nofail + a short device-timeout keeps a single missing drive from blocking
+# boot (a degraded pool is still recoverable; a hung boot is not). state:
+# mounted writes the fstab entry and mounts it now, idempotently.
+- name: Create mount points
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.mount }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ hdd_data_drives + hdd_parity_drives }}"
+  loop_control:
+    label: "{{ item.mount }}"
+
+- name: Mount data and parity filesystems (by-id, nofail)
+  become: true
+  ansible.posix.mount:
+    path: "{{ item.mount }}"
+    src: "/dev/disk/by-id/{{ item.id }}"
+    fstype: ext4
+    opts: "nofail,x-systemd.device-timeout=5"
+    state: mounted
+  loop: "{{ hdd_data_drives + hdd_parity_drives }}"
+  loop_control:
+    label: "{{ item.mount }} ({{ item.id }})"

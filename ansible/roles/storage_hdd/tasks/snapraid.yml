@@ -1,0 +1,30 @@
+---
+# SnapRAID: 2 parity + 2 data (dual-fault). Parity lives on the two parity
+# drives; content (the file index) is kept on BOTH data disks plus the boot
+# drive (/var/snapraid) so the index survives losing any single disk. Config
+# uses the /mnt/* mount paths, not by-id — snapraid resolves drives by path.
+- name: Install snapraid
+  become: true
+  ansible.builtin.apt:
+    name: snapraid
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create /var/snapraid (off-pool content copy)
+  become: true
+  ansible.builtin.file:
+    path: /var/snapraid
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Template /etc/snapraid.conf
+  become: true
+  ansible.builtin.template:
+    src: snapraid.conf.j2
+    dest: /etc/snapraid.conf
+    owner: root
+    group: root
+    mode: "0644"

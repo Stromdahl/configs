@@ -1,0 +1,30 @@
+{{ ansible_managed | comment }}
+# SnapRAID configuration for helium — 2 parity + 2 data (dual-fault tolerance).
+# Managed by ansible role storage_hdd; edits will be overwritten.
+
+# Parity files — one per parity drive. 2-parity gives dual-disk fault tolerance.
+parity {{ hdd_parity_drives[0].mount }}/snapraid.parity
+2-parity {{ hdd_parity_drives[1].mount }}/snapraid.2-parity
+
+# Content (file index) — kept on each data disk plus an off-pool copy on the
+# boot drive, so the index survives losing any single disk.
+{% for d in hdd_data_drives %}
+content {{ d.mount }}/.snapraid.content
+{% endfor %}
+content /var/snapraid/snapraid.content
+
+# Data disks.
+{% for d in hdd_data_drives %}
+data {{ d.label }} {{ d.mount }}
+{% endfor %}
+
+# Exclusions — transient/incomplete files that must not enter parity.
+exclude *.unrecoverable
+exclude /tmp/
+exclude /lost+found/
+exclude *.tmp
+exclude *.!sync
+exclude *.part
+exclude *.partial
+exclude .Trash-*/
+exclude /.snapraid.content
