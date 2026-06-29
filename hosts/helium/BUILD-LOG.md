@@ -129,3 +129,51 @@ tests ran to completion rather than aborting:
    LVM stack) + plain single-disk Debian install on the NVMe; Ansible then builds
    the btrfs raid1 **data** pool across the two SSDs (per the revised PRD, the
    root is no longer raid1).
+
+---
+
+## 2026-06-29 — second data-tier SSD released from neon (`/home/ms` preserved)
+
+**State at end of session:** the second SATA SSD for the data tier is now
+**sourced and logically released** — it is neon's OS drive, a **Kingston SUV400
+447 GB** (`sda` on neon). neon's `/home/ms` (16 GB) was backed up to krypton, so
+the disk can be wiped and moved into helium. The physical pull/install hasn't
+happened yet; once it's in, helium has **both** data-tier SSDs and builds the
+btrfs raid1 in one shot — no single-device/degraded window.
+
+### Why this was needed
+The data tier needs two SSDs; one was on hand, the other was still inside neon as
+its boot disk. The original cutover plan ("neon keeps serving until retirement,
+then frees its SSD") created a latent build-graph cycle: `issues/011` (data tier,
+needs both SSDs) sits *upstream* of the whole `005 → 008 → 009` chain, yet the
+second SSD only freed at `009` (retire neon). Resolved by the user's call to
+**release neon now** rather than keep it serving — neon goes bootless until its
+later rebuild (NVMe as OS+storage, via the rescue USB).
+
+### neon disk layout (surveyed read-only, `ms@jellyfin.stromdahl.tech`)
+| Disk | Model | Holds | Fate |
+|---|---|---|---|
+| `sda` | Kingston SUV400 **447 GB** SATA SSD | OS (`/`, 49 GB used incl. `/home/ms`) | **→ helium data tier** (wipe) |
+| `nvme0n1` | Samsung 990 PRO **2 TB** | `/mnt/datastore`: media (1.7 TB) + Steam library | **stays in neon**, untouched |
+
+### What was preserved / dropped
+- **`/home/ms` (16 GB) → krypton** at `~/backups/neon-2026-06-29/home-ms/`.
+  rsync `-aHAX`, exit 0, 250,430 files; dry-run reverify clean (only timestamp
+  drift on live browser/Steam/Discord cache files). Captures projects (721 MB),
+  Factorio saves, Steam Proton prefixes/saves (`.local` 11 GB), flatpak data.
+  **Final delta** before pulling the disk:
+  `rsync -aHAX ms@jellyfin.stromdahl.tech:/home/ms/ ~/backups/neon-2026-06-29/home-ms/`
+- **Games:** Steam library lives on neon's NVMe (`/mnt/datastore/steam`) and stays;
+  saves/prefixes are in the `/home/ms` backup. Both covered.
+- **Media library (1.7 TB):** untouched on neon's NVMe; migrates to helium later
+  (`issues/008`) once the HDD pool exists.
+- ***arr Docker state (radarr/sonarr/etc. named volumes on neon's `sda`):**
+  **intentionally NOT preserved** — user chose to rebuild the stack on helium.
+
+### Resume checklist (next session)
+1. Final delta rsync of neon's `/home/ms` (command above).
+2. Power off neon → pull the Kingston SUV400 447 GB SSD.
+3. Install + cable **both** SSDs in helium; confirm they enumerate
+   (`lsblk -d -e7,11` → two ~447–500 GB `sata` drives).
+4. Proceed to `issues/001` / `issues/011`: wipe NVMe, single-disk Debian install,
+   Ansible builds the btrfs **raid1** data pool across both SSDs in one shot.

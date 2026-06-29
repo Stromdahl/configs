@@ -26,8 +26,18 @@ storage role (sibling to the HDD-pool role), not carved out during the install.
 Drives should be referenced by stable identifiers so the mirror survives reboots
 and re-cabling.
 
-**Human prerequisite:** the two 500 GB SATA SSDs must be physically installed and
-cabled — per the BUILD-LOG they are not yet present.
+**Human prerequisite:** both data-tier SSDs must be physically installed and
+cabled. As of 2026-06-29 **both are now available** and the tier builds raid1 in
+one shot — no degraded/single-device window. The second SSD is the **Kingston
+SUV400 447 GB** released from neon (it was neon's OS drive): `/home/ms` was backed
+up to krypton, neon's *arr state is intentionally dropped (rebuilt on helium), and
+neon's games + media library stay safe on its NVMe. See the BUILD-LOG entry for
+2026-06-29. This resolves the latent build-graph cycle where the second SSD would
+otherwise only be freed at neon retirement (`issues/009`), downstream of this
+issue — neon no longer needs to keep serving, so its SSD is freed up front.
+
+Note: the Kingston is 447 GB, so a raid1 across it and a 500 GB SSD yields usable
+capacity capped to the smaller drive (~447 GB) — still ample (hot data is ~15 GB).
 
 Depends on `issues/002` (Ansible foundation + a configured host).
 
