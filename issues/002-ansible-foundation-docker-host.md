@@ -1,9 +1,9 @@
 ---
 title: Ansible foundation — bring helium to a hardened, docker-ready host from krypton
-status: in-progress
+status: done
 priority: high
 created: 2026-06-27
-closed: null
+closed: 2026-06-29
 labels: [epic:bootstrap]
 ---
 
@@ -40,12 +40,12 @@ one-time manual router step).
 
 ## Acceptance criteria
 
-- [ ] `ansible-playbook` run from krypton over SSH applies cleanly and is
+- [x] `ansible-playbook` run from krypton over SSH applies cleanly and is
       idempotent on a second run.
-- [ ] A sops-encrypted secret is decrypted by Ansible at run-time and **consumed**
+- [x] A sops-encrypted secret is decrypted by Ansible at run-time and **consumed**
       without the age key ever landing on the box (the sudo/become password serves
       as this secret).
-- [ ] SSH is hardened, the firewall is active, fail2ban and unattended-upgrades are
+- [x] SSH is hardened, the firewall is active, fail2ban and unattended-upgrades are
       running.
-- [ ] `docker run hello-world` succeeds; the compose plugin is present.
-- [ ] No GitHub/deploy key exists on the box.
+- [x] `docker run hello-world` succeeds; the compose plugin is present.
+- [x] No GitHub/deploy key exists on the box.

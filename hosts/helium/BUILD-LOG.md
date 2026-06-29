@@ -307,3 +307,55 @@ only boots in legacy mode.
    in), then `ansible-playbook` from krypton → hardened, docker-ready host.
 2. Then `issues/003` (HDD pool) and `issues/011` (SSD btrfs raid1, by `ata-<serial>`)
    unblock in parallel.
+
+---
+
+## 2026-06-29 (later) — Ansible foundation; `issues/002` done
+
+**State at end of session:** **`issues/002` is complete.** A scoped `ansible/`
+tree (pilot — helium only) brings the box from a bare Debian install to a
+hardened, docker-ready host in one `ansible-playbook` run pushed from krypton.
+All five acceptance criteria verified on the box. Next is `issues/003` (HDD
+mergerfs/snapraid pool) and `issues/011` (SSD btrfs raid1), which now unblock.
+
+### What was built (`ansible/` at repo root)
+- `ansible.cfg` — inventory + `vars_plugins_enabled = host_group_vars,
+  community.sops.sops`; galaxy deps land in gitignored `ansible/galaxy/`.
+- `inventory/hosts.yml` — `helium` @ `192.168.1.191` (now a **pinned DHCP
+  reservation** — done this session), user `ms`, group `nas`.
+- `host_vars/helium/{vars.yml,secrets.sops.yml}` — plain vars + the sops-encrypted
+  `ansible_become_password` (admin-key-only; helium has no per-host age key).
+- `roles/base/` — fleet-consistent hardening, config content matched to the
+  dotfiles `sshd`/`ufw`/`fail2ban`/`unattended-upgrades` modules; idempotent
+  modules + handlers, `sshd -t` validation on the drop-in.
+- `site.yml` — `base` + `geerlingguy.docker` (docker-ce + compose plugin from the
+  official trixie repo) applied to `nas`.
+- `.sops.yaml` gained an admin-key-only rule for `ansible/host_vars/**.sops.yml`.
+
+### Secret handling (no age key on the box)
+The become password is decrypted **on krypton** by the `community.sops` vars
+plugin (admin key at `~/.config/sops/age/keys.txt`) and consumed in memory — it
+never lands on helium. `ansible -b` reaching `root` proved decryption + consume.
+
+### Verification (all `issues/002` criteria pass)
+| Check | Result |
+|---|---|
+| Apply from krypton | 1st run `changed=16 failed=0`; 2nd run `changed=0` (idempotent) |
+| sops secret | become→`root` works; no age key on box |
+| sshd | `permitrootlogin/passwordauthentication/kbdinteractiveauthentication no` |
+| ufw | active; deny (incoming); 22/80/443 allowed (v4+v6) |
+| fail2ban | active; sshd jail loaded |
+| unattended-upgrades | enabled |
+| docker | `hello-world` works; `docker compose` plugin `5.2.0` (trixie repo) |
+| keys | no GitHub/deploy private keys on the box |
+
+### Notes
+- `docker-compose-plugin` is `5.2.0-1~debian.13~trixie` — the current official
+  `docker compose` plugin (v2-lineage subcommand, not legacy `docker-compose`).
+- DHCP reservation for helium's NIC is now pinned, so `ansible_host` is stable.
+
+### Resume checklist (next session)
+1. `issues/003`: Ansible builds the HDD mergerfs + SnapRAID pool (2 parity +
+   2 data) over the 4× SAS drives via the HBA.
+2. `issues/011`: Ansible builds the SSD btrfs **raid1** data pool across
+   `sde`+`sdf`, addressed by `ata-<serial>` ids, in one shot.
