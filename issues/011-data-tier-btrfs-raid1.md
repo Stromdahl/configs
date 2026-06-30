@@ -4,7 +4,7 @@ status: in-progress
 priority: high
 created: 2026-06-29
 closed: null
-labels: [epic:storage]
+labels: [epic:storage, needs-human]
 ---
 
 ## Description
@@ -60,11 +60,17 @@ rebalances). Building the tier itself is fully automatable from krypton. Briefed
       both `KINGSTON SUV400S37480G` 480 GB — overall-health PASSED, 0 reallocated/
       pending/uncorrectable, ~95–96 % life left, extended self-test completed
       without error. See the BUILD-LOG entry for 2026-06-29.
-- [ ] A btrfs raid1 filesystem spans both SSDs and survives a reboot, mounted at a
-      stable location.
-- [ ] Precious subvolumes (appdata, Immich, Paperless) carry full CoW + checksums;
+- [~] A btrfs raid1 filesystem spans both SSDs and survives a reboot, mounted at a
+      stable location. **Built + verified 2026-06-30:** label `helium-ssd`, 2 devices
+      (sde, sdf), Data/Metadata/System all RAID1, mounted by fs UUID at `/data/ssd/*`.
+      **Reboot survival pending human:** needs a `sudo reboot` of helium + re-mount check.
+- [x] Precious subvolumes (appdata, Immich, Paperless) carry full CoW + checksums;
       the scratch subvolumes (downloads, transcode cache) are nodatacow
-      (`chattr +C` confirmed) and excluded from checksumming.
+      (`chattr +C` confirmed) and excluded from checksumming. **Verified 2026-06-30:**
+      `lsattr -d` shows `C` on downloads/transcode, clean on appdata/immich/paperless.
 - [ ] A simulated single-drive loss is survived with data intact (mirror degrades,
-      not fails).
-- [ ] The tier is built by an idempotent Ansible storage role run from krypton.
+      not fails). **Pending human (console):** offline one SSD, `mount -o degraded`,
+      confirm data intact, re-add + `btrfs balance ... -dconvert=raid1 -mconvert=raid1`.
+- [x] The tier is built by an idempotent Ansible storage role run from krypton.
+      **Verified 2026-06-30:** `ansible/roles/storage_ssd` run via `--tags storage_ssd`;
+      a clean second run reports `changed=0`.
