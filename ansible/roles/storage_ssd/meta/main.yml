@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: storage_ssd
+  description: SSD data tier for helium — btrfs raid1 mirror with nodatacow scratch subvolumes.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []

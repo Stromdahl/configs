@@ -1,0 +1,12 @@
+---
+# btrfs-progs supplies mkfs.btrfs / btrfs(8); gdisk supplies sgdisk (used to zap the
+# old partition tables before mkfs). Neither is installed on the minimal trixie base.
+- name: Install btrfs-progs and gdisk
+  become: true
+  ansible.builtin.apt:
+    name:
+      - btrfs-progs
+      - gdisk
+    state: present
+    update_cache: true
+    cache_valid_time: 3600

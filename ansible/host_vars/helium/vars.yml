@@ -26,3 +26,20 @@ hdd_union_mount: "/srv/media"
 # category.create=lfs is load-bearing: fill one data drive before touching the
 # other (keeps the second spun down). See roles/storage_hdd/tasks/mergerfs.yml.
 hdd_mergerfs_opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=lfs,moveonenospc=true,minfreespace=50G,fsname=mergerfs"
+
+# storage_ssd: the two 480 GB Kingston SUV400 SATA SSDs as a btrfs raid1 mirror —
+# the hot/precious data tier (Docker appdata, Immich, Paperless) plus lean scratch
+# (downloads, transcode). Addressed by per-serial ata-* by-id symlinks: both SSDs
+# share an identical malformed WWN (NAA=0, Kingston UV400 firmware bug), so no
+# usable wwn-* link exists. The fstab mount source is the btrfs fs UUID (captured
+# after mkfs), not a device path — a multi-device raid1 must mount device-agnostic
+# so it still mounts when one member is the dead one.
+ssd_pool_mount: /data/ssd
+ssd_pool_label: helium-ssd
+ssd_devices:
+  - /dev/disk/by-id/ata-KINGSTON_SUV400S37480G_50026B767400167E
+  - /dev/disk/by-id/ata-KINGSTON_SUV400S37480G_50026B776705BF4D
+# Precious subvolumes keep full CoW + checksums; scratch subvolumes are nodatacow
+# (mount opt + chattr +C) to avoid CoW fragmentation and pointless checksumming.
+ssd_subvolumes_precious: [appdata, immich, paperless]
+ssd_subvolumes_scratch: [downloads, transcode]

@@ -15,3 +15,5 @@
       tags: [docker]
     - role: storage_hdd
       tags: [storage, storage_hdd]
+    - role: storage_ssd
+      tags: [storage, storage_ssd]

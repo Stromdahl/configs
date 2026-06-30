@@ -1,0 +1,56 @@
+---
+# Mount each subvolume at /data/ssd/<name> by the btrfs fs UUID — NOT a device path:
+# a multi-device raid1 mounted via one member can't mount if that member is the dead
+# one, which would defeat the single-drive-loss AC. nofail keeps a missing pool from
+# wedging boot (degraded recovery is a manual action — never `degraded` in fstab).
+# Scratch subvolumes additionally get nodatacow + chattr +C: no CoW, no checksums.
+- name: Create subvolume mountpoints under the pool root
+  become: true
+  ansible.builtin.file:
+    path: "{{ ssd_pool_mount }}/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ ssd_subvolumes_precious + ssd_subvolumes_scratch }}"
+
+- name: Mount precious subvolumes (full CoW + checksums)
+  become: true
+  ansible.posix.mount:
+    path: "{{ ssd_pool_mount }}/{{ item }}"
+    src: "UUID={{ ssd_fs_uuid }}"
+    fstype: btrfs
+    opts: "subvol=@{{ item }},noatime,nofail"
+    state: mounted
+  loop: "{{ ssd_subvolumes_precious }}"
+
+- name: Mount scratch subvolumes (nodatacow)
+  become: true
+  ansible.posix.mount:
+    path: "{{ ssd_pool_mount }}/{{ item }}"
+    src: "UUID={{ ssd_fs_uuid }}"
+    fstype: btrfs
+    opts: "subvol=@{{ item }},noatime,nofail,nodatacow"
+    state: mounted
+  loop: "{{ ssd_subvolumes_scratch }}"
+
+# chattr +C only takes effect on an EMPTY dir (not retroactive). The scratch subvols
+# are freshly mounted and empty here. Guard on lsattr so a re-run is a no-op — the
+# 'C' flag only ever appears in the attribute field, never in the path.
+- name: Read attribute flags on scratch subvolumes
+  become: true
+  ansible.builtin.command:
+    cmd: "lsattr -d {{ ssd_pool_mount }}/{{ item }}"
+  register: ssd_lsattr
+  changed_when: false
+  loop: "{{ ssd_subvolumes_scratch }}"
+
+- name: Set chattr +C (NODATACOW) on scratch subvolumes while empty
+  become: true
+  ansible.builtin.command:
+    cmd: "chattr +C {{ ssd_pool_mount }}/{{ item.item }}"
+  changed_when: true
+  when: "'C' not in item.stdout"
+  loop: "{{ ssd_lsattr.results }}"
+  loop_control:
+    label: "{{ item.item }}"

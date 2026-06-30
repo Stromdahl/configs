@@ -1,0 +1,22 @@
+---
+# SSD data tier for helium: two 480 GB Kingston SATA SSDs → a btrfs raid1 mirror.
+# btrfs is chosen for data checksumming (non-ECC board — guards silent bit-rot)
+# and cheap snapshots. Precious subvolumes (appdata, Immich, Paperless) keep full
+# CoW + checksums; scratch subvolumes (downloads, transcode) are nodatacow to
+# avoid CoW fragmentation and checksumming of throwaway data.
+#
+# Disks are addressed by per-serial ata-* by-id symlinks (the shared WWN is a
+# Kingston firmware bug). The pool mounts by its btrfs fs UUID so it survives a
+# single-drive loss (a member-path mount can't mount if that member is the dead
+# one). The mkfs is guarded by existing-fs detection — a re-run never reformats.
+- name: btrfs tooling (btrfs-progs)
+  ansible.builtin.import_tasks: packages.yml
+
+- name: Create the btrfs raid1 filesystem (idempotent, guarded)
+  ansible.builtin.import_tasks: filesystem.yml
+
+- name: Create precious + scratch subvolumes
+  ansible.builtin.import_tasks: subvolumes.yml
+
+- name: Mount each subvolume by fs UUID (nofail), chattr +C on scratch
+  ansible.builtin.import_tasks: mounts.yml

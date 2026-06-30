@@ -1,0 +1,43 @@
+---
+# Create the btrfs raid1 across both SSDs — DESTRUCTIVE on first run, but guarded:
+# every wipe/mkfs task is gated on "the pool member is not yet btrfs", so a re-run
+# never reformats. The two SSDs currently hold disposable old OS partitions (an old
+# helium attempt + neon's old root) — sgdisk --zap-all clears the GPT before mkfs.
+#
+# Detection keys on the first device: `btrfs filesystem show` exits non-zero on a
+# non-btrfs device, zero once the raid1 exists.
+- name: Detect whether the pool already exists (btrfs on member 0)
+  become: true
+  ansible.builtin.command:
+    cmd: "btrfs filesystem show {{ ssd_devices[0] }}"
+  register: ssd_fs_check
+  changed_when: false
+  failed_when: false
+
+- name: Zap any existing partition table on each SSD (first build only)
+  become: true
+  ansible.builtin.command:
+    cmd: "sgdisk --zap-all {{ item }}"
+  loop: "{{ ssd_devices }}"
+  when: ssd_fs_check.rc != 0
+  changed_when: true
+
+- name: Create the btrfs raid1 filesystem across both SSDs (first build only)
+  become: true
+  ansible.builtin.command:
+    cmd: "mkfs.btrfs -L {{ ssd_pool_label }} -m raid1 -d raid1 {{ ssd_devices | join(' ') }}"
+  when: ssd_fs_check.rc != 0
+  changed_when: true
+
+# Capture the fs UUID UNCONDITIONALLY (every run, not only after mkfs) — the mount
+# tasks template it into fstab, so it must be a known fact even on a clean re-run.
+- name: Read the btrfs filesystem UUID
+  become: true
+  ansible.builtin.command:
+    cmd: "blkid -s UUID -o value {{ ssd_devices[0] }}"
+  register: ssd_blkid
+  changed_when: false
+
+- name: Record the btrfs filesystem UUID
+  ansible.builtin.set_fact:
+    ssd_fs_uuid: "{{ ssd_blkid.stdout | trim }}"

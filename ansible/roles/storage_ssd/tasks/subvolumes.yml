@@ -1,0 +1,44 @@
+---
+# Subvolumes live under the btrfs top level (subvolid=5). We mount the top level at
+# a temp mountpoint, create each @-prefixed subvolume, then unmount — the real
+# per-subvol mounts at /data/ssd/<name> happen in mounts.yml. The whole block is
+# gated on "the precious subvols aren't mounted yet", so a fully-built host skips it
+# and reports no change; `creates:` on each create keeps a partial-failure rerun safe.
+- name: Check whether the pool subvolumes are already mounted
+  become: true
+  ansible.builtin.command:
+    cmd: "findmnt -rno SOURCE {{ ssd_pool_mount }}/{{ ssd_subvolumes_precious[0] }}"
+  register: ssd_subvol_check
+  changed_when: false
+  failed_when: false
+
+- name: Create the @-prefixed subvolumes from the btrfs top level
+  when: ssd_subvol_check.rc != 0
+  become: true
+  block:
+    - name: Ensure the temp top-level mountpoint exists
+      ansible.builtin.file:
+        path: /mnt/ssd-pool-top
+        state: directory
+        mode: "0755"
+
+    - name: Mount the btrfs top level (subvolid=5)
+      ansible.builtin.command:
+        cmd: "mount -o subvolid=5 UUID={{ ssd_fs_uuid }} /mnt/ssd-pool-top"
+      changed_when: true
+
+    - name: Create each subvolume
+      ansible.builtin.command:
+        cmd: "btrfs subvolume create /mnt/ssd-pool-top/@{{ item }}"
+        creates: "/mnt/ssd-pool-top/@{{ item }}"
+      loop: "{{ ssd_subvolumes_precious + ssd_subvolumes_scratch }}"
+
+    - name: Unmount the btrfs top level
+      ansible.builtin.command:
+        cmd: "umount /mnt/ssd-pool-top"
+      changed_when: true
+
+    - name: Remove the temp top-level mountpoint
+      ansible.builtin.file:
+        path: /mnt/ssd-pool-top
+        state: absent
