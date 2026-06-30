@@ -1,6 +1,6 @@
 ---
 title: Data tier — btrfs raid1 SSD mirror with nodatacow scratch subvolumes
-status: open
+status: in-progress
 priority: high
 created: 2026-06-29
 closed: null
