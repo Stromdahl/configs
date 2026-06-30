@@ -453,3 +453,52 @@ the firewall. Final remote check is the user's (a phone on cellular with NetBird
 
 **Still open:** the iGPU/QuickSync UI check; the no-port-forward attestation; and
 the real remote-peer test from a roaming NetBird device.
+
+---
+
+## 2026-06-30 (later) — storage fault drills: `issues/003` + `issues/011` CLOSED
+
+**State at end of session:** both storage tiers are now **fully verified and their
+issues closed**. The four manual ACs that had kept 003 + 011 `in-progress` /
+`needs-human` were exercised as live fault drills — run now, while the pools are
+empty, so zero real data was at risk and we validated the exact recovery runbooks
+we'll lean on once `issues/008` pours in the real library. helium is left **healthy**:
+both pools mounted, compose stack up, jellyfin healthy.
+
+### Done in three risk-ramped phases (krypton-driven; reboots run by hand)
+1. **Reboot reassembly (003-AC6 + 011 reboot survival).** One reboot; afterwards all
+   four HDD ext4 mounts + the `/srv/media` mergerfs union returned, both snapraid
+   timers `active`, status clean; all 5 btrfs subvols auto-mounted, `helium-ssd`
+   still 2-device RAID1. The multi-device-btrfs boot race 011 warned about did **not**
+   occur.
+2. **snapraid parity recovery (003-AC5).** 50 MB random canary → `snapraid sync` →
+   removed it (**no sync between loss and fix** — the classic footgun) →
+   `snapraid fix -d disk1` = 200 errors / 200 recovered / **0 unrecoverable**; restored
+   canary sha256 matched byte-for-byte. Cleaned up with `--force-empty sync`; array
+   back to empty + `check` clean.
+3. **btrfs degraded-mount drive-loss (011-AC4).** Hashed canary while healthy →
+   stopped stack + unmounted → offlined one SSD (`echo 1 > /sys/block/sdX/device/delete`)
+   → mounted **`-o degraded,ro`** from the lone device (`btrfs show` = *"Some devices
+   missing"*, canary hash intact) → reboot re-added the device → `btrfs balance
+   -dconvert=raid1 -mconvert=raid1` (5/5 chunks) → back to 2-device RAID1, device stats
+   all-0. Read-only degraded mount was deliberate: a degraded *rw* mount writes
+   non-raid1 `single` chunks.
+
+### Notable: device-letter churn is a non-issue (validated, not assumed)
+The Phase-3 reboot **reshuffled kernel enumeration** — the SSD that was `sde` came
+back as `sdd`, bumping the SAS drives around. Both pools still mounted perfectly:
+the SSD tier by fs-UUID (fstab) with the `ata-*` by-id links auto-repointing, the
+HDD tier by `wwn-*` by-id with snapraid using `/mnt/*` paths. This is live proof the
+stable-identifier design (011's UUID+`ata-*` rule, 003's `wwn-*` rule) survives
+exactly the failure mode it was built for.
+
+### Storage epic status now
+- `issues/001` (OS), `002` (Ansible), **`003` (HDD pool)**, **`011` (SSD tier)** — all `done`.
+- Still open in epic:storage — `004` (HDD spin-down), `012` (SSD scrub verify),
+  `013` (timer failure alerting).
+
+### Resume checklist (next session)
+The storage foundation is trustworthy. Highest-value next build step is
+**`issues/008` — migrate the real media library + *arr state from neon** so Jellyfin
+serves actual content. New services (`006` Immich, `007` Paperless, `014` download
+automation) are also unblocked off the keystone `005` slice.
