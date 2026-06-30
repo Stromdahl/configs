@@ -60,10 +60,15 @@ rebalances). Building the tier itself is fully automatable from krypton. Briefed
       both `KINGSTON SUV400S37480G` 480 GB — overall-health PASSED, 0 reallocated/
       pending/uncorrectable, ~95–96 % life left, extended self-test completed
       without error. See the BUILD-LOG entry for 2026-06-29.
-- [~] A btrfs raid1 filesystem spans both SSDs and survives a reboot, mounted at a
+- [ ] A btrfs raid1 filesystem spans both SSDs and survives a reboot, mounted at a
       stable location. **Built + verified 2026-06-30:** label `helium-ssd`, 2 devices
       (sde, sdf), Data/Metadata/System all RAID1, mounted by fs UUID at `/data/ssd/*`.
-      **Reboot survival pending human:** needs a `sudo reboot` of helium + re-mount check.
+      **Reboot survival pending human:** after `sudo reboot`, check `findmnt /data/ssd/appdata`
+      returns a mount — an *absent* mount is the failure (multi-device btrfs needs udev's
+      `btrfs device ready` to see BOTH sde+sdf before systemd gives up, and `nofail` means
+      a failed scan boots silently with the pool unmounted). If missing, the fix is on the
+      device-scan side (`btrfs device scan`, check the btrfs-progs udev rule fired), NOT the
+      fstab — the fstab is verified correct.
 - [x] Precious subvolumes (appdata, Immich, Paperless) carry full CoW + checksums;
       the scratch subvolumes (downloads, transcode cache) are nodatacow
       (`chattr +C` confirmed) and excluded from checksumming. **Verified 2026-06-30:**
