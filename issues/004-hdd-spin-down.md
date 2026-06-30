@@ -4,7 +4,7 @@ status: open
 priority: medium
 created: 2026-06-27
 closed: null
-labels: [epic:storage]
+labels: [epic:storage, needs-human]
 ---
 
 ## Description
