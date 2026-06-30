@@ -1,10 +1,10 @@
 ---
 title: HDD pool — mergerfs + SnapRAID (2 parity + 2 data) over the HBA
-status: in-progress
+status: done
 priority: high
 created: 2026-06-27
-closed: null
-labels: [epic:storage, needs-human]
+closed: 2026-06-30
+labels: [epic:storage]
 ---
 
 ## Description
@@ -39,9 +39,9 @@ in `tasks/003`.
 - [x] SnapRAID is configured with 2 parity + 2 data; `snapraid sync` completes and
       `snapraid status` reports clean.
 - [x] sync (and scrub) run automatically on their systemd timers.
-- [ ] A simulated data-drive loss is recoverable from parity (fix/restore verified
+- [x] A simulated data-drive loss is recoverable from parity (fix/restore verified
       on test data).
-- [ ] The pool re-assembles correctly across a reboot.
+- [x] The pool re-assembles correctly across a reboot.
 
 ## Status (2026-06-29)
 
@@ -55,8 +55,13 @@ idempotent (clean re-run = `changed=0`).
   disks + `/var/snapraid`), `snapraid sync` clean, sync/scrub timers `active`.
   The union fstab entry carries `x-systemd.requires=/mnt/disk1,/mnt/disk2` so it
   cannot mount before the data drives at boot (guards AC6).
-- **Remaining (human hands at the console — see `tasks/003`):**
-  1. **AC5** simulated data-drive loss → `snapraid fix` restores a canary.
-  2. **AC6** reboot helium → all mounts + timers return, `snapraid status` clean.
-
-  Run both, tick the boxes, then set `status: done` + `closed:`.
+**Done 2026-06-30 — both manual ACs verified (drills run while the pool was empty,
+zero real data at risk):**
+- **AC6 reboot reassembly:** rebooted helium; all four `/mnt/{disk1,disk2,parity1,parity2}`
+  ext4 mounts + the `/srv/media` mergerfs union returned, both snapraid timers
+  `active`, `snapraid status` clean.
+- **AC5 parity recovery:** wrote a 50 MB random canary to `disk1`, `snapraid sync`,
+  removed it (simulated loss — **no sync between loss and fix**), `snapraid fix -d disk1`
+  → 200 errors / 200 recovered / **0 unrecoverable**, restored canary's sha256 matched
+  the original byte-for-byte. Cleaned up (`--force-empty sync`); array back to empty +
+  `check` clean.
