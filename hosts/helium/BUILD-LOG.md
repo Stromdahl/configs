@@ -417,3 +417,26 @@ with SSH keepalive + retries (`ANSIBLE_TIMEOUT=30`, `ANSIBLE_SSH_RETRIES=3`,
    playback dashboard; set Dashboard ▸ Playback ▸ transcode temp path to `/transcode`.
 
 The real media library is still empty (`/srv/media`) — populating it is `issues/008`.
+
+### Exposure model decided: LAN + mesh, never public (DNS via OPNsense Unbound)
+The keystone slice originally assumed strict mesh-only (DNS → mesh IP, DOCKER-USER
+drops the LAN). On review the user chose **LAN + mesh, never public** so non-NetBird
+home clients (TVs/HTPC) can reach Jellyfin:
+
+- **DNS:** an **OPNsense Unbound host override** `*` `home.stromdahl.tech`
+  → **`192.168.1.191`** (helium's LAN IP), TTL 600. Verified resolving from krypton
+  via the OPNsense resolver (`192.168.1.1`). (Initial attempt pointed at the stale
+  rescue-OS lease `.174` — corrected to `.191`.)
+- **Firewall:** made the DOCKER-USER restriction a documented toggle
+  `compose_restrict_to_mesh` (host_vars). Set **false** → the role keeps the four
+  DOCKER-USER rules **absent** (and a re-run removes a drop left by a prior strict
+  deploy). The public boundary is now solely OPNsense (no port-forward) + helium
+  having no public IP. Flip the var to `true` to restore strict mesh-only.
+- **Verified end-to-end from krypton (LAN host), no `-k`:** `https://jellyfin.home.stromdahl.tech/`
+  → 302 → `/web/` **200**, `ssl_verify=0` (real LE cert); `http://` → 301→https;
+  Traefik dashboard → 401 (basic-auth). DOCKER-USER chain now empty. Role idempotent
+  (`changed=0`) in the new state.
+
+**Still open:** off-LAN access over NetBird needs mesh-side DNS for
+`home.stromdahl.tech → 100.65.22.72` (the OPNsense override only answers LAN
+clients); the iGPU/QuickSync UI check; and the no-port-forward attestation.

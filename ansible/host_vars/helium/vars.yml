@@ -61,3 +61,11 @@ jellyfin_pgid: 1003
 jellyfin_render_gid: 992   # helium's render group (getent group render), for iGPU/QuickSync
 # helium's LAN NIC name (`ip -o link`), for the DOCKER-USER LAN-drop rule.
 compose_lan_iface: eno2   # active Intel I210 port = default route (eno1/I219 is down)
+# Exposure model (chosen 2026-06-30): LAN + mesh, never public.
+#   false (chosen) -> reachable on the home LAN AND over NetBird; the public boundary
+#     is OPNsense having no port-forward + helium having no public IP. *.home.stromdahl.tech
+#     resolves to helium's LAN IP via an OPNsense Unbound host override. Non-NetBird home
+#     clients (TVs/HTPC) can reach Jellyfin. The role REMOVES the DOCKER-USER LAN drop.
+#   true -> strict mesh-only: the DOCKER-USER chain drops new LAN conns to published ports,
+#     so only NetBird peers (wt0) reach them. Point DNS at the mesh IP if you flip this.
+compose_restrict_to_mesh: false

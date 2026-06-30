@@ -1,8 +1,18 @@
 ---
-# DOCKER-USER chain rules: lock published ports to loopback + NetBird only.
+# DOCKER-USER chain rules: optionally lock published ports to loopback + NetBird.
 #
 # ============================================================
-# WHY THIS IS NEEDED
+# EXPOSURE MODEL TOGGLE — compose_restrict_to_mesh (host_vars/helium/vars.yml)
+# ============================================================
+# These rules are applied (state=present) only when compose_restrict_to_mesh is
+# true (strict mesh-only). The chosen model for helium is FALSE (LAN + mesh, never
+# public): DNS points *.home.stromdahl.tech at helium's LAN IP via OPNsense Unbound,
+# the public boundary is OPNsense having no port-forward, and these rules are kept
+# ABSENT (state=absent) — so a re-run also cleans up a drop left by a prior strict
+# deploy. Everything below describes the rules as they exist in the mesh-only case.
+#
+# ============================================================
+# WHY THIS IS NEEDED (mesh-only mode)
 # ============================================================
 # Docker inserts ACCEPT rules in the FORWARD chain ahead of ufw's policy,
 # so published ports (e.g. 80, 443) are reachable from the LAN even when
@@ -63,6 +73,7 @@
   become: true
   ansible.builtin.iptables:
     action: insert
+    state: "{{ 'present' if compose_restrict_to_mesh | bool else 'absent' }}"
     chain: DOCKER-USER
     in_interface: lo
     jump: RETURN
@@ -73,6 +84,7 @@
   become: true
   ansible.builtin.iptables:
     action: insert
+    state: "{{ 'present' if compose_restrict_to_mesh | bool else 'absent' }}"
     chain: DOCKER-USER
     in_interface: wt0
     jump: RETURN
@@ -83,6 +95,7 @@
   become: true
   ansible.builtin.iptables:
     action: insert
+    state: "{{ 'present' if compose_restrict_to_mesh | bool else 'absent' }}"
     chain: DOCKER-USER
     ctstate:
       - ESTABLISHED
@@ -95,9 +108,8 @@
   become: true
   ansible.builtin.iptables:
     action: insert
+    state: "{{ 'present' if compose_restrict_to_mesh | bool else 'absent' }}"
     chain: DOCKER-USER
-    # TODO: replace compose_lan_iface PLACEHOLDER in host_vars/helium/vars.yml
-    # with helium's real LAN interface name (e.g. enp1s0) before deploying.
     in_interface: "{{ compose_lan_iface }}"
     ctstate:
       - NEW

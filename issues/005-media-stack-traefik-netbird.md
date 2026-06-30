@@ -44,15 +44,20 @@ from), and `issues/011` (the data tier appdata + transcode cache live on).
 
 ## Acceptance criteria
 
-- [ ] Jellyfin is reachable at `jellyfin.home.stromdahl.tech` **over the NetBird
-      mesh** with a valid (non-self-signed) TLS certificate. *(cert ✅ real LE; mesh
-      reachability blocked on the DNS mapping below — needs-human)*
-- [ ] Nothing is reachable from the public internet; no router port-forward exists.
-      *(needs-human: user attests no router port-forward)*
-- [x] No container-published port is exposed on the **LAN** by Docker bypassing
-      ufw — published ports bind to loopback / the NetBird interface (or
-      `DOCKER-USER` rules reinstate the default-deny), verified from another LAN host.
-      *(verified 2026-06-30 from krypton: :80/:443 to helium's LAN IP both time out)*
+> **Model revised 2026-06-30 → LAN + mesh, never public** (see Status). AC#3's
+> "no LAN exposure" was intentionally dropped: the home LAN is allowed; the public
+> boundary is OPNsense having no port-forward + helium having no public IP.
+
+- [x] Jellyfin is reachable at `jellyfin.home.stromdahl.tech` with a valid
+      (non-self-signed) TLS certificate. *(verified 2026-06-30 from krypton over the
+      LAN: 302→`/web/` 200, `ssl_verify=0`, real LE cert. Off-LAN access over NetBird
+      is one DNS record away — see Status.)*
+- [ ] Nothing is reachable from the public internet; no port-forward exists.
+      *(needs-human: user attests OPNsense has no 80/443 port-forward to helium)*
+- [x] ~~No container-published port is exposed on the LAN~~ **superseded by the
+      LAN+mesh model** — LAN access is intentional. The DOCKER-USER drop is kept
+      ABSENT via `compose_restrict_to_mesh: false`. *(Strict mesh-only stays a
+      one-var flip; the drop was verified working on 2026-06-30 before the flip.)*
 - [ ] Jellyfin transcodes using the iGPU (QuickSync). *(render device RW-accessible
       in-container; needs-human: confirm QuickSync in a real stream via the UI)*
 - [x] Jellyfin reads the library from the HDD pool mount; its config (appdata) and
@@ -61,10 +66,20 @@ from), and `issues/011` (the data tier appdata + transcode cache live on).
 - [x] The stack is brought up by the Ansible compose-stack role from krypton, with
       secrets sourced from sops. *(verified 2026-06-30)*
 
-## Status — 2026-06-30 (in-progress; machine-side done)
+## Status — 2026-06-30 (in-progress)
 
-Deployed and running; idempotent. The remaining ACs need the user's hands — see
-the handoff in `hosts/helium/BUILD-LOG.md` (2026-06-30 entry). The single gating
-item is **DNS**: map `jellyfin`/`traefik.home.stromdahl.tech` → helium's mesh IP
-`100.65.22.72` (NetBird DNS, or a Cloudflare A record), which the playbook does
-not and cannot do (DNS-01 only writes cert-validation TXT records).
+Deployed, running, idempotent, and **reachable over the LAN with a valid cert**
+(`https://jellyfin.home.stromdahl.tech`). DNS is an **OPNsense Unbound** host
+override `*.home.stromdahl.tech → 192.168.1.191` (helium's LAN IP). Exposure model
+is **LAN + mesh, never public** (`compose_restrict_to_mesh: false`; DOCKER-USER drop
+removed). Details in `hosts/helium/BUILD-LOG.md` (2026-06-30).
+
+Remaining (needs the user's hands):
+- **Off-LAN / mesh access (optional):** the OPNsense override only answers LAN
+  clients, so roaming NetBird devices can't resolve the name. helium is on the mesh
+  (`100.65.22.72`) and the firewall allows it — only DNS is missing. Add NetBird DNS
+  for `home.stromdahl.tech → 100.65.22.72` if remote access is wanted.
+- **iGPU transcode (AC#4):** confirm QuickSync in a real stream + set the transcode
+  temp path to `/transcode` in the Jellyfin UI.
+- **No public port-forward (AC#2):** confirm on OPNsense.
+- Real library still empty (`/srv/media`) — that's `issues/008`.
