@@ -18,8 +18,9 @@ out of service.
 After verification, neon retires; its 1.8 TB NVMe is freed (a candidate local
 backup target, handled by the deferred backup work).
 
-Depends on `issues/008` (library + state migrated), and on `issues/006` and
-`issues/007` so every service is live on helium before the final cutover.
+Depends on `issues/008` (library migrated), `issues/014` + `issues/015` (download
+automation + *arr state), and `issues/006` + `issues/007` (Immich + Paperless) — so
+every service is live on helium before the final cutover.
 
 ## Acceptance criteria
 

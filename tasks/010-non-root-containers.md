@@ -6,11 +6,12 @@ capabilities + privileged flags, and make read-only bind mounts where a service
 only reads. Per-service hardening only — **explicitly NOT** host-wide
 `userns-remap` (it breaks Jellyfin's `/dev/dri` and gluetun's net caps).
 
-> **Depends on the service stack being up: `issues/005` (media), `issues/006`
+> **Depends on the service stack being up: `issues/005` (Jellyfin), `issues/014`
+> (download automation — gluetun/qBittorrent/*arr/Jellyseerr), `issues/006`
 > (Immich), `issues/007` (Paperless).** This is post-bring-up hardening against a
-> known-working baseline. **Do not grab until 005 (at least) is `done`;** harden
-> 006/007 services as those land. The frontmatter omits a `Depends on` line, but
-> the issue body is explicit — treat 005/006/007 as prerequisites.
+> known-working baseline. **Do not grab until 005 (at least) is `done`;** harden the
+> 014/006/007 services as those land. The frontmatter omits a `Depends on` line, but
+> the issue body is explicit — treat 005/014/006/007 as prerequisites.
 
 ## Pickup protocol
 
@@ -91,10 +92,11 @@ establishes; mirror it for 006/007). Apply:
 
 ## Entry points (edit — grep-stable)
 
-- The helium compose template(s) created by `tasks/005` (and the Immich/Paperless
-  service definitions from `tasks/006`/`tasks/007`) — grep each `<service>:` block
-  by name and add the keys above. **This is an edit-each-service pass, not a new
-  role.**
+- The helium compose template(s) created by `tasks/005` (Jellyfin/Traefik) and
+  extended by `tasks/014` (gluetun/qBittorrent/*arr/Jellyseerr), plus the
+  Immich/Paperless definitions from `tasks/006`/`tasks/007` — grep each `<service>:`
+  block by name and add the keys above. **This is an edit-each-service pass, not a
+  new role.**
 - Add **`render_gid: <gid>`** to `ansible/host_vars/helium/vars.yml` (grep the
   compose-stack vars block 005 added) and template it into Jellyfin's `group_add`.
 
@@ -142,7 +144,7 @@ establishes; mirror it for 006/007). Apply:
 
 ## Out of scope / don't touch
 
-- Building the stacks (`005`/`006`/`007`) — this only hardens their existing
+- Building the stacks (`005`/`014`/`006`/`007`) — this only hardens their existing
   service definitions.
 - Host-wide `userns-remap` — explicitly excluded.
 - gluetun's `NET_ADMIN`/`/dev/net/tun` and Jellyfin's `/dev/dri` — required, not

@@ -23,8 +23,9 @@ so the hardening is done per-service (run-as-user, `cap_drop`, `no-new-privilege
 read-only bind mounts where possible) rather than by remapping the whole daemon.
 
 This is post-bring-up hardening, not a bootstrap blocker. Depends on the service
-stack being up (the media stack, Immich, and Paperless issues) so each container
-can be hardened against a known-working baseline.
+stack being up (`issues/005` Jellyfin, `issues/014` download automation, `issues/006`
+Immich, `issues/007` Paperless) so each container can be hardened against a
+known-working baseline.
 
 ## Acceptance criteria
 
