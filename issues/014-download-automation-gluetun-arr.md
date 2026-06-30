@@ -26,8 +26,15 @@ mesh-only):
   media pool + downloads.
 - **Jellyseerr** — request management, feeding the *arr stack.
 
-Stand these up with fresh config; migrating the real *arr state + active downloads
-is `issues/015`.
+Stand these up with **fresh config following TRaSH Guides best practices** —
+folder structure, naming, quality profiles, and custom formats. (Migrating neon's
+*arr state was scoped as `issues/015` but **dropped** in favor of this fresh build.)
+
+**Hardlink note:** downloads live on the SSD scratch tier and media on the HDD pool
+— two filesystems — so *arr imports are **copy-then-delete**, not instant hardlink /
+atomic moves. This is an intentional deviation from TRaSH's single-filesystem
+hardlink requirement, accepted to keep the HDD pool cold/quiet/parity-only (helium
+drops long-term ratio seeding, the main thing hardlinks buy).
 
 Depends on `issues/005` (the compose-stack role + internal Traefik + NetBird mesh
 this all plugs into).

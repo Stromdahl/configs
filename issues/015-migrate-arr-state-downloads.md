@@ -1,13 +1,20 @@
 ---
 title: Migrate *arr state and active downloads from neon
-status: open
+status: dropped
 priority: medium
 created: 2026-06-30
-closed: null
+closed: 2026-06-30
 labels: [epic:cutover, needs-human]
 ---
 
 ## Description
+
+> **DROPPED 2026-06-30.** Superseded by the decision to build the *arr stack
+> **fresh** with TRaSH Guides best practices (`issues/014`) rather than migrate
+> neon's state. neon's *arr DBs / quality profiles are intentionally **not**
+> preserved; the fresh stack adopts the migrated library (`issues/008`) as existing
+> media and applies TRaSH quality profiles + custom formats. Text below kept for
+> history.
 
 Bring the *arr application state off neon onto helium **intact** — radarr / sonarr /
 prowlarr / bazarr / profilarr configs + databases — so library history, quality
