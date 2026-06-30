@@ -169,18 +169,17 @@ services:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- https://am.i.mullvad.net/connected 2>/dev/null | grep -q 'You are connected'"]
-      interval: 30s
-      timeout: 15s
-      retries: 3
-      start_period: 30s
+    # No custom healthcheck: the gluetun image ships a provider-agnostic built-in
+    # (/gluetun-entrypoint healthcheck) that reports healthy once the tunnel passes
+    # traffic. (neon overrode it with a Mullvad-specific am.i.mullvad.net probe,
+    # which would never pass on Proton.)
     environment:
       - VPN_SERVICE_PROVIDER=${GLUETUN_VPN_SERVICE_PROVIDER:?missing GLUETUN_VPN_SERVICE_PROVIDER}
       - VPN_TYPE=wireguard
+      # Proton WireGuard PrivateKey + Address from a generated Proton config (sops).
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY:?missing WIREGUARD_PRIVATE_KEY}
       - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESS:?missing WIREGUARD_ADDRESS}
-      - SERVER_CITIES=${GLUETUN_SERVER_CITIES:?missing GLUETUN_SERVER_CITIES}
+      - SERVER_COUNTRIES=${GLUETUN_SERVER_COUNTRIES:?missing GLUETUN_SERVER_COUNTRIES}
       - TZ=${TZ:-Europe/Stockholm}
     labels:
       - "traefik.enable=true"

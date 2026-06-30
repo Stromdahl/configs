@@ -73,10 +73,12 @@ compose_restrict_to_mesh: false
 # issue 014 — download automation: gluetun + qBittorrent + *arr + Jellyseerr.
 # All behind the existing internal Traefik (subdomain-per-service under
 # *.{{ compose_domain }}); reachable LAN+mesh, never public (same boundary as 005).
-# gluetun (Mullvad/WireGuard) — non-secret config here; WIREGUARD_* are in
-# secrets.sops.yml (migrated from neon's secrets.env).
-gluetun_vpn_provider: mullvad
-gluetun_server_cities: "Malmö"
+# gluetun (ProtonVPN/WireGuard) — non-secret config here; WIREGUARD_* (the Proton
+# WireGuard PrivateKey + Address from a generated Proton config) are in
+# secrets.sops.yml. Server picked by country (Proton uses SERVER_COUNTRIES; the
+# WireGuard key is account-wide, not server-locked, so gluetun roams within Sweden).
+gluetun_vpn_provider: protonvpn
+gluetun_server_countries: Sweden
 # Storage placement (issue 014): *arr/qbit config on the SSD *precious* appdata
 # subvol; downloads on the SSD *scratch* subvol; media on the HDD union. Downloads
 # and media are two filesystems => *arr imports are copy-then-delete (accepted, see
