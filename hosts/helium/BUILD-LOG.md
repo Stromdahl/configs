@@ -437,6 +437,19 @@ home clients (TVs/HTPC) can reach Jellyfin:
   Traefik dashboard → 401 (basic-auth). DOCKER-USER chain now empty. Role idempotent
   (`changed=0`) in the new state.
 
-**Still open:** off-LAN access over NetBird needs mesh-side DNS for
-`home.stromdahl.tech → 100.65.22.72` (the OPNsense override only answers LAN
-clients); the iGPU/QuickSync UI check; and the no-port-forward attestation.
+### Remote access wired: Cloudflare split-horizon → mesh IP
+For off-LAN devices, added a **public Cloudflare** record `*.home.stromdahl.tech`
+A → **`100.65.22.72`** (helium's NetBird IP), DNS-only/unproxied, TTL 300, via the
+existing DNS-01 token. Split-horizon now:
+- **LAN clients** → OPNsense Unbound → `192.168.1.191` (local; OPNsense answers
+  before forwarding, so the public record never reaches them).
+- **Roaming clients** (NetBird up) → public DNS → `100.65.22.72` → over the mesh.
+- The mesh IP is non-routable (`100.64/10`), so the public record exposes nothing.
+
+Verified: public resolvers (1.1.1.1/8.8.8.8) return `100.65.22.72`; LAN still
+returns `.191`; helium serves `https://jellyfin.home.stromdahl.tech/` on its mesh
+IP with a valid LE cert (302, `ssl_verify=0`). The wt0 path was already allowed by
+the firewall. Final remote check is the user's (a phone on cellular with NetBird up).
+
+**Still open:** the iGPU/QuickSync UI check; the no-port-forward attestation; and
+the real remote-peer test from a roaming NetBird device.

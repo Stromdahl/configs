@@ -50,8 +50,8 @@ from), and `issues/011` (the data tier appdata + transcode cache live on).
 
 - [x] Jellyfin is reachable at `jellyfin.home.stromdahl.tech` with a valid
       (non-self-signed) TLS certificate. *(verified 2026-06-30 from krypton over the
-      LAN: 302→`/web/` 200, `ssl_verify=0`, real LE cert. Off-LAN access over NetBird
-      is one DNS record away — see Status.)*
+      LAN: 302→`/web/` 200, `ssl_verify=0`, real LE cert. Mesh path wired via
+      split-horizon DNS — see Status; final remote-peer test is needs-human.)*
 - [ ] Nothing is reachable from the public internet; no port-forward exists.
       *(needs-human: user attests OPNsense has no 80/443 port-forward to helium)*
 - [x] ~~No container-published port is exposed on the LAN~~ **superseded by the
@@ -74,11 +74,15 @@ override `*.home.stromdahl.tech → 192.168.1.191` (helium's LAN IP). Exposure m
 is **LAN + mesh, never public** (`compose_restrict_to_mesh: false`; DOCKER-USER drop
 removed). Details in `hosts/helium/BUILD-LOG.md` (2026-06-30).
 
+**Remote access (done 2026-06-30):** split-horizon DNS — a public Cloudflare
+wildcard `*.home.stromdahl.tech` A → `100.65.22.72` (helium's mesh IP, DNS-only)
+serves roaming NetBird devices, while OPNsense Unbound keeps serving the LAN IP to
+home clients. Verified public resolvers return the mesh IP, LAN still returns
+`.191`, and helium serves the name+valid cert on `100.65.22.72`.
+
 Remaining (needs the user's hands):
-- **Off-LAN / mesh access (optional):** the OPNsense override only answers LAN
-  clients, so roaming NetBird devices can't resolve the name. helium is on the mesh
-  (`100.65.22.72`) and the firewall allows it — only DNS is missing. Add NetBird DNS
-  for `home.stromdahl.tech → 100.65.22.72` if remote access is wanted.
+- **Remote-peer test:** from a roaming NetBird device (phone on cellular), open
+  `https://jellyfin.home.stromdahl.tech/` — should load on the valid cert over the mesh.
 - **iGPU transcode (AC#4):** confirm QuickSync in a real stream + set the transcode
   temp path to `/transcode` in the Jellyfin UI.
 - **No public port-forward (AC#2):** confirm on OPNsense.
