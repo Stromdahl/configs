@@ -4,7 +4,7 @@ status: open
 priority: high
 created: 2026-06-27
 closed: null
-labels: [epic:cutover]
+labels: [epic:cutover, needs-human]
 ---
 
 ## Description

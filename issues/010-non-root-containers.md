@@ -4,7 +4,7 @@ status: open
 priority: medium
 created: 2026-06-29
 closed: null
-labels: [epic:hardening]
+labels: [epic:hardening, needs-human]
 ---
 
 ## Description
