@@ -502,3 +502,90 @@ The storage foundation is trustworthy. Highest-value next build step is
 **`issues/008` — migrate the real media library + *arr state from neon** so Jellyfin
 serves actual content. New services (`006` Immich, `007` Paperless, `014` download
 automation) are also unblocked off the keystone `005` slice.
+
+---
+
+## 2026-06-30 (later still) — media stack: library migration kicked off (008) + *arr stack deployed (014, VPN-gated)
+
+**State at end of session:** `issues/008` + `issues/014` both **in-progress**.
+The ~932 GB library bulk-rsync is **running detached** on helium; the 014 download
+stack is **deployed** with the bridge *arr verified end-to-end, blocked only on the
+gluetun Mullvad WireGuard credential (needs-human). Both run/overlap as planned.
+
+### Corrected reality vs the task briefs
+- neon's OS drive is now in helium, so **neon is bootless and runs the Ventoy
+  rescue OS at `192.168.1.153`** (`ms`, sudo pw `rescue`; it reclaimed neon's old
+  lease → its host key changed, expected). The 008 brief's `ssh helium→neon`
+  against neon's normal OS no longer applies.
+- helium holds **no private SSH key** and `/srv/media` is **root-owned**, so the
+  copy is run write-side-root on helium, read-side `ms@neon-rescue`.
+
+### issue 008 — library bulk rsync (RUNNING in background)
+- **Source:** neon's Samsung 990 PRO 2 TB (`nvme0n1`, ext4) **mounted read-only**
+  at `/mnt/neon-src` on neon-rescue. Library = `media/media/{movies,series}`,
+  **exactly 932 GB** (movies 605 G / 17 files, series 327 G / 242 files), owned
+  `1001:1003`. Verified **0 files unreadable by `other`** → reading as `ms` skips
+  nothing (so root-on-read via `PermitRootLogin no` on rescue wasn't needed).
+- **Mechanism:** ephemeral ed25519 key `/root/.ssh/neon_migrate` on helium,
+  its pubkey appended to `ms@neon-rescue:~/.ssh/authorized_keys`. Migration script
+  at **`/root/neon-migrate.sh`**, launched as transient unit **`neon-migrate.service`**
+  (`systemd-run`), logging to **`/var/log/neon-migrate.log`**. Two sequential rsyncs,
+  `-aHAX --numeric-ids --partial`, **no `--delete`**: `movies/ → /srv/media/movies/`
+  and **`series/ → /srv/media/tv/`** (neon's `series` → Jellyfin's `tv`).
+- **Prep done:** `chown 1001:1003 /srv/media/{movies,tv}` (so 014's *arr can write
+  imports); **both snapraid timers STOPPED** (`snapraid-sync`/`-scrub`) so they don't
+  fire mid-copy — **must re-enable + run one `snapraid sync` after the copy**.
+  Installed `rsync` on helium (was missing).
+- **Progress at handoff:** ~125 G+/932 G, ~83 MB/s, ETA ~2.5–3 h. Self-completing
+  (detached); survives disconnect.
+- **Still pending (gated):** bulk finish → Jellyfin scan → **cold final delta with
+  `--delete`** (user signals a quiescent window) → re-enable snapraid + one sync →
+  playback over mesh (user). Then close 008.
+
+### issue 014 — download automation (DEPLOYED; VPN-gated)
+- Extended `roles/compose_stack` (one role, both 005+014): added gluetun,
+  qbittorrent, prowlarr, flaresolverr (all `network_mode: service:gluetun`),
+  radarr, sonarr, bazarr, profilarr, jellyseerr (plain `media` bridge) to
+  `docker-compose.yml.j2`; new vars in `host_vars/helium/vars.yml`; WireGuard
+  secrets migrated from neon's `secrets.env` into `secrets.sops.yml` (sops, never
+  stdout); per-app appdata dirs + downloads chown + a seeded `qBittorrent.conf` in
+  `tasks/stack.yml`. Deployed `--tags compose,services` from krypton.
+- **Verified (machine-side, from krypton/LAN):** radarr/sonarr/bazarr/profilarr →
+  **HTTP 200**, jellyseerr → 307, **all valid per-host LE certs** at
+  `*.home.stromdahl.tech`. **No LAN port leak** — every service port
+  (7878/8989/6767/6868/5055/8080/9696) **refuses** direct connection; only Traefik
+  80/443 listen (services publish zero host ports — deliberate, since
+  `compose_restrict_to_mesh=false` has no DOCKER-USER drop).
+- **❗ BLOCKED — gluetun WireGuard tunnel won't pass traffic.** Tunnel *sets up*
+  and selects valid Malmö Mullvad endpoints, but every check (incl. raw-IP egress,
+  bypassing DNS) times out → handshake never completes. **Ruled out:** gluetun impl
+  (userspace `WIREGUARD_IMPLEMENTATION=userspace` fails identically), key/address
+  format (44-char b64 key + valid CIDR, cleanly migrated), city parsing, local
+  egress (LE/NetBird/pulls all work). → **The migrated Mullvad key is not being
+  accepted** (likely a lapsed Mullvad subscription or the key was removed when neon
+  was decommissioned; far less likely an OPNsense outbound-UDP-51820 rule specific
+  to helium). **Needs the user** to confirm Mullvad is active / supply a fresh
+  WireGuard key+address → drop into `secrets.sops.yml` → re-run the role.
+- **VPN tier stopped** (`docker compose stop gluetun qbittorrent prowlarr
+  flaresolverr`) to halt the 6 s reconnect loop; the next role run starts it.
+- **Deviations from the 014 brief (intentional):** subdomain-per-service Traefik
+  routing (brief showed neon's PathPrefix); **bazarr media mount RW not `:ro`**
+  (bazarr writes sidecar subtitles); **zero host-published ports on gluetun**
+  (brief's "publish on gluetun" = container port over the bridge, not a host
+  publish — a host publish would leak on the LAN). TRaSH quality-profiles/custom-
+  formats import is **post-deploy app config** (profilarr/in-app, first-boot API
+  keys) — out of 014's ACs, not automated.
+
+### Resume checklist (next session)
+1. **008:** check `systemctl is-active neon-migrate` + `du -sh /srv/media/{movies,tv}`
+   vs 605 G/327 G + `tail /var/log/neon-migrate.log` for `DONE rc_total=0`. Then
+   Jellyfin scan, cold final-delta (`--delete`, user window), re-enable snapraid
+   timers + one `snapraid sync`, playback sign-off → close 008.
+2. **014:** get a working Mullvad WireGuard key+address → `sops` into
+   `secrets.sops.yml` → re-run `--tags compose,services` → gluetun healthy →
+   verify kill-switch + qbit/prowlarr reachable over Traefik → first-boot app
+   config (qbit creds, prowlarr indexers, *arr root folders `/data/media/{movies,tv}`
+   + download client `gluetun:8080`, profilarr TRaSH sync) → close 014.
+3. **Cleanup when 008 closes:** unmount `/mnt/neon-src` on neon-rescue; remove the
+   ephemeral key (`/root/.ssh/neon_migrate*` on helium + the line in neon-rescue's
+   authorized_keys).
