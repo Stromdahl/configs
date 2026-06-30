@@ -1,0 +1,105 @@
+---
+# Render the .env (secrets + config) and docker-compose.yml from templates,
+# copy Traefik's static dynamic.yml, then bring the stack up.
+#
+# community.docker is NOT in the pinned galaxy collections — docker compose
+# is invoked via ansible.builtin.command, mirroring neon's deploy.sh idiom.
+#
+# On-box verify: docker compose writes Created/Started/Recreated to stderr
+# (not stdout). The changed_when below parses stderr. Confirm this is still
+# true on helium's docker compose version with:
+#   docker compose up -d 2>&1 | head -20
+#
+# On-box note: bash-exported UID/GID env vars may take precedence over
+# --env-file values in some shells. Verify that the rendered UID/GID from
+# the .env are actually used by confirming `id` inside the jellyfin container
+# post-deploy. If they are shadowed, quote the vars in the .env as UID= with
+# no conflict, or unset UID/GID in the ansible environment block here.
+
+- name: Create compose_stack_dir
+  become: true
+  ansible.builtin.file:
+    path: "{{ compose_stack_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create traefik config subdirectory
+  become: true
+  ansible.builtin.file:
+    path: "{{ compose_stack_dir }}/config/traefik"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# Jellyfin writes config and transcode data under these dirs. They must be
+# owned by jellyfin_puid:jellyfin_pgid before first start, otherwise docker
+# creates them root-owned and Jellyfin cannot write to them.
+- name: Create Jellyfin config dir under ssd appdata
+  become: true
+  ansible.builtin.file:
+    path: "{{ ssd_pool_mount }}/appdata/jellyfin"
+    state: directory
+    owner: "{{ jellyfin_puid }}"
+    group: "{{ jellyfin_pgid }}"
+    mode: "0750"
+
+- name: Create Jellyfin transcode dir under ssd scratch
+  become: true
+  ansible.builtin.file:
+    path: "{{ ssd_pool_mount }}/transcode"
+    state: directory
+    owner: "{{ jellyfin_puid }}"
+    group: "{{ jellyfin_pgid }}"
+    mode: "0750"
+
+# .env rendered to 0600 — contains Cloudflare DNS token + Traefik dashboard
+# basic-auth hash. no_log keeps secret values out of the Ansible output.
+- name: Render .env from template (sops secrets + config vars)
+  become: true
+  ansible.builtin.template:
+    src: stack.env.j2
+    dest: "{{ compose_stack_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Render docker-compose.yml from template
+  become: true
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ compose_stack_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+# Copy verbatim — traefik middleware definitions and TLS options.
+# dynamic.yml has no Jinja markers; using copy (not template) makes the
+# intent clear and avoids accidental expansion of any future { in the file.
+- name: Copy Traefik dynamic config
+  become: true
+  ansible.builtin.copy:
+    src: traefik/dynamic.yml
+    dest: "{{ compose_stack_dir }}/config/traefik/dynamic.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Bring up the compose stack
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      docker compose
+      -f {{ compose_stack_dir }}/docker-compose.yml
+      --env-file {{ compose_stack_dir }}/.env
+      up -d --remove-orphans
+  register: _compose_up
+  # docker compose writes progress to stderr (Created/Started/Recreated).
+  # We parse stderr because stdout is typically empty on `up -d`.
+  changed_when: >-
+    'Started' in _compose_up.stderr or
+    'Created' in _compose_up.stderr or
+    'Recreated' in _compose_up.stderr

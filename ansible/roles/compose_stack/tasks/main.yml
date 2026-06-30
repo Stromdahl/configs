@@ -1,0 +1,34 @@
+---
+# Compose-stack role for helium: NetBird mesh client, DOCKER-USER firewall
+# rules, and the Jellyfin + Traefik + docker-socket-proxy stack.
+#
+# needs-human blockers (asserted below):
+#   jellyfin_render_gid — run `getent group render | cut -d: -f3` on helium
+#   compose_lan_iface   — run `ip -o link` on helium to identify the LAN NIC
+#
+# Both must be set in host_vars/helium/vars.yml before `ansible-playbook site.yml
+# --tags compose` will succeed. The assert gates the entire role.
+
+- name: Assert on-box vars have been set (render gid + LAN iface)
+  become: false
+  ansible.builtin.assert:
+    that:
+      - jellyfin_render_gid is defined
+      - jellyfin_render_gid | int != 99999
+      - compose_lan_iface is defined
+      - compose_lan_iface != "PLACEHOLDER"
+    fail_msg: >-
+      Deploy blocked: one or more on-box placeholder vars are still unset.
+      On helium run:
+        getent group render | cut -d: -f3   (-> jellyfin_render_gid)
+        ip -o link                           (-> compose_lan_iface, e.g. enp1s0)
+      Then update host_vars/helium/vars.yml and re-run.
+
+- name: Install + join the NetBird mesh client
+  ansible.builtin.import_tasks: netbird.yml
+
+- name: Close the Docker-bypasses-ufw gap (private-only published ports)
+  ansible.builtin.import_tasks: firewall.yml
+
+- name: Template env/compose from sops and bring the stack up
+  ansible.builtin.import_tasks: stack.yml

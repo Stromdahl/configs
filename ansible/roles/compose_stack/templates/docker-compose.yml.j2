@@ -1,0 +1,138 @@
+# Rendered by Ansible from roles/compose_stack/templates/docker-compose.yml.j2.
+# This file is committed to git — no secrets inline. All ${VAR} references
+# are resolved at `docker compose` run time from {{ compose_stack_dir }}/.env
+# (rendered to 0600 with the sops-decrypted secrets).
+#
+# Services included: docker-socket-proxy, traefik, jellyfin.
+# Excluded (issue 014): gluetun, qbittorrent, *arr, flaresolverr, jellyseerr, homer.
+#
+# Divergences from neon's compose:
+#   - Network renamed gluetun_network -> media (plain bridge, no VPN dependency)
+#   - Jellyfin router rule uses jellyfin.${DOMAIN} (neon used bare ${DOMAIN})
+#   - Jellyfin group_add: ["${RENDER_GID}"] for iGPU/QuickSync render group
+#   - Jellyfin volumes: bind mounts to helium SSD/HDD tiers (not named volumes)
+#   - Jellyfin /media volume is :ro (media share is read-only)
+#   - Traefik acme.json kept in named volume `traefik_certs` (same as neon);
+#     a bind mount would land world-readable (644) and Traefik refuses it
+#   - Traefik dynamic.yml bind mount uses relative path ./config/traefik/
+#     (resolves to {{ compose_stack_dir }}/config/traefik/ given -f flag)
+#
+# Post-deploy human steps:
+#   - Jellyfin Dashboard > Playback: set Transcoding temp path to /transcode
+#   - Verify jellyfin.${DOMAIN} resolves from a NetBird peer (not from LAN)
+#   - Verify traefik.${DOMAIN} dashboard is accessible over mesh
+name: helium
+
+networks:
+  media:
+  socket_proxy:
+
+volumes:
+  traefik_certs:
+
+secrets:
+  cf_dns_api_token:
+    environment: CF_DNS_API_TOKEN
+
+services:
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.2
+    container_name: docker-socket-proxy
+    restart: unless-stopped
+    environment:
+      - CONTAINERS=1
+      - NETWORKS=1
+      - SERVICES=0
+      - TASKS=0
+      - INFO=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - socket_proxy
+
+  traefik:
+    image: traefik:v3.6.11
+    container_name: traefik
+    restart: unless-stopped
+    depends_on:
+      - docker-socket-proxy
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.endpoint=tcp://docker-socket-proxy:2375"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--entrypoints.web.address=:80"
+      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entryPoints.web.http.redirections.entryPoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?missing ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth,security-headers@file"
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH:?missing TRAEFIK_DASHBOARD_AUTH}"
+    ports:
+      - "80:80"
+      - "443:443"
+    secrets:
+      - cf_dns_api_token
+    environment:
+      # CF token passed as a mounted file, not a plain env var.
+      # Plain env vars are visible via `docker inspect`; the _FILE variant
+      # is read from the secrets tmpfs mount — not in the process environment.
+      - CF_DNS_API_TOKEN_FILE=/run/secrets/cf_dns_api_token
+    volumes:
+      # acme.json lives in a named volume so Docker owns its permissions (600).
+      # A bind-mounted file would be created 644 by Ansible and Traefik refuses
+      # "permissions are too open" on startup.
+      - traefik_certs:/letsencrypt
+      - ./config/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    networks:
+      - media
+      - socket_proxy
+
+  jellyfin:
+    image: ghcr.io/linuxserver/jellyfin:10.11.8
+    container_name: jellyfin
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.routers.jellyfin.tls.certresolver=letsencrypt"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      - "traefik.http.routers.jellyfin.middlewares=jellyfin-headers@file"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+    # iGPU/QuickSync: add the render group so Jellyfin can open /dev/dri/renderD128.
+    # The GID is host-specific — read from `getent group render | cut -d: -f3` on
+    # helium and set jellyfin_render_gid in host_vars/helium/vars.yml.
+    group_add:
+      - "${RENDER_GID:?missing RENDER_GID}"
+    devices:
+      - /dev/dri:/dev/dri  # Required for Jellyfin HW transcoding / QuickSync
+    volumes:
+      - ${CONFIG_DIR:?missing CONFIG_DIR}:/config
+      # Media share is read-only — Jellyfin must never write to the HDD union.
+      - ${MEDIA_SHARE:?missing MEDIA_SHARE}:/media:ro
+      # Transcode scratch on SSD (nodatacow subvolume). After first start:
+      # Jellyfin Dashboard > Playback > Transcoding temp path -> /transcode
+      - ${TRANSCODE_DIR:?missing TRANSCODE_DIR}:/transcode
+    networks:
+      - media

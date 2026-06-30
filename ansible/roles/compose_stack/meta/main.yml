@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: compose_stack
+  description: >-
+    Compose-stack deploy (Jellyfin + internal Traefik + NetBird) for the
+    helium pilot. Private-only: published ports are blocked from the LAN
+    NIC via DOCKER-USER; access is over the NetBird mesh only.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []

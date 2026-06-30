@@ -1,0 +1,117 @@
+---
+# DOCKER-USER chain rules: lock published ports to loopback + NetBird only.
+#
+# ============================================================
+# WHY THIS IS NEEDED
+# ============================================================
+# Docker inserts ACCEPT rules in the FORWARD chain ahead of ufw's policy,
+# so published ports (e.g. 80, 443) are reachable from the LAN even when
+# ufw's default INPUT/FORWARD policy is DROP. The DOCKER-USER chain is
+# Docker's deliberate hook for site-local overrides — rules here survive
+# `systemctl restart docker` and are not wiped on daemon restart.
+#
+# ============================================================
+# EGRESS TRAP — READ BEFORE FINISHING
+# ============================================================
+# A blanket `-j DROP` appended to DOCKER-USER would also kill container
+# outbound traffic (Traefik's Let's Encrypt ACME calls, Cloudflare DNS-01
+# challenges). The safe pattern is:
+#   1. RETURN (allow) for lo
+#   2. RETURN (allow) for wt0 (NetBird interface)
+#   3. RETURN (allow) for ESTABLISHED,RELATED connections from any interface
+#      (outbound-initiated responses must flow back)
+#   4. DROP NEW connections arriving on the LAN NIC only
+#
+# Rule ORDER matters, and there is a trap: Docker ships DOCKER-USER with a
+# trailing `-A DOCKER-USER -j RETURN`. The iptables module's DEFAULT action is
+# `append` (-A), which would land these rules AFTER that RETURN — never reached,
+# making the whole fix a silent no-op. So every rule below uses `action: insert`.
+# Because each insert goes to the top, the LAST task inserted ends up FIRST; the
+# resulting top-to-bottom order is DROP(lan), RETURN(established), RETURN(wt0),
+# RETURN(lo) — which is correct (DROP only matches the LAN iface; lo/wt0/egress
+# fall through to their RETURNs). ansible.builtin.iptables checks rule
+# *existence*, not position, so STILL verify the result on helium with:
+#   iptables -L DOCKER-USER -n --line-numbers
+# All four custom rules must appear BEFORE Docker's trailing RETURN.
+#
+# ============================================================
+# INTERFACE-KEYED APPROACH (chosen) vs PORT-BINDING ALTERNATIVE
+# ============================================================
+# Alternative: bind Traefik to 127.0.0.1 and the wt0 IP only (ports block).
+# Rejected because: (a) wt0 gets a new IP on every `netbird down+up`, forcing
+# a compose restart to re-bind; (b) requires modifying the compose template
+# for each new service. Interface-keyed DOCKER-USER rules survive NetBird
+# re-IP and require no compose changes.
+#
+# ============================================================
+# NEEDS-HUMAN / FINISH-ON-BOX (AC #3)
+# ============================================================
+# compose_lan_iface is a PLACEHOLDER in host_vars/helium/vars.yml.
+# Set it to helium's real LAN NIC name before deploy:
+#   ip -o link | awk '{print $2}' | sed 's/://'
+# Typical value on EliteDesk 800 G4: enp1s0 or eno1.
+#
+# AC #3 verification (from another LAN host, NOT from helium):
+#   curl -k https://jellyfin.<domain>   # must time out or be refused
+# Confirm that the service IS reachable from a NetBird peer:
+#   curl -k https://jellyfin.<domain>   # (from a mesh peer) must return 200
+#
+# This file is a SCAFFOLD. Review rule correctness with a network-savvy eye
+# before treating it as final.
+
+- name: "DOCKER-USER: allow loopback in-interface (lo)"
+  become: true
+  ansible.builtin.iptables:
+    action: insert
+    chain: DOCKER-USER
+    in_interface: lo
+    jump: RETURN
+    comment: "compose_stack: allow loopback"
+
+- name: "DOCKER-USER: allow NetBird mesh interface (wt0)"
+  become: true
+  ansible.builtin.iptables:
+    action: insert
+    chain: DOCKER-USER
+    in_interface: wt0
+    jump: RETURN
+    comment: "compose_stack: allow NetBird mesh (wt0)"
+
+- name: "DOCKER-USER: allow ESTABLISHED/RELATED (container outbound responses)"
+  become: true
+  ansible.builtin.iptables:
+    action: insert
+    chain: DOCKER-USER
+    ctstate:
+      - ESTABLISHED
+      - RELATED
+    jump: RETURN
+    comment: "compose_stack: allow outbound-initiated responses"
+
+- name: "DOCKER-USER: drop NEW connections from LAN NIC"
+  become: true
+  ansible.builtin.iptables:
+    action: insert
+    chain: DOCKER-USER
+    # TODO: replace compose_lan_iface PLACEHOLDER in host_vars/helium/vars.yml
+    # with helium's real LAN interface name (e.g. enp1s0) before deploying.
+    in_interface: "{{ compose_lan_iface }}"
+    ctstate:
+      - NEW
+    jump: DROP
+    comment: "compose_stack: drop new LAN conns (Docker-ufw bypass fix)"
+
+# Make iptables rules persist across reboots via iptables-persistent.
+# This installs the package if missing and saves the current ruleset.
+- name: Install iptables-persistent (saves rules across reboots)
+  become: true
+  ansible.builtin.apt:
+    name: iptables-persistent
+    state: present
+    update_cache: false
+
+- name: Save iptables rules (ipv4)
+  become: true
+  ansible.builtin.command:
+    cmd: netfilter-persistent save
+  changed_when: true

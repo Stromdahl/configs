@@ -43,3 +43,21 @@ ssd_devices:
 # (mount opt + chattr +C) to avoid CoW fragmentation and pointless checksumming.
 ssd_subvolumes_precious: [appdata, immich, paperless]
 ssd_subvolumes_scratch: [downloads, transcode]
+
+# compose_stack: Jellyfin + internal-only Traefik, deployed by roles/compose_stack.
+# Private-only — reachable over the NetBird mesh at *.{{ compose_domain }}, never the
+# public internet or the LAN (DOCKER-USER fix in roles/compose_stack/tasks/firewall.yml).
+compose_stack_dir: /opt/helium
+compose_domain: home.stromdahl.tech              # -> jellyfin/traefik.home.stromdahl.tech
+compose_acme_email: mattias.stromdahl@gmail.com  # LE registration (DNS-01 via Cloudflare)
+# Jellyfin uid/gid (mirrors neon's config.env). Must own the SSD appdata + transcode
+# dirs and be able to read /srv/media.
+jellyfin_puid: 1001
+jellyfin_pgid: 1003
+# needs-human: render group gid for iGPU/QuickSync. On helium run:
+#   getent group render | cut -d: -f3
+# then replace the placeholder. The assert in roles/compose_stack fails the deploy
+# until this is set, so jellyfin never starts with a wrong/root group.
+jellyfin_render_gid: 99999   # PLACEHOLDER — set to helium's real render gid before deploy
+# needs-human: helium's LAN NIC name (`ip -o link`), for the DOCKER-USER LAN-drop rule.
+compose_lan_iface: PLACEHOLDER   # e.g. enp1s0 — set before deploy (see firewall.yml)

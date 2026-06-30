@@ -17,3 +17,5 @@
       tags: [storage, storage_hdd]
     - role: storage_ssd
       tags: [storage, storage_ssd]
+    - role: compose_stack
+      tags: [compose, services]

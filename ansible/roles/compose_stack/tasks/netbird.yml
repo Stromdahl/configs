@@ -1,0 +1,89 @@
+---
+# Install NetBird WireGuard mesh client from the upstream pkgs.netbird.io
+# apt repo, enable the daemon, and join the mesh idempotently.
+#
+# Mirrors modules/netbird/install.sh logic exactly.
+#
+# needs-human: after the daemon joins, the peer may require approval in the
+# NetBird management dashboard (https://app.netbird.io) before it can
+# communicate with other peers. Verify that jellyfin.{{ compose_domain }}
+# resolves to the helium mesh IP from another mesh peer post-join.
+
+- name: Install curl and gnupg (needed to fetch and dearmor the netbird key)
+  become: true
+  ansible.builtin.apt:
+    name:
+      - curl
+      - gnupg
+    state: present
+    update_cache: false
+
+- name: Fetch netbird GPG key (armored) to a temp file
+  become: true
+  ansible.builtin.get_url:
+    url: https://pkgs.netbird.io/debian/public.key
+    dest: /tmp/netbird-public.key.asc
+    mode: "0644"
+    force: true
+
+- name: Dearmor netbird GPG key into the system keyring
+  become: true
+  ansible.builtin.command:
+    cmd: gpg --dearmor --yes -o /usr/share/keyrings/netbird-archive-keyring.gpg /tmp/netbird-public.key.asc
+    creates: /usr/share/keyrings/netbird-archive-keyring.gpg
+
+- name: Set keyring permissions (644, world-readable for apt)
+  become: true
+  ansible.builtin.file:
+    path: /usr/share/keyrings/netbird-archive-keyring.gpg
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Install netbird apt source
+  become: true
+  ansible.builtin.copy:
+    src: netbird.sources
+    dest: /etc/apt/sources.list.d/netbird.sources
+    owner: root
+    group: root
+    mode: "0644"
+  register: _netbird_source
+
+- name: Install netbird package
+  become: true
+  ansible.builtin.apt:
+    name: netbird
+    state: present
+    update_cache: "{{ _netbird_source.changed }}"
+
+- name: Enable and start netbird service
+  become: true
+  ansible.builtin.systemd:
+    name: netbird
+    enabled: true
+    state: started
+    daemon_reload: false
+
+# Check current connection status before deciding to join.
+# `netbird status` may exit non-zero when not connected — failed_when: false
+# so the task always produces a usable result. The "Management: Connected"
+# string is the expected marker; verify it on helium's netbird version with
+# `netbird status` before relying on it.
+- name: Check netbird connection status
+  become: true
+  ansible.builtin.command:
+    cmd: netbird status
+  register: _netbird_status
+  changed_when: false
+  failed_when: false
+
+- name: Join NetBird mesh (runs only when not already connected)
+  become: true
+  ansible.builtin.command:
+    cmd: netbird up --setup-key {{ netbird_setup_key }}
+  when: "'Management: Connected' not in _netbird_status.stdout"
+  # setup-key must not appear in logs — it grants mesh-join access
+  no_log: true
+  # netbird up is an intent command; treat it as changed every time it runs
+  changed_when: true
