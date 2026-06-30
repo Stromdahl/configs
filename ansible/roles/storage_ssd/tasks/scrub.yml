@@ -1,0 +1,26 @@
+---
+# Drop the btrfs scrub unit + timer and enable the TIMER (the service is oneshot,
+# triggered by its timer, not enabled directly). daemon-reload runs via handler
+# after the unit files change. Mirrors storage_hdd's SnapRAID timer pattern.
+- name: Install btrfs scrub systemd units
+  become: true
+  ansible.builtin.copy:
+    src: "systemd/{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - btrfs-scrub.service
+    - btrfs-scrub.timer
+  notify: Reload systemd
+
+- name: Reload systemd now (before enabling the timer)
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the btrfs scrub timer
+  become: true
+  ansible.builtin.systemd_service:
+    name: btrfs-scrub.timer
+    enabled: true
+    state: started

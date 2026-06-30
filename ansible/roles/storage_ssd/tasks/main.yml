@@ -20,3 +20,6 @@
 
 - name: Mount each subvolume by fs UUID (nofail), chattr +C on scratch
   ansible.builtin.import_tasks: mounts.yml
+
+- name: Scheduled btrfs scrub (bit-rot detection/repair) — issues/012
+  ansible.builtin.import_tasks: scrub.yml

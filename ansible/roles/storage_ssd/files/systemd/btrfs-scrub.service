@@ -1,0 +1,18 @@
+[Unit]
+Description=btrfs scrub of the helium-ssd raid1 pool (verify checksums, repair from the good mirror)
+# Don't scrub if the pool isn't mounted — scrub operates on the live filesystem.
+# This path must match storage_ssd's ssd_pool_mount + ssd_subvolumes_precious[0]
+# (/data/ssd/appdata). Like the SnapRAID units, this is a static file, so the path
+# is hardcoded to the host_vars values rather than templated.
+RequiresMountsFor=/data/ssd/appdata
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+# Scrubbing any mounted path on the fs scrubs the whole raid1; on a checksum
+# mismatch btrfs rewrites the bad copy from the good mirror. -B runs in the
+# foreground so the oneshot waits for completion; -d adds per-device stats.
+# btrfs scrub exits non-zero if it can't complete or finds uncorrectable errors —
+# issues/013 wires OnFailure= on this unit to an out-of-band notification.
+ExecStart=/usr/bin/btrfs scrub start -B -d /data/ssd/appdata
