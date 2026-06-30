@@ -359,3 +359,61 @@ never lands on helium. `ansible -b` reaching `root` proved decryption + consume.
    2 data) over the 4× SAS drives via the HBA.
 2. `issues/011`: Ansible builds the SSD btrfs **raid1** data pool across
    `sde`+`sdf`, addressed by `ata-<serial>` ids, in one shot.
+
+---
+
+## 2026-06-30 — media stack deployed (Jellyfin + Traefik + NetBird); `issues/005` machine-side done
+
+**State at end of session:** the keystone services slice is **deployed and
+running** on helium. `docker-socket-proxy + traefik + jellyfin` are up
+(Jellyfin healthy), reachable **privately only**, brought up by the
+`compose_stack` Ansible role from krypton with all secrets from sops. The role
+is **idempotent** (clean re-run `changed=0`). `issues/005` stays **in-progress**
+— the remaining acceptance criteria all need the user's hands (DNS, off-box
+clients, the Jellyfin UI). See the handoff list below.
+
+### What unblocked it
+Only the two on-box placeholder vars in `host_vars/helium/vars.yml`:
+- `jellyfin_render_gid: 992` — helium's `render` group (owns `/dev/dri/renderD128`).
+- `compose_lan_iface: eno2` — the active Intel I210 port / default route
+  (`eno1`/I219 is down). This keys the DOCKER-USER LAN-drop rule.
+
+All three stack secrets (NetBird setup key, Cloudflare DNS token, Traefik
+dashboard basic-auth) were already in `host_vars/helium/secrets.sops.yml`.
+
+### Deploy run
+`cd ansible && ansible-playbook site.yml --tags compose,services`. First attempt
+went **UNREACHABLE at Gathering Facts** — a transient LAN blip (ping showed ~33 %
+loss / latency spike; box uptime unchanged, no reboot, nothing applied). Re-ran
+with SSH keepalive + retries (`ANSIBLE_TIMEOUT=30`, `ANSIBLE_SSH_RETRIES=3`,
+`ServerAliveInterval=15`) → clean `ok=25 changed=20 failed=0`.
+
+### Verified (machine-side, from krypton)
+| Check | Result |
+|---|---|
+| Containers | traefik, docker-socket-proxy, jellyfin all **Up**; jellyfin **healthy** |
+| TLS cert | **real Let's Encrypt** (`issuer=Let's Encrypt CN=YR1`, `CN=jellyfin.home.stromdahl.tech`, exp 2026-09-28) via DNS-01/Cloudflare — **no self-signed fallback** |
+| Jellyfin mounts | `/config`→`/data/ssd/appdata/jellyfin` (rw); `/media`→`/srv/media` **ro**; `/transcode`→`/data/ssd/transcode` (rw) — **AC#5 met** |
+| iGPU plumbing | `renderD128` present in-container under gid 992, `RENDER_RW_OK` (actual QuickSync stream is the off-box UI check) |
+| **AC#3 LAN-exposure** | from krypton (LAN host 192.168.1.170): `curl https://192.168.1.191/` and `:80` both **time out** (DROP, no RST); SSH still works → **AC#3 met** |
+| NetBird | Management+Signal **Connected**; FQDN `helium.netbird.cloud`; **mesh IP `100.65.22.72`**; peers 0/4 connected |
+| DOCKER-USER | `-i eno2 --ctstate NEW -j DROP` then RETURN for established / `-i wt0` / `-i lo` — LAN dropped, mesh+loopback+egress allowed (verified with `iptables -S`) |
+| `.env` | `600 root:root` (sops-rendered, secrets not world-readable) — **AC#6 met** |
+| Idempotence | clean re-run `ok=23 changed=0` (gated the `netfilter-persistent save` + dropped `force:true` on the netbird key fetch) |
+
+### ❗ Remaining — needs the user's hands (`issues/005` stays in-progress)
+1. **DNS: map `jellyfin`/`traefik.home.stromdahl.tech` → `100.65.22.72`.** NOT in
+   the playbook — DNS-01 only creates the cert-validation TXT records. The name is
+   NXDOMAIN today (neon used `jellyfin.stromdahl.tech` → a LAN IP). Options: a
+   NetBird DNS record (keeps the mesh IP private; matches the issue's stated
+   design) **or** a Cloudflare A record `*.home.stromdahl.tech → 100.65.22.72`
+   (works everywhere; publishes the non-routable 100.64/10 mesh IP). **AC#1 gate.**
+2. **Mesh-reachability (AC#1):** from a NetBird peer, `curl https://jellyfin.home.stromdahl.tech/`
+   → 200/redirect. Needs (1) done + a peer online (currently 0/4 connected; approve
+   the helium peer in the NetBird dashboard if pending).
+3. **AC#2 (nothing public):** confirm the router has **no port-forward** for 80/443
+   to helium. Nothing public by construction, but it's a user attestation.
+4. **AC#4 (iGPU):** play a transcoded title and confirm **QuickSync** in Jellyfin's
+   playback dashboard; set Dashboard ▸ Playback ▸ transcode temp path to `/transcode`.
+
+The real media library is still empty (`/srv/media`) — populating it is `issues/008`.

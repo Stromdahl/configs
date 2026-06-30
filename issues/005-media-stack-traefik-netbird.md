@@ -45,13 +45,26 @@ from), and `issues/011` (the data tier appdata + transcode cache live on).
 ## Acceptance criteria
 
 - [ ] Jellyfin is reachable at `jellyfin.home.stromdahl.tech` **over the NetBird
-      mesh** with a valid (non-self-signed) TLS certificate.
+      mesh** with a valid (non-self-signed) TLS certificate. *(cert ✅ real LE; mesh
+      reachability blocked on the DNS mapping below — needs-human)*
 - [ ] Nothing is reachable from the public internet; no router port-forward exists.
-- [ ] No container-published port is exposed on the **LAN** by Docker bypassing
+      *(needs-human: user attests no router port-forward)*
+- [x] No container-published port is exposed on the **LAN** by Docker bypassing
       ufw — published ports bind to loopback / the NetBird interface (or
       `DOCKER-USER` rules reinstate the default-deny), verified from another LAN host.
-- [ ] Jellyfin transcodes using the iGPU (QuickSync).
-- [ ] Jellyfin reads the library from the HDD pool mount; its config (appdata) and
-      transcode cache live on the SSD tier.
-- [ ] The stack is brought up by the Ansible compose-stack role from krypton, with
-      secrets sourced from sops.
+      *(verified 2026-06-30 from krypton: :80/:443 to helium's LAN IP both time out)*
+- [ ] Jellyfin transcodes using the iGPU (QuickSync). *(render device RW-accessible
+      in-container; needs-human: confirm QuickSync in a real stream via the UI)*
+- [x] Jellyfin reads the library from the HDD pool mount; its config (appdata) and
+      transcode cache live on the SSD tier. *(verified 2026-06-30: `/media` ro from
+      `/srv/media`, `/config`+`/transcode` on the SSD tier)*
+- [x] The stack is brought up by the Ansible compose-stack role from krypton, with
+      secrets sourced from sops. *(verified 2026-06-30)*
+
+## Status — 2026-06-30 (in-progress; machine-side done)
+
+Deployed and running; idempotent. The remaining ACs need the user's hands — see
+the handoff in `hosts/helium/BUILD-LOG.md` (2026-06-30 entry). The single gating
+item is **DNS**: map `jellyfin`/`traefik.home.stromdahl.tech` → helium's mesh IP
+`100.65.22.72` (NetBird DNS, or a Cloudflare A record), which the playbook does
+not and cannot do (DNS-01 only writes cert-validation TXT records).
