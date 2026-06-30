@@ -69,3 +69,23 @@ compose_lan_iface: eno2   # active Intel I210 port = default route (eno1/I219 is
 #   true -> strict mesh-only: the DOCKER-USER chain drops new LAN conns to published ports,
 #     so only NetBird peers (wt0) reach them. Point DNS at the mesh IP if you flip this.
 compose_restrict_to_mesh: false
+
+# issue 014 — download automation: gluetun + qBittorrent + *arr + Jellyseerr.
+# All behind the existing internal Traefik (subdomain-per-service under
+# *.{{ compose_domain }}); reachable LAN+mesh, never public (same boundary as 005).
+# gluetun (Mullvad/WireGuard) — non-secret config here; WIREGUARD_* are in
+# secrets.sops.yml (migrated from neon's secrets.env).
+gluetun_vpn_provider: mullvad
+gluetun_server_cities: "Malmö"
+# Storage placement (issue 014): *arr/qbit config on the SSD *precious* appdata
+# subvol; downloads on the SSD *scratch* subvol; media on the HDD union. Downloads
+# and media are two filesystems => *arr imports are copy-then-delete (accepted, see
+# issue 014 / project_helium_arr_trash). The *arr run as the jellyfin uid/gid so
+# they own appdata, downloads, and the migrated media (chowned in issue 008).
+arr_appdata_dir: "{{ ssd_pool_mount }}/appdata"       # -> /data/ssd/appdata/<app>
+arr_downloads_dir: "{{ ssd_pool_mount }}/downloads"   # -> /data/ssd/downloads (qbit + *arr)
+arr_puid: "{{ jellyfin_puid }}"
+arr_pgid: "{{ jellyfin_pgid }}"
+# Per-app appdata dirs the compose_stack role creates + chowns before first start.
+# (gluetun/flaresolverr have no /config volume, so they are not listed.)
+arr_appdata_apps: [qbittorrent, prowlarr, radarr, sonarr, bazarr, profilarr, jellyseerr]

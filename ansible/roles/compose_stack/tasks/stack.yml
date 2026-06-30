@@ -55,6 +55,56 @@
     group: "{{ jellyfin_pgid }}"
     mode: "0750"
 
+# --- issue 014: download-automation appdata + downloads dirs -----------------
+# The *arr/qbit containers create files under these paths as arr_puid:arr_pgid;
+# they must be owned by that uid/gid before first start or docker creates them
+# root-owned and the apps cannot write. (Skipped cleanly if arr_appdata_apps is
+# undefined, e.g. an 005-only deploy.)
+- name: Create per-app appdata dirs (issue 014)
+  become: true
+  ansible.builtin.file:
+    path: "{{ arr_appdata_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ arr_puid }}"
+    group: "{{ arr_pgid }}"
+    mode: "0750"
+  loop: "{{ arr_appdata_apps | default([]) }}"
+
+- name: Ensure the downloads scratch dir is writable by the *arr/qbit uid (issue 014)
+  become: true
+  ansible.builtin.file:
+    path: "{{ arr_downloads_dir }}"
+    state: directory
+    owner: "{{ arr_puid }}"
+    group: "{{ arr_pgid }}"
+    mode: "0775"
+  when: arr_downloads_dir is defined
+
+# Seed a minimal qBittorrent.conf so the WebUI is reachable through Traefik on
+# first boot (qBittorrent 5.x rejects the proxied Host header by default). force:
+# false -> only written if absent, so qBittorrent owns it thereafter and re-runs
+# stay changed=0.
+- name: Create qBittorrent config subdir (issue 014)
+  become: true
+  ansible.builtin.file:
+    path: "{{ arr_appdata_dir }}/qbittorrent/qBittorrent"
+    state: directory
+    owner: "{{ arr_puid }}"
+    group: "{{ arr_pgid }}"
+    mode: "0750"
+  when: arr_appdata_apps is defined
+
+- name: Seed qBittorrent.conf for reverse-proxy reachability (issue 014)
+  become: true
+  ansible.builtin.copy:
+    src: qbittorrent.conf
+    dest: "{{ arr_appdata_dir }}/qbittorrent/qBittorrent/qBittorrent.conf"
+    owner: "{{ arr_puid }}"
+    group: "{{ arr_pgid }}"
+    mode: "0640"
+    force: false
+  when: arr_appdata_apps is defined
+
 # .env rendered to 0600 — contains Cloudflare DNS token + Traefik dashboard
 # basic-auth hash. no_log keeps secret values out of the Ansible output.
 - name: Render .env from template (sops secrets + config vars)

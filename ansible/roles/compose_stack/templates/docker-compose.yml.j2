@@ -3,8 +3,10 @@
 # are resolved at `docker compose` run time from {{ compose_stack_dir }}/.env
 # (rendered to 0600 with the sops-decrypted secrets).
 #
-# Services included: docker-socket-proxy, traefik, jellyfin.
-# Excluded (issue 014): gluetun, qbittorrent, *arr, flaresolverr, jellyseerr, homer.
+# Services: docker-socket-proxy, traefik, jellyfin (issue 005) + gluetun,
+# qbittorrent, prowlarr, flaresolverr, radarr, sonarr, bazarr, profilarr,
+# jellyseerr (issue 014). Excluded vs neon: homer, the alpine `test` probe,
+# the commented `backup`.
 #
 # Divergences from neon's compose:
 #   - Network renamed gluetun_network -> media (plain bridge, no VPN dependency)
@@ -134,5 +136,271 @@ services:
       # Transcode scratch on SSD (nodatacow subvolume). After first start:
       # Jellyfin Dashboard > Playback > Transcoding temp path -> /transcode
       - ${TRANSCODE_DIR:?missing TRANSCODE_DIR}:/transcode
+    networks:
+      - media
+
+  # ===========================================================================
+  # issue 014 — download automation: gluetun + qBittorrent + *arr + Jellyseerr.
+  # Adapted from neon's compose with these helium divergences:
+  #   - Network gluetun_network -> media (the existing bridge from issue 005).
+  #   - Subdomain-per-service Traefik routing (neon used PathPrefix for the *arr);
+  #     the *.${DOMAIN} wildcard cert + DNS already cover every new host.
+  #   - NO host-published ports anywhere. Under compose_restrict_to_mesh=false
+  #     there is no DOCKER-USER LAN drop, so a published port would be LAN-reachable
+  #     (014 AC: "no published port leaks"). qBittorrent (8080) and Prowlarr (9696)
+  #     share gluetun's netns, so their Traefik routers/labels ride on the gluetun
+  #     container and Traefik reaches them over the `media` bridge by container name.
+  #   - Bind mounts to helium tiers (not named volumes): config -> SSD appdata,
+  #     downloads -> SSD scratch, media -> HDD union. downloads and media are two
+  #     filesystems => imports are copy-then-delete (accepted; see issue 014).
+  #   - radarr/sonarr/bazarr do NOT depend_on qbit health -> *arr WebUI availability
+  #     is decoupled from VPN/qbit state.
+  # gluetun firewall: Traefik and the bridge *arr share gluetun's connected `media`
+  # subnet, which gluetun auto-allows (neon worked the same way with no FIREWALL_*).
+  # If Traefik 502s to qbit/prowlarr, or prowlarr can't sync to the *arr, add to
+  # gluetun: FIREWALL_INPUT_PORTS=8080,9696 and FIREWALL_OUTBOUND_SUBNETS=<media subnet>.
+  # ===========================================================================
+
+  gluetun:
+    image: qmcgaw/gluetun:v3.41.1
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- https://am.i.mullvad.net/connected 2>/dev/null | grep -q 'You are connected'"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    environment:
+      - VPN_SERVICE_PROVIDER=${GLUETUN_VPN_SERVICE_PROVIDER:?missing GLUETUN_VPN_SERVICE_PROVIDER}
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY:?missing WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESS:?missing WIREGUARD_ADDRESS}
+      - SERVER_CITIES=${GLUETUN_SERVER_CITIES:?missing GLUETUN_SERVER_CITIES}
+      - TZ=${TZ:-Europe/Stockholm}
+    labels:
+      - "traefik.enable=true"
+      # qBittorrent WebUI (shares gluetun netns) -> qbittorrent.${DOMAIN}
+      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.qbittorrent.entrypoints=websecure"
+      - "traefik.http.routers.qbittorrent.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.qbittorrent.service=qbittorrent"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
+      - "traefik.http.routers.qbittorrent.middlewares=security-headers@file"
+      # Prowlarr (shares gluetun netns) -> prowlarr.${DOMAIN}
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.prowlarr.entrypoints=websecure"
+      - "traefik.http.routers.prowlarr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.prowlarr.service=prowlarr"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+      - "traefik.http.routers.prowlarr.middlewares=security-headers@file"
+    networks:
+      - media
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.1.4
+    container_name: qbittorrent
+    restart: unless-stopped
+    # Shares gluetun's network stack -> all torrent traffic egresses via the VPN;
+    # if gluetun stops, qbit loses connectivity (kill-switch).
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    environment:
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+      - WEBUI_PORT=8080
+    volumes:
+      - ${APPDATA_DIR:?missing APPDATA_DIR}/qbittorrent:/config
+      - ${DOWNLOADS_SHARE:?missing DOWNLOADS_SHARE}:/downloads
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:2.3.5
+    container_name: prowlarr
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9696/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      - ${APPDATA_DIR:?missing APPDATA_DIR}/prowlarr:/config
+
+  # Cloudflare/DDoS-GUARD solver used by Prowlarr; internal only (no Traefik route).
+  flaresolverr:
+    image: flaresolverr/flaresolverr:v3.4.6
+    container_name: flaresolverr
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8191/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    environment:
+      - LOG_LEVEL=info
+      - LOG_HTML=false
+      - CAPTCHA_SOLVER=none
+      - TZ=${TZ:-Europe/Stockholm}
+      - LANG=en_GB
+      - DRIVER=nodriver
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:6.1.1
+    container_name: radarr
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+      - "traefik.http.routers.radarr.middlewares=security-headers@file"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7878/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      - ${APPDATA_DIR:?missing APPDATA_DIR}/radarr:/config
+      - ${MEDIA_SHARE:?missing MEDIA_SHARE}:/data/media
+      - ${DOWNLOADS_SHARE:?missing DOWNLOADS_SHARE}:/downloads
+    networks:
+      - media
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:4.0.17
+    container_name: sonarr
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+      - "traefik.http.routers.sonarr.middlewares=security-headers@file"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8989/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      - ${APPDATA_DIR:?missing APPDATA_DIR}/sonarr:/config
+      - ${MEDIA_SHARE:?missing MEDIA_SHARE}:/data/media
+      - ${DOWNLOADS_SHARE:?missing DOWNLOADS_SHARE}:/downloads
+    networks:
+      - media
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:1.5.6
+    container_name: bazarr
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`bazarr.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.bazarr.entrypoints=websecure"
+      - "traefik.http.routers.bazarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+      - "traefik.http.routers.bazarr.middlewares=security-headers@file"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:6767/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      - ${APPDATA_DIR:?missing APPDATA_DIR}/bazarr:/config
+      # Bazarr writes sidecar subtitle files alongside the media -> RW.
+      # (Deviates from the issue brief's ':ro', which would break subtitle saving.)
+      - ${MEDIA_SHARE:?missing MEDIA_SHARE}:/data/media
+    networks:
+      - media
+
+  profilarr:
+    image: santiagosayshey/profilarr:v1.1.4
+    container_name: profilarr
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.profilarr.rule=Host(`profilarr.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.profilarr.entrypoints=websecure"
+      - "traefik.http.routers.profilarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.profilarr.loadbalancer.server.port=6868"
+      - "traefik.http.routers.profilarr.middlewares=security-headers@file"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:6868/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    environment:
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      - ${APPDATA_DIR:?missing APPDATA_DIR}/profilarr:/config
+    networks:
+      - media
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:2.7.3
+    container_name: jellyseerr
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyseerr.rule=Host(`jellyseerr.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.jellyseerr.entrypoints=websecure"
+      - "traefik.http.routers.jellyseerr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.jellyseerr.loadbalancer.server.port=5055"
+      - "traefik.http.routers.jellyseerr.middlewares=security-headers@file"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5055/api/v1/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    environment:
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      - ${APPDATA_DIR:?missing APPDATA_DIR}/jellyseerr:/app/config
     networks:
       - media
