@@ -1,6 +1,6 @@
 ---
 title: Jellyfin over the mesh — internal Traefik + NetBird + the compose-stack role
-status: open
+status: in-progress
 priority: high
 created: 2026-06-27
 closed: null
