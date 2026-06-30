@@ -1,10 +1,10 @@
 ---
 title: Data tier — btrfs raid1 SSD mirror with nodatacow scratch subvolumes
-status: in-progress
+status: done
 priority: high
 created: 2026-06-29
-closed: null
-labels: [epic:storage, needs-human]
+closed: 2026-06-30
+labels: [epic:storage]
 ---
 
 ## Description
@@ -60,22 +60,26 @@ rebalances). Building the tier itself is fully automatable from krypton. Briefed
       both `KINGSTON SUV400S37480G` 480 GB — overall-health PASSED, 0 reallocated/
       pending/uncorrectable, ~95–96 % life left, extended self-test completed
       without error. See the BUILD-LOG entry for 2026-06-29.
-- [ ] A btrfs raid1 filesystem spans both SSDs and survives a reboot, mounted at a
-      stable location. **Built + verified 2026-06-30:** label `helium-ssd`, 2 devices
-      (sde, sdf), Data/Metadata/System all RAID1, mounted by fs UUID at `/data/ssd/*`.
-      **Reboot survival pending human:** after `sudo reboot`, check `findmnt /data/ssd/appdata`
-      returns a mount — an *absent* mount is the failure (multi-device btrfs needs udev's
-      `btrfs device ready` to see BOTH sde+sdf before systemd gives up, and `nofail` means
-      a failed scan boots silently with the pool unmounted). If missing, the fix is on the
-      device-scan side (`btrfs device scan`, check the btrfs-progs udev rule fired), NOT the
-      fstab — the fstab is verified correct.
+- [x] A btrfs raid1 filesystem spans both SSDs and survives a reboot, mounted at a
+      stable location. **Built + verified 2026-06-30:** label `helium-ssd`, 2 devices,
+      Data/Metadata/System all RAID1, mounted by fs UUID at `/data/ssd/*`.
+      **Reboot survival verified 2026-06-30:** survived two reboots; all 5 subvols
+      auto-mounted both times. The second reboot reshuffled enumeration (the SSD moved
+      `sde`→`sdd`, bumping the SAS letters) and the pool still mounted cleanly — live
+      proof the UUID-fstab + `ata-*`/`wwn-*` by-id design survives device-letter churn.
 - [x] Precious subvolumes (appdata, Immich, Paperless) carry full CoW + checksums;
       the scratch subvolumes (downloads, transcode cache) are nodatacow
       (`chattr +C` confirmed) and excluded from checksumming. **Verified 2026-06-30:**
       `lsattr -d` shows `C` on downloads/transcode, clean on appdata/immich/paperless.
-- [ ] A simulated single-drive loss is survived with data intact (mirror degrades,
-      not fails). **Pending human (console):** offline one SSD, `mount -o degraded`,
-      confirm data intact, re-add + `btrfs balance ... -dconvert=raid1 -mconvert=raid1`.
+- [x] A simulated single-drive loss is survived with data intact (mirror degrades,
+      not fails). **Verified 2026-06-30 (drill on the empty pool):** wrote a hashed
+      canary while healthy, stopped the stack + unmounted, offlined one SSD
+      (`echo 1 > /sys/block/sdX/device/delete`), mounted `-o degraded,ro` from the lone
+      surviving device — `btrfs show` reported *"Some devices missing"* and the canary's
+      sha256 still matched (data intact). Re-added the device by reboot, `btrfs balance
+      -dconvert=raid1 -mconvert=raid1` (relocated 5/5 chunks), back to 2-device RAID1 with
+      device stats all-0. Read-only degraded mount was deliberate — a degraded *rw* mount
+      writes non-raid1 `single` chunks.
 - [x] The tier is built by an idempotent Ansible storage role run from krypton.
       **Verified 2026-06-30:** `ansible/roles/storage_ssd` run via `--tags storage_ssd`;
       a clean second run reports `changed=0`.
