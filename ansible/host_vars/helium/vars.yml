@@ -58,6 +58,6 @@ jellyfin_pgid: 1003
 #   getent group render | cut -d: -f3
 # then replace the placeholder. The assert in roles/compose_stack fails the deploy
 # until this is set, so jellyfin never starts with a wrong/root group.
-jellyfin_render_gid: 99999   # PLACEHOLDER — set to helium's real render gid before deploy
-# needs-human: helium's LAN NIC name (`ip -o link`), for the DOCKER-USER LAN-drop rule.
-compose_lan_iface: PLACEHOLDER   # e.g. enp1s0 — set before deploy (see firewall.yml)
+jellyfin_render_gid: 992   # helium's render group (getent group render), for iGPU/QuickSync
+# helium's LAN NIC name (`ip -o link`), for the DOCKER-USER LAN-drop rule.
+compose_lan_iface: eno2   # active Intel I210 port = default route (eno1/I219 is down)
