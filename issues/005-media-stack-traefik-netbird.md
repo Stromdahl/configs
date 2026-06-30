@@ -28,6 +28,14 @@ Stand the stack up with fresh config here; migrating real library data and *arr
 state is a separate cutover slice. Jellyfin reads its media from the HDD pool
 mount; downloads/transcode cache live on the SSD tier.
 
+**Note — Docker bypasses ufw.** Containers started with published ports (`-p`)
+insert their own iptables rules *ahead* of ufw, so the base role's default-deny
+does **not** cover them — a published port is reachable on the LAN regardless of
+ufw. For the all-private model to actually hold (not just against the public
+internet), published ports must bind to loopback / the NetBird mesh interface, or
+`DOCKER-USER` rules must reinstate the default-deny. This is plumbing every later
+service reuses, so it belongs in this first slice.
+
 Depends on `issues/002` (docker host), `issues/003` (the pool the media mount
 comes from), and `issues/011` (the data-tier mirror the downloads/transcode cache
 and appdata live on).
@@ -37,6 +45,9 @@ and appdata live on).
 - [ ] Each service is reachable at its `*.home.stromdahl.tech` URL **over the
       NetBird mesh** with a valid (non-self-signed) TLS certificate.
 - [ ] Nothing is reachable from the public internet; no router port-forward exists.
+- [ ] No container-published port is exposed on the **LAN** by Docker bypassing
+      ufw — published ports bind to loopback / the NetBird interface (or
+      `DOCKER-USER` rules reinstate the default-deny), verified from another LAN host.
 - [ ] gluetun reports the VPN egress IP, and qBittorrent's traffic egresses through
       it (kill-switch verified).
 - [ ] Jellyfin transcodes using the iGPU (QuickSync).
