@@ -4,13 +4,16 @@
 #   cd ansible
 #   ansible-galaxy collection install -r requirements.yml -p galaxy/collections
 #   ansible-galaxy role install -r requirements.yml -p galaxy/roles
+# Versions are pinned exactly (not >= floors) so the control node is reproducible:
+# a floor lets a force-reinstall silently jump majors (e.g. community.general 11→13)
+# away from what was verified. Bump these deliberately, then re-verify on helium.
 collections:
   - name: community.sops
-    version: ">=2.2.2"
+    version: "2.2.2"
   - name: community.general
-    version: ">=11.0.0"
+    version: "11.2.1"
   - name: ansible.posix
-    version: ">=2.1.0"
+    version: "2.1.0"
 
 roles:
   - name: geerlingguy.docker
