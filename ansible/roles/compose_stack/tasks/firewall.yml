@@ -67,6 +67,7 @@
     in_interface: lo
     jump: RETURN
     comment: "compose_stack: allow loopback"
+  register: _du_lo
 
 - name: "DOCKER-USER: allow NetBird mesh interface (wt0)"
   become: true
@@ -76,6 +77,7 @@
     in_interface: wt0
     jump: RETURN
     comment: "compose_stack: allow NetBird mesh (wt0)"
+  register: _du_wt0
 
 - name: "DOCKER-USER: allow ESTABLISHED/RELATED (container outbound responses)"
   become: true
@@ -87,6 +89,7 @@
       - RELATED
     jump: RETURN
     comment: "compose_stack: allow outbound-initiated responses"
+  register: _du_est
 
 - name: "DOCKER-USER: drop NEW connections from LAN NIC"
   become: true
@@ -100,6 +103,7 @@
       - NEW
     jump: DROP
     comment: "compose_stack: drop new LAN conns (Docker-ufw bypass fix)"
+  register: _du_drop
 
 # Make iptables rules persist across reboots via iptables-persistent.
 # This installs the package if missing and saves the current ruleset.
@@ -109,9 +113,16 @@
     name: iptables-persistent
     state: present
     update_cache: false
+  register: _iptables_persistent
 
+# Only persist when something actually changed, so a clean re-run is changed=0.
+# The four DOCKER-USER inserts are existence-idempotent (the iptables module
+# checks with -C), so on a no-op run they all report ok and the save is skipped.
 - name: Save iptables rules (ipv4)
   become: true
   ansible.builtin.command:
     cmd: netfilter-persistent save
+  when: >-
+    _du_lo.changed or _du_wt0.changed or _du_est.changed or
+    _du_drop.changed or _iptables_persistent.changed
   changed_when: true

@@ -18,13 +18,15 @@
     state: present
     update_cache: false
 
+# No force: re-fetching every run reports changed on an otherwise no-op run.
+# The dearmor step below is guarded by `creates:`, so the keyring is built
+# once; this staged .asc only needs to exist for that first dearmor.
 - name: Fetch netbird GPG key (armored) to a temp file
   become: true
   ansible.builtin.get_url:
     url: https://pkgs.netbird.io/debian/public.key
     dest: /tmp/netbird-public.key.asc
     mode: "0644"
-    force: true
 
 - name: Dearmor netbird GPG key into the system keyring
   become: true
