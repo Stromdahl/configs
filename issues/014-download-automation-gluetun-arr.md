@@ -1,6 +1,6 @@
 ---
 title: Download automation — gluetun + qBittorrent + *arr + Jellyseerr behind the mesh
-status: open
+status: in-progress
 priority: medium
 created: 2026-06-30
 closed: null
