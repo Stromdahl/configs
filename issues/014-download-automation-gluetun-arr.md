@@ -1,9 +1,9 @@
 ---
 title: Download automation — gluetun + qBittorrent + *arr + Jellyseerr behind the mesh
-status: in-progress
+status: done
 priority: medium
 created: 2026-06-30
-closed: null
+closed: 2026-07-01
 labels: [epic:services, needs-human]
 ---
 
@@ -41,12 +41,12 @@ this all plugs into).
 
 ## Acceptance criteria
 
-- [ ] gluetun reports the VPN egress IP, and qBittorrent's traffic egresses through
+- [x] gluetun reports the VPN egress IP, and qBittorrent's traffic egresses through
       it (kill-switch verified: stopping gluetun kills qBittorrent connectivity).
-- [ ] Each *arr service and Jellyseerr is reachable at its `*.home.stromdahl.tech`
+- [x] Each *arr service and Jellyseerr is reachable at its `*.home.stromdahl.tech`
       URL over the mesh with a valid cert; nothing is publicly reachable, and no
       published port leaks on the LAN (the `issues/005` Docker/ufw fix holds).
-- [ ] The *arr stack reads the media pool and writes downloads to the SSD scratch
+- [x] The *arr stack reads the media pool and writes downloads to the SSD scratch
       tier; config (appdata) lives on the SSD precious tier.
-- [ ] The services are brought up by the Ansible compose-stack role from krypton,
+- [x] The services are brought up by the Ansible compose-stack role from krypton,
       with secrets sourced from sops.
