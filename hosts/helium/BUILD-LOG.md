@@ -589,3 +589,43 @@ gluetun Mullvad WireGuard credential (needs-human). Both run/overlap as planned.
 3. **Cleanup when 008 closes:** unmount `/mnt/neon-src` on neon-rescue; remove the
    ephemeral key (`/root/.ssh/neon_migrate*` on helium + the line in neon-rescue's
    authorized_keys).
+
+## 2026-07-01 — issue 014 unblocked: Proton WireGuard tunnel live (kill-switch verified)
+
+**State at end of session:** the gluetun VPN tier is **up and healthy**. The dead
+Mullvad credential is replaced with a **Proton WireGuard** key, and qBittorrent's
+egress now runs through the Proton tunnel. issue 014 is **machine-side complete**;
+only first-boot app config remains.
+
+### Why this unblocked (and the cost/benefit call)
+The prior "gluetun won't pass traffic" block was a **dead credential, not a config
+fault**. Cost/benefit review with the user: keep the VPN (privacy insurance vs. the
+Swedish copyright-troll settlement-letter mill; **~zero marginal cost** — a Proton
+sub is already owned) but **drop the port-forwarding chase** — PF only buys seeding,
+which 014 explicitly dropped, so a plain Proton WireGuard config (NAT-PMP OFF) is
+all that's needed. The Mullvad->Proton migration was already the right direction.
+
+### Wiring
+- Proton WireGuard config generated (device "Helium", GNU/Linux, NAT-PMP OFF).
+- `PrivateKey` + `Address` (`10.2.0.2/32`) -> `wireguard_private_key` /
+  `wireguard_address` in `ansible/host_vars/helium/secrets.sops.yml` via
+  `sops set --value-stdin` (key never hit a terminal/transcript). Commit `992916f`.
+- `gluetun_vpn_provider: protonvpn` / `gluetun_server_countries: Sweden` were
+  already set; the Proton key is **account-wide**, so gluetun roams within Sweden
+  regardless of the server the downloaded config named (it was `CH-18-TOR` — a Tor
+  server, irrelevant since gluetun selects by country).
+- Deployed `--tags compose,services` from krypton: `ok=27 changed=3 failed=0`.
+
+### Verified (read-only, from krypton)
+| Check | Result |
+|---|---|
+| gluetun | **healthy** (healthcheck passes only once the tunnel carries traffic) |
+| qbittorrent / prowlarr | **healthy**; flaresolverr health starting |
+| Tunnel egress | qbit exits via a **Proton IP** (`31.13.191.67`), **distinct from helium's home WAN** — torrent traffic is masked |
+| Kill-switch | **structural**: qbit uses `network_mode: service:gluetun`, so gluetun down = qbit has no network stack (Docker-guaranteed; not separately drilled) |
+
+### Remaining (first-boot app config — out of 014's machine-side scope)
+- qBittorrent WebUI creds; Prowlarr indexers (+ flaresolverr for CF-gated ones);
+  *arr root folders `/data/media/{movies,tv}` + download client `gluetun:8080`;
+  profilarr TRaSH sync. Then close 014.
+- (008 library rsync tracked separately.)
