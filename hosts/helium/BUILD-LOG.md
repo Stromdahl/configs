@@ -687,3 +687,12 @@ Jellyseerr -> *arr -> Prowlarr -> qBittorrent(VPN) -> import -> Jellyfin.
 **issue 014 — all 4 ACs verified -> closing.** Remaining items are per-user prefs, not
 ACs: Bazarr language profile + subtitle-provider account; profilarr/TRaSH quality
 profiles (014 explicitly scoped TRaSH import out of its ACs); private-tracker indexers.
+
+### (same session) Bazarr — Swedish-first subtitle language profile
+Per user: Swedish primary, English fallback. Enabled `sv`+`en` and created profile 1
+"Swedish/English" (items sv then en) directly in Bazarr's SQLite (`table_settings_languages`,
+`table_languages_profiles` — no REST endpoint for profiles), then restarted Bazarr and set
+it as the **default profile for series + movies** via the settings API. Bazarr re-saved the
+profile on load (added its own `audio_only_include` field) = accepted/active. Not yet
+subbing anything: (a) needs a subtitle-provider account, (b) Radarr/Sonarr libraries are
+empty until the migrated media is imported — new items inherit the default profile.
