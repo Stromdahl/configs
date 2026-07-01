@@ -629,3 +629,49 @@ all that's needed. The Mullvad->Proton migration was already the right direction
   *arr root folders `/data/media/{movies,tv}` + download client `gluetun:8080`;
   profilarr TRaSH sync. Then close 014.
 - (008 library rsync tracked separately.)
+
+## 2026-07-01 (later) — issue 014 app config wired via API; NetBird roaming access validated
+
+**State at end of session:** the download-automation stack is **configured and
+functional end-to-end** — qBittorrent, Radarr, Sonarr, Prowlarr, and Bazarr are
+wired together via their REST APIs (idempotent, schema-driven). issue 014 is
+**machine + plumbing complete**; only per-user config (accounts / quality profiles)
+remains. Bonus: NetBird roaming-peer access validated live (issue 005 AC).
+
+### NetBird roaming validation (issue 005 needs-human AC — DONE)
+Mid-session krypton left the home LAN, so `192.168.1.191` went unreachable. Not a
+helium outage — the exact roaming case NetBird exists for. After `netbird up` on
+krypton (mesh IP `100.65.64.45`), helium was reachable at its mesh IP **`100.65.22.72`**
+over the tunnel (SSH + container APIs); helium uptime (~15 h) confirmed it never went
+down. The remaining app config was completed over the mesh. -> issue 005's roaming
+NetBird-peer AC is verified.
+
+### App configuration (all via REST API, on-box keys, idempotent)
+Driver read each app's API key on the box (never to a terminal); the qBit password
+streamed from sops via `sops exec-env` stdin. Field names were introspected from each
+`/schema` endpoint first (caught `movieCategory`/`tvCategory`, not `category`).
+- **qBittorrent:** permanent WebUI password set via API + stored in sops
+  (`qbittorrent_webui_password`; seed conf is `force:false` so it survives redeploys).
+- **Radarr:** root `/data/media/movies`; qBit download client (host `gluetun:8080`,
+  category `radarr`) — POST 201 = live connectivity test passed.
+- **Sonarr:** root `/data/media/tv`; qBit download client (category `sonarr`).
+- **Prowlarr:** FlareSolverr proxy (`http://localhost:8191`, tagged); Radarr + Sonarr
+  apps (`fullSync`, callback `http://gluetun:9696`, servers `http://radarr:7878` /
+  `http://sonarr:8989`); 2 starter public indexers (The Pirate Bay, YTS).
+- **Sync verified:** `ApplicationIndexerSync` -> Radarr got TPB+YTS, Sonarr got TPB
+  (YTS is movies-only, correctly category-filtered out of Sonarr).
+- **Bazarr:** linked to Radarr + Sonarr (`use_*` on, keys set) via settings API (204).
+
+### Internal wiring reference (for future edits)
+- qbit/prowlarr/flaresolverr share gluetun's netns: among themselves `localhost`;
+  from the bridge *arr, reach them as `gluetun:<port>` (8080/9696/8191).
+- bridge *arr resolve each other + `gluetun` by docker DNS name.
+- No remote path mapping: qbit + *arr both mount downloads at `/downloads`.
+
+### Remaining — per-user (accounts / preferences), not blocking the pipeline
+- **Bazarr:** create a language profile (e.g. English + Swedish) + add a subtitle
+  provider account (needs creds) — done together in the Bazarr UI.
+- **Jellyseerr:** first-run wizard (links Jellyfin admin + Radarr/Sonarr) — UI/creds.
+- **Profilarr/TRaSH:** import quality profiles + custom formats via profilarr's UI
+  (deliberately NOT API-imported -- profilarr owns that state).
+- **Indexers:** TPB/YTS are a smoke-test starter set; add private trackers (creds).
