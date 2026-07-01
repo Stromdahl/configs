@@ -675,3 +675,15 @@ streamed from sops via `sops exec-env` stdin. Field names were introspected from
 - **Profilarr/TRaSH:** import quality profiles + custom formats via profilarr's UI
   (deliberately NOT API-imported -- profilarr owns that state).
 - **Indexers:** TPB/YTS are a smoke-test starter set; add private trackers (creds).
+
+### (same session) Jellyseerr wired — full request loop closed; issue 014 ACs met
+User completed the Jellyfin sign-in wizard (the one credential step, done in the UI so
+the Jellyfin password stayed out of automation). Then over the mesh: read Jellyseerr's
+API key on-box and added **Radarr** (HD-1080p -> `/data/media/movies`) + **Sonarr**
+(HD-1080p -> `/data/media/tv`) via `/api/v1/settings/{radarr,sonarr}` (both HTTP 201;
+Jellyseerr auto-detected Sonarr v4, no language profile). Request loop is now closed:
+Jellyseerr -> *arr -> Prowlarr -> qBittorrent(VPN) -> import -> Jellyfin.
+
+**issue 014 — all 4 ACs verified -> closing.** Remaining items are per-user prefs, not
+ACs: Bazarr language profile + subtitle-provider account; profilarr/TRaSH quality
+profiles (014 explicitly scoped TRaSH import out of its ACs); private-tracker indexers.
