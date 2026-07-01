@@ -696,3 +696,17 @@ it as the **default profile for series + movies** via the settings API. Bazarr r
 profile on load (added its own `audio_only_include` field) = accepted/active. Not yet
 subbing anything: (a) needs a subtitle-provider account, (b) Radarr/Sonarr libraries are
 empty until the migrated media is imported — new items inherit the default profile.
+
+### (same session) Library imported into Radarr + Sonarr (in-place, no re-download)
+Imported the migrated `/data/media` library via API: **15 movies -> Radarr, 17 series ->
+Sonarr**. Added under the **Any** quality profile (library has 2160p remuxes; HD-1080p
+would flag them cutoff-unmet and a future "search cutoff-unmet" could try to replace 4K
+with 1080p), each with its **exact on-disk path** (adopts existing files, no orphaning),
+downloads disabled (`searchForMovie`/`searchForMissingEpisodes` false; Sonarr
+`monitor=existing`). Folder->metadata matches all clean (year-matched; even
+`The Martian ... [YTS.MX]` resolved). Verified after RefreshMovie/RefreshSeries:
+**15/15 movies hasFile, 17/17 series = 249 episode files adopted, both queues empty
+(zero accidental grabs).** Bazarr will sync these on its next run and apply the
+Swedish-first default profile; Jellyseerr now dedupes requests against owned titles.
+This completes the media-stack bring-up: acquire (014) + serve (Jellyfin/005) + the
+migrated library (008) are all live and integrated.
