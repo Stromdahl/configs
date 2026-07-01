@@ -770,3 +770,17 @@ health, and API-fed widgets. All four ACs verified; issue 018 **done**.
   live). Bump `widgets.yaml` HDD `refresh` higher if it ever wakes them.
 - Optional later: Jellyfin/Jellyseerr/Prowlarr/Bazarr widgets (each needs another
   on-box key into sops) — currently link + status only.
+
+### (same session) SnapRAID sync raced a live import — pipeline proven, parity deferred to nightly timer
+Manual `snapraid sync` after the library import ran 100% (874 GB in 3h55m, **0 io / 0 data
+errors, HBA ioc_reset_count=0**) but exited non-zero with ~480k "file errors" +
+"cannot modify data disk during a sync". Cause was **not** corruption: a Jellyseerr request
+for the full *Agatha Christie's Poirot* series (13 seasons) was downloading through the stack
+(VPN -> qBittorrent -> Sonarr) and Sonarr was importing episodes into the HDD pool *during*
+the sync (27/70 eps landed, 43 more queued at 100%). Live writes to `/mnt/disk{1,2}` = files
+changing mid-sync = expected file-error skips (re-caught next run), not data loss.
+**Lesson:** never `snapraid sync` while the pool is being actively imported to; let the
+scheduled timer handle it during a quiet window. The `snapraid-sync.timer` (re-enabled this
+session) fires daily **03:00** (`Persistent=true`) — that quiet-window run completes clean
+parity over the migrated library + new content automatically. Side note: this is the first
+**end-to-end proof of the acquire pipeline via a real user request.**
