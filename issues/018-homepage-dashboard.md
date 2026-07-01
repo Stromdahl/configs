@@ -1,9 +1,9 @@
 ---
 title: Single-pane dashboard for the stack (Homepage)
-status: open
+status: done
 priority: medium
 created: 2026-07-01
-closed: null
+closed: 2026-07-01
 labels: [epic:services]
 ---
 
@@ -26,10 +26,20 @@ benefits from `issues/014` (the services it surfaces).
 
 ## Acceptance criteria
 
-- [ ] Homepage is reachable at its `*.home.stromdahl.tech` subdomain over the
+- [x] Homepage is reachable at its `*.home.stromdahl.tech` subdomain over the
       mesh with a valid cert; not reachable publicly.
-- [ ] It shows grouped links and live health for the running stack services.
-- [ ] At least the *arr queue and tier disk-usage widgets render live data
+      → `homepage.home.stromdahl.tech` resolves to helium's mesh IP (100.65.22.72)
+      from a roaming krypton; curl over the tunnel returns HTTP 200 with a valid
+      LE chain (`ssl_verify=0`). Public boundary unchanged (no port-forward).
+- [x] It shows grouped links and live health for the running stack services.
+      → 4 groups (Media / Automation / Downloads / Infrastructure) + a Smart Home
+      bookmark; per-service status dots fed by the docker-socket-proxy provider.
+- [x] At least the *arr queue and tier disk-usage widgets render live data
       pulled via API.
-- [ ] Deployed via the Ansible compose-stack role with config on the SSD tier
+      → Radarr + Sonarr queue widgets (API 200, authed) and SSD (`/app/config`)
+      + HDD (`/mnt/media` mergerfs union) disk widgets; qBittorrent speed too.
+- [x] Deployed via the Ansible compose-stack role with config on the SSD tier
       and sops-sourced API keys.
+      → `homepage` service in the compose template; config verbatim-copied to
+      `/data/ssd/appdata/homepage`; radarr/sonarr keys + qbit pass from sops via
+      `{{HOMEPAGE_VAR_*}}`.

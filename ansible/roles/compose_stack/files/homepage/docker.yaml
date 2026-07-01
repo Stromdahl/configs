@@ -1,0 +1,6 @@
+# Docker provider (issue 018). Homepage reads container state over TCP from the
+# existing tecnativa/docker-socket-proxy (CONTAINERS=1 is all it needs — non-swarm),
+# never the raw socket. Services reference this as `server: my-docker`.
+my-docker:
+  host: docker-socket-proxy
+  port: 2375

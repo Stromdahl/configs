@@ -710,3 +710,63 @@ downloads disabled (`searchForMovie`/`searchForMissingEpisodes` false; Sonarr
 Swedish-first default profile; Jellyseerr now dedupes requests against owned titles.
 This completes the media-stack bring-up: acquire (014) + serve (Jellyfin/005) + the
 migrated library (008) are all live and integrated.
+
+## 2026-07-01 (later) — issue 018: Homepage single-pane dashboard, live end-to-end
+
+Added **Homepage** (`ghcr.io/gethomepage/homepage:v1.13.2`) to the compose stack as
+the stack's front door at **`homepage.home.stromdahl.tech`** — grouped links, live
+health, and API-fed widgets. All four ACs verified; issue 018 **done**.
+
+### What was added (all via the compose_stack role — config-as-code)
+- **Service** in `docker-compose.yml.j2`: non-root (jellyfin uid/gid via PUID/PGID),
+  on `media` + `socket_proxy` nets, Traefik router (LE cert, `security-headers@file`,
+  port 3000), **no published ports**. HDD union bind-mounted `:ro` at `/mnt/media` for
+  the disk widget. No container healthcheck (Homepage's `HOMEPAGE_ALLOWED_HOSTS` would
+  reject a localhost-Host probe; the image ships its own healthcheck — reports healthy).
+- **Config** `roles/compose_stack/files/homepage/{settings,services,widgets,docker,
+  bookmarks}.yaml`, **copied verbatim** (never templated) so the `{{HOMEPAGE_VAR_*}}`
+  placeholders survive Jinja and resolve at runtime from the container env.
+- **Secrets**: `radarr_api_key` + `sonarr_api_key` added to `secrets.sops.yml` (read
+  off the box via `docker exec <arr> cat /config/config.xml` piped into `sops set` —
+  values never hit the terminal); qbit WebUI pass reused from 014. Rendered into the
+  `.env` and injected as `HOMEPAGE_VAR_*`.
+
+### Gotchas hit (both caught before reaching prod)
+- **Jinja parses `#` comments.** A `{{HOMEPAGE_VAR_*}}` written in a *comment* in the
+  compose **template** blew up Ansible's Jinja pass (`unexpected end of print
+  statement`) even though `docker compose config` was happy (it skips Jinja). Fix: no
+  `{{ }}` in the templated compose file's comments. The config *files* are `copy`, not
+  `template`, so their `{{...}}` is fine. → run `--check` (it caught this), not just
+  `docker compose config`.
+- **BusyBox grep in the *arr containers** has no `-P`; extract the ApiKey with GNU grep
+  on krypton (`docker exec … cat | grep -oP`), not inside the container.
+
+### Verification (over the mesh, krypton roaming off-LAN)
+- Reachable: `homepage.home.stromdahl.tech` → `100.65.22.72`; curl HTTP **200**, valid
+  LE chain (`ssl_verify=0`). Container **healthy**, logs clean.
+- **Widgets actually render** (probed Homepage's own client proxy, not just the upstream
+  API): `/api/services/proxy` for Radarr → `have:15` + real titles; Sonarr → the 17-series
+  list; `/api/widgets/resources?type=disk&target=…` → SSD tier `/app/config` (btrfs, 480G,
+  10%) and HDD tier `/mnt/media` (mergerfs, 23.8T, 4%), plus cpu/memory. So the key
+  substitution, widget config, and data path are all confirmed end-to-end — not asserted.
+  (qBittorrent card not headlessly probeable — bespoke handler; confirm in the browser.)
+- Docker status dots via the existing socket-proxy (CONTAINERS=1), reachable from the
+  homepage container.
+
+### Idempotency
+- Homepage itself is **idempotent**: repeat `--tags compose` runs leave it untouched, and
+  all config-file/template/.env tasks report `ok`.
+- BUT every run reports `changed=1` on "Bring up the compose stack" because the three
+  **gluetun-netns services (qbittorrent, prowlarr, flaresolverr)** are recreated on every
+  `docker compose up` (`network_mode: service:gluetun` gets re-resolved each `up`). This
+  is **pre-existing to the 014 stack, not introduced by 018** — but it breaks the
+  README's "clean second run = no changes" invariant and briefly restarts qbit each
+  deploy (kill-switch stays intact). Left as-is; a future fix would pin/quiet those three.
+
+### Follow-ups (not AC blockers)
+- **HDD spin-down (004):** the disk widget statvfs's `/mnt/media` on a 15-min poll
+  (long by design). statvfs is normally superblock-cached, but confirm the two data
+  drives stay in standby with Homepage running (`hdparm -C` needs sudo — not checked
+  live). Bump `widgets.yaml` HDD `refresh` higher if it ever wakes them.
+- Optional later: Jellyfin/Jellyseerr/Prowlarr/Bazarr widgets (each needs another
+  on-box key into sops) — currently link + status only.

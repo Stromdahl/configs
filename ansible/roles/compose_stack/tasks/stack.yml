@@ -105,6 +105,37 @@
     force: false
   when: arr_appdata_apps is defined
 
+# --- issue 018: Homepage dashboard config -----------------------------------
+# Config dir on the SSD appdata tier, owned by the jellyfin uid/gid so Homepage
+# (running as PUID/PGID) can read its config and write its logs subdir.
+- name: Create Homepage config dir under ssd appdata (issue 018)
+  become: true
+  ansible.builtin.file:
+    path: "{{ ssd_pool_mount }}/appdata/homepage"
+    state: directory
+    owner: "{{ jellyfin_puid }}"
+    group: "{{ jellyfin_pgid }}"
+    mode: "0750"
+
+# Copied verbatim (NOT templated): the files carry {{HOMEPAGE_VAR_*}} placeholders
+# that Homepage resolves at runtime — Jinja must not touch them. force (default
+# true) re-asserts the committed config each run; Homepage's own runtime files
+# (logs/) live alongside and are left untouched.
+- name: Deploy Homepage config files (issue 018)
+  become: true
+  ansible.builtin.copy:
+    src: "homepage/{{ item }}"
+    dest: "{{ ssd_pool_mount }}/appdata/homepage/{{ item }}"
+    owner: "{{ jellyfin_puid }}"
+    group: "{{ jellyfin_pgid }}"
+    mode: "0640"
+  loop:
+    - settings.yaml
+    - services.yaml
+    - widgets.yaml
+    - docker.yaml
+    - bookmarks.yaml
+
 # .env rendered to 0600 — contains Cloudflare DNS token + Traefik dashboard
 # basic-auth hash. no_log keeps secret values out of the Ansible output.
 - name: Render .env from template (sops secrets + config vars)

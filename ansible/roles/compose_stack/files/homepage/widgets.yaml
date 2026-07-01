@@ -1,0 +1,27 @@
+# Info widgets shown in the header (issue 018).
+#
+# Disk usage (018 AC) is read by statvfs inside the container:
+#   - SSD tier  -> /app/config is bind-mounted from the SSD btrfs pool, so its
+#                  free space IS the SSD tier's (no extra mount, no secrets exposed).
+#   - HDD tier  -> /mnt/media is the mergerfs union (/srv/media) mounted :ro.
+#                  refresh is deliberately long: statvfs is served from the cached
+#                  superblock, but a long poll keeps well clear of HDD spin-down (004).
+
+- resources:
+    label: helium
+    cpu: true
+    memory: true
+    uptime: true
+    refresh: 30000
+
+- resources:
+    label: SSD tier
+    disk: /app/config
+    diskUnits: bytes
+    refresh: 60000
+
+- resources:
+    label: HDD tier
+    disk: /mnt/media
+    diskUnits: bytes
+    refresh: 900000

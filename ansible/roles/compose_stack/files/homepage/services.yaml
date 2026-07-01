@@ -1,0 +1,92 @@
+# Service groups (issue 018). Copied verbatim — the {{HOMEPAGE_VAR_*}} placeholders
+# are resolved by Homepage at runtime from the container's environment (rendered
+# from sops into the stack .env), NEVER by Ansible/Jinja.
+#
+# Two distinct URLs per service:
+#   href  = the user-clickable external URL through Traefik (hardcoded domain).
+#   widget.url = the INTERNAL address Homepage itself calls for live data. Homepage
+#     is on the `media` bridge, so it resolves peers by container name. qBittorrent
+#     and Prowlarr share gluetun's netns, so they are reached AT gluetun's name.
+#   server/container = docker status dot, keyed on the real container name.
+
+- Media:
+    - Jellyfin:
+        icon: jellyfin.png
+        href: https://jellyfin.home.stromdahl.tech
+        description: Media server
+        server: my-docker
+        container: jellyfin
+    - Jellyseerr:
+        icon: jellyseerr.png
+        href: https://jellyseerr.home.stromdahl.tech
+        description: Requests
+        server: my-docker
+        container: jellyseerr
+
+- Automation:
+    - Radarr:
+        icon: radarr.png
+        href: https://radarr.home.stromdahl.tech
+        description: Movies
+        server: my-docker
+        container: radarr
+        widget:
+          type: radarr
+          url: http://radarr:7878
+          key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
+          enableQueue: true
+    - Sonarr:
+        icon: sonarr.png
+        href: https://sonarr.home.stromdahl.tech
+        description: Series
+        server: my-docker
+        container: sonarr
+        widget:
+          type: sonarr
+          url: http://sonarr:8989
+          key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
+          enableQueue: true
+    - Bazarr:
+        icon: bazarr.png
+        href: https://bazarr.home.stromdahl.tech
+        description: Subtitles
+        server: my-docker
+        container: bazarr
+    - Profilarr:
+        icon: mdi-tune
+        href: https://profilarr.home.stromdahl.tech
+        description: Quality profiles
+        server: my-docker
+        container: profilarr
+
+- Downloads:
+    - qBittorrent:
+        icon: qbittorrent.png
+        href: https://qbittorrent.home.stromdahl.tech
+        description: Torrent client (VPN)
+        server: my-docker
+        container: qbittorrent
+        widget:
+          type: qbittorrent
+          url: http://gluetun:8080
+          username: "{{HOMEPAGE_VAR_QBIT_USER}}"
+          password: "{{HOMEPAGE_VAR_QBIT_PASS}}"
+    - Prowlarr:
+        icon: prowlarr.png
+        href: https://prowlarr.home.stromdahl.tech
+        description: Indexers
+        server: my-docker
+        container: prowlarr
+
+- Infrastructure:
+    - Traefik:
+        icon: traefik.png
+        href: https://traefik.home.stromdahl.tech
+        description: Reverse proxy
+        server: my-docker
+        container: traefik
+    - Gluetun:
+        icon: mdi-vpn
+        description: VPN tunnel (kill-switch)
+        server: my-docker
+        container: gluetun

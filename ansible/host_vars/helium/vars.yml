@@ -91,3 +91,9 @@ arr_pgid: "{{ jellyfin_pgid }}"
 # Per-app appdata dirs the compose_stack role creates + chowns before first start.
 # (gluetun/flaresolverr have no /config volume, so they are not listed.)
 arr_appdata_apps: [qbittorrent, prowlarr, radarr, sonarr, bazarr, profilarr, jellyseerr]
+
+# issue 018 — Homepage dashboard (homepage.{{ compose_domain }}). Config on the SSD
+# appdata tier; API-fed widgets pull live data over the media bridge. The widget
+# secrets live in secrets.sops.yml (radarr_api_key, sonarr_api_key,
+# qbittorrent_webui_password). The qBittorrent WebUI username is non-secret:
+qbittorrent_webui_username: admin

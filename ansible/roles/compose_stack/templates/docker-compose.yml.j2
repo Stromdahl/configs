@@ -140,6 +140,50 @@ services:
       - media
 
   # ===========================================================================
+  # issue 018 — Homepage: single-pane dashboard (grouped links + live health +
+  # API-fed widgets). On the `media` bridge (reaches every service by container
+  # name; qbit/prowlarr AT gluetun's name) AND `socket_proxy` (container status
+  # over TCP via docker-socket-proxy, never the raw socket). No published ports —
+  # reached only through Traefik at homepage.${DOMAIN}. Runs non-root as the
+  # jellyfin uid/gid (owns its config dir on the SSD appdata tier).
+  #   - Config files are copied verbatim by the role (issue 018); their
+  #     HOMEPAGE_VAR_* placeholders resolve from the environment below.
+  #   - No healthcheck: Homepage's HOMEPAGE_ALLOWED_HOSTS rejects a localhost
+  #     Host header, which a naive wget probe would send. restart + Traefik suffice.
+  homepage:
+    image: ghcr.io/gethomepage/homepage:v1.13.2
+    container_name: homepage
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homepage.rule=Host(`homepage.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.homepage.entrypoints=websecure"
+      - "traefik.http.routers.homepage.tls.certresolver=letsencrypt"
+      - "traefik.http.services.homepage.loadbalancer.server.port=3000"
+      - "traefik.http.routers.homepage.middlewares=security-headers@file"
+    environment:
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+      # Host-header allowlist (required since Homepage 0.9.13). Must match the
+      # Traefik router host exactly, or Homepage returns a 400.
+      - HOMEPAGE_ALLOWED_HOSTS=homepage.${DOMAIN:?missing DOMAIN}
+      # Secrets for the API-fed widgets, injected as HOMEPAGE_VAR_* and referenced
+      # as HOMEPAGE_VAR_* placeholders in services.yaml. Sourced from sops via .env.
+      - HOMEPAGE_VAR_RADARR_KEY=${RADARR_API_KEY:?missing RADARR_API_KEY}
+      - HOMEPAGE_VAR_SONARR_KEY=${SONARR_API_KEY:?missing SONARR_API_KEY}
+      - HOMEPAGE_VAR_QBIT_USER=${QBIT_WEBUI_USER:-admin}
+      - HOMEPAGE_VAR_QBIT_PASS=${QBIT_WEBUI_PASS:?missing QBIT_WEBUI_PASS}
+    volumes:
+      - ${HOMEPAGE_CONFIG_DIR:?missing HOMEPAGE_CONFIG_DIR}:/app/config
+      # Read-only mount of the HDD union so the resources widget can statvfs the
+      # HDD tier. (The SSD tier is read via /app/config, already on that pool.)
+      - ${MEDIA_SHARE:?missing MEDIA_SHARE}:/mnt/media:ro
+    networks:
+      - media
+      - socket_proxy
+
+  # ===========================================================================
   # issue 014 — download automation: gluetun + qBittorrent + *arr + Jellyseerr.
   # Adapted from neon's compose with these helium divergences:
   #   - Network gluetun_network -> media (the existing bridge from issue 005).

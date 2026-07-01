@@ -1,0 +1,26 @@
+# Homepage global settings (issue 018). Copied verbatim by the compose_stack
+# role to {{ ssd_pool_mount }}/appdata/homepage/settings.yaml — NOT templated,
+# so any {{HOMEPAGE_VAR_*}} placeholders in the sibling files survive intact.
+title: helium
+description: media stack — helium
+theme: dark
+color: slate
+headerStyle: clean
+
+# Status dot per service (fed by the docker provider in docker.yaml).
+statusStyle: dot
+
+# Group layout. Keys MUST match the top-level group names in services.yaml.
+layout:
+  Media:
+    style: row
+    columns: 2
+  Automation:
+    style: row
+    columns: 4
+  Downloads:
+    style: row
+    columns: 2
+  Infrastructure:
+    style: row
+    columns: 2
