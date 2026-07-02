@@ -97,3 +97,25 @@ arr_appdata_apps: [qbittorrent, prowlarr, radarr, sonarr, bazarr, profilarr, jel
 # secrets live in secrets.sops.yml (radarr_api_key, sonarr_api_key,
 # qbittorrent_webui_password). The qBittorrent WebUI username is non-secret:
 qbittorrent_webui_username: admin
+
+# issue 006 — Immich (private Google-Photos replacement). CPU-only ML on the i5-9400
+# (the RTX 2060 was pulled — no CUDA path). Library AND Postgres both live on the SSD
+# *precious* 'immich' subvol (CoW + checksums; small library, so checksums beat
+# write-amplification). immich-server runs as ROOT (Immich has no PUID/PGID) and
+# writes the library as root; the postgres image self-chowns its data dir on first
+# init — so neither bind dir is pre-chowned (left root-owned). Reached at
+# immich.{{ compose_domain }} behind the internal Traefik, LAN + mesh, never public.
+#
+# Pinned to a specific release for reproducibility. NOTE: v3.0.0 is the current stable
+# *major* (the task brief predated it and suggested v2.7.5). For a *fresh* install v3's
+# breaking changes (REST API; pgvecto.rs -> VectorChord) don't apply. To pin the more
+# matured v2.x line instead, set immich_version to a v2.x tag AND swap the postgres /
+# valkey image pins in roles/compose_stack/templates/docker-compose.yml.j2 to that
+# release's docker-compose.yml (v2.x used a different postgres image).
+immich_version: "v3.0.0"
+immich_upload_location: "{{ ssd_pool_mount }}/immich/library"   # -> /data/ssd/immich/library
+immich_db_location: "{{ ssd_pool_mount }}/immich/postgres"      # -> /data/ssd/immich/postgres
+immich_db_username: postgres      # POSTGRES_USER (superuser in the immich postgres image)
+immich_db_name: immich            # POSTGRES_DB / DB_DATABASE_NAME
+# immich_db_password: lives in secrets.sops.yml (needs-human — mint an [A-Za-z0-9]-only
+# value; the deploy fails closed until it exists).

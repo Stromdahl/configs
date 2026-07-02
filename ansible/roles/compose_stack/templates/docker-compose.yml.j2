@@ -5,8 +5,9 @@
 #
 # Services: docker-socket-proxy, traefik, jellyfin (issue 005) + gluetun,
 # qbittorrent, prowlarr, flaresolverr, radarr, sonarr, bazarr, profilarr,
-# jellyseerr (issue 014). Excluded vs neon: homer, the alpine `test` probe,
-# the commented `backup`.
+# jellyseerr (issue 014) + homepage (issue 018) + immich-server,
+# immich-machine-learning, immich-redis, immich-database (issue 006).
+# Excluded vs neon: homer, the alpine `test` probe, the commented `backup`.
 #
 # Divergences from neon's compose:
 #   - Network renamed gluetun_network -> media (plain bridge, no VPN dependency)
@@ -28,9 +29,14 @@ name: helium
 networks:
   media:
   socket_proxy:
+  # issue 006 — dedicated internal bridge for Immich's backends (db/redis/ML never
+  # join the shared media bridge); immich-server is dual-homed on media for Traefik.
+  immich:
 
 volumes:
   traefik_certs:
+  # issue 006 — Immich ML model cache (CLIP + face models); persist across redeploys.
+  immich_model_cache:
 
 secrets:
   cf_dns_api_token:
@@ -448,3 +454,106 @@ services:
       - ${APPDATA_DIR:?missing APPDATA_DIR}/jellyseerr:/app/config
     networks:
       - media
+
+  # ===========================================================================
+  # issue 006 — Immich: private Google-Photos replacement. Four services
+  # (server + machine-learning + valkey + postgres), mirroring the OFFICIAL
+  # immich-app release compose (v3.0.0) with these helium divergences:
+  #   - NO published ports. Upstream publishes 2283:2283; here immich-server is
+  #     reached only through Traefik at immich.${DOMAIN}. Under
+  #     compose_restrict_to_mesh=false a published port would be LAN-reachable
+  #     (there is no DOCKER-USER drop) — same rule the issue 014 services follow.
+  #   - CPU-only ML: the plain immich-machine-learning image (no -cuda/-openvino
+  #     suffix) and NO `extends: hwaccel.ml.yml` block = CPU inference (the default).
+  #     The RTX 2060 was pulled, so there is no CUDA path.
+  #   - valkey + postgres are renamed immich-redis / immich-database (upstream calls
+  #     them redis / database) so the generic names stay free for a future second
+  #     stack (Paperless, issue 007). DB_HOSTNAME/REDIS_HOSTNAME on immich-server are
+  #     set to the renamed hosts to match.
+  #   - env_file: .env is DROPPED (upstream sets it on server + ML): the shared
+  #     {{ compose_stack_dir }}/.env holds every stack's secrets, and env_file would
+  #     inject all of them into the Immich containers. immich-server gets an explicit
+  #     environment: block with only its own vars; ML needs none.
+  #   - The four services sit on a dedicated internal `immich` bridge (db/redis/ML
+  #     never touch the shared media bridge); immich-server is dual-homed on `media`
+  #     so Traefik can reach it. (socket_proxy is the precedent for isolating a
+  #     sensitive backend on its own network.)
+  #   - Library + Postgres bind to the SSD 'immich' precious subvol. immich-server
+  #     runs as root (no PUID/PGID) and writes the library as root; the postgres image
+  #     self-chowns its data dir on first init — so neither dir is pre-chowned.
+  #   - valkey + postgres pinned by digest exactly as the upstream release pins them
+  #     (the tested pair); server + ML pinned by ${IMMICH_VERSION}.
+  # Post-deploy human steps (needs-human): mint IMMICH_DB_PASSWORD into sops; add the
+  # instance in the phone app over the mesh + enable auto-backup; the first CPU bulk
+  # ML index (faces + CLIP smart-search) is slow — confirmed by observation over time.
+  # ===========================================================================
+
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:?missing IMMICH_VERSION}
+    container_name: immich_server
+    restart: unless-stopped
+    depends_on:
+      - immich-redis
+      - immich-database
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich.rule=Host(`immich.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.immich.entrypoints=websecure"
+      - "traefik.http.routers.immich.tls.certresolver=letsencrypt"
+      - "traefik.http.services.immich.loadbalancer.server.port=2283"
+      - "traefik.http.routers.immich.middlewares=security-headers@file"
+    environment:
+      # Discrete DB_* vars (not DB_URL). Hostnames are the renamed service names.
+      - DB_HOSTNAME=immich-database
+      - DB_USERNAME=${IMMICH_DB_USERNAME:-postgres}
+      - DB_PASSWORD=${IMMICH_DB_PASSWORD:?missing IMMICH_DB_PASSWORD}
+      - DB_DATABASE_NAME=${IMMICH_DB_NAME:-immich}
+      - REDIS_HOSTNAME=immich-redis
+      # ML reached at the default http://immich-machine-learning:3003 (service kept
+      # at its upstream name, so no URL override needed).
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      # Library on the SSD 'immich' precious subvol. Internal media path is /data.
+      - ${IMMICH_UPLOAD_LOCATION:?missing IMMICH_UPLOAD_LOCATION}:/data
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - media    # Traefik reaches immich-server here
+      - immich   # db / redis / ML backends
+    # Uses the image's built-in healthcheck (upstream sets healthcheck.disable=false).
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:?missing IMMICH_VERSION}
+    container_name: immich_machine_learning
+    restart: unless-stopped
+    # CPU inference: plain image, NO `extends: hwaccel.ml.yml`. Models cached in a
+    # named volume so redeploys/re-pulls don't re-download the CLIP + face models.
+    volumes:
+      - immich_model_cache:/cache
+    networks:
+      - immich
+
+  immich-redis:
+    image: docker.io/valkey/valkey:9@sha256:4963247afc4cd33c7d3b2d2816b9f7f8eeebab148d29056c2ca4d7cbc966f2d9
+    container_name: immich_redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+    networks:
+      - immich
+
+  immich-database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    container_name: immich_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=${IMMICH_DB_PASSWORD:?missing IMMICH_DB_PASSWORD}
+      - POSTGRES_USER=${IMMICH_DB_USERNAME:-postgres}
+      - POSTGRES_DB=${IMMICH_DB_NAME:-immich}
+      - POSTGRES_INITDB_ARGS=--data-checksums
+    volumes:
+      # Postgres data on the SSD 'immich' precious subvol (deliberate: checksums beat
+      # write-amplification for a small library). The image self-chowns this on init.
+      - ${IMMICH_DB_LOCATION:?missing IMMICH_DB_LOCATION}:/var/lib/postgresql/data
+    shm_size: 128mb
+    networks:
+      - immich

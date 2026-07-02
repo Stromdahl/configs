@@ -136,6 +136,23 @@
     - docker.yaml
     - bookmarks.yaml
 
+# --- issue 006: Immich library + Postgres dirs on the SSD 'immich' precious subvol -
+# Both dirs are created root-owned and empty — NOT pre-chowned to a service uid:
+# immich-server runs as root (Immich has no PUID/PGID) and writes the library as root,
+# and the postgres image self-chowns its data dir to the postgres user on first init.
+# The 'immich' btrfs subvol itself is provisioned by the storage_ssd role.
+- name: Create Immich library + Postgres dirs on the ssd immich subvol (issue 006)
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ immich_upload_location }}"
+    - "{{ immich_db_location }}"
+
 # .env rendered to 0600 — contains Cloudflare DNS token + Traefik dashboard
 # basic-auth hash. no_log keeps secret values out of the Ansible output.
 - name: Render .env from template (sops secrets + config vars)
