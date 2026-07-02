@@ -23,6 +23,22 @@
         server: my-docker
         container: jellyseerr
 
+- Photos:
+    - Immich:
+        icon: immich.png
+        href: https://immich.home.stromdahl.tech
+        description: Photo library
+        server: my-docker
+        container: immich_server
+        # Stats widget (photos/videos/storage/users) needs an Immich API key:
+        # Immich UI -> Account Settings -> API Keys, then wire HOMEPAGE_VAR_IMMICH_KEY
+        # via sops -> stack.env.j2 and uncomment:
+        # widget:
+        #   type: immich
+        #   url: http://immich_server:2283
+        #   key: "{{HOMEPAGE_VAR_IMMICH_KEY}}"
+        #   version: 2
+
 - Automation:
     - Radarr:
         icon: radarr.png
