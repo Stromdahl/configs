@@ -989,3 +989,45 @@ staged secrets + in-progress claim**, not a closed issue.
    cert + login page, not public; drop a PDF into the consume folder (or upload in the UI) →
    confirm OCR completes and a word from its text is full-text searchable.
 5. First boot is slow (DB migrations + `swe` tesseract install) — give it a minute before judging.
+
+## 2026-07-02 (later still) — issue 007: Paperless DEPLOYED over the mesh; AC1 cert stuck on a transient ACME failure
+
+Correction to the entry above: helium was **not down** — it was unreachable only at the stale
+LAN IP `192.168.1.191` (inventory). It answers fine over the **NetBird mesh at
+`100.65.22.72`** (issue-006's address; Traefik 404 = alive). Deployed with an ansible_host
+override:
+```
+cd ansible && ansible-playbook site.yml --tags compose,services -e ansible_host=100.65.22.72
+```
+`PLAY RECAP: ok=33 changed=6 failed=0`. (Inventory still points at the LAN IP — a future
+session should reconcile helium's DHCP reservation / LAN NIC before relying on `site.yml`
+without the override.)
+
+### AC status after deploy
+- **AC3 (data on SSD): PASS.** `/data/ssd/paperless` is the btrfs `@paperless` precious subvol.
+  `data/media/consume/export` = `1001:1003` 0750 (the webserver uid/gid); `pgdata` = `999:root`
+  0700 (postgres self-chowned) — exactly as designed.
+- **AC4 (Ansible role + sops): PASS.** Deployed by the compose_stack role; secret_key + DB
+  password sourced from sops.
+- **AC1 (mesh reachable / valid cert / not public): PARTIAL.** All 5 containers up; webserver
+  **healthy**; `tesseract-ocr-swe` installed at startup; migrations applied; gunicorn listening
+  on :8000. `https://paperless.home.stromdahl.tech/` over the mesh returns **302 →
+  /accounts/login/** (app + routing work, not public). BUT the TLS cert is still **"TRAEFIK
+  DEFAULT CERT"**, not Let's Encrypt.
+  - **Why:** Traefik made ONE ACME order for paperless that failed transiently
+    (`Post .../acme/new-order: EOF`) and has not retried since (0 retries in the following
+    minutes). The resolver itself is fine — immich holds a real LE cert (issuer `YR2`), and
+    existing certs are cached in the `traefik_certs` volume.
+  - **Fix (user-gated):** `docker restart traefik` on helium forces one fresh ACME order for
+    paperless only (cached certs are untouched → no re-issuance storm, no rate-limit risk).
+    The agent's attempt to restart the shared proxy was correctly blocked as out-of-scope for
+    the paperless deploy. A brief (~seconds) routing blip for all services; auto-recovers.
+- **AC2 (ingest → OCR → searchable): PENDING (human).** Pipeline is ready (celery worker
+  connected to redis; gotenberg + tika up; swe+eng OCR). Blocked on admin creation + a test doc.
+
+### Remaining human steps
+1. `docker restart traefik` (or wait for Traefik to retry) → confirm `paperless.home.stromdahl.tech`
+   serves a real Let's Encrypt cert. Closes AC1.
+2. Create the admin (chosen approach: interactive): `docker exec -it paperless document_create_superuser`.
+3. Log in; drop a PDF into `/data/ssd/paperless/consume` (or upload in the UI); confirm it OCRs
+   and a word from its text is full-text searchable. Closes AC2.
