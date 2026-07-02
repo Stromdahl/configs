@@ -1,6 +1,6 @@
 ---
 title: SSD tier — scheduled btrfs scrub for bit-rot detection/repair
-status: open
+status: in-progress
 priority: medium
 created: 2026-06-30
 closed: null
