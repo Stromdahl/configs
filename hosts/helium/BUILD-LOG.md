@@ -1145,3 +1145,28 @@ appdata files.
   retention/`forget` stays independent per app.
 - Offsite copy of the local repo (`restic copy` to a second repo, or a cloud
   backend) is still deferred per the PRD.
+
+## 2026-07-02 — issue 005 closed: QuickSync verified + no-public-exposure attested
+
+**State:** issue 005 (Jellyfin over the mesh) is **done** — the last two `needs-human`
+ACs landed, so the keystone services slice is fully closed.
+
+- **AC#4 (iGPU QuickSync):** HW accel was never enabled in the Jellyfin UI (no
+  `encoding.xml`), though the machine side was already correct: `/dev/dri` passed
+  through (cgroup `rwm`), `renderD128` RW to the container process (in the render
+  gid), `/transcode` mounted from the SSD tier. User enabled Intel QSV + forced a
+  downscale stream. Verified from the **live ffmpeg invocation** in the Jellyfin logs
+  (23:07): `-init_hw_device vaapi=va:/dev/dri/renderD128,driver=iHD -init_hw_device
+  qsv=qs@va -hwaccel vaapi -hwaccel_output_format vaapi`, `-codec:v h264_qsv`,
+  `scale_vaapi` + `hwmap=derive_device=qsv,format=qsv`, segments written to
+  `/transcode/*.mp4` — full VAAPI→QSV hardware pipeline, **not** the CPU `libx264`
+  path (a stale `libx264` from before the toggle was also in the log). Bonus: the
+  title transcoded was a **migrated-library** episode (Poirot S01E01), so this also
+  demos issue 008's library serving + HW-transcoding end to end.
+- **AC#2 (no public exposure):** user attested OPNsense carries no 80/443 port-forward
+  to helium. Consistent with the design — public `*.home.stromdahl.tech` resolves only
+  to the non-routable mesh IP (100.65.22.72) and helium has no public IP.
+- **Remote-peer test** (hanging off AC#1) was already validated live 2026-07-01.
+
+Checks run read-only from krypton over the mesh (LAN dark from krypton's current
+network; helium up 2d, reachable at 100.65.22.72).

@@ -1,10 +1,10 @@
 ---
 title: Jellyfin over the mesh — internal Traefik + NetBird + the compose-stack role
-status: in-progress
+status: done
 priority: high
 created: 2026-06-27
-closed: null
-labels: [epic:services, needs-human]
+closed: 2026-07-02
+labels: [epic:services]
 ---
 
 ## Description
@@ -52,14 +52,20 @@ from), and `issues/011` (the data tier appdata + transcode cache live on).
       (non-self-signed) TLS certificate. *(verified 2026-06-30 from krypton over the
       LAN: 302→`/web/` 200, `ssl_verify=0`, real LE cert. Mesh path wired via
       split-horizon DNS — see Status; final remote-peer test is needs-human.)*
-- [ ] Nothing is reachable from the public internet; no port-forward exists.
-      *(needs-human: user attests OPNsense has no 80/443 port-forward to helium)*
+- [x] Nothing is reachable from the public internet; no port-forward exists.
+      *(2026-07-02: user attested OPNsense has no 80/443 port-forward to helium;
+      public `*.home.stromdahl.tech` resolves only to the non-routable mesh IP and
+      helium has no public IP.)*
 - [x] ~~No container-published port is exposed on the LAN~~ **superseded by the
       LAN+mesh model** — LAN access is intentional. The DOCKER-USER drop is kept
       ABSENT via `compose_restrict_to_mesh: false`. *(Strict mesh-only stays a
       one-var flip; the drop was verified working on 2026-06-30 before the flip.)*
-- [ ] Jellyfin transcodes using the iGPU (QuickSync). *(render device RW-accessible
-      in-container; needs-human: confirm QuickSync in a real stream via the UI)*
+- [x] Jellyfin transcodes using the iGPU (QuickSync). *(verified 2026-07-02: a real
+      forced-downscale stream of a migrated title ran the full HW pipeline —
+      `-init_hw_device qsv=qs@va -hwaccel vaapi`, `-codec:v h264_qsv`, `scale_vaapi` +
+      `hwmap=...format=qsv`, segments written to `/transcode` on the SSD tier —
+      confirmed from the live ffmpeg invocation in the Jellyfin logs, not the CPU
+      `libx264` path.)*
 - [x] Jellyfin reads the library from the HDD pool mount; its config (appdata) and
       transcode cache live on the SSD tier. *(verified 2026-06-30: `/media` ro from
       `/srv/media`, `/config`+`/transcode` on the SSD tier)*
@@ -87,3 +93,18 @@ Remaining (needs the user's hands):
   temp path to `/transcode` in the Jellyfin UI.
 - **No public port-forward (AC#2):** confirm on OPNsense.
 - Real library still empty (`/srv/media`) — that's `issues/008`.
+
+## Status — 2026-07-02 (done)
+
+All ACs green; issue closed. The two outstanding human steps landed:
+- **Remote-peer test** was validated live on 2026-07-01 (roaming NetBird peer reached
+  the stack over the mesh — logged in `BUILD-LOG.md`).
+- **AC#2 (no public exposure):** user attested OPNsense carries no 80/443 port-forward
+  to helium.
+- **AC#4 (QuickSync):** user enabled Intel QSV in the Jellyfin UI and played a forced
+  downscale; verified from the live ffmpeg command that it used the VAAPI→QSV hardware
+  pipeline (`h264_qsv`, `scale_vaapi`, `hwmap=...format=qsv`) with segments on
+  `/transcode` (SSD tier) — not the software `libx264` path.
+
+The real library migration is `issues/008` (in progress); Jellyfin was confirmed
+serving + HW-transcoding a migrated title during this check.
