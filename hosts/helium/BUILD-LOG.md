@@ -1039,3 +1039,18 @@ without the override.)
 `curl` (no `-k`) → 302 to the login page. DNS → `100.65.22.72` (mesh, non-routable off-mesh).
 **AC1 PASS.** Confirms the transient `new-order: EOF` was the whole story. Now 3/4 ACs green
 (AC1/AC3/AC4); only **AC2** (admin creation + ingest→OCR→search) remains — a human step.
+
+### AC2 pipeline verified (throwaway doc, then cleaned up) → OCR + search confirmed
+Dropped an **image-only** PDF (no text layer — `pdftotext` → 0 chars, so OCR is mandatory)
+into `/data/ssd/paperless/consume`, owned `1001:1003`. Paperless consumed it: `ocrmypdf` ran,
+"consumption finished", "New document id 1 created" (5.8s). Read the OCR output back from
+Postgres — extracted content was exact: `Paperless OCR test OCRVERIFY7391ZEBRA Swedish:
+raksmorgas aeoo safe to delete` (token incl. digits + Swedish line read correctly), and an
+`ILIKE '%OCRVERIFY%'` query matched (count=1) → **ingest → OCR (eng+swe) → searchable text
+confirmed**. Cleaned up via soft-delete + `empty_trash([1])`: DB back to 0 documents, all
+archive/original/thumbnail files removed, consume dir empty. Instance left pristine.
+
+**Net: all 4 ACs technically met (AC1/AC3/AC4 + AC2 pipeline).** The only outstanding
+operational step is creating the admin account for interactive use:
+`docker exec -it paperless document_create_superuser` (no admin exists yet — the instance has
+zero users). Not an AC, but required before anyone can log in / search in the UI.
