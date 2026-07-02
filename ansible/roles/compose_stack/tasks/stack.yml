@@ -137,21 +137,28 @@
     - bookmarks.yaml
 
 # --- issue 006: Immich library + Postgres dirs on the SSD 'immich' precious subvol -
-# Both dirs are created root-owned and empty — NOT pre-chowned to a service uid:
-# immich-server runs as root (Immich has no PUID/PGID) and writes the library as root,
-# and the postgres image self-chowns its data dir to the postgres user on first init.
 # The 'immich' btrfs subvol itself is provisioned by the storage_ssd role.
-- name: Create Immich library + Postgres dirs on the ssd immich subvol (issue 006)
+# immich-server runs as root (Immich has no PUID/PGID) and writes the library as root,
+# so the library dir is root-owned.
+- name: Create Immich library dir on the ssd immich subvol (issue 006)
   become: true
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ immich_upload_location }}"
     state: directory
     owner: root
     group: root
     mode: "0755"
-  loop:
-    - "{{ immich_upload_location }}"
-    - "{{ immich_db_location }}"
+
+# The postgres image chowns PGDATA to the postgres user (uid 999, mode 0700) on first
+# init. Ansible must NOT enforce owner/group/mode here — doing so resets the dir to
+# root:root 0755 every run, which breaks postgres on its next restart (PGDATA must be
+# 0700 and owned by the run-user). So just ensure the dir exists and leave ownership
+# to postgres; `state: directory` with no owner/mode is idempotent on the existing dir.
+- name: Ensure Immich Postgres data dir exists on the ssd immich subvol (issue 006)
+  become: true
+  ansible.builtin.file:
+    path: "{{ immich_db_location }}"
+    state: directory
 
 # .env rendered to 0600 — contains Cloudflare DNS token + Traefik dashboard
 # basic-auth hash. no_log keeps secret values out of the Ansible output.
