@@ -1,6 +1,6 @@
 ---
 title: Paperless document ingest, mesh-only
-status: open
+status: in-progress
 priority: medium
 created: 2026-06-27
 closed: null
