@@ -1031,3 +1031,11 @@ without the override.)
 2. Create the admin (chosen approach: interactive): `docker exec -it paperless document_create_superuser`.
 3. Log in; drop a PDF into `/data/ssd/paperless/consume` (or upload in the UI); confirm it OCRs
    and a word from its text is full-text searchable. Closes AC2.
+
+### AC1 update: cert obtained after the Traefik restart → AC1 PASS
+`docker restart traefik` (user-authorized) forced a fresh DNS-01 order that succeeded within
+~20s. `paperless.home.stromdahl.tech` now serves a real Let's Encrypt cert (subject
+`CN=paperless.home.stromdahl.tech`, issuer `YR1`, valid 2026-07-02 → 2026-09-30); full-chain
+`curl` (no `-k`) → 302 to the login page. DNS → `100.65.22.72` (mesh, non-routable off-mesh).
+**AC1 PASS.** Confirms the transient `new-order: EOF` was the whole story. Now 3/4 ACs green
+(AC1/AC3/AC4); only **AC2** (admin creation + ingest→OCR→search) remains — a human step.
