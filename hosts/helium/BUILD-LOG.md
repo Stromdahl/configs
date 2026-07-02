@@ -1054,3 +1054,94 @@ archive/original/thumbnail files removed, consume dir empty. Instance left prist
 operational step is creating the admin account for interactive use:
 `docker exec -it paperless document_create_superuser` (no admin exists yet — the instance has
 zero users). Not an AC, but required before anyone can log in / search in the UI.
+
+## 2026-07-02 (later) — issue 016: restic appdata backup — new role, deployed, all 5 ACs verified live
+
+Added a new **`restic_backup`** Ansible role (mirroring `storage_ssd`'s btrfs-scrub
+shape: static systemd unit files + a guarded idempotent init + a timer) that backs
+up the SSD **`appdata`** precious subvolume to the HDD pool with restic. Deployed
+from krypton over the mesh, verified end-to-end including a real test restore and
+a deliberately-induced failure. **Issue 016 → `done`**, all 5 ACs green.
+
+### Scope (deliberate, stated per the issue's own wording)
+Source is **`/data/ssd/appdata` only** — the *arr databases/quality profiles,
+Bazarr's language profile, Jellyseerr history, Jellyfin watch state. The issue's
+"full-box backup" note lists Immich + Paperless + appdata as the eventual target,
+but explicitly scopes *this* issue to "the appdata slice and the local repo" —
+Immich and Paperless live on separate SSD precious subvols (`/data/ssd/{immich,
+paperless}`) and are deferred to a later issue, which can reuse the same repo
+with an independent `--tag`. The HDD media library stays excluded throughout
+(different filesystem entirely — `/srv/media`, SnapRAID-protected, never a restic
+source).
+
+### What was built (`ansible/roles/restic_backup/`)
+- **`packages.yml`** — `apt install restic` (trixie ships `0.18.0-1+b4`).
+- **`secrets.yml`** — the repo passphrase (sops `restic_repository_password`,
+  machine-minted via `openssl rand -base64 32`, set with `sops set --value-stdin`
+  fed a JSON-encoded string — never hit stdout) written to `/etc/restic/appdata.pass`,
+  root:root `0600`, `no_log: true` on the task.
+- **`repo.yml`** — `restic init` guarded by a `stat` on `<repo>/config` (restic
+  errors on a re-init; the stat makes the task genuinely idempotent, mirroring
+  storage_ssd/storage_hdd's "detect existing state, never redo it" mkfs idiom).
+  Repo path: **`/mnt/disk1/backups/restic-appdata`** — a dedicated dir written
+  directly to one HDD pool member's raw ext4 mount, *not* addressed through the
+  mergerfs `/srv/media` union, so it's pinned to a deterministic disk and never
+  subject to mergerfs's create/least-free-space or `moveonenospc` policies
+  (those only govern writes made *through* the union). It still lands on a
+  SnapRAID data disk, so it inherits SnapRAID's parity protection as a side
+  benefit — `snapraid.conf` indexes the whole `disk1`/`disk2` mounts, not just
+  the media folders.
+- **`timer.yml`** — installs 3 static unit files, enables+starts the timer only
+  (service is oneshot, timer-triggered). `restic-backup.timer`: daily `02:00`,
+  ahead of SnapRAID's nightly sync (`03:00`) and off the SnapRAID scrub
+  (Sun `04:00`) / btrfs scrub (1st-of-month `05:00`) windows — no two
+  maintenance jobs ever touch a pool at once. `restic-backup.service`: two
+  `ExecStart` lines — `restic backup` (tag `appdata`, `--exclude-caches` plus
+  explicit `cache`/`log`/`logs` dir excludes) then `restic forget --prune`
+  (`--keep-daily 7 --keep-weekly 4 --keep-monthly 6`) — the retention bound is
+  hardcoded directly in the unit, matching the SnapRAID-scrub unit's
+  hardcoded-percentage convention.
+- **Failure seam (AC5):** `OnFailure=restic-backup-alert.service` on the backup
+  unit, pointing at a small placeholder alert unit (`logger -p daemon.alert` +
+  `wall`). issues/013 (the real notification channel — ntfy vs. healthchecks vs.
+  email is still an open decision there) only needs to swap that one unit's
+  `ExecStart`; nothing about `restic-backup.service` changes. This meets 016's
+  explicitly-lowered bar ("at minimum a non-silent failure") — it does **not**
+  yet page/email anyone.
+- **Wiring:** one line in `site.yml` (`tags: [backup, restic]`); new vars in
+  `host_vars/helium/vars.yml` (`restic_backup_source`, `restic_repo_path`,
+  `restic_password_file`); `restic_repository_password` in `secrets.sops.yml`.
+
+### Deploy + verification (over the mesh, `-e ansible_host=100.65.22.72` —
+krypton was off the home LAN this session, `.191` unreachable)
+| Check | Result |
+|---|---|
+| 1st `--tags backup` run | `ok=10 changed=7 failed=0` |
+| 2nd `--tags backup` run (idempotency) | `ok=8 changed=0 failed=0` (AC4) |
+| Repo init | `/mnt/disk1/backups/restic-appdata/config` created, mode `0400` root:root |
+| Passphrase file | `/etc/restic/appdata.pass`, mode `0600` root:root — never world-readable (AC1) |
+| Manual trigger (`systemctl start restic-backup.service`) | both `ExecStart`s `0/SUCCESS`; snapshot `4078b7d4`, 807 MiB, tag `appdata` (AC2) |
+| Excludes | confirmed via `restic ls latest`: no `.../{jellyfin,prowlarr,radarr,sonarr,bazarr,profilarr,jellyseerr,homepage}/{cache,log,logs}` paths present |
+| `restic check --read-data-subset=5%` | `no errors were found` |
+| **Test restore (AC3)** | sha256 of live `/data/ssd/appdata/radarr/config.xml` vs. `restic restore latest --include .../config.xml` output — **identical hash**, byte-for-byte |
+| **Induced-failure test (AC5)** | renamed away `appdata.pass` → `systemctl start` → unit `is-failed` = `failed` → `restic-backup-alert.service` fired, journal shows the `daemon.alert` line + `wall` attempt → password file + failed-state restored via a `trap`, a follow-up real run succeeded (2nd snapshot `d879a127`) |
+
+Both snapshots (`4078b7d4`, `d879a127`) are genuine backups of live appdata, not
+synthetic test artifacts — left in the repo (retention will roll them off
+naturally per the keep-daily policy), unlike the Paperless throwaway-PDF case.
+
+### Boundaries respected
+No media-library path was ever a restic source (different filesystem). No
+offsite repo (explicitly deferred). No other role touched beyond the one-line
+`site.yml` addition. No compose stack restart/redeploy — only read existing
+appdata files.
+
+### Resume checklist (next session)
+- `issues/013` (storage alerting): when a real channel is picked, point
+  `restic-backup-alert.service`'s `ExecStart` at it (and do the same for the
+  SnapRAID/btrfs-scrub `OnFailure=` seams those units already comment about).
+- A later issue can extend `restic_backup` (or add a sibling role sharing the
+  same repo) to cover Immich + Paperless, each under its own `--tag` so
+  retention/`forget` stays independent per app.
+- Offsite copy of the local repo (`restic copy` to a second repo, or a cloud
+  backend) is still deferred per the PRD.
