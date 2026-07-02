@@ -1,9 +1,9 @@
 ---
 title: Paperless document ingest, mesh-only
-status: in-progress
+status: done
 priority: medium
 created: 2026-06-27
-closed: null
+closed: 2026-07-02
 labels: [epic:services, needs-human]
 ---
 
@@ -24,10 +24,10 @@ Depends on `issues/005` (Traefik internal + NetBird mesh + compose-stack role) a
 
 ## Acceptance criteria
 
-- [ ] Paperless is reachable at `paperless.home.stromdahl.tech` over the mesh with a
+- [x] Paperless is reachable at `paperless.home.stromdahl.tech` over the mesh with a
       valid cert; not reachable publicly.
-- [ ] A document added via the ingest path is OCR'd and becomes full-text
+- [x] A document added via the ingest path is OCR'd and becomes full-text
       searchable.
-- [ ] Documents and Postgres data reside on the SSD tier.
-- [ ] The service is deployed via the Ansible compose-stack role with sops-sourced
+- [x] Documents and Postgres data reside on the SSD tier.
+- [x] The service is deployed via the Ansible compose-stack role with sops-sourced
       secrets.
