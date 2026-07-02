@@ -935,3 +935,57 @@ problem, not a service problem.
 mesh IP** for roaming, **OPNsense Unbound → LAN IP** for on-LAN. A NetBird nameserver group that
 claims `home.stromdahl.tech` breaks the roaming half on any client that honours it (notably
 mobile). Don't re-add one for that domain. It's a NetBird-account setting, not in this repo.
+
+## 2026-07-02 (later) — issue 007: Paperless-ngx IaC written + secrets minted (deploy gated: helium down)
+
+Added the **Paperless-ngx** stack to the `compose_stack` role, mirroring the Immich block's
+discipline. **Not deployed** — helium is unreachable this session (`ssh: connect to
+192.168.1.191 port 22: No route to host`; powered off or moved), so the two on-box ACs
+(reachable/cert/not-public; ingest→OCR→search) are unverified. Deliverable = **reviewed IaC +
+staged secrets + in-progress claim**, not a closed issue.
+
+### What landed (committed on `main`)
+- **5-service group** in `docker-compose.yml.j2`: `paperless` (webserver) + namespaced
+  `paperless-redis` / `paperless-db` / `paperless-gotenberg` / `paperless-tika` on a dedicated
+  internal `paperless` bridge; webserver dual-homed on `media` for Traefik. **No published
+  ports.** Traefik router (webserver only) → `paperless.home.stromdahl.tech`, port 8000,
+  `security-headers@file`. `env_file` dropped; explicit `environment:` block.
+- **Vars** (`host_vars/helium/vars.yml`) + **`.env`** (`stack.env.j2`): data/media/consume/
+  export/pgdata all on the SSD *precious* `paperless` subvol (already provisioned by
+  storage_ssd); webserver runs as USERMAP_UID:GID = jellyfin uid/gid (1001:1003) and owns
+  those dirs; pgdata left for postgres to self-chown (issue-006 pattern). `PAPERLESS_URL` set
+  → drives ALLOWED_HOSTS + CSRF for the reverse proxy.
+- **Dir tasks** (`stack.yml`): chown data/media/consume/export to 1001:1003; pgdata `state:
+  directory` only.
+- **Homepage**: a "Documents" group with Paperless (stats widget commented — needs an API token).
+- **Secrets** (`secrets.sops.yml`): machine-minted `paperless_secret_key` (base64/64) +
+  `paperless_db_password` (hex/24), encrypted, never echoed. `paperless_admin_user` /
+  `paperless_admin_password` deliberately **absent** (optional; see below).
+
+### Image pins (verified live against the registries, 2026-07-02, not stale search)
+- paperless `2.20.15` (latest stable v2; **v3.0.0 is beta-only** → stay on v2)
+- postgres **`17.10`** with the **classic `/var/lib/postgresql/data` mount** — deliberately
+  NOT upstream main's pg18 + `/var/lib/postgresql` (version-specific `.../18/docker` PGDATA
+  path is a footgun); keeps issue-006's PGDATA-ownership pattern applicable
+- redis `8.8.0`, gotenberg `8.34` (with paperless's `--chromium-disable-javascript` +
+  `--chromium-allow-list=file:///tmp/.*` flags), tika `3.3.1.0` (non-`-full`)
+- OCR (CPU): `eng` bundled + `swe` auto-installed at container start via `PAPERLESS_OCR_LANGUAGES`
+
+### Verified offline
+- `ansible-playbook site.yml --syntax-check` clean.
+- Rendered the compose template with a dummy `.env` and ran `docker compose config -q` locally
+  → **valid**; all five paperless services present.
+- sops file re-encrypted; both new keys extract cleanly; existing keys intact; diff shows only
+  `ENC[AES256_GCM,…]` (no plaintext leak).
+
+### Still needs the user's hands (deploy + AC verification, when helium is back)
+1. Bring helium up (confirm its address — `192.168.1.191` gave *No route to host*; the earlier
+   log has it at `.174`, so re-check the DHCP reservation / inventory before deploying).
+2. `cd ansible && ansible-playbook site.yml --tags compose,services` (re-run for idempotence).
+3. **Admin superuser:** either populate `paperless_admin_user` + `paperless_admin_password` in
+   sops (auto-create on first boot), or `docker exec -it paperless document_create_superuser`.
+   Left as a deploy-time choice so no admin password is forced into git/transcript.
+4. **AC verify:** `curl -v https://paperless.home.stromdahl.tech/` from a mesh peer → real LE
+   cert + login page, not public; drop a PDF into the consume folder (or upload in the UI) →
+   confirm OCR completes and a word from its text is full-text searchable.
+5. First boot is slow (DB migrations + `swe` tesseract install) — give it a minute before judging.
