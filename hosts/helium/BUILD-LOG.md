@@ -790,3 +790,20 @@ The quiet-window scheduled run resolved the prior race exactly as predicted: **`
 405 GB delta in 2h43m (03:00->05:43; the stable bulk was already done by the 07-01 partial run).
 Full HDD pool — migrated library + the Poirot series — is now dual-parity protected. Nightly
 timer keeps it current. Parity-protection thread closed.
+
+### 2026-07-02 — health check + two fixes (SSD scratch retention, flaresolverr healthcheck)
+Full health pass: host clean (no failed units, load ~0.3), btrfs SSD raid1 0 device errors,
+HDD mergerfs+snapraid parity clean (HBA ioc_reset_count=0), VPN egress masked. Two issues
+found and fixed:
+1. **SSD scratch 92% full (409 GB).** qBittorrent had *no* seeding limits, so every imported
+   torrent kept seeding in `/data/ssd/downloads` forever. Set ratio=1.0 / seeding-time=1440min
+   -> pause (`max_ratio_act=0`); the *arr already have `removeCompletedDownloads=on`, so paused
+   torrents are now removed+deleted post-import (chain works). Explicitly deleted the 19
+   already-imported completed torrents (`deleteFiles=true`, hash absent from every *arr queue)
+   -> freed 413 GB; **SSD 92% -> 7%**. In-flight download (Poirot S13) left untouched.
+   Note `max_ratio_act` only reliably supports 0=pause/1=remove (no cross-version delete-files),
+   which is why the *arr handle file deletion, not qBit.
+2. **flaresolverr perpetually "unhealthy" = false alarm.** Compose healthcheck called `wget`,
+   absent from the image; service itself fine (`/health`->200). Switched healthcheck to a
+   python3 urllib probe (python3 is in the image); redeployed --tags compose,services over the
+   mesh (`ansible_host=100.65.22.72`) -> **healthy, 0 unhealthy containers**.
