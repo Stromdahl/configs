@@ -1,6 +1,6 @@
 ---
 title: Back up service appdata off the mirror with restic
-status: open
+status: in-progress
 priority: high
 created: 2026-07-01
 closed: null
