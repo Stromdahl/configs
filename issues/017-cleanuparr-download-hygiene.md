@@ -1,9 +1,9 @@
 ---
 title: Auto-clean stalled and failed downloads with Cleanuparr
-status: in-progress
+status: done
 priority: medium
 created: 2026-07-01
-closed: null
+closed: 2026-07-03
 labels: [epic:services]
 ---
 
@@ -27,12 +27,12 @@ Depends on `issues/014` (the *arr + qBittorrent it manages).
 
 ## Acceptance criteria
 
-- [ ] Cleanuparr is reachable at `cleanuparr.home.stromdahl.tech` over the mesh
+- [x] Cleanuparr is reachable at `cleanuparr.home.stromdahl.tech` over the mesh
       with a valid cert; not reachable publicly.
-- [ ] A deliberately stalled/failed test download is removed from qBittorrent
+- [x] A deliberately stalled/failed test download is removed from qBittorrent
       and from the Radarr/Sonarr queue, and the release is blacklisted
       (verified, not assumed).
-- [ ] It runs unattended on a schedule (no manual trigger needed for routine
+- [x] It runs unattended on a schedule (no manual trigger needed for routine
       cleanup).
-- [ ] Deployed via the Ansible compose-stack role with config on the SSD tier
+- [x] Deployed via the Ansible compose-stack role with config on the SSD tier
       and sops-sourced API keys.
