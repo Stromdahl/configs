@@ -883,6 +883,9 @@ roams). First run: `ok=30 changed=4` (Immich dirs, `.env`, compose, stack up).
   self-chowned to `999:999 0700`** on init (confirming the no-pre-chown decision).
 - ML on CPU: plain image, gunicorn up, **no CUDA/GPU refs**; server logs
   `Immich ... running [v3.0.0] [production]`.
+- server→ML wiring: `immich_server` resolves `immich-machine-learning` (172.20.0.4 on the
+  `immich` net) and its `/ping` returns `pong` — the ML job path works across the network
+  (the substance of AC #3; "jobs complete on a real library" is still over-time).
 
 **Bug found + fixed during the idempotence check.** The dir task set PGDATA to `root:root
 0755` every run, overwriting postgres's `999:999 0700` → a latent break (postgres refuses to
