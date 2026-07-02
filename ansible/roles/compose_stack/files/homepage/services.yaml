@@ -39,6 +39,21 @@
         #   key: "{{HOMEPAGE_VAR_IMMICH_KEY}}"
         #   version: 2
 
+- Documents:
+    - Paperless:
+        icon: paperless-ngx.png
+        href: https://paperless.home.stromdahl.tech
+        description: Document archive
+        server: my-docker
+        container: paperless
+        # Stats widget (total/inbox docs) needs a Paperless API token:
+        # Paperless UI -> Settings -> My Profile -> API Token, then wire
+        # HOMEPAGE_VAR_PAPERLESS_KEY via sops -> stack.env.j2 and uncomment:
+        # widget:
+        #   type: paperlessngx
+        #   url: http://paperless:8000
+        #   key: "{{HOMEPAGE_VAR_PAPERLESS_KEY}}"
+
 - Automation:
     - Radarr:
         icon: radarr.png

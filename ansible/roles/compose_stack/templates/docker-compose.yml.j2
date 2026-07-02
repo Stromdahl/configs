@@ -32,11 +32,18 @@ networks:
   # issue 006 — dedicated internal bridge for Immich's backends (db/redis/ML never
   # join the shared media bridge); immich-server is dual-homed on media for Traefik.
   immich:
+  # issue 007 — dedicated internal bridge for Paperless's backends (redis/postgres/
+  # gotenberg/tika never join the shared media bridge); the webserver is dual-homed on
+  # media for Traefik.
+  paperless:
 
 volumes:
   traefik_certs:
   # issue 006 — Immich ML model cache (CLIP + face models); persist across redeploys.
   immich_model_cache:
+  # issue 007 — Paperless's Redis (task queue) data; persist so in-flight consume tasks
+  # survive a restart. Not precious -> a named volume on the OS disk, not the SSD subvol.
+  paperless_redis:
 
 secrets:
   cf_dns_api_token:
@@ -557,3 +564,141 @@ services:
     shm_size: 128mb
     networks:
       - immich
+
+  # ===========================================================================
+  # issue 007 — Paperless-ngx: document ingest, OCR, full-text search. Five
+  # services (webserver + redis + postgres + gotenberg + tika), mirroring the
+  # OFFICIAL paperless-ngx postgres-tika compose with these helium divergences
+  # (same discipline as the Immich block above):
+  #   - NO published ports. Upstream publishes 8000:8000; here the webserver is
+  #     reached only through Traefik at paperless.${DOMAIN}. Under
+  #     compose_restrict_to_mesh=false a published port would be LAN-reachable.
+  #   - Services namespaced paperless-* (upstream: webserver/db/broker/gotenberg/
+  #     tika) so the generic names stay free; PAPERLESS_DBHOST/REDIS point at them.
+  #   - Postgres 17 with the CLASSIC /var/lib/postgresql/data mount (upstream main
+  #     moved to pg18 + /var/lib/postgresql, a version-specific PGDATA footgun). The
+  #     image self-chowns PGDATA on init, so pgdata is left root-owned (Ansible only
+  #     ensures it exists) — exactly the issue-006 postgres pattern.
+  #   - env_file DROPPED (it would inject every stack's secrets); the webserver gets
+  #     an explicit environment: block with only its own vars.
+  #   - Backends (redis/postgres/gotenberg/tika) sit on the dedicated internal
+  #     `paperless` bridge; the webserver is dual-homed on `media` so Traefik reaches
+  #     it. No backend joins the shared media bridge.
+  #   - Data/media/consume/export bind onto paperless's in-container defaults under
+  #     the SSD 'paperless' precious subvol (docs: do NOT override the *_DIR env vars
+  #     under docker — mount onto the defaults). The webserver runs as USERMAP_UID:GID
+  #     (the jellyfin uid/gid) and owns them.
+  #   - OCR on CPU: eng is bundled; swe is installed at startup (PAPERLESS_OCR_LANGUAGES).
+  # Post-deploy human steps (needs-human): create the admin (populate the optional
+  # PAPERLESS_ADMIN_* vars in sops, OR `docker exec -it paperless document_create_superuser`);
+  # then drop a PDF into the consume folder and confirm OCR -> full-text searchable.
+  # ===========================================================================
+
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:${PAPERLESS_VERSION:?missing PAPERLESS_VERSION}
+    container_name: paperless
+    restart: unless-stopped
+    depends_on:
+      paperless-db:
+        condition: service_healthy
+      paperless-redis:
+        condition: service_healthy
+      paperless-gotenberg:
+        condition: service_started
+      paperless-tika:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.paperless.rule=Host(`paperless.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.paperless.entrypoints=websecure"
+      - "traefik.http.routers.paperless.tls.certresolver=letsencrypt"
+      - "traefik.http.services.paperless.loadbalancer.server.port=8000"
+      - "traefik.http.routers.paperless.middlewares=security-headers@file"
+    environment:
+      - PAPERLESS_REDIS=redis://paperless-redis:6379
+      - PAPERLESS_DBHOST=paperless-db
+      - PAPERLESS_DBUSER=${PAPERLESS_DB_USERNAME:-paperless}
+      - PAPERLESS_DBNAME=${PAPERLESS_DB_NAME:-paperless}
+      - PAPERLESS_DBPASS=${PAPERLESS_DB_PASSWORD:?missing PAPERLESS_DB_PASSWORD}
+      - PAPERLESS_SECRET_KEY=${PAPERLESS_SECRET_KEY:?missing PAPERLESS_SECRET_KEY}
+      # External URL -> sets ALLOWED_HOSTS + CSRF_TRUSTED_ORIGINS for the reverse proxy.
+      - PAPERLESS_URL=https://paperless.${DOMAIN:?missing DOMAIN}
+      # Office-doc + email parsing via Gotenberg + Tika.
+      - PAPERLESS_TIKA_ENABLED=1
+      - PAPERLESS_TIKA_GOTENBERG_ENDPOINT=http://paperless-gotenberg:3000
+      - PAPERLESS_TIKA_ENDPOINT=http://paperless-tika:9998
+      # OCR: active language(s), and extra tesseract pkgs installed at startup.
+      - PAPERLESS_OCR_LANGUAGE=${PAPERLESS_OCR_LANGUAGE:-eng}
+      - PAPERLESS_OCR_LANGUAGES=${PAPERLESS_OCR_INSTALL_LANGS:-}
+      # The container runs as this uid/gid and chowns its data dirs to it.
+      - USERMAP_UID=${PAPERLESS_USERMAP_UID:-1001}
+      - USERMAP_GID=${PAPERLESS_USERMAP_GID:-1003}
+      - PAPERLESS_TIME_ZONE=${TZ:-Europe/Stockholm}
+      # Admin auto-create (optional): empty -> create the superuser manually post-deploy.
+      - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER:-}
+      - PAPERLESS_ADMIN_PASSWORD=${PAPERLESS_ADMIN_PASSWORD:-}
+    volumes:
+      # Bind the SSD subdirs onto paperless's in-container default paths.
+      - ${PAPERLESS_DATA_ROOT:?missing PAPERLESS_DATA_ROOT}/data:/usr/src/paperless/data
+      - ${PAPERLESS_DATA_ROOT:?missing PAPERLESS_DATA_ROOT}/media:/usr/src/paperless/media
+      - ${PAPERLESS_DATA_ROOT:?missing PAPERLESS_DATA_ROOT}/export:/usr/src/paperless/export
+      - ${PAPERLESS_DATA_ROOT:?missing PAPERLESS_DATA_ROOT}/consume:/usr/src/paperless/consume
+    networks:
+      - media       # Traefik reaches the webserver here
+      - paperless   # redis / postgres / gotenberg / tika backends
+    # No healthcheck: with PAPERLESS_URL set, ALLOWED_HOSTS rejects a localhost-Host
+    # probe (400), so a naive healthcheck would report unhealthy though the app is up
+    # (same reasoning as the homepage service). restart + Traefik suffice.
+
+  paperless-redis:
+    image: docker.io/library/redis:8.8.0
+    container_name: paperless_redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+    volumes:
+      - paperless_redis:/data
+    networks:
+      - paperless
+
+  paperless-db:
+    image: docker.io/library/postgres:17.10
+    container_name: paperless_postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PAPERLESS_DB_USERNAME:-paperless} || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    environment:
+      - POSTGRES_DB=${PAPERLESS_DB_NAME:-paperless}
+      - POSTGRES_USER=${PAPERLESS_DB_USERNAME:-paperless}
+      - POSTGRES_PASSWORD=${PAPERLESS_DB_PASSWORD:?missing PAPERLESS_DB_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--data-checksums
+    volumes:
+      # Postgres data on the SSD 'paperless' precious subvol. Classic PGDATA mount;
+      # the image self-chowns it on first init (dir left root-owned by Ansible).
+      - ${PAPERLESS_DATA_ROOT:?missing PAPERLESS_DATA_ROOT}/pgdata:/var/lib/postgresql/data
+    networks:
+      - paperless
+
+  paperless-gotenberg:
+    image: docker.io/gotenberg/gotenberg:8.34
+    container_name: paperless_gotenberg
+    restart: unless-stopped
+    # Paperless's required gotenberg flags (upstream compose): disable JS, restrict
+    # file access to /tmp (where paperless drops files to convert).
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+    networks:
+      - paperless
+
+  paperless-tika:
+    image: docker.io/apache/tika:3.3.1.0
+    container_name: paperless_tika
+    restart: unless-stopped
+    networks:
+      - paperless

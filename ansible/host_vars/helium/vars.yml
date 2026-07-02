@@ -119,3 +119,34 @@ immich_db_username: postgres      # POSTGRES_USER (superuser in the immich postg
 immich_db_name: immich            # POSTGRES_DB / DB_DATABASE_NAME
 # immich_db_password: lives in secrets.sops.yml (needs-human — mint an [A-Za-z0-9]-only
 # value; the deploy fails closed until it exists).
+
+# issue 007 — Paperless-ngx (document ingest / OCR / full-text search). Five services
+# (webserver + redis + postgres + gotenberg + tika) mirroring the OFFICIAL paperless-ngx
+# postgres-tika compose, adapted to this stack's pattern (namespaced services, dedicated
+# internal bridge, no published ports, sops secrets). ALL data — documents/media, the
+# consume + export folders, AND the Postgres data dir — lives on the SSD *precious*
+# 'paperless' subvol (CoW + checksums; irreplaceable records). Paperless never touches
+# /srv/media or the HDD pool. Reached at paperless.{{ compose_domain }} behind the
+# internal Traefik, LAN + mesh, never public.
+#
+# Version: pinned to the latest stable v2 line (v3.0.0 is beta-only as of 2026-07).
+# Postgres pinned to 17 with the CLASSIC /var/lib/postgresql/data mount — NOT upstream
+# main's pg18 + /var/lib/postgresql, whose version-specific PGDATA path (.../18/docker)
+# is a footgun — which keeps issue 006's PGDATA-ownership pattern directly applicable.
+paperless_version: "2.20.15"
+paperless_data_root: "{{ ssd_pool_mount }}/paperless"   # /data/ssd/paperless/{data,media,consume,export,pgdata}
+# OCR (CPU): eng is bundled in the image; swe is installed at container startup via
+# PAPERLESS_OCR_LANGUAGES. paperless_ocr_language is the *active* language(s).
+paperless_ocr_language: "eng+swe"          # PAPERLESS_OCR_LANGUAGE (active OCR language[s])
+paperless_ocr_install_langs: "swe"         # PAPERLESS_OCR_LANGUAGES (extra tesseract pkgs to install)
+# Paperless runs as this uid/gid (USERMAP_UID/GID) and chowns its data dirs to it.
+# Reuse the stack's jellyfin uid/gid (neon precedent 1001:1003) so it owns the SSD dirs.
+paperless_usermap_uid: "{{ jellyfin_puid }}"   # 1001
+paperless_usermap_gid: "{{ jellyfin_pgid }}"   # 1003
+paperless_db_username: paperless           # PAPERLESS_DBUSER / POSTGRES_USER
+paperless_db_name: paperless               # PAPERLESS_DBNAME / POSTGRES_DB
+# Secrets in secrets.sops.yml: paperless_secret_key + paperless_db_password (machine-minted;
+# the deploy fails closed until they exist). Admin superuser is created at deploy time —
+# either by populating the OPTIONAL paperless_admin_user + paperless_admin_password in sops
+# (auto-create on first boot) or interactively on the box:
+#   docker exec -it paperless document_create_superuser

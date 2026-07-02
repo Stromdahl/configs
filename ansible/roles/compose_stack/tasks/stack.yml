@@ -160,6 +160,29 @@
     path: "{{ immich_db_location }}"
     state: directory
 
+# --- issue 007: Paperless data dirs on the SSD 'paperless' precious subvol -----
+# The 'paperless' btrfs subvol itself is provisioned by the storage_ssd role. The
+# webserver runs as USERMAP_UID:GID (the jellyfin uid/gid) and writes data/media/
+# consume/export as that user, so those must be pre-owned by it before first start.
+# pgdata is left to the postgres image to self-chown (same as issue 006), so it is
+# NOT chowned here — enforcing owner/mode would reset it to root:root every run and
+# break postgres on its next restart (PGDATA must be 0700, owned by the run-user).
+- name: Create Paperless data dirs owned by the container uid/gid (issue 007)
+  become: true
+  ansible.builtin.file:
+    path: "{{ paperless_data_root }}/{{ item }}"
+    state: directory
+    owner: "{{ paperless_usermap_uid }}"
+    group: "{{ paperless_usermap_gid }}"
+    mode: "0750"
+  loop: [data, media, consume, export]
+
+- name: Ensure Paperless Postgres data dir exists on the ssd paperless subvol (issue 007)
+  become: true
+  ansible.builtin.file:
+    path: "{{ paperless_data_root }}/pgdata"
+    state: directory
+
 # .env rendered to 0600 — contains Cloudflare DNS token + Traefik dashboard
 # basic-auth hash. no_log keeps secret values out of the Ansible output.
 - name: Render .env from template (sops secrets + config vars)
