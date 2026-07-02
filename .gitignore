@@ -6,6 +6,7 @@
 !/.gitignore
 !/.sops.yaml
 !/AGENTS.md
+!/adr/
 !/ansible/
 !/README.md
 !/bootstrap.sh
