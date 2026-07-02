@@ -1,0 +1,27 @@
+[Unit]
+Description=restic backup of the SSD appdata subvolume to the HDD pool (issue 016)
+# Static paths — must match host_vars/helium/vars.yml: restic_backup_source
+# (/data/ssd/appdata), restic_repo_path (/mnt/disk1/backups/restic-appdata),
+# restic_password_file (/etc/restic/appdata.pass). Like the SnapRAID/btrfs
+# scrub units, this file is copied verbatim rather than templated.
+RequiresMountsFor=/data/ssd/appdata /mnt/disk1
+# Non-silent-failure seam for issues/013 (alerting mechanism, still open/
+# undecided). When 013 lands, only restic-backup-alert.service's ExecStart
+# needs to change — this unit's OnFailure= hook stays as-is.
+OnFailure=restic-backup-alert.service
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+Environment=RESTIC_CACHE_DIR=/var/cache/restic
+# Snapshot the appdata subvolume — the *arr/Jellyfin curation state. NOT the
+# SnapRAID-protected media library (out of scope by design) and NOT the
+# Immich/Paperless precious subvols (separate mounts, deferred to a later
+# issue). --exclude-caches respects any CACHEDIR.TAG; the explicit excludes
+# drop regenerable image/log caches so snapshots track curation state, not
+# churn.
+ExecStart=/usr/bin/restic backup /data/ssd/appdata --repo /mnt/disk1/backups/restic-appdata --password-file /etc/restic/appdata.pass --tag appdata --exclude-caches --exclude=**/cache --exclude=**/log --exclude=**/logs
+# Retention/prune so the repo does not grow unbounded (issue 016 AC). Daily
+# for a couple of weeks, weekly for over a month, monthly for half a year.
+ExecStart=/usr/bin/restic forget --repo /mnt/disk1/backups/restic-appdata --password-file /etc/restic/appdata.pass --tag appdata --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune

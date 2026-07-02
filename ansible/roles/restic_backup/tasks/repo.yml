@@ -1,0 +1,36 @@
+---
+# restic init errors on an already-initialised repo, so guard it with a stat
+# on the repo's config file (written only once init succeeds) — mirrors
+# storage_ssd/storage_hdd's "detect existing state, never redo it" idiom for
+# their own idempotent mkfs/format steps.
+#
+# Placement: a dedicated directory on the raw ext4 mount of one HDD pool
+# member (not addressed through the mergerfs /srv/media union) so it lands on
+# a deterministic, pinned disk and is never subject to mergerfs's
+# create/least-free-space or moveonenospc policies (those only govern writes
+# made *through* the union). It still sits on a SnapRAID data disk, so it
+# picks up SnapRAID's parity protection as a side benefit — snapraid.conf
+# indexes the whole disk1/disk2 mounts, not just the media folders.
+- name: Create the repo's parent directory on the HDD pool
+  become: true
+  ansible.builtin.file:
+    path: "{{ restic_repo_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Check whether the repository is already initialised
+  become: true
+  ansible.builtin.stat:
+    path: "{{ restic_repo_path }}/config"
+  register: _restic_repo_config
+
+- name: Initialise the restic repository (first run only)
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      restic init
+      --repo {{ restic_repo_path }}
+      --password-file {{ restic_password_file }}
+  when: not _restic_repo_config.stat.exists

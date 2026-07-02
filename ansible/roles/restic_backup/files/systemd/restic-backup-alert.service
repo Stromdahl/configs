@@ -1,0 +1,14 @@
+[Unit]
+Description=Alert on restic-backup.service failure (placeholder until issues/013)
+
+[Service]
+Type=oneshot
+# There is no notification channel on the fleet yet (issues/013 — ntfy vs.
+# healthchecks.io vs. email is still an open decision). This is the minimum
+# non-silent bar for issue 016's AC until 013 lands: a distinct, high-priority
+# journal entry plus a wall broadcast, instead of only the unit quietly
+# sitting in `systemctl --failed`. When 013 picks a channel, swap the
+# ExecStart line(s) below for that call — nothing about restic-backup.service
+# needs to change, since it only depends on this unit's name.
+ExecStart=/usr/bin/logger -p daemon.alert -t restic-backup "restic-backup.service FAILED on %H -- see: journalctl -u restic-backup"
+ExecStart=-/usr/bin/wall "restic-backup.service FAILED on %H -- see: journalctl -u restic-backup"

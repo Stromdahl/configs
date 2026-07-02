@@ -1,0 +1,19 @@
+---
+# restic backup of the SSD 'appdata' precious subvolume (issue 016) — the
+# *arr/Jellyfin/etc curation state (databases, quality profiles, watch state).
+# Deliberately scoped: the media library on the HDD pool is SnapRAID-protected
+# and explicitly excluded, and the Immich/Paperless precious subvols are
+# separate mount points under /data/ssd — out of scope for this slice (a later
+# issue extends the same local repo to them). Local repo only; an offsite copy
+# is deferred.
+- name: Install restic
+  ansible.builtin.import_tasks: packages.yml
+
+- name: Repo passphrase from sops (root-only file, never world-readable)
+  ansible.builtin.import_tasks: secrets.yml
+
+- name: Initialise the restic repository on the HDD pool (idempotent, guarded)
+  ansible.builtin.import_tasks: repo.yml
+
+- name: Scheduled backup + retention/prune systemd timer
+  ansible.builtin.import_tasks: timer.yml

@@ -150,3 +150,24 @@ paperless_db_name: paperless               # PAPERLESS_DBNAME / POSTGRES_DB
 # either by populating the OPTIONAL paperless_admin_user + paperless_admin_password in sops
 # (auto-create on first boot) or interactively on the box:
 #   docker exec -it paperless document_create_superuser
+
+# issue 016 — restic backup of the SSD 'appdata' precious subvolume to the HDD
+# pool. Deliberately scoped to the 'appdata' subvol only — *arr databases,
+# quality profiles/custom formats, Bazarr's language profile, Jellyseerr
+# request history, Jellyfin watch state. NOT the SnapRAID-protected media
+# library (explicitly excluded) and NOT the Immich/Paperless precious subvols
+# (separate mounts under /data/ssd; deferred to a later issue). Local repo
+# only for now — an offsite copy is deferred.
+restic_backup_source: "{{ ssd_pool_mount }}/appdata"   # -> /data/ssd/appdata
+# Direct path on one HDD pool member's raw ext4 mount (not addressed through
+# the mergerfs /srv/media union), so it lands on a deterministic, pinned disk
+# and is never subject to mergerfs's create/least-free-space or
+# moveonenospc policies (those only govern writes made *through* the union).
+# It still sits on a SnapRAID data disk, so it inherits SnapRAID's parity
+# protection as a side benefit.
+restic_repo_path: "{{ hdd_data_drives[0].mount }}/backups/restic-appdata"  # -> /mnt/disk1/backups/restic-appdata
+restic_password_file: /etc/restic/appdata.pass
+# restic_repository_password: lives in secrets.sops.yml (machine-minted;
+# the repo-init task fails closed until it exists). Retention policy
+# (--keep-daily/weekly/monthly) is hardcoded directly in the systemd unit,
+# matching the SnapRAID/btrfs-scrub units' static-file convention.

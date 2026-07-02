@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: restic_backup
+  description: >-
+    Versioned, deduplicated restic backup of the SSD 'appdata' precious
+    subvolume to the HDD pool (issue 016) — the *arr/Jellyfin curation state,
+    not the SnapRAID-protected media library.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []
