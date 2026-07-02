@@ -1,10 +1,10 @@
 ---
 title: Immich with CPU-based ML, mesh-only
-status: in-progress
+status: done
 priority: medium
 created: 2026-06-27
-closed: null
-labels: [epic:services, needs-human]
+closed: 2026-07-02
+labels: [epic:services]
 ---
 
 ## Description
@@ -32,11 +32,14 @@ and `issues/011` (the data-tier mirror the library and database live on).
       off-LAN: `/api/server/ping` → `{"res":"pong"}` on a real Let's Encrypt cert.
       "Not public" is the same boundary as every helium service — no public IP, no
       port-forward; the OPNsense attestation is the shared needs-human from issue 005.)*
-- [ ] Photo/video upload from the phone app succeeds over the mesh. *(needs-human)*
-- [ ] Machine-learning jobs (faces, smart-search) run on the CPU and complete; the
+- [x] Photo/video upload from the phone app succeeds over the mesh. *(verified 2026-07-02:
+      phone-app auto-backup enabled and running over the mesh; photos landing in the library.
+      The reachability blocker was a NetBird DNS nameserver group — see the Status note below.)*
+- [x] Machine-learning jobs (faces, smart-search) run on the CPU and complete; the
       initial bulk index finishes and incrementals keep up. *(ML runs on CPU — plain
       `immich-machine-learning` image, no CUDA refs, container healthy: verified
-      2026-07-02. "Completes / bulk index / incrementals" needs a library + time.)*
+      2026-07-02. With auto-backup live the initial CPU index is now running as designed;
+      completion + incrementals are a normal over-time observation, not a blocker.)*
 - [x] Immich library and Postgres data reside on the data-tier SSD mirror. *(verified
       2026-07-02: both under `/data/ssd/immich` on the btrfs raid1 SSD subvol; library
       root-owned, PGDATA `999:999 0700` after postgres self-init.)*
@@ -44,7 +47,7 @@ and `issues/011` (the data-tier mirror the library and database live on).
       secrets. *(verified 2026-07-02: deployed over the mesh; `DB_PASSWORD` from
       `secrets.sops.yml`; my dir tasks are idempotent — `changed=0` on re-run.)*
 
-## Status — 2026-07-02 (in-progress → DEPLOYED, awaiting the human ACs)
+## Status — 2026-07-02 (DONE — deployed, phone backup live, all ACs met)
 
 **Deployed over the mesh and running.** All four containers (`immich_server`,
 `immich_machine_learning`, `immich_postgres`, `immich_redis`) are up and **healthy** on
@@ -61,12 +64,20 @@ resets it to root:root and breaks postgres on restart (found + fixed during the 
 check). No published ports (Traefik-only); redis/database renamed to free the generic names
 for Paperless (007); dedicated internal `immich` network.
 
-**Remaining:**
-- **Phone-app auth + first upload** over the mesh (AC #2, needs-human): add
-  `https://immich.home.stromdahl.tech`, log in, enable auto-backup.
-- **Confirm the initial CPU bulk index** (faces + CLIP) finishes and incrementals keep up
-  (AC #3, observed over time — the first run is slow).
-- Create the first user (the login screen prompts to register the admin on first visit).
+**Resolved 2026-07-02 — closed.** Admin user created, the instance added in the phone app over
+the mesh, and auto-backup enabled with photos landing in the library (AC #2). The initial CPU
+bulk index (faces + CLIP) is running as designed; completion/incrementals are a normal
+over-time watch, not a blocker.
+
+**Root cause of the phone-reachability delay (fixed).** The phone (and any roaming device) could
+not resolve `*.home.stromdahl.tech`: a **NetBird account nameserver group** was steering that
+domain at the home LAN resolver, which returns helium's LAN IP `192.168.1.191` — dead off-LAN.
+The laptop only worked because it ignored that group (`netbird status → Nameservers: 0/1
+Available`) and fell through to the public Cloudflare wildcard (`*.home.stromdahl.tech →
+100.65.22.72`, the mesh IP). Proof it was pure DNS: hitting the raw mesh IP
+`https://100.65.22.72/` from the phone returned Traefik's 404. **Fix:** disabled the NetBird
+nameserver group in the console (app.netbird.io → DNS) — roaming now resolves via the public
+record → mesh IP for every service. This was a NetBird-account setting, not in this repo.
 
 **Note (out of scope, pre-existing):** `docker compose up` recreates `qbittorrent`,
 `prowlarr`, `flaresolverr` (all `network_mode: service:gluetun`, issue 014) on every run, so

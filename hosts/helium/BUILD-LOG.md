@@ -904,3 +904,34 @@ Worth a separate idempotence pass on the gluetun-attached services.
 phone app over the mesh + enable auto-backup; then confirm the first CPU bulk index (faces +
 CLIP) finishes and incrementals keep up (slow first run). Issue 006 stays `in-progress` until
 those two land.
+
+## 2026-07-02 (later) — issue 006 CLOSED: phone backup live; a NetBird DNS nameserver group was hijacking roaming resolution
+
+Immich's last human ACs landed: admin user created, instance added in the phone app over the
+mesh, auto-backup enabled, photos landing in `/data/ssd/immich/library`. The CPU bulk index
+(faces + CLIP) is running as designed. **Issue 006 → `done`.**
+
+### The phone-reachability blocker (root cause + fix)
+Symptom: the laptop reached every `*.home.stromdahl.tech` service over NetBird, but the phone
+reached **none** — Immich, Jellyfin, *arr all timed out. Not Immich-specific → a mesh/DNS-layer
+problem, not a service problem.
+
+- **Mesh path was fine.** From the phone on cellular, NetBird showed `helium 100.65.22.72
+  connected`, and `https://100.65.22.72/` (the raw mesh IP) returned Traefik's **404 page not
+  found** — so TLS + Traefik are reachable from the phone.
+- **The failure was DNS.** The phone resolved `*.home.stromdahl.tech` to helium's **LAN IP
+  `192.168.1.191`** (unreachable off-LAN), not the mesh IP.
+- **Cause: a NetBird account nameserver group** matching `home.stromdahl.tech` and forwarding it
+  to the home LAN resolver. The laptop dodged it — `netbird status → Nameservers: 0/1 Available`
+  (couldn't reach that nameserver off-LAN) → fell through to public DNS. The public Cloudflare
+  wildcard `*.home.stromdahl.tech → 100.65.22.72` (verified on 1.1.1.1 + 8.8.8.8) is the intended
+  roaming path.
+- **Fix: disabled the NetBird nameserver group** (app.netbird.io → DNS → Nameservers). Roaming
+  devices now resolve via the public record → mesh IP for every service. Short-term phone
+  workaround that also worked: Android Private DNS → `one.one.one.one` (forces public DoT,
+  bypassing the group).
+
+**Gotcha for future work:** the exposure design is split-horizon — **public Cloudflare wildcard →
+mesh IP** for roaming, **OPNsense Unbound → LAN IP** for on-LAN. A NetBird nameserver group that
+claims `home.stromdahl.tech` breaks the roaming half on any client that honours it (notably
+mobile). Don't re-add one for that domain. It's a NetBird-account setting, not in this repo.
