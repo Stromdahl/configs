@@ -1254,10 +1254,16 @@ into files, never echoed to a terminal). Setup order is enforced by the code:
   gluetun's netns), user `admin`, existing sops password → test **200 "successful"**.
 - **Arr apps:** Radarr `http://radarr:7878` + Sonarr `http://sonarr:8989`, each
   with its existing `config.xml` API key, version 3 → both test **200 "successful"**.
-- **QueueCleaner:** enabled, cron `0 0/5 * * * ?` (every 5 min, unattended),
-  `DownloadingMetadataMaxStrikes: 3`, plus a `stalled-public` StallRule (3 strikes,
-  Public). Cleanuparr's queue-delete hardcodes `blocklist=true&skipRedownload=true`
-  and triggers a fresh search, so removal → blocklist → re-search is one action.
+- **QueueCleaner:** enabled, cron `0 0/5 * * * ?` (every 5 min, unattended).
+  All three paths the issue names are on: **stalled** (a `stalled-public` StallRule,
+  3 strikes, Public), **metadata-stuck** (`DownloadingMetadataMaxStrikes: 3`), and
+  **failed imports** (`FailedImport.maxStrikes: 3`, `PatternMode: Exclude` with an
+  empty list = match-all — the "malformed release the *arr keeps retrying" case; note
+  the validator rejects `Include` mode with zero patterns, so Exclude/match-all is the
+  way to enable it broadly). Cleanuparr's queue-delete hardcodes
+  `blocklist=true&skipRedownload=true` and triggers a fresh search, so
+  removal → blocklist → re-search is one action. DownloadCleaner (orphaned-file
+  pruning / seeding rules) stays deliberately OFF — real blast radius, not an AC.
 
 ### Verified (over the mesh, `-e ansible_host=100.65.22.72` — krypton off the home LAN)
 | Check | Result |
@@ -1268,7 +1274,7 @@ into files, never echoed to a terminal). Setup order is enforced by the code:
 | Not public (AC1) | no published port; same boundary as all siblings — public `*.home.stromdahl.tech` resolves only to the non-routable mesh IP, no OPNsense port-forward (issue-005 attested) |
 | Connections | qbit + Radarr + Sonarr all "health changed: Healthy" in the logs; no auth errors |
 | Schedule (AC3) | `Job QueueCleaner scheduled with cron expression '0 0/5 * * * ?'` — runs with no manual trigger |
-| Config on SSD (AC4) | `/data/ssd/appdata/cleanuparr` (SSD precious appdata subvol), sops-sourced secrets |
+| Config on SSD (AC4) | `/data/ssd/appdata/cleanuparr` (SSD precious appdata subvol). The only sops entry added is Cleanuparr's OWN admin password; the arr/qbit connection secrets live in Cleanuparr's sqlite (API-set), NOT templated from sops — so a `/config` wipe recovers by **restore, not `ansible-playbook`**. That dir sits under `restic_backup_source` (`/data/ssd/appdata`, issue 016), so it IS backed up. Same model as issue-014's app config. |
 
 ### Stalled-download removal — exercised live (AC2), three-part evidence
 First attempt used a real TPB magnet grabbed via Radarr; it found peers and began
@@ -1287,6 +1293,14 @@ bounded test.
   movieId 17). All three captured before/after.
 - The movie was kept unmonitored so Cleanuparr's post-removal search couldn't grab
   a real release.
+
+Honest scope of the drill: the live removal was exercised on the **stalled/metadata
+path against Radarr**. The **failed-import** path and the **Sonarr** instance were
+not separately drilled — both ride Cleanuparr's identical strike → remove →
+blocklist mechanism (same code, `InstanceType` switch only), and both are
+configured + health-green, but only the Radarr metadata case was end-to-end proven.
+Heads-up: the QueueCleaner is now **live on the real download stack** (5-min cron) —
+a genuinely-stalled real grab will be removed + blocklisted after ~3 strikes (~15 min).
 
 ### Cleanup (left pristine, mirroring the Paperless/016 throwaway discipline)
 Removed the blocklist entry, deleted the throwaway movie (deleteFiles=true), and
