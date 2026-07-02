@@ -1,6 +1,6 @@
 ---
 title: Auto-clean stalled and failed downloads with Cleanuparr
-status: open
+status: in-progress
 priority: medium
 created: 2026-07-01
 closed: null
