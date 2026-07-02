@@ -807,3 +807,62 @@ found and fixed:
    absent from the image; service itself fine (`/health`->200). Switched healthcheck to a
    python3 urllib probe (python3 is in the image); redeployed --tags compose,services over the
    mesh (`ansible_host=100.65.22.72`) -> **healthy, 0 unhealthy containers**.
+
+## 2026-07-02 (later) — issue 006: Immich IaC written (v3.0.0, CPU ML, mesh-only); deploy gated on DB_PASSWORD
+
+Added the full Immich service group to the `compose_stack` role, mirroring the OFFICIAL
+immich-app **v3.0.0** release compose. Machine-side IaC is done + validated; the deploy is a
+needs-human gate (one secret + phone-app auth + the slow first bulk index). helium was
+unreachable on its LAN IP (krypton roaming off-LAN) but reachable on the mesh (`100.65.22.72`).
+
+### What was added (config-as-code, on branch `immich-006`)
+- **4 services** in `docker-compose.yml.j2`: `immich-server`, `immich-machine-learning`,
+  `immich-redis` (valkey), `immich-database` (postgres). New internal `immich` bridge +
+  `immich_model_cache` named volume.
+- **vars** (`host_vars/helium/vars.yml`): `immich_version: v3.0.0`, upload/DB locations on the
+  SSD `immich` precious subvol, DB user/name. The secret `immich_db_password` → sops (NOT
+  minted — needs-human).
+- **.env** (`stack.env.j2`): `IMMICH_*` vars (namespaced to avoid collisions in the shared
+  .env); the password has no default → the render/deploy fails closed until the secret exists.
+- **dirs** (`stack.yml`): create `/data/ssd/immich/{library,postgres}` root-owned (not
+  pre-chowned — see below).
+
+### Decisions (deliberate deviations from the task brief)
+- **v3.0.0, not v2.7.5.** Brief predated v3; v3.0.0 is current stable. Fresh install → v3's
+  breaking changes (API, pgvecto→VectorChord) don't apply. Pinning matured v2.x instead is the
+  user's call (needs a different postgres image).
+- **No pre-chown.** v3 `immich-server` runs as ROOT (no PUID/PGID) → writes the library as
+  root; the postgres image self-chowns its data dir on init. The brief's "chown to the
+  container uid" assumed a non-root model; corrected to root-owned empty dirs.
+- **No published ports.** Upstream publishes `2283:2283`; here Traefik-only (the LAN-leak rule
+  from issue 014 under `compose_restrict_to_mesh=false`).
+- **redis/database renamed** `immich-redis`/`immich-database` (frees the generic names for
+  Paperless, issue 007); `DB_HOSTNAME`/`REDIS_HOSTNAME` on the server set to match.
+- **`env_file: .env` dropped** off server + ML (upstream sets it): the shared `.env` holds
+  every stack's secrets, and `env_file` would inject them all into the Immich containers.
+  `immich-server` gets an explicit `environment:` block with only its own vars.
+- **Dedicated `immich` network** for db/redis/ML; `immich-server` dual-homed on `media` for
+  Traefik. (socket_proxy is the precedent for isolating a sensitive backend.)
+- valkey + postgres **digest-pinned** exactly as upstream (the tested pair).
+
+### Verified (no deploy run — needs the secret first)
+- `docker compose config` on the rendered stack → schema valid; **20/20 Immich structural
+  assertions pass**: v3.0.0 images, no published ports, correct network membership (server on
+  media+immich; backends immich-only), Traefik router/host/port 2283/security-headers, DB &
+  REDIS hostnames → renamed services, CPU ML (plain image, no `extends`), valkey/postgres
+  digest pins, model-cache volume, no `env_file` secret leak.
+- Edited YAML parses. `ansible-playbook --syntax-check` is blocked only by the gitignored
+  `geerlingguy.docker` galaxy role being absent in a fresh worktree checkout (unrelated to
+  this change; resolves after `ansible-galaxy install -r requirements.yml`).
+
+### Remaining — needs-human (the deploy is one secret away)
+1. **Mint `immich_db_password`** (`[A-Za-z0-9]` only) into `host_vars/helium/secrets.sops.yml`.
+2. **Deploy:** `ansible-playbook site.yml --tags compose,services` (target the mesh IP
+   `100.65.22.72` while krypton roams off-LAN).
+3. **Phone app** over the mesh: add `https://immich.home.stromdahl.tech`, log in, enable
+   auto-backup (AC #2).
+4. **First CPU bulk index** (faces + CLIP) is slow; confirm it finishes + incrementals keep up
+   (AC #3, over time).
+
+Landed on branch `immich-006` (draft PR), not `main` — the worktree is enforced for this
+background job. Merge to `main` however you prefer.
