@@ -27,39 +27,49 @@ and `issues/011` (the data-tier mirror the library and database live on).
 
 ## Acceptance criteria
 
-- [ ] Immich is reachable at `immich.home.stromdahl.tech` over the mesh with a
-      valid cert; not reachable publicly.
-- [ ] Photo/video upload from the phone app succeeds over the mesh.
+- [x] Immich is reachable at `immich.home.stromdahl.tech` over the mesh with a
+      valid cert; not reachable publicly. *(verified 2026-07-02 from krypton roaming
+      off-LAN: `/api/server/ping` → `{"res":"pong"}` on a real Let's Encrypt cert.
+      "Not public" is the same boundary as every helium service — no public IP, no
+      port-forward; the OPNsense attestation is the shared needs-human from issue 005.)*
+- [ ] Photo/video upload from the phone app succeeds over the mesh. *(needs-human)*
 - [ ] Machine-learning jobs (faces, smart-search) run on the CPU and complete; the
-      initial bulk index finishes and incrementals keep up.
-- [ ] Immich library and Postgres data reside on the data-tier SSD mirror.
-- [ ] The service is deployed via the Ansible compose-stack role with sops-sourced
-      secrets.
+      initial bulk index finishes and incrementals keep up. *(ML runs on CPU — plain
+      `immich-machine-learning` image, no CUDA refs, container healthy: verified
+      2026-07-02. "Completes / bulk index / incrementals" needs a library + time.)*
+- [x] Immich library and Postgres data reside on the data-tier SSD mirror. *(verified
+      2026-07-02: both under `/data/ssd/immich` on the btrfs raid1 SSD subvol; library
+      root-owned, PGDATA `999:999 0700` after postgres self-init.)*
+- [x] The service is deployed via the Ansible compose-stack role with sops-sourced
+      secrets. *(verified 2026-07-02: deployed over the mesh; `DB_PASSWORD` from
+      `secrets.sops.yml`; my dir tasks are idempotent — `changed=0` on re-run.)*
 
-## Status — 2026-07-02 (in-progress)
+## Status — 2026-07-02 (in-progress → DEPLOYED, awaiting the human ACs)
 
-Machine-side IaC complete + validated; the deploy is a needs-human gate (one secret + the
-phone-app AC + the slow first index). helium is reachable over the mesh (`100.65.22.72`).
+**Deployed over the mesh and running.** All four containers (`immich_server`,
+`immich_machine_learning`, `immich_postgres`, `immich_redis`) are up and **healthy** on
+**v3.0.0**. `immich.home.stromdahl.tech` serves `{"res":"pong"}` on a real Let's Encrypt cert
+over the mesh. `DB_PASSWORD` was minted into `secrets.sops.yml`. 3 of 5 ACs verified (see
+above); the remaining two are genuinely human/over-time (phone upload; the slow first CPU
+index). Full detail in `hosts/helium/BUILD-LOG.md` (2026-07-02, "Immich deployed").
 
-**Done:** Immich's 4-service group (server + ML + valkey + postgres) added to the
-`compose_stack` role, mirroring the official immich-app **v3.0.0** release compose — CPU ML
-(plain image, no `hwaccel` extends), no published ports (Traefik router
-`immich.home.stromdahl.tech` → :2283, security-headers reused), a dedicated internal `immich`
-network (db/redis/ML off the shared media bridge), library + Postgres bound to the SSD
-`immich` precious subvol, valkey/postgres digest-pinned to the upstream-tested pair. Validated
-with `docker compose config` on the rendered stack (schema + 20 structural assertions). Full
-detail in `hosts/helium/BUILD-LOG.md` (2026-07-02, "later").
+**Machine-side deltas from the brief (all deliberate):** pinned **v3.0.0** (brief predated it,
+suggested v2.7.5 — fresh-install-safe; switching to matured v2.x is the user's call and needs
+a different postgres image). **No pre-chown** — the server runs as root, and the postgres
+image self-chowns PGDATA (`999:999 0700`); ansible must NOT manage the PGDATA owner/mode or it
+resets it to root:root and breaks postgres on restart (found + fixed during the idempotence
+check). No published ports (Traefik-only); redis/database renamed to free the generic names
+for Paperless (007); dedicated internal `immich` network.
 
-**Deviation from the brief:** pinned **v3.0.0** (the brief predated it and suggested v2.7.5).
-Fresh-install-safe (v3's breaking changes are API + pgvecto→VectorChord, neither of which
-affects a new install). Switching to the matured v2.x line is the user's call — it needs a
-different postgres image.
+**Remaining:**
+- **Phone-app auth + first upload** over the mesh (AC #2, needs-human): add
+  `https://immich.home.stromdahl.tech`, log in, enable auto-backup.
+- **Confirm the initial CPU bulk index** (faces + CLIP) finishes and incrementals keep up
+  (AC #3, observed over time — the first run is slow).
+- Create the first user (the login screen prompts to register the admin on first visit).
 
-**Remaining (needs-human):**
-- Mint `immich_db_password` (`[A-Za-z0-9]` only) into `host_vars/helium/secrets.sops.yml`
-  (deliberately not minted by the agent).
-- Run the deploy: `ansible-playbook site.yml --tags compose,services` (target helium's mesh
-  IP `100.65.22.72` while krypton roams off-LAN).
-- Phone-app auth + first upload over the mesh (AC #2).
-- Confirm the initial CPU bulk ML index (faces + CLIP) finishes and incrementals keep up
-  (AC #3 — observed over time, not in a deploy run).
+**Note (out of scope, pre-existing):** `docker compose up` recreates `qbittorrent`,
+`prowlarr`, `flaresolverr` (all `network_mode: service:gluetun`, issue 014) on every run, so
+the "Bring up the compose stack" task always reports `changed`. Not introduced here — the
+Immich containers are stable. Worth a separate idempotence pass on the gluetun-networked
+services.

@@ -866,3 +866,38 @@ unreachable on its LAN IP (krypton roaming off-LAN) but reachable on the mesh (`
 
 Landed on branch `immich-006` (draft PR), not `main` — the worktree is enforced for this
 background job. Merge to `main` however you prefer.
+
+### (same session) Immich deployed over the mesh — all 4 containers healthy on v3.0.0
+User approved minting the secret + deploying. Minted `immich_db_password` (40× `[A-Za-z0-9]`)
+into `secrets.sops.yml` via `sops set` (value never hit stdout). Installed the pinned galaxy
+deps into the worktree (gitignored tree), then `ansible-playbook site.yml --tags
+compose,services -e ansible_host=100.65.22.72` (helium's mesh IP; LAN IP dead while krypton
+roams). First run: `ok=30 changed=4` (Immich dirs, `.env`, compose, stack up).
+
+**Verified (runtime, over the mesh):**
+- 4 containers `Up (healthy)`: `immich_server` + `immich_machine_learning` (v3.0.0),
+  `immich_postgres` (vectorchord), `immich_redis` (valkey:9).
+- `https://immich.home.stromdahl.tech/api/server/ping` → `{"res":"pong"}` on a **real
+  Let's Encrypt cert** (issuer `Let's Encrypt CN=YR2`, subject `CN=immich.home.stromdahl.tech`).
+- Storage: `/data/ssd/immich` on the btrfs SSD raid1 subvol; `library` root-owned; **PGDATA
+  self-chowned to `999:999 0700`** on init (confirming the no-pre-chown decision).
+- ML on CPU: plain image, gunicorn up, **no CUDA/GPU refs**; server logs
+  `Immich ... running [v3.0.0] [production]`.
+
+**Bug found + fixed during the idempotence check.** The dir task set PGDATA to `root:root
+0755` every run, overwriting postgres's `999:999 0700` → a latent break (postgres refuses to
+start on a `0755`/root PGDATA at next restart). Fixed: the task now only *ensures the dir
+exists* and leaves ownership to postgres (`state: directory`, no owner/mode). Restored the
+live dir to `999:999 0700` and **restarted `immich_postgres` to prove it — came back healthy**
+(`database system is ready to accept connections`). Re-run now `changed=1`, and my two Immich
+dir tasks report `ok`.
+
+**Pre-existing, NOT from this change (flagged):** the remaining `changed=1` is "Bring up the
+compose stack" — `docker compose up` recreates `qbittorrent`/`prowlarr`/`flaresolverr` (all
+`network_mode: service:gluetun`, issue 014) on every run. The Immich containers are stable.
+Worth a separate idempotence pass on the gluetun-attached services.
+
+**Still needs the user's hands (AC #2, #3):** create the admin user + add the instance in the
+phone app over the mesh + enable auto-backup; then confirm the first CPU bulk index (faces +
+CLIP) finishes and incrementals keep up (slow first run). Issue 006 stays `in-progress` until
+those two land.
