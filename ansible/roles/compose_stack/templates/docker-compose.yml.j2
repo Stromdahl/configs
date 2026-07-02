@@ -300,7 +300,8 @@ services:
       gluetun:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8191/health || exit 1"]
+      # flaresolverr image ships no wget; python3 (present) probes /health instead.
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8191/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
