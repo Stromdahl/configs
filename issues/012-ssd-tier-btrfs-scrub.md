@@ -1,9 +1,9 @@
 ---
 title: SSD tier — scheduled btrfs scrub for bit-rot detection/repair
-status: in-progress
+status: done
 priority: medium
 created: 2026-06-30
-closed: null
+closed: 2026-07-02
 labels: [epic:storage]
 ---
 
@@ -32,9 +32,9 @@ Depends on `issues/011` (the btrfs raid1 mirror this scrubs).
 
 ## Acceptance criteria
 
-- [ ] A `btrfs scrub` runs the whole `helium-ssd` filesystem on a recurring systemd
+- [x] A `btrfs scrub` runs the whole `helium-ssd` filesystem on a recurring systemd
       timer (monthly), at low IO priority, and does not run if the pool is unmounted.
-- [ ] The scrub timer is enabled and survives a reboot.
-- [ ] A scrub on the healthy pool completes with 0 uncorrectable errors.
-- [ ] Built by the idempotent `storage_ssd` role from krypton (clean re-run =
+- [x] The scrub timer is enabled and survives a reboot.
+- [x] A scrub on the healthy pool completes with 0 uncorrectable errors.
+- [x] Built by the idempotent `storage_ssd` role from krypton (clean re-run =
       `changed=0`).

@@ -1170,3 +1170,42 @@ ACs landed, so the keystone services slice is fully closed.
 
 Checks run read-only from krypton over the mesh (LAN dark from krypton's current
 network; helium up 2d, reachable at 100.65.22.72).
+
+## 2026-07-02 — issue 012 closed: SSD-tier btrfs scrub deployed + verified
+
+**State:** issue 012 is **done** — the monthly `btrfs scrub` timer for the
+`helium-ssd` raid1 pool is live on helium. The Ansible code for this
+(`storage_ssd/tasks/scrub.yml` + the `btrfs-scrub.{service,timer}` unit pair) was
+already written and committed by a prior session (`8d2e372`, 2026-06-30) but never
+claimed, deployed, or verified — the issue was still `open` and the units did not
+exist on the host. This session was deploy + verify + close; no role code changed.
+
+### Deploy (over the mesh, `-e ansible_host=100.65.22.72` — krypton off the home
+LAN this session, `.191` unreachable)
+| Check | Result |
+|---|---|
+| 1st `--tags storage_ssd` run | `ok=13 changed=3 failed=0` |
+| 2nd `--tags storage_ssd` run (idempotency, AC4) | `ok=12 changed=0 failed=0` |
+
+The 3 first-run changes were the unit-install + timer-enable tasks from this
+issue, plus pre-existing host drift on the `downloads`/`transcode` subvolume
+mountpoints (unrelated to scrub, not part of this issue's scope) — all three
+converged to `changed=0` on the second run.
+
+### Verification
+- `btrfs filesystem show /data/ssd/appdata`: label `helium-ssd`, 2 devices
+  (`/dev/sdd`, `/dev/sdf`), confirming the raid1 mirror this scrubs.
+- `systemctl is-enabled btrfs-scrub.timer` → `enabled` (survives reboot, AC2);
+  `list-timers` shows next run `2026-08-01 05:00` — off both SnapRAID windows.
+- Manually triggered (`systemctl start btrfs-scrub.service`): completed
+  `0/SUCCESS` on both devices, **"Error summary: no errors found"** for
+  `/dev/sdd` and `/dev/sdf` — 0 uncorrectable errors on the healthy pool (AC3).
+- Unit files confirm low-IO (`Nice=19`, `IOSchedulingClass=idle`) and the
+  unmount guard (`RequiresMountsFor=/data/ssd/appdata`) — AC1.
+- Checked the sibling `storage_hdd` SnapRAID-scrub unit for an `OnFailure=`
+  seam to mirror per the issue's suggestion: it has none yet either, so there
+  was nothing to mirror — `issues/013` owns wiring that on both tiers.
+
+### Boundaries respected
+No HDD/snapraid scrub or media pool touched. No compose stack restart. No
+`site.yml` change (role was already registered from issue 011).
