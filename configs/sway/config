@@ -7,6 +7,7 @@ set $term 'foot'
 set $menu 'wofi --show drun'
 set $browser 'MOZ_ENABLE_WAYLAND=1 firefox'
 # set $browser 'firefox'
+set $browser_personal 'MOZ_ENABLE_WAYLAND=1 firefox -P play'
 set $lock 'swaylock -f -c 181818 --ring-color fe8019 --ring-ver-color 689d68 --ring-wrong-color cc241d --key-hl-color ebdbb2 --bs-hl-color fe8019 --line-color 00000000 --inside-color 1d202180 --inside-ver-color 1d202180 --inside-wrong-color 1d202180 --separator-color 00000000 --text-color ebdbb2 --text-ver-color ebdbb2 --text-wrong-color cc241d --indicator-radius 80 --indicator-thickness 8 --show-failed-attempts'
 
 ### SETTINGs
@@ -79,6 +80,8 @@ bindsym $mod+d exec $menu
 
 # Browser
 bindsym $mod+b exec $browser
+# Browser (personal 'play' profile)
+bindsym $mod+Shift+b exec $browser_personal
 
 ### KEYBINDINGS
 # Volume
