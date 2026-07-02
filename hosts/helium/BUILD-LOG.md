@@ -1209,3 +1209,95 @@ converged to `changed=0` on the second run.
 ### Boundaries respected
 No HDD/snapraid scrub or media pool touched. No compose stack restart. No
 `site.yml` change (role was already registered from issue 011).
+
+## 2026-07-03 — issue 017: Cleanuparr deployed + wired; stalled-download removal proven end-to-end; all 4 ACs green
+
+**State:** issue 017 → **done**. Cleanuparr (download hygiene for the issue-014
+stack) is deployed as a compose service, reachable over the mesh with a real LE
+cert, connected to qBittorrent + Radarr + Sonarr using the **existing** issue-014
+credentials (no re-key), and its QueueCleaner runs unattended on a 5-minute cron.
+The core AC — a deliberately-stalled download being removed from qBittorrent AND
+the *arr queue, with the release blocklisted — was **exercised live**, not assumed.
+
+### What was added (all via the compose_stack role — config-as-code)
+- **`docker-compose.yml.j2`** — a `cleanuparr` service (`ghcr.io/cleanuparr/
+  cleanuparr:2.9.14`): SSD appdata volume (`${APPDATA_DIR}/cleanuparr:/config`),
+  the `media` bridge, Traefik labels for `cleanuparr.${DOMAIN}` (websecure + LE
+  resolver + `security-headers@file`), a `/health` healthcheck, **no published
+  port** (Traefik-only, same LAN+mesh-never-public boundary as every sibling).
+  No `/downloads` mount — DownloadCleaner (orphaned-file pruning) is deliberately
+  left disabled (real blast radius on the live downloads dir, and not an AC), so
+  only the QueueCleaner runs.
+- **`host_vars/helium/vars.yml`** — appended `cleanuparr` to `arr_appdata_apps`
+  (reuses the existing dir-create+chown loop → `/data/ssd/appdata/cleanuparr`,
+  owned 1001:1003); added `cleanuparr_admin_username: admin` + a header note.
+- **`secrets.sops.yml`** — `cleanuparr_admin_password` (machine-minted, `sops set
+  --value-stdin`, never to stdout). This is Cleanuparr's **own** admin identity
+  (like the Immich/Paperless admin), NOT a stack `.env` var — Cleanuparr has no
+  ADMIN_* env; the account is created once via its `/api/auth/setup/account`.
+- **`homepage/services.yaml`** — a Cleanuparr tile under the Downloads group
+  (link + docker status dot; no widget — Homepage has no cleanuparr widget type).
+
+### Config schema note (why the connections are API-driven, not env/seed-file)
+Cleanuparr v2.9 keeps ALL business config in its own sqlite db under `/config`
+(verified against the v2.9.14 source: `api/configuration/*` + `api/queue-rules/*`
+controllers, `[Authorize]`, enums serialized as strings). There is no env-var or
+config-file path for download-client / arr-app connections — so, mirroring the
+issue-014 app-config discipline, they were set once post-deploy over the mesh via
+the REST API (`jq`-built JSON bodies; the qbit password streamed from sops via
+`sops exec-env`; the Radarr/Sonarr keys read from each app's `config.xml` on-box
+into files, never echoed to a terminal). Setup order is enforced by the code:
+`setup/account` → `setup/complete` → `login` (login 401s until setup is complete).
+
+### What was wired (REST API, over `https://cleanuparr.home.stromdahl.tech`)
+- **Download client:** qBittorrent, host `http://gluetun:8080` (qbit shares
+  gluetun's netns), user `admin`, existing sops password → test **200 "successful"**.
+- **Arr apps:** Radarr `http://radarr:7878` + Sonarr `http://sonarr:8989`, each
+  with its existing `config.xml` API key, version 3 → both test **200 "successful"**.
+- **QueueCleaner:** enabled, cron `0 0/5 * * * ?` (every 5 min, unattended),
+  `DownloadingMetadataMaxStrikes: 3`, plus a `stalled-public` StallRule (3 strikes,
+  Public). Cleanuparr's queue-delete hardcodes `blocklist=true&skipRedownload=true`
+  and triggers a fresh search, so removal → blocklist → re-search is one action.
+
+### Verified (over the mesh, `-e ansible_host=100.65.22.72` — krypton off the home LAN)
+| Check | Result |
+|---|---|
+| 1st `--tags compose,services` run | `ok=33 changed=5 failed=0` |
+| 2nd/idempotency run | `ok=33 changed=1` — the ONLY change is "Bring up the compose stack" (the known gluetun-netns tier `flaresolverr/prowlarr/qbittorrent` Recreate churn); my `.env`/compose/homepage/dir tasks are all `changed=0`, cleanuparr not recreated |
+| Cert (AC1) | real LE cert at `cleanuparr.home.stromdahl.tech` (issuer `Let's Encrypt CN=YR2`, valid), `/health` **HTTP 200** over the mesh. Cert issued first try — no Traefik-restart quirk this time |
+| Not public (AC1) | no published port; same boundary as all siblings — public `*.home.stromdahl.tech` resolves only to the non-routable mesh IP, no OPNsense port-forward (issue-005 attested) |
+| Connections | qbit + Radarr + Sonarr all "health changed: Healthy" in the logs; no auth errors |
+| Schedule (AC3) | `Job QueueCleaner scheduled with cron expression '0 0/5 * * * ?'` — runs with no manual trigger |
+| Config on SSD (AC4) | `/data/ssd/appdata/cleanuparr` (SSD precious appdata subvol), sops-sourced secrets |
+
+### Stalled-download removal — exercised live (AC2), three-part evidence
+First attempt used a real TPB magnet grabbed via Radarr; it found peers and began
+crawling (0.1%), so `ResetStrikesOnProgress` correctly kept it from striking out —
+not a valid stall test. Replaced with a **deterministic dead download**: a
+fabricated magnet with a random infohash (no peers → stuck in qBittorrent `metaDL`
+forever), pushed into Radarr's queue via `/api/v3/release/push` against a throwaway
+unmonitored "Nosferatu (1922)" movie. Cron temporarily set to 1-minute for a
+bounded test.
+- Strikes accrued **1 → 2 → 3** (reason `DownloadingMetadata`) on consecutive runs,
+  then: `Removing item with max strikes` → `item marked for removal` → `queue item
+  deleted`.
+- **(a)** torrent **gone from qBittorrent** (info API `length=0` for the hash);
+  **(b)** item **gone from the Radarr queue** (`totalRecords=0`); **(c)** release
+  **present in Radarr's blocklist** (`Nosferatu.1922.1080p.BluRay.x264-CLEANUPARRTEST`,
+  movieId 17). All three captured before/after.
+- The movie was kept unmonitored so Cleanuparr's post-removal search couldn't grab
+  a real release.
+
+### Cleanup (left pristine, mirroring the Paperless/016 throwaway discipline)
+Removed the blocklist entry, deleted the throwaway movie (deleteFiles=true), and
+restored the cron to 5-minute. Confirmed: movie 17 → 404, Radarr queue 0, blocklist
+0, no radarr-category torrents in qBittorrent, no leftover files in `/data/ssd/
+downloads`. (The lone remaining qbit torrent, `Poirot.S13`, is a pre-existing real
+sonarr download from an earlier session — not a test artifact, left untouched.)
+
+### Boundaries respected
+Only Cleanuparr added. No re-key of the *arr/qBittorrent creds (reused the issue-014
+keys). No change to gluetun/VPN or qBittorrent settings. No `site.yml` change
+(compose_stack already registered). No full-stack restart — only `docker compose up`
+added the one container (the gluetun-netns tier recreates on any compose run by
+design). Did not `git push`.

@@ -90,7 +90,8 @@ arr_puid: "{{ jellyfin_puid }}"
 arr_pgid: "{{ jellyfin_pgid }}"
 # Per-app appdata dirs the compose_stack role creates + chowns before first start.
 # (gluetun/flaresolverr have no /config volume, so they are not listed.)
-arr_appdata_apps: [qbittorrent, prowlarr, radarr, sonarr, bazarr, profilarr, jellyseerr]
+# 'cleanuparr' (issue 017) reuses this same loop for its SSD appdata dir.
+arr_appdata_apps: [qbittorrent, prowlarr, radarr, sonarr, bazarr, profilarr, jellyseerr, cleanuparr]
 
 # issue 018 — Homepage dashboard (homepage.{{ compose_domain }}). Config on the SSD
 # appdata tier; API-fed widgets pull live data over the media bridge. The widget
@@ -171,3 +172,15 @@ restic_password_file: /etc/restic/appdata.pass
 # the repo-init task fails closed until it exists). Retention policy
 # (--keep-daily/weekly/monthly) is hardcoded directly in the systemd unit,
 # matching the SnapRAID/btrfs-scrub units' static-file convention.
+
+# issue 017 — Cleanuparr (download hygiene: stalled/failed-download cleanup for
+# the issue-014 stack). Config on the SSD appdata tier (arr_appdata_apps above);
+# no container env vars needed for its business config — download-client +
+# arr-app connections and the queue-cleaner schedule/rules are set once, post-
+# deploy, via Cleanuparr's own REST API (its sqlite db under /config is the
+# source of truth thereafter). It reuses the EXISTING qBittorrent WebUI creds
+# and Radarr/Sonarr API keys from issue 014 (read on-box; never re-keyed).
+# Cleanuparr's own admin login is a NEW identity (like the Immich/Paperless
+# admin) minted into secrets.sops.yml as cleanuparr_admin_password — used only
+# for the one-time /api/auth/setup/account call, not templated into stack.env.
+cleanuparr_admin_username: admin

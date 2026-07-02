@@ -108,6 +108,12 @@
         description: Indexers
         server: my-docker
         container: prowlarr
+    - Cleanuparr:
+        icon: mdi-broom
+        href: https://cleanuparr.home.stromdahl.tech
+        description: Download hygiene
+        server: my-docker
+        container: cleanuparr
 
 - Infrastructure:
     - Traefik:

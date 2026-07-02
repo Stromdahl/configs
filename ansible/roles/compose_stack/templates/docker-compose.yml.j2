@@ -6,7 +6,9 @@
 # Services: docker-socket-proxy, traefik, jellyfin (issue 005) + gluetun,
 # qbittorrent, prowlarr, flaresolverr, radarr, sonarr, bazarr, profilarr,
 # jellyseerr (issue 014) + homepage (issue 018) + immich-server,
-# immich-machine-learning, immich-redis, immich-database (issue 006).
+# immich-machine-learning, immich-redis, immich-database (issue 006) +
+# paperless + paperless-redis/db/gotenberg/tika (issue 007) + cleanuparr
+# (issue 017).
 # Excluded vs neon: homer, the alpine `test` probe, the commented `backup`.
 #
 # Divergences from neon's compose:
@@ -459,6 +461,59 @@ services:
       - TZ=${TZ:-Europe/Stockholm}
     volumes:
       - ${APPDATA_DIR:?missing APPDATA_DIR}/jellyseerr:/app/config
+    networks:
+      - media
+
+  # ===========================================================================
+  # issue 017 — Cleanuparr: download hygiene for the issue-014 stack. Monitors
+  # the Radarr/Sonarr queues and qBittorrent; on repeated stall/failed-import
+  # strikes it removes the download from qBittorrent, blocklists the release in
+  # the *arr (blocklist=true is hardcoded in Cleanuparr's queue-delete call) so
+  # it is not re-grabbed, and triggers a fresh search. Successor to Decluttarr.
+  #   - Reuses the EXISTING qBittorrent WebUI creds + Radarr/Sonarr API keys
+  #     from issue 014 (read from each app's config.xml / sops on-box; never
+  #     re-keyed). Cleanuparr's own admin login is a NEW identity (like the
+  #     Immich/Paperless admin) — minted into secrets.sops.yml, NOT a container
+  #     env var (Cleanuparr has no ADMIN_USER/PASSWORD env — the account is
+  #     created once via its own /api/auth/setup/account, post-deploy).
+  #   - All business config (download-client + arr-app connections, the queue
+  #     cleaner schedule + stall rule) lives in Cleanuparr's own sqlite db under
+  #     /config — set once via its REST API (schema-driven, same discipline as
+  #     014's app config), not via env vars or a seeded file.
+  #   - DownloadCleaner (orphaned-file pruning / seeding rules) is deliberately
+  #     LEFT DISABLED (its default state): it would delete files under the live
+  #     downloads dir on an unvetted rule set — real blast radius, and not an
+  #     issue-017 AC. No /downloads mount either, since nothing here needs it
+  #     while that feature is off. Only the QueueCleaner (stalled/failed queue
+  #     items) is enabled — exactly what the ACs require and verify.
+  #   - No published port; Traefik-only at cleanuparr.${DOMAIN}, same boundary
+  #     as every other service in this stack (LAN + mesh, never public).
+  # ===========================================================================
+
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:2.9.14
+    container_name: cleanuparr
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cleanuparr.rule=Host(`cleanuparr.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.cleanuparr.entrypoints=websecure"
+      - "traefik.http.routers.cleanuparr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.cleanuparr.loadbalancer.server.port=11011"
+      - "traefik.http.routers.cleanuparr.middlewares=security-headers@file"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:11011/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    environment:
+      - PORT=11011
+      - PUID=${UID:?missing UID}
+      - PGID=${GID:?missing GID}
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      - ${APPDATA_DIR:?missing APPDATA_DIR}/cleanuparr:/config
     networks:
       - media
 
