@@ -784,3 +784,9 @@ scheduled timer handle it during a quiet window. The `snapraid-sync.timer` (re-e
 session) fires daily **03:00** (`Persistent=true`) — that quiet-window run completes clean
 parity over the migrated library + new content automatically. Side note: this is the first
 **end-to-end proof of the acquire pipeline via a real user request.**
+
+### 2026-07-02 03:00 — nightly SnapRAID sync completed clean (parity resolved)
+The quiet-window scheduled run resolved the prior race exactly as predicted: **`Everything OK`**,
+405 GB delta in 2h43m (03:00->05:43; the stable bulk was already done by the 07-01 partial run).
+Full HDD pool — migrated library + the Poirot series — is now dual-parity protected. Nightly
+timer keeps it current. Parity-protection thread closed.
