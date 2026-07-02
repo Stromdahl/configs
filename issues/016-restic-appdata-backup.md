@@ -1,9 +1,9 @@
 ---
 title: Back up service appdata off the mirror with restic
-status: in-progress
+status: done
 priority: high
 created: 2026-07-01
-closed: null
+closed: 2026-07-02
 labels: [epic:backup]
 ---
 
@@ -33,12 +33,12 @@ HDD pool the repo is written to).
 
 ## Acceptance criteria
 
-- [ ] A `restic` repository exists on the HDD pool and is initialised with a
+- [x] A `restic` repository exists on the HDD pool and is initialised with a
       passphrase sourced from sops (never landing in git or world-readable).
-- [ ] A scheduled unit snapshots the appdata subvolume unattended, with a
+- [x] A scheduled unit snapshots the appdata subvolume unattended, with a
       retention/prune policy applied so the repo does not grow unbounded.
-- [ ] A test restore of one application's config from a snapshot succeeds
+- [x] A test restore of one application's config from a snapshot succeeds
       (verified, not assumed).
-- [ ] Deployed via Ansible from krypton, idempotently.
-- [ ] A failed backup run surfaces out of band (wired to `issues/013`'s
+- [x] Deployed via Ansible from krypton, idempotently.
+- [x] A failed backup run surfaces out of band (wired to `issues/013`'s
       mechanism once available; until then, at minimum a non-silent failure).
