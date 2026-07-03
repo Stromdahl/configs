@@ -1432,3 +1432,49 @@ Follow-ups (offered, not blocking; neither done): drop `servers/neon/` from the 
 `git push neon` path); optional Cloudflare-zone tidiness check for a dangling `jellyfin.stromdahl.tech`
 record. Also surfaced: nothing alerts on *service reachability* (why the ~15 h Immich outage went
 unnoticed) — a candidate new issue, distinct from `issues/013` (storage-timer alerting).
+
+## 2026-07-03 — issue 026: restic backup of Immich + Paperless — deployed + verified, all ACs green
+
+Authored in parallel (one of a 026/004/010 batch, each in its own git worktree) then deployed
+serially from krypton over the mesh (`-e ansible_host=100.65.22.72`). Extends `issues/016`'s restic
+repo/role; no new secret, no container recreation. Cherry-picked to main as `3c76c79`.
+
+### What deployed (role `restic_backup`, `--tags backup,restic`)
+`ok=13 changed=4` first run, **`changed=0`** on re-run (AC5 idempotence). Installs
+`/usr/local/sbin/restic-app-backup <app>` (pg_dump → gzip → single `restic backup` of dump+libs
+`--tag <app> --retry-lock 5m` → per-tag `forget --prune`; `docker exec` **without** `-t` to avoid
+CRLF dump corruption; trap wipes the plaintext dump), a templated `restic-backup-alert@.service`
+(leaves 016's non-templated one untouched), and staggered timers `restic-immich` (02:20) +
+`restic-paperless` (02:40) — after appdata (02:00), before SnapRAID (03:00). Reuses repo
+`/mnt/disk1/backups/restic-appdata` + `/etc/restic/appdata.pass`.
+
+### Verified from krypton (scratch restore, never in-place)
+- **First backups landed:** immich snapshot **19.86 GiB**, paperless **392 KiB**; 016's three
+  `appdata` snapshots untouched (026 coexists).
+- **Immich AC3 (consistent working DB):** restored the dump into a throwaway PG on the *live* image
+  (`ghcr.io/immich-app/postgres:14-vectorchord…`), applied Immich's documented restore-time
+  `search_path` sed, `psql --single-transaction --set ON_ERROR_STOP=on` → **exit 0**. Extensions
+  present (`vchord 0.4.3`, `vector 0.8.1`); **`asset` = 3782 rows, exactly matching live**. Dump
+  holds all **66 tables + 66 COPY blocks** (87 MB) — real data, not just schema.
+- **Immich AC4:** restored one original from the snapshot (8.2 MB, valid MP4). Snapshot holds
+  **11,220 image/video originals**. Confirmed `/data/ssd/immich/library` is the *whole* Immich data
+  root (mounts container `/data`: library/ upload/ thumbs/ profile/ encoded-video/ backups/).
+- **Paperless AC3:** dump restored to a throwaway PG (postgres:17.10), `psql` exit 0.
+- **Paperless AC4:** Paperless is **empty today** (0 documents; media = only `media.lock`), so the
+  doc restore is vacuous. Media mount source `/data/ssd/paperless/media` matches the backup path,
+  so real documents will be captured; file-restore mechanism already proven by the Immich original.
+- **AC6 (alert on failure):** both units carry `OnFailure=restic-backup-alert@<unit>.service`; the
+  template runs `logger -p daemon.alert` + `wall` (placeholder until 013). Proved end-to-end
+  **non-disruptively** with a transient `systemd-run … -p OnFailure=… /bin/false` → the alert
+  instance fired and logged `… backup FAILED on helium`. No live service touched.
+
+### Gotchas hit
+- Ansible **ad-hoc** commands need the same `-e ansible_host=100.65.22.72` as the playbook, else they
+  fall back to the inventory LAN IP (`192.168.1.191`, dark while krypton roams) → `No route to host`.
+- `ansible -m command -a "docker inspect … --format {{.X}}"` tries to Jinja-template the `{{ }}` and
+  errors; run docker/restic multi-step checks via `-m script` (a script file's braces are literal).
+- `ms` is in helium's `docker` group (docker needs no sudo), but `restic`/`systemctl` need root →
+  run those via Ansible `become` (sops-decrypted become password), not raw `ssh + sudo`.
+- Immich's asset table is **`asset`** (singular); its DB sets an empty session `search_path` (hence
+  the restore sed) — first restore-test attempt queried `assets` and looked like a failure until
+  disambiguated. The backup was correct all along.
