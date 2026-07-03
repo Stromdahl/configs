@@ -1,0 +1,14 @@
+[Unit]
+Description=Alert on %i backup failure (placeholder until issues/013)
+
+[Service]
+Type=oneshot
+# Templated sibling of restic-backup-alert.service (issue 016), for the per-app
+# backups (issue 026). %i is the failed backup unit's short name (e.g.
+# restic-immich), passed in by the backup unit's OnFailure=...@%N.service. Same
+# minimum non-silent bar until issues/013 picks a channel (ntfy / healthchecks.io
+# / email) — when it lands, swap the two ExecStart lines below; nothing about the
+# restic-immich / restic-paperless units needs to change (they only reference
+# this unit's name). The leading '-' on wall tolerates no logged-in ttys.
+ExecStart=/usr/bin/logger -p daemon.alert -t restic-backup "%i backup FAILED on %H -- see: journalctl -u %i"
+ExecStart=-/usr/bin/wall "%i backup FAILED on %H -- see: journalctl -u %i"

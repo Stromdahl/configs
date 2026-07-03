@@ -1,0 +1,13 @@
+[Unit]
+Description=Daily restic backup of Paperless (Postgres dump + documents)
+
+[Timer]
+# 02:40 — staggered after the appdata (02:00) and Immich (02:20) backups and
+# before SnapRAID's nightly sync (03:00), so the three restic runs don't contend
+# for the repo's exclusive prune lock (--retry-lock 5m in the script is the
+# second guard) and the new snapshot lands before parity is computed over it.
+OnCalendar=*-*-* 02:40:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

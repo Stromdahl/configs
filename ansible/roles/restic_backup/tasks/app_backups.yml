@@ -1,0 +1,56 @@
+---
+# issue 026 — extend the issue-016 restic setup to the Postgres-backed apps
+# Immich + Paperless. Each is backed up into the SAME repo (016's
+# /mnt/disk1/backups/restic-appdata, reused via the same password file — no new
+# repo, no new secret) under its OWN tag (immich / paperless), so retention/prune
+# rolls independently of the appdata tag. The DB is captured as a consistent
+# pg_dump via `docker exec` (NOT a torn file-level copy of the live PGDATA); the
+# photo/document libraries are captured as files. A staggered per-app timer plus a
+# templated OnFailure alert reuse 016's non-silent-failure pattern. Purely
+# additive to the role: it does not touch the 016 units, site.yml, or host_vars.
+- name: Staging dir for the per-app DB dumps (root-only; dumps wiped post-backup)
+  become: true
+  ansible.builtin.file:
+    path: /var/backups/restic-staging
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Install the per-app backup script (DB dump -> restic backup -> per-tag prune)
+  become: true
+  ansible.builtin.copy:
+    src: restic-app-backup.sh
+    dest: /usr/local/sbin/restic-app-backup
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the per-app restic backup + templated alert systemd units
+  become: true
+  ansible.builtin.copy:
+    src: "systemd/{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - restic-backup-alert@.service
+    - restic-immich.service
+    - restic-immich.timer
+    - restic-paperless.service
+    - restic-paperless.timer
+  notify: Reload systemd
+
+- name: Reload systemd now (before enabling the timers)
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the per-app restic backup timers
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - restic-immich.timer
+    - restic-paperless.timer

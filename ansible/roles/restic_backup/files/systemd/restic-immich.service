@@ -1,0 +1,20 @@
+[Unit]
+Description=restic backup of Immich (Postgres logical dump + photo library) to the HDD pool (issue 026)
+# Static paths — must match host_vars/helium/vars.yml: immich_upload_location
+# (/data/ssd/immich/library) and restic_repo_path (/mnt/disk1/...). Copied
+# verbatim like the 016 / SnapRAID / btrfs-scrub units; the pg_dump target
+# (immich_postgres) + repo path live in /usr/local/sbin/restic-app-backup.
+RequiresMountsFor=/data/ssd/immich/library /mnt/disk1
+# The dump runs `docker exec immich_postgres pg_dump`, so docker must be up.
+After=docker.service
+Wants=docker.service
+# Non-silent-failure seam (issues/013). %N = this unit's name without the
+# .service suffix (-> restic-immich), so the alert instance names THIS unit.
+# Leaves 016's non-templated restic-backup-alert.service untouched.
+OnFailure=restic-backup-alert@%N.service
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/usr/local/sbin/restic-app-backup immich

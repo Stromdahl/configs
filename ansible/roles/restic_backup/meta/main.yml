@@ -2,9 +2,11 @@
 galaxy_info:
   role_name: restic_backup
   description: >-
-    Versioned, deduplicated restic backup of the SSD 'appdata' precious
-    subvolume to the HDD pool (issue 016) — the *arr/Jellyfin curation state,
-    not the SnapRAID-protected media library.
+    Versioned, deduplicated restic backup to the HDD pool. Issue 016: the SSD
+    'appdata' precious subvolume (*arr/Jellyfin curation state, not the
+    SnapRAID-protected media library). Issue 026 extends the same repo to the
+    Postgres-backed apps Immich + Paperless — a consistent pg_dump plus the
+    photo/document libraries, each under its own tag.
   license: MIT
   min_ansible_version: "2.15"
   platforms:

@@ -1,0 +1,20 @@
+[Unit]
+Description=restic backup of Paperless (Postgres logical dump + documents) to the HDD pool (issue 026)
+# Static paths — must match host_vars/helium/vars.yml: paperless_data_root
+# (/data/ssd/paperless -> media + data) and restic_repo_path (/mnt/disk1/...).
+# Copied verbatim like the 016 / SnapRAID / btrfs-scrub units; the pg_dump target
+# (paperless_postgres) + repo path live in /usr/local/sbin/restic-app-backup.
+RequiresMountsFor=/data/ssd/paperless /mnt/disk1
+# The dump runs `docker exec paperless_postgres pg_dump`, so docker must be up.
+After=docker.service
+Wants=docker.service
+# Non-silent-failure seam (issues/013). %N = this unit's name without the
+# .service suffix (-> restic-paperless), so the alert instance names THIS unit.
+# Leaves 016's non-templated restic-backup-alert.service untouched.
+OnFailure=restic-backup-alert@%N.service
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/usr/local/sbin/restic-app-backup paperless

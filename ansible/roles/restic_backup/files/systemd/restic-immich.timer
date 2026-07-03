@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily restic backup of Immich (Postgres dump + photo library)
+
+[Timer]
+# 02:20 — staggered AFTER the appdata backup (restic-backup.timer, 02:00) and
+# BEFORE SnapRAID's nightly sync (03:00), so the three restic runs don't contend
+# for the repo's exclusive prune lock (--retry-lock 5m in the script is the
+# second guard) and the new snapshot lands on the HDD pool before parity is
+# computed over it.
+OnCalendar=*-*-* 02:20:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

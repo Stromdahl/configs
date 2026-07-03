@@ -17,3 +17,9 @@
 
 - name: Scheduled backup + retention/prune systemd timer
   ansible.builtin.import_tasks: timer.yml
+
+# issue 026 — extend the same repo to the Postgres-backed apps (Immich +
+# Paperless): a consistent pg_dump + the photo/document libraries, each under its
+# own tag, on staggered per-app timers reusing the OnFailure alert pattern.
+- name: Per-app (Immich + Paperless) DB dump + library backups (issue 026)
+  ansible.builtin.import_tasks: app_backups.yml
