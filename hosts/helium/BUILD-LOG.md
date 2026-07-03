@@ -1315,3 +1315,36 @@ keys). No change to gluetun/VPN or qBittorrent settings. No `site.yml` change
 (compose_stack already registered). No full-stack restart — only `docker compose up`
 added the one container (the gluetun-netns tier recreates on any compose run by
 design). Did not `git push`.
+
+## 2026-07-03 — issue 008 closed: library migration complete (final delta waived by construction)
+
+**State:** issue 008 (migrate the media library from neon) is **done**. This unblocks
+`issues/009` (DNS cutover → retire neon) — all of 009's dependencies are now met.
+
+Current pool state (read-only over the mesh from krypton, `ssh 100.65.22.72`):
+- `/srv/media` (mergerfs over `/mnt/disk1`+`/mnt/disk2`): **611 G movies + 734 G tv**.
+- `neon-migrate` log ends `=== DONE rc_total=0 ===` (2026-06-30 19:40 UTC) — first pass
+  complete. Service inactive; snapraid-sync/scrub timers enabled.
+
+**Why closed without a final delta rsync (AC2):**
+- The library is *larger* than the ~932 GB migrated — the live 014 download stack has
+  been acquiring on helium since (Sonarr/Radarr active; a real `Poirot.S13` grab was
+  seen during the 017 run). So **helium has diverged from and now supersedes neon.**
+- User confirmed 2026-07-03 that **neon's download side is stopped and all new content
+  lands on helium** — neon has been frozen since before the first pass finished
+  (`rc_total=0`). So there are **no neon-side changes to reconcile**; a from-neon delta
+  could only be empty.
+- The documented resume-checklist delta used `rsync --delete` — which is now a
+  **foot-gun**: a `neon→helium --delete` would delete helium's newer content. Any real
+  reconcile would have to be additive (no `--delete`), and it would transfer nothing.
+- Driving it was also blocked at the access layer: helium `sudo` is password-gated
+  (non-interactive), the migration source was a **root-only ephemeral key**
+  (`/root/.ssh/neon_migrate*`), and neon-rescue is unreachable as `ms`. So a proof-only
+  dry-run would need hands on a rescue host that may already be torn down.
+
+AC1 (present + in Jellyfin) and AC3 (migrated title plays over the mesh — Poirot
+S01E01 transcoded via QSV during the 005 check on 2026-07-02) were both already met.
+
+**Cleanup folded into `issues/009`:** unmount `/mnt/neon-src` on neon-rescue + remove
+the ephemeral key (helium `/root/.ssh/neon_migrate*` and neon-rescue's `authorized_keys`
+line) — it's root/neon-side teardown that belongs with the neon decommission.

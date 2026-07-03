@@ -18,9 +18,16 @@ out of service.
 After verification, neon retires; its 1.8 TB NVMe is freed (a candidate local
 backup target, handled by the deferred backup work).
 
-Depends on `issues/008` (library migrated), `issues/014` + `issues/015` (download
-automation + *arr state), and `issues/006` + `issues/007` (Immich + Paperless) — so
-every service is live on helium before the final cutover.
+**Migration-scaffolding teardown (folded in from `issues/008`):** as part of
+retiring neon, tear down the library-migration plumbing — unmount `/mnt/neon-src`
+on neon-rescue and remove the ephemeral key (`/root/.ssh/neon_migrate*` on helium +
+the matching line in neon-rescue's `authorized_keys`). 008 closed without doing this
+because it is root/neon-side teardown that belongs with the decommission.
+
+Depends on `issues/008` (library migrated — done), `issues/014` (download automation
+— done; `issues/015`, the *arr-state migration, was **dropped** in favour of a fresh
+014 build), and `issues/006` + `issues/007` (Immich + Paperless — done) — so every
+service is live on helium before the final cutover. All dependencies are now met.
 
 ## Acceptance criteria
 
