@@ -1,6 +1,6 @@
 ---
 title: Run service containers as non-root where the image supports it
-status: open
+status: in-progress
 priority: medium
 created: 2026-06-29
 closed: null
