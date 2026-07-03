@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+{{ ansible_managed | comment }}
+# helium HDD spin-down (issue 004). Enables the SAS Power Condition STANDBY_Z
+# state (spindle stop after an idle window) on each pool drive, persisting it to
+# the drive's saved mode page (`sdparm --save`). Re-run every boot by
+# hdd-spin-down.service as a belt-and-suspenders, since firmware honoring of
+# --save across a power cycle varies.
+#
+# Idempotent: a drive whose CURRENT (running) power condition already matches the
+# desired STANDBY_Z=1 + SZCT value is skipped with no firmware write, so repeated
+# boots / Ansible runs cause no wear. Idempotency keys off the *current* values,
+# not the *saved* page: --save honoring varies by firmware, so a drive that
+# ignores the SP bit would otherwise show a stale saved value and be re-written on
+# every run. The current page is what governs live behaviour and is re-established
+# each boot by this same script, so it is the stable, correct key. Prints the
+# sentinel SPINDOWN_CHANGED to stdout iff it actually wrote to at least one drive
+# (Ansible keys `changed` off that).
+#
+# Drives are addressed by their stable wwn-* by-id symlink, NOT /dev/sg* — sg
+# numbering is not stable across reboots, whereas the by-id path is, and sdparm
+# operates on the block device directly. A drive whose by-id path is absent is
+# logged and skipped (never fails the boot).
+set -euo pipefail
+
+# 100 ms units; see host_vars/helium/vars.yml (hdd_standby_z_timer).
+STANDBY_TIMER={{ hdd_standby_z_timer }}
+
+DRIVES=(
+{% for d in hdd_data_drives + hdd_parity_drives %}
+  "{{ d.id }}"
+{% endfor %}
+)
+
+changed=0
+failed=0
+
+for wwn in "${DRIVES[@]}"; do
+  dev="/dev/disk/by-id/${wwn}"
+  if [[ ! -e "${dev}" ]]; then
+    echo "skip: ${wwn} not present"
+    continue
+  fi
+
+  # Read the CURRENT (leftmost) STANDBY_Z enable flag + SZCT timer value.
+  info="$(sdparm --get=STANDBY_Z,SZCT "${dev}" 2>/dev/null || true)"
+  cur_en="$(awk '/^STANDBY_Z/{print $2; exit}' <<<"${info}")"
+  cur_ct="$(awk '/^SZCT/{print $2; exit}' <<<"${info}")"
+
+  if [[ "${cur_en}" == "1" && "${cur_ct}" == "${STANDBY_TIMER}" ]]; then
+    echo "ok: ${wwn} already STANDBY_Z=1 SZCT=${STANDBY_TIMER}"
+    continue
+  fi
+
+  echo "apply: ${wwn} -> STANDBY_Z=1 SZCT=${STANDBY_TIMER}"
+  if sdparm --set=STANDBY_Z=1,SZCT="${STANDBY_TIMER}" --save "${dev}" >/dev/null; then
+    changed=1
+  else
+    echo "ERROR: sdparm set failed on ${wwn} (${dev})" >&2
+    failed=1
+  fi
+done
+
+if [[ "${changed}" == "1" ]]; then
+  echo "SPINDOWN_CHANGED"
+fi
+
+exit "${failed}"

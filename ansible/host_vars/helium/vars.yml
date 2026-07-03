@@ -26,6 +26,14 @@ hdd_union_mount: "/srv/media"
 # category.create=lfs is load-bearing: fill one data drive before touching the
 # other (keeps the second spun down). See roles/storage_hdd/tasks/mergerfs.yml.
 hdd_mergerfs_opts: "defaults,allow_other,use_ino,cache.files=partial,dropcacheonclose=true,category.create=lfs,moveonenospc=true,minfreespace=50G,fsname=mergerfs"
+# storage_hdd spin-down (issue 004): SAS Power Condition STANDBY_Z timer.
+# Units are 100 ms (confirmed on-box via `sdparm --page=po`): 12000 -> 1200 s =
+# 20 min idle before the spindle stops. STANDBY_Z is the real spin-down; IDLE_A
+# (a shallow ~10 ms-recovery idle) is already firmware-default-enabled at 2 s and
+# is left unmanaged. Applied by roles/storage_hdd/tasks/spin_down.yml
+# (sdparm --set=STANDBY_Z=1,SZCT=<this> --save) and re-applied every boot by
+# hdd-spin-down.service (firmware honoring of --save across a power cycle varies).
+hdd_standby_z_timer: 12000
 
 # storage_ssd: the two 480 GB Kingston SUV400 SATA SSDs as a btrfs raid1 mirror —
 # the hot/precious data tier (Docker appdata, Immich, Paperless) plus lean scratch

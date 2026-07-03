@@ -25,3 +25,6 @@
 
 - name: SnapRAID sync/scrub systemd timers
   ansible.builtin.import_tasks: timers.yml
+
+- name: HDD spin-down (SAS STANDBY_Z timers + smartd -n standby guard)
+  ansible.builtin.import_tasks: spin_down.yml

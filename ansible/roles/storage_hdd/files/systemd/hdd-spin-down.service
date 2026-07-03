@@ -1,0 +1,14 @@
+[Unit]
+Description=Apply SAS HDD standby (spin-down) timers to the pool drives
+Documentation=file:///usr/local/sbin/hdd-spin-down.sh
+# Order after local filesystems so the wwn-* by-id block devices are enumerated
+# before sdparm addresses them (issue 004). Best-effort: the script skips any
+# drive whose by-id path is absent, so a missing drive never fails the boot.
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/hdd-spin-down.sh
+
+[Install]
+WantedBy=multi-user.target

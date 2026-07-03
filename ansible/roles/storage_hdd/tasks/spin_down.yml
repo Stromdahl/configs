@@ -1,0 +1,65 @@
+---
+# issue 004 — HDD spin-down for the four SAS pool drives.
+#
+# These are SAS drives behind the LSI 9300-8i (IT mode), so spin-down is driven
+# by the SCSI Power Condition mode page via sdparm (NOT hdparm, which is ATA
+# only). We enable STANDBY_Z (spindle stop) with a configurable idle timer and
+# persist it two ways: (a) sdparm --save writes the drive's saved mode page;
+# (b) hdd-spin-down.service re-applies it on every boot, since firmware honoring
+# of --save across a power cycle varies by drive.
+#
+# The apply script is idempotent and addresses drives by their stable wwn-*
+# by-id symlink (sg numbering is not stable across reboots). It writes to a
+# drive only when the current/saved values differ from the desired ones, so a
+# clean re-run reports changed=0 and repeated boots cause no firmware wear.
+- name: Install the HDD spin-down apply script
+  become: true
+  ansible.builtin.template:
+    src: hdd-spin-down.sh.j2
+    dest: /usr/local/sbin/hdd-spin-down.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the HDD spin-down boot service
+  become: true
+  ansible.builtin.copy:
+    src: systemd/hdd-spin-down.service
+    dest: /etc/systemd/system/hdd-spin-down.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Reload systemd now (before enabling the service)
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable the HDD spin-down boot service
+  become: true
+  ansible.builtin.systemd_service:
+    name: hdd-spin-down.service
+    enabled: true
+
+# Apply the timers now so the first deploy takes effect without a reboot. The
+# script is idempotent; changed is keyed off the SPINDOWN_CHANGED sentinel it
+# prints only when it actually wrote to a drive.
+- name: Apply SAS STANDBY_Z timers now (idempotent)
+  become: true
+  ansible.builtin.command:
+    cmd: /usr/local/sbin/hdd-spin-down.sh
+  register: hdd_spindown_apply
+  changed_when: "'SPINDOWN_CHANGED' in hdd_spindown_apply.stdout"
+
+# smartd is already enabled by the Debian package preset and its default
+# DEVICESCAN already carries `-n standby`. Pin that spin-down-safe content as
+# config-as-code so polling can never regress spin-down. Enabling the daemon and
+# failure alerting are issue 013's concern (see the template header).
+- name: Pin the spin-down-safe smartd config (-n standby)
+  become: true
+  ansible.builtin.template:
+    src: smartd.conf.j2
+    dest: /etc/smartd.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart smartd

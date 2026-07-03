@@ -3,3 +3,12 @@
   become: true
   ansible.builtin.systemd_service:
     daemon_reload: true
+
+# smartd's canonical unit on Debian is smartmontools.service (smartd.service is
+# an alias). Restart it so a changed /etc/smartd.conf takes effect; `-n standby`
+# means the re-scan won't wake a drive that is already in standby (issue 004).
+- name: Restart smartd
+  become: true
+  ansible.builtin.systemd_service:
+    name: smartmontools.service
+    state: restarted

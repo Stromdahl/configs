@@ -1,0 +1,19 @@
+{{ ansible_managed | comment }}
+# helium SMART monitoring config (managed by storage_hdd, issue 004).
+#
+# Spin-down guard: `-n standby` makes smartd SKIP a drive that is in SAS STANDBY
+# (spun down) rather than waking it to poll, so routine SMART polling can never
+# defeat the issue-004 standby timers. The Debian default DEVICESCAN already
+# carried `-n standby`; this pins that guarantee as config-as-code so a reinstall
+# or a changed distro default can't silently regress spin-down.
+#
+# DEVICESCAN monitors every attached device (the 4 SAS drives + SSDs + NVMe), so
+# SMART health visibility is preserved. `-n standby` is a no-op on the SSDs/NVMe
+# (they never enter SAS standby). `-m root -M exec ...` keeps the Debian mail
+# hook wired so failures are surfaced.
+#
+# SCOPE: issue 004 owns ONLY this spin-down-safe content. The smartd daemon is
+# already enabled by the Debian package preset. Failure alerting, notification
+# routing and any per-drive tuning belong to issue 013 (monitoring) — extend
+# there, don't fork this file.
+DEVICESCAN -d removable -n standby -m root -M exec /usr/share/smartmontools/smartd-runner
