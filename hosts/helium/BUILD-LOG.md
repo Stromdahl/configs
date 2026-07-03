@@ -1410,3 +1410,25 @@ RAM-based rescue OS and vanish on shutdown (I'm off-LAN and can't reach `.153` t
 Samsung 990 PRO 2 TB NVMe (old media + Steam) stays in the box — a candidate local backup target,
 deferred to the backup work, not part of 009. Repo hygiene (`servers/neon/`, the now-dead
 `git push neon` deploy path) can be dropped in a separate cleanup commit — not a 009 close blocker.
+
+### (same session) neon powered off → AC#3/#4 met → issue 009 CLOSED
+User confirmed neon was up on the rescue drive and asked me to power it off. krypton was still
+roaming (NetBird-only, no LAN IP), and neon-rescue has no mesh presence (throwaway rescue OS,
+LAN-only) — so no direct path. Reached it **through helium as a ProxyJump** (`ssh -J
+ms@100.65.22.72 ms@192.168.1.153`): helium is on the LAN and forwards the TCP, while krypton's
+own key authenticates end-to-end to neon-rescue — helium needed no key (and had none: the one
+that worked was the migration key just torn down). Confirmed the target (`debian-rescue`, up
+2d15h, `/mnt/neon-src` still mounted), then `sudo -S poweroff` (rescue OS's throwaway `rescue`
+password — not a secret). Verified down from helium on the LAN: `.153:22` refused + no ping.
+The RAM-based rescue OS vaporized `/mnt/neon-src` + the `neon_migrate` authorized_keys line on
+shutdown → **neon-side teardown complete** by construction.
+
+Final **neon-dark sweep** over the mesh with neon confirmed off: **11/11 services** (jellyfin,
+jellyseerr, radarr, sonarr, bazarr, prowlarr, immich, paperless, homepage, cleanuparr, traefik)
+reachable with valid LE certs (`ssl_verify_result=0`). **All 4 ACs green → `issues/009` done.**
+helium is now the sole, fully-private home for every service; neon is retired.
+
+Follow-ups (offered, not blocking; neither done): drop `servers/neon/` from the repo (dead
+`git push neon` path); optional Cloudflare-zone tidiness check for a dangling `jellyfin.stromdahl.tech`
+record. Also surfaced: nothing alerts on *service reachability* (why the ~15 h Immich outage went
+unnoticed) — a candidate new issue, distinct from `issues/013` (storage-timer alerting).

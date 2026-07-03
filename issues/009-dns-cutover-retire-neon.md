@@ -1,9 +1,9 @@
 ---
 title: DNS cutover to helium and retire neon
-status: in-progress
+status: done
 priority: high
 created: 2026-06-27
-closed: null
+closed: 2026-07-03
 labels: [epic:cutover]
 ---
 
@@ -31,10 +31,13 @@ service is live on helium before the final cutover. All dependencies are now met
 
 ## Acceptance criteria
 
-- [ ] `*.home.stromdahl.tech` resolves to helium and every service (Jellyfin,
+- [x] `*.home.stromdahl.tech` resolves to helium and every service (Jellyfin,
       Jellyseerr, *arr, Immich, Paperless) is reachable over the mesh with valid
-      certs.
-- [ ] The public `jellyfin.stromdahl.tech` record is removed; nothing is publicly
-      reachable.
-- [ ] All services verified working on helium with neon powered off.
-- [ ] neon is decommissioned and its role fully retired.
+      certs. (Immich was down over the mesh — Traefik multi-network routing bug —
+      found + fixed under this issue; full 11/11 sweep green.)
+- [x] The public `jellyfin.stromdahl.tech` record is removed; nothing is publicly
+      reachable. (NXDOMAIN on public resolvers.)
+- [x] All services verified working on helium with neon powered off. (Final
+      neon-dark sweep: 11/11 reachable, valid certs.)
+- [x] neon is decommissioned and its role fully retired. (Powered off via helium
+      ProxyJump; helium- + neon-side migration teardown complete.)
