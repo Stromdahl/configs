@@ -559,6 +559,13 @@ services:
       - immich-database
     labels:
       - "traefik.enable=true"
+      # issue 009 — immich-server is dual-homed (media + immich). Without this label
+      # Traefik's docker provider picks one of the two container IPs non-deterministically
+      # on recreate; when it picks the immich-net IP (which Traefik isn't attached to) the
+      # route silently hangs (TLS ok, backend times out). Pin it to the shared media bridge.
+      # Value = the real docker network name (compose prefixes it with the project name,
+      # which defaults to the deploy dir's basename).
+      - "traefik.docker.network={{ compose_stack_dir | basename }}_media"
       - "traefik.http.routers.immich.rule=Host(`immich.${DOMAIN:?missing DOMAIN}`)"
       - "traefik.http.routers.immich.entrypoints=websecure"
       - "traefik.http.routers.immich.tls.certresolver=letsencrypt"
@@ -664,6 +671,11 @@ services:
         condition: service_started
     labels:
       - "traefik.enable=true"
+      # issue 009 — paperless is dual-homed (media + paperless); pin Traefik to the media
+      # bridge, same rationale as immich-server above. This one currently routes fine, but
+      # that's just the network-name ordering the provider happens to pick — the label makes
+      # it deterministic so a future recreate can't flip it to the unroutable paperless-net IP.
+      - "traefik.docker.network={{ compose_stack_dir | basename }}_media"
       - "traefik.http.routers.paperless.rule=Host(`paperless.${DOMAIN:?missing DOMAIN}`)"
       - "traefik.http.routers.paperless.entrypoints=websecure"
       - "traefik.http.routers.paperless.tls.certresolver=letsencrypt"
