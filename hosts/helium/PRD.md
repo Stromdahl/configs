@@ -35,6 +35,11 @@ dotfiles modules. neon's library and *arr state migrate over, then neon retires.
    cost me the library.
 2. As the operator, I want the HDDs spun down except during streams and the
    nightly parity sync, so that the box is quiet, cool, and low-power.
+   > **Update (2026-07-03, issue 004):** platter spin-down is **not achievable** on the
+   > LSI SAS3008 HBA + these enterprise SAS drives (commands accepted but ignored; verified
+   > exhaustively — see BUILD-LOG). This goal is met by the *architecture* (hot data on SSD,
+   > HDD pool touched only by reads + the nightly sync) + HBA cooling + `IDLE_A` head-unload,
+   > **not** by spun-down platters. Don't re-attempt spin-down on this hardware.
 3. As a viewer, I want Jellyfin + Jellyseerr to keep working as they do on neon,
    with the full library history intact after migration.
 4. As the user, I want Immich for my phone photos with on-box ML, so that I have

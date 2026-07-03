@@ -1552,3 +1552,34 @@ recreates on a repeat run (uptimes stable). Hardening itself is idempotent.
 ### Recommended user spot-checks (non-blocking; QSV device access already proven)
 Force one Jellyfin transcode and confirm `docker logs jellyfin | grep -i qsv` shows `-hwaccel qsv`;
 do a phone photo upload (Immich) + drop a PDF in Paperless consume (OCR). All plumbing verified green.
+
+## 2026-07-03 — issue 004 CLOSED: HDD spin-down not achievable on the SAS3008 HBA (hardware limit)
+
+Ran the deferred idle-standby observation. **The drives never spin down — a hardware limitation,
+not a config or poller issue.** Closed 004 best-effort per its own framing.
+
+### How it was established (methodology matters here)
+- **First watch was wrong:** polling `smartctl -n standby -i` every 3 min issues an INQUIRY to a
+  spinning drive, which resets the SZCT idle timer — so polling faster than the 20-min timer
+  guarantees it never sleeps (this is why smartd polls every 30 min, *longer* than the timer).
+  Discarded that run.
+- **Clean run:** sampled only `/proc/diskstats` (free kernel counters, no drive commands) for 24 min,
+  then ONE `smartctl -n standby` check. Result: `sda`/`sdb`/`sde` had **zero block I/O for 24 min**
+  and stayed spinning; `sdc` idle 15 min, spinning. snapraid inactive throughout.
+- **Poller hunt came up empty:** smartd polls every 30 min with `-n standby`; multipathd inactive;
+  no node_exporter/netdata/scrutiny/collectd/telegraf; no frequent systemd timers touch the drives;
+  no enclosure services. Nothing is waking them.
+- **Manual spin-down refused:** on parity `sdb`, `sdparm --command=stop`, `sg_start --pc=3` (explicit
+  STANDBY_Z), and `sg_start --stop` all returned **rc=0 but left the drive spinning** — including
+  after setting `PM_BG=1` (power-mgmt precedence; reverted). Mode page is correct: `STANDBY_Z=1`,
+  `SZCT=12000` (=20 min, saved), `IDLE_A=1`@2 s.
+
+### Root cause + disposition
+HBA = **Broadcom/LSI SAS3008** (IT-mode SAS-3). It + these HPE MB012000JWDFD enterprise SAS drives
+accept spin-down commands and silently ignore them — the classic LSI-SAS-HBA behavior. No config
+knob fixes it; only different hardware (plain SATA HBA / non-enterprise drives) would. **AC1 (timers
+applied+persistent) and AC5 (no poller) are met; AC2/3/4 (actually reach standby) are hardware-blocked.**
+Config kept (harmless, documents intent; firmware-default `IDLE_A` 2 s head-unload still trims
+noise/wear). **PRD goal #2 (quiet/cool/low-power) now rests on the architecture — hot data on SSD,
+HDD pool touched only by reads + the nightly sync — plus HBA cooling, NOT platter spin-down.**
+Don't re-attempt spin-down on this hardware.
