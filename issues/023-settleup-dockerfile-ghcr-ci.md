@@ -1,6 +1,6 @@
 ---
 title: Package settleup — Dockerfile + GHCR build/publish pipeline
-status: open
+status: in-progress
 priority: high
 created: 2026-07-02
 closed: null
