@@ -1,0 +1,4 @@
+---
+# edge group — public-facing hosts (radon, joining in issue 022). No edge-wide
+# variables yet; radon carries its own in host_vars when provisioned. This file
+# exists to declare the group and give edge-scoped vars a home.

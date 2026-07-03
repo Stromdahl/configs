@@ -1,16 +1,17 @@
 ---
-# Base hardening role for helium. Reproduces what the dotfiles hardening modules
-# (sshd, ufw, fail2ban, unattended-upgrades) produce, so helium's posture stays
-# consistent with the rest of the fleet, plus hostname/timezone.
+# Host-agnostic base hardening role. Reproduces what the dotfiles hardening
+# modules (sshd, ufw, fail2ban, unattended-upgrades) produce, so every managed
+# host keeps a fleet-consistent posture, plus hostname/timezone. Driven by
+# base_hostname / base_timezone (see defaults/main.yml) — no per-host names here.
 - name: Set hostname
   become: true
   ansible.builtin.hostname:
-    name: "{{ helium_hostname }}"
+    name: "{{ base_hostname }}"
 
 - name: Set timezone
   become: true
   community.general.timezone:
-    name: "{{ helium_timezone }}"
+    name: "{{ base_timezone }}"
 
 - name: Harden SSH (key-only, no root)
   ansible.builtin.import_tasks: sshd.yml

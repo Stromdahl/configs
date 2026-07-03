@@ -1,16 +1,11 @@
 ---
 # Plain (non-secret) variables for helium. The become password lives encrypted
 # in secrets.sops.yml alongside this file.
-helium_hostname: helium
-helium_timezone: Europe/Stockholm
-
-# geerlingguy.docker: install docker-ce engine + compose v2 plugin from the
-# official repo. The role derives the apt suite from ansible_distribution_release
-# (trixie), which Docker publishes.
-docker_install_compose_plugin: true
-docker_install_compose: false
-docker_users:
-  - "{{ ansible_user }}"
+#
+# Host name/timezone and the shared docker settings now come from the base role
+# defaults + group_vars/all.yml (base_hostname={{ inventory_hostname }}=helium,
+# base_timezone=Europe/Stockholm, docker_users, compose flags) — same effective
+# values, so this file only carries what is genuinely helium-specific.
 
 # storage_hdd: the four 12 TB SAS drives behind the LSI 9300-8i HBA. Referenced
 # by stable wwn-* by-id symlinks (unique here, unlike the Kingston SSDs). Two

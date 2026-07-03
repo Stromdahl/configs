@@ -1,11 +1,13 @@
 ---
-# helium pilot: one playbook run from krypton → hardened, docker-ready host.
-#   cd ansible && ansible-playbook site.yml
+# Multi-host fleet playbook, run from krypton → hardened, docker-ready hosts.
+#   cd ansible && ansible-playbook site.yml            # both groups
+#   cd ansible && ansible-playbook site.yml --limit radon
 #
-# Idempotent: a clean second run reports no changes. The become password is the
-# sops-encrypted ansible_become_password loaded from host_vars/helium/secrets.sops.yml
-# at run-time; it is never written to the target.
-- name: Bring helium to a hardened, docker-ready state
+# One play per inventory group (nas, edge). Idempotent: a clean second run
+# reports no changes. Become passwords are the sops-encrypted
+# ansible_become_password loaded from each host's host_vars/<host>/secrets.sops.yml
+# at run-time; they are never written to the target.
+- name: Bring nas hosts to a hardened, docker-ready state
   hosts: nas
   become: true
   roles:
@@ -21,3 +23,16 @@
       tags: [compose, services]
     - role: restic_backup
       tags: [backup, restic]
+
+# edge — public-facing hosts. base + docker only; the public edge_stack role
+# (Traefik + Cloudflare Origin cert + apps) arrives with radon in issue 024.
+# Empty group for now, so this play skips with "no hosts matched" until radon
+# joins the edge group (issue 022).
+- name: Bring edge hosts to a hardened, docker-ready state
+  hosts: edge
+  become: true
+  roles:
+    - role: base
+      tags: [base]
+    - role: geerlingguy.docker
+      tags: [docker]

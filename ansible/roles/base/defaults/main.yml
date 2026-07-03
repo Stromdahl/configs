@@ -1,0 +1,12 @@
+---
+# Host-agnostic defaults for the base role. Any group/host can override these
+# via group_vars/host_vars without editing the role.
+#
+# base_hostname: rename the box to its inventory name (radon's provider-assigned
+#   name becomes `radon`; helium stays `helium`). Override per-host only if the
+#   desired hostname differs from the inventory name.
+base_hostname: "{{ inventory_hostname }}"
+# base_timezone: safe neutral default. The fleet sets Europe/Stockholm in
+#   group_vars/all.yml (higher precedence), so this only applies to a host that
+#   opts out of the fleet default.
+base_timezone: "Etc/UTC"

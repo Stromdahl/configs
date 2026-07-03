@@ -1,0 +1,16 @@
+---
+# Fleet-wide variables applied to every managed host (all groups). Loaded by the
+# host_group_vars plugin, same as host_vars/. Overrides role defaults; a host_vars
+# entry overrides these in turn.
+
+# base role: the fleet's timezone. Also consumed by compose_stack's container TZ.
+base_timezone: Europe/Stockholm
+
+# geerlingguy.docker: shared engine settings so every group (nas + edge) gets a
+# consistent Docker without per-host docker vars. docker_users adds the box's
+# connecting admin ({{ ansible_user }}) to the docker group. compose_plugin=true /
+# standalone=false already match the role defaults; pinned here for explicitness.
+docker_install_compose_plugin: true
+docker_install_compose: false
+docker_users:
+  - "{{ ansible_user }}"

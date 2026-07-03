@@ -1,23 +1,31 @@
-# Ansible — helium pilot
+# Ansible — fleet control layer
 
-A scoped Ansible control layer for **helium only**. The rest of the fleet
-(krypton, argon, the PVE hosts) stays on the custom dotfiles bash modules; this
-tree is the pilot for replacing them.
+A multi-host Ansible control layer, grown from the helium pilot. The rest of the
+fleet (krypton, argon, the PVE hosts) stays on the custom dotfiles bash modules;
+this tree is the path off them. Two inventory groups, each with its own play in
+`site.yml`:
 
-Playbooks are **pushed from krypton over SSH** as the `ms` admin user. helium
-holds no GitHub key, no deploy key, and no age key — it never runs the dotfiles
-installer and never decrypts its own secrets.
+- **`nas`** — private NAS/services hosts (helium): base + docker + storage +
+  compose stack + restic backup.
+- **`edge`** — public-facing hosts: base + docker only. Empty until radon joins
+  it (issue 022); its public `edge_stack` role arrives in issue 024.
+
+Playbooks are **pushed from krypton over SSH** as each host's admin user. Managed
+hosts hold no GitHub key, no deploy key, and no age key — they never run the
+dotfiles installer and never decrypt their own secrets.
 
 ## Layout
 
 ```
 ansible.cfg                       control config (inventory, sops vars plugin)
 requirements.yml                  galaxy collections + roles
-inventory/hosts.yml               helium @ its pinned DHCP address, user ms
-host_vars/helium/vars.yml         plain vars (hostname, tz, docker opts)
+inventory/hosts.yml               nas (helium) + edge (empty) groups
+group_vars/all.yml                fleet-wide vars (timezone, shared docker opts)
+group_vars/edge.yml               edge-group placeholder (radon vars land in host_vars)
+host_vars/helium/vars.yml         helium-specific vars (storage, compose stack)
 host_vars/helium/secrets.sops.yml sops-encrypted vars (ansible_become_password)
-site.yml                          base hardening + docker, applied to `nas`
-roles/base/                       fleet-consistent hardening (ssh/ufw/fail2ban/uu)
+site.yml                          one play per group: nas (full) + edge (base+docker)
+roles/base/                       host-agnostic hardening (ssh/ufw/fail2ban/uu)
 ```
 
 ## Secrets (sops + age)
