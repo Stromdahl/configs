@@ -1,6 +1,6 @@
 ---
 title: Generalize the Ansible pilot into a multi-host control layer (nas + edge)
-status: open
+status: in-progress
 priority: high
 created: 2026-07-03
 closed: null
