@@ -1,6 +1,6 @@
 ---
 title: Register stromdahl.io and set up its Cloudflare zone + Origin certificate
-status: open
+status: in-progress
 priority: high
 created: 2026-07-02
 closed: null
