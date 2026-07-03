@@ -1,9 +1,9 @@
 ---
 title: Register stromdahl.io and set up its Cloudflare zone + Origin certificate
-status: in-progress
+status: done
 priority: high
 created: 2026-07-02
-closed: null
+closed: 2026-07-03
 labels: [epic:public-apps, needs-human]
 ---
 
@@ -29,8 +29,8 @@ for radon; the static origin cert replaces all of that.
 
 ## Acceptance criteria
 
-- [ ] `stromdahl.io` is registered and its nameservers point at Cloudflare; the zone shows Active.
-- [ ] The zone's SSL/TLS mode is set to Full (strict).
-- [ ] A Cloudflare Origin Certificate covering `stromdahl.io` and `*.stromdahl.io` is generated, and its private key is captured securely for the stack slice.
-- [ ] `stromdahl.tech` and its existing token are unchanged.
-- [ ] No Let's Encrypt / DNS-01 / Cloudflare API token is created for radon.
+- [x] `stromdahl.io` is registered and its nameservers point at Cloudflare; the zone shows Active.
+- [x] The zone's SSL/TLS mode is set to Full (strict).
+- [x] A Cloudflare Origin Certificate covering `stromdahl.io` and `*.stromdahl.io` is generated, and its private key is captured securely for the stack slice.
+- [x] `stromdahl.tech` and its existing token are unchanged.
+- [x] No Let's Encrypt / DNS-01 / Cloudflare API token is created for radon.
