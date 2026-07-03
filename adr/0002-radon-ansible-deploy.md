@@ -80,3 +80,4 @@ pipeline.
 - Durable spec: `hosts/radon/PRD.md`
 - Amends: `adr/0001-public-app-tier-radon.md`
 - Ansible pilot → multi-host: `ansible/` (helium `nas` play; new `edge` play for radon)
+- Backlog: `issues/027` (generalize to `nas`/`edge`) → `issues/022` (provision radon) → `issues/024` (`edge_stack`)
