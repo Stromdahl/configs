@@ -1,9 +1,9 @@
 ---
 title: Package settleup — Dockerfile + GHCR build/publish pipeline
-status: in-progress
+status: done
 priority: high
 created: 2026-07-02
-closed: null
+closed: 2026-07-03
 labels: [epic:public-apps, needs-human]
 ---
 
@@ -26,8 +26,27 @@ Can proceed in parallel with `issues/021` and `issues/022`.
 
 ## Acceptance criteria
 
-- [ ] settleup is pushed to a GitHub repo under the user's account.
-- [ ] A multi-stage Dockerfile builds a small runtime image that starts settleup and serves HTTP on its internal port, with the SQLite path configurable via env to a mounted location.
-- [ ] settleup's `cargo test` suite runs in CI and gates the build.
-- [ ] On push/tag, CI publishes the image to GHCR as a publicly pullable package.
-- [ ] Pulling and running the published image serves the app and persists the DB to the mounted volume across restarts.
+- [x] settleup is pushed to a GitHub repo under the user's account.
+- [x] A multi-stage Dockerfile builds a small runtime image that starts settleup and serves HTTP on its internal port, with the SQLite path configurable via env to a mounted location.
+- [x] settleup's `cargo test` suite runs in CI and gates the build.
+- [x] On push/tag, CI publishes the image to GHCR as a publicly pullable package.
+- [x] Pulling and running the published image serves the app and persists the DB to the mounted volume across restarts.
+
+## Resolution (2026-07-03)
+
+Delivered in the settleup repo (github.com/Stromdahl/settleup, GPL-3.0):
+
+- **Image:** `ghcr.io/stromdahl/settleup` (`:latest` on main, plus `:sha-*` and
+  `type=semver` tags on `v*` tags). Multi-stage build — `rust:1-bookworm` builder →
+  `debian:bookworm-slim` runtime, ~136 MB, **non-root** (uid 10001).
+- **Runtime contract for `issues/024`:** listens on **:3000** internally
+  (`SETTLEUP_ADDR=0.0.0.0:3000` baked in); DB at `SETTLEUP_DB=/data/settleup.db`
+  with `/data` a `VOLUME` owned by the app user (mount a named volume there);
+  `SETTLEUP_BASE_URL` is deliberately **not** baked in — the deployment sets it
+  (e.g. `https://settleup.stromdahl.io`) so QR/invite links and Secure cookies are right.
+- **CI** (`.github/workflows/ci.yml`): `cargo test --locked` gates a build-and-push
+  job; builds on PRs (no push), publishes to GHCR on push to main / `v*` tags.
+- **Verified:** CI green; **anonymous** `docker pull` of the published image
+  succeeds (package is public — no manual visibility toggle was needed); running the
+  pulled image serves the app and a created group survives destroying and recreating
+  the container against the same named volume.
