@@ -1,6 +1,6 @@
 # 0001 — Public app tier on an isolated VPS (radon)
 
-- **Status:** Accepted (2026-07-02)
+- **Status:** Accepted (2026-07-02) — **amended by [ADR-0002](0002-radon-ansible-deploy.md) (2026-07-03):** the *deploy mechanism* (git-push pipeline) and *backup* (Hetzner daily snapshots) decisions below are superseded; the **isolation** (no mesh) and **TLS** (static Origin cert, no LE/token) decisions remain in force.
 
 ## Context
 
