@@ -1,0 +1,73 @@
+---
+# Render the .env (config) + docker-compose.yml from templates, copy Traefik's
+# dynamic.yml (Origin-cert store + rate-limit + security-headers), then bring the
+# stack up. Mirrors compose_stack/tasks/stack.yml minus every helium-specific app
+# dir. community.docker is NOT in the pinned galaxy collections, so `docker
+# compose` is invoked via ansible.builtin.command (neon's / helium's idiom).
+
+- name: Create edge_stack_dir
+  become: true
+  ansible.builtin.file:
+    path: "{{ edge_stack_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create traefik config subdirectory
+  become: true
+  ansible.builtin.file:
+    path: "{{ edge_stack_dir }}/config/traefik"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# .env rendered to 0600. It carries no secret on the edge box today (the origin
+# key is rendered separately by secrets.yml, never via the env) — but keep 0600 +
+# no_log to match compose_stack and stay safe if a secret is ever added.
+- name: Render .env from template
+  become: true
+  ansible.builtin.template:
+    src: stack.env.j2
+    dest: "{{ edge_stack_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Render docker-compose.yml from template
+  become: true
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ edge_stack_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+# Copy verbatim — no Jinja markers in the dynamic config (the cert paths + rate
+# limits are static container-side values), matching compose_stack's intent.
+- name: Copy Traefik dynamic config
+  become: true
+  ansible.builtin.copy:
+    src: traefik/dynamic.yml
+    dest: "{{ edge_stack_dir }}/config/traefik/dynamic.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Bring up the edge compose stack
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      docker compose
+      -f {{ edge_stack_dir }}/docker-compose.yml
+      --env-file {{ edge_stack_dir }}/.env
+      up -d --remove-orphans
+  register: _compose_up
+  # docker compose writes progress to stderr (Created/Started/Recreated); stdout
+  # is typically empty on `up -d`, so parse stderr for the idempotency signal.
+  changed_when: >-
+    'Started' in _compose_up.stderr or
+    'Created' in _compose_up.stderr or
+    'Recreated' in _compose_up.stderr

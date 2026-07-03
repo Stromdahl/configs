@@ -1,0 +1,140 @@
+# Rendered by Ansible from roles/edge_stack/templates/docker-compose.yml.j2.
+# Committed to git — no secrets inline. ${VAR} refs resolve at `docker compose`
+# run time from {{ edge_stack_dir }}/.env (rendered 0600).
+#
+# The public edge stack for radon (issue 024): docker-socket-proxy + traefik +
+# settleup. Mirrors compose_stack's docker-socket-proxy + docker-provider label
+# routing and the `homepage` one-web-app-behind-Traefik shape, with these edge
+# divergences from the helium compose:
+#   - TLS is the STATIC Cloudflare Origin cert (dynamic.yml default store), NOT
+#     ACME: the three --certificatesresolvers.letsencrypt.acme.* flags, the
+#     cf_dns_api_token secret + CF_DNS_API_TOKEN_FILE env, and the
+#     traefik_certs:/letsencrypt volume are all GONE; router tls=true (no
+#     certresolver).
+#   - The websecure entrypoint trusts Cloudflare's IP ranges
+#     (forwardedHeaders.trustedIPs, from group_vars/edge.yml) so the rate-limit
+#     keys on — and access logs record — the real client IP, not a CF edge IP.
+#   - NO Traefik dashboard router on the public box (api.dashboard off).
+#   - Only traefik publishes ports (80/443). settleup is expose-only; with the
+#     DOCKER-USER LAN-drop gone, a published app port WOULD be internet-exposed.
+name: radon
+
+networks:
+  # App <-> Traefik bridge.
+  edge:
+  # Traefik <-> docker-socket-proxy only; the raw docker socket never touches
+  # the app-facing bridge.
+  socket_proxy:
+
+volumes:
+  # settleup's SQLite DB. A named volume on radon's local disk so app state
+  # survives container recreates.
+  settleup_data:
+
+services:
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.4.2
+    container_name: docker-socket-proxy
+    restart: unless-stopped
+    # Stays root to read the root:docker-owned /var/run/docker.sock (uid 0 is the
+    # socket owner -> no DAC_OVERRIDE needed); haproxy binds 2375 (>1024, no
+    # NET_BIND_SERVICE). It IS the socket-access boundary, so no cap beyond the
+    # empty set. Only CONTAINERS + NETWORKS are exposed (what the docker provider
+    # needs); everything else stays denied.
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    environment:
+      - CONTAINERS=1
+      - NETWORKS=1
+      - SERVICES=0
+      - TASKS=0
+      - INFO=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - socket_proxy
+
+  traefik:
+    image: traefik:v3.6.11
+    container_name: traefik
+    restart: unless-stopped
+    # DOCUMENTED root exception (issue 010 posture). Traefik must bind privileged
+    # ports 80/443, which requires CAP_NET_BIND_SERVICE even as uid 0 (an empty
+    # cap set cannot bind <1024). It only reads the Origin cert/key (root-owned,
+    # bind-mounted read-only); drop everything else.
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - "no-new-privileges:true"
+    depends_on:
+      - docker-socket-proxy
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.endpoint=tcp://docker-socket-proxy:2375"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--entrypoints.web.address=:80"
+      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entryPoints.web.http.redirections.entryPoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      # Trust Cloudflare's edge ranges so the client IP Traefik sees (for the
+      # rate-limit key and the access log) is the real visitor from
+      # X-Forwarded-For, not the CF edge that terminated the connection.
+      - "--entrypoints.websecure.forwardedHeaders.trustedIPs={{ edge_cloudflare_trusted_ips | join(',') }}"
+      # Access logs to stdout (JSON) so `docker logs traefik` shows per-request
+      # ClientHost — the real-client-IP evidence issue 024 verifies.
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+    labels:
+      # No dashboard router on the public box — the Traefik container exposes
+      # nothing itself; it only routes the app below.
+      - "traefik.enable=false"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Static Origin cert (default TLS store) + the dynamic middleware/options
+      # config, both read-only. No acme.json / traefik_certs volume — no ACME.
+      - ./config/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./config/traefik/certs:/etc/traefik/certs:ro
+    networks:
+      - edge
+      - socket_proxy
+
+  # settleup — the public expense-splitting app (issue 023 GHCR image). Mirrors
+  # compose_stack's `homepage` shape: expose-only (NO ports:), on the Traefik
+  # `edge` bridge, routed by docker-provider labels. The image already runs as a
+  # fixed non-root uid (10001) and bakes SETTLEUP_ADDR=0.0.0.0:3000 +
+  # SETTLEUP_DB=/data/settleup.db, so the only env it needs is the base URL (for
+  # correct QR/invite links + secure cookies) and only `user:` must NOT be set.
+  # The SQLite DB lives on the settleup_data named volume at /data. Verified from
+  # the image: it declares VOLUME /data owned 10001:999 (user `app`), so the fresh
+  # named volume inherits that ownership on first init and the non-root process
+  # can write its DB — no volume chown task is needed.
+  settleup:
+    image: ${SETTLEUP_IMAGE:?missing SETTLEUP_IMAGE}
+    container_name: settleup
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.settleup.rule=Host(`${SETTLEUP_HOST:?missing SETTLEUP_HOST}`)"
+      - "traefik.http.routers.settleup.entrypoints=websecure"
+      - "traefik.http.routers.settleup.tls=true"
+      - "traefik.http.services.settleup.loadbalancer.server.port=3000"
+      - "traefik.http.routers.settleup.middlewares=security-headers@file,rate-limit@file"
+    environment:
+      - SETTLEUP_BASE_URL=${SETTLEUP_BASE_URL:?missing SETTLEUP_BASE_URL}
+    volumes:
+      - settleup_data:/data
+    networks:
+      - edge

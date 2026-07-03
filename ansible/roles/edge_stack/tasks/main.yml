@@ -1,0 +1,20 @@
+---
+# Public edge stack for radon (issue 024). Mirrors helium's compose_stack
+# render-and-up, but DELIBERATELY DROPS three of compose_stack/tasks/main.yml's
+# pieces — radon is a public, mesh-free box:
+#   - the jellyfin_render_gid / compose_lan_iface assert (helium-only on-box vars)
+#   - the netbird.yml import (mesh join — radon is public, not mesh-restricted)
+#   - the firewall.yml import (DOCKER-USER LAN drop + iptables-persistent). Do NOT
+#     install iptables-persistent here: it declares `Breaks: ufw` and would evict
+#     radon's ufw (see issues/028). radon keeps ufw; only Traefik publishes ports.
+#
+# TLS is a STATIC Cloudflare Origin certificate served via Traefik's file
+# provider — no ACME, no cert resolver, no Cloudflare API token on the box. The
+# origin cert + key are sops-encrypted (admin-key-only) in
+# host_vars/radon/secrets.sops.yml and rendered to disk by secrets.yml below.
+
+- name: Render the Cloudflare Origin cert + key to disk for Traefik
+  ansible.builtin.import_tasks: secrets.yml
+
+- name: Template env/compose + dynamic config from sops and bring the stack up
+  ansible.builtin.import_tasks: stack.yml

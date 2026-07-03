@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  role_name: edge_stack
+  description: >-
+    Public edge stack for radon (issue 024): Traefik serving a STATIC Cloudflare
+    Origin certificate via the file provider (no ACME, no cert resolver, no CF
+    API token on the box), with a rate-limit + the fleet's shared security-headers
+    middleware, in front of the settleup app. Mirrors helium's compose_stack
+    render-and-up, but DROPS the NetBird mesh join and the DOCKER-USER LAN-drop
+    firewall — radon is publicly reachable by design.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []

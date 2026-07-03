@@ -24,10 +24,10 @@
     - role: restic_backup
       tags: [backup, restic]
 
-# edge — public-facing hosts. base + docker only; the public edge_stack role
-# (Traefik + Cloudflare Origin cert + apps) arrives with radon in issue 024.
-# Empty group for now, so this play skips with "no hosts matched" until radon
-# joins the edge group (issue 022).
+# edge — public-facing hosts (radon). base + docker, then the public edge_stack
+# role (Traefik serving the Cloudflare Origin cert via the file provider + the
+# settleup app). No NetBird mesh, no DOCKER-USER LAN drop, no iptables-persistent
+# (it would evict ufw — see issues/028); only Traefik publishes ports.
 - name: Bring edge hosts to a hardened, docker-ready state
   hosts: edge
   become: true
@@ -36,3 +36,5 @@
       tags: [base]
     - role: geerlingguy.docker
       tags: [docker]
+    - role: edge_stack
+      tags: [edge_stack, services]

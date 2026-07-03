@@ -1,0 +1,44 @@
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+
+  # Static Cloudflare Origin certificate served via the file provider — NO ACME,
+  # no cert resolver. The cert + key are rendered to disk by the edge_stack role
+  # (secrets.yml) and bind-mounted read-only at /etc/traefik/certs. Setting it as
+  # the default store's defaultCertificate makes Traefik serve it for every router
+  # that requests TLS (tls=true) without naming its own resolver.
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/origin.crt
+        keyFile: /etc/traefik/certs/origin.key
+
+http:
+  middlewares:
+    security-headers:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: strict-origin-when-cross-origin
+        permissionsPolicy: camera=(), microphone=(), geolocation=()
+
+    # Rate limit for the unauthenticated public apps. With no sourceCriterion set,
+    # Traefik keys on the request's client IP — and because the websecure
+    # entrypoint trusts Cloudflare's ranges (forwardedHeaders.trustedIPs), that
+    # resolves to the real visitor (CF-Connecting-IP / X-Forwarded-For), not a
+    # Cloudflare edge address. average = sustained requests/second; burst = the
+    # short spike a single client may exceed the average by.
+    rate-limit:
+      rateLimit:
+        average: 50
+        burst: 100
