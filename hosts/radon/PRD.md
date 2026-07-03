@@ -4,6 +4,14 @@
 > toy / side-project web apps under `*.stromdahl.io`. Crystallized from a grilling
 > session; this is the durable spec the build follows. Decomposition into
 > executable tasks is a separate step (`to-issues`).
+>
+> **Revised 2026-07-03:** the deploy/provisioning model changed from the neon-style
+> git-push pipeline to the fleet's **Ansible** control layer (generalized from the
+> helium pilot into a multi-host setup with radon as the first `edge` host), and the
+> host moved from a planned Hetzner CX22 to an existing **Hostinger** VPS. ADR-0001
+> still governs the tier's isolation and TLS posture, but its "reused git-push
+> conventions" and "Hetzner snapshot" bullets are superseded by this revision — a
+> new superseding ADR should record the git-push → Ansible decision.
 
 ## Problem Statement
 
@@ -30,10 +38,18 @@ the fleet — kept **entirely off the home network**. It runs dynamic apps in Do
 behind an internal Traefik, fronted by **Cloudflare** (proxied) so the VPS IP is
 hidden and a free DDoS shield sits in front of the no-auth apps. TLS uses a static
 **Cloudflare Origin Certificate**, so there is no ACME machinery and no Cloudflare
-API token on the most-exposed box. The stack is deployed with the existing
-**git-push → sparse-checkout → `deploy.sh`** pipeline (the same shape neon used);
-each app's container image is built by that app's **own CI and pulled from GHCR**,
-so no build toolchain lives on radon.
+API token on the most-exposed box.
+
+radon is managed by the fleet's **Ansible** control layer, pushed from krypton over
+SSH — the same mechanism that provisions helium — now generalized into a small
+**multi-host** setup where radon is the first member of a new **`edge`** inventory
+group. This is a deliberate departure from the neon-style git-push deploy the fleet
+used previously, chosen *because* radon is the most-exposed box: the Ansible model
+holds **no age key, no deploy key, no GitHub key, and no cloned repo** on the target
+— secrets are decrypted on krypton at run-time and pushed in memory — so radon ends
+up holding only what Traefik must read from disk (the origin-cert key). Each app's
+container image is built by that app's **own CI and pulled from GHCR**, so no build
+toolchain lives on radon.
 
 "One place" is resolved as the **`stromdahl.io` namespace**, not one runtime: every
 project is reachable at `<app>.stromdahl.io`, but where each one actually executes
@@ -54,15 +70,19 @@ on helium.
    never reach my NAS or family data.
 3. As the operator, I want the public box's real IP hidden and a shield in front of
    it, so that an unauthenticated app is not directly exposed to internet noise.
-4. As the operator, I want to reuse my existing git-push deploy and sops secret
-   conventions, so that radon feels like the rest of the fleet and needs no new
-   deploy tooling.
-5. As the operator, I want each app to build and publish its own image, so that the
+4. As the operator, I want radon managed by the same Ansible control layer and sops
+   conventions as the rest of the fleet, so that it feels like the rest of the fleet
+   and needs no bespoke deploy tooling — and so this build advances the fleet's
+   move off the custom dotfiles modules onto Ansible.
+5. As the operator, I want the most-exposed box to hold as little secret material as
+   possible — no decrypting key, no deploy key, no repo — with secrets decrypted on
+   krypton at run-time, so that a compromise yields the least.
+6. As the operator, I want each app to build and publish its own image, so that the
    public box holds no build toolchain and deploys are a fast image pull.
-6. As the user, I want all my toy projects to appear under one `stromdahl.io` roof,
+7. As the user, I want all my toy projects to appear under one `stromdahl.io` roof,
    so that they feel like a coherent home even when some (e.g. lunchlund) keep
    running on GitHub Pages.
-7. As the operator, I want the cost and the security effort to stay proportional to
+8. As the operator, I want the cost and the security effort to stay proportional to
    toy-project stakes, so that I am not running enterprise ceremony for a bar-tab
    splitter.
 
@@ -70,15 +90,17 @@ on helium.
 
 ### Host / provider
 
-- radon is a **Hetzner CX22** shared-vCPU instance (2 vCPU / 4 GB / 40 GB SSD) in
-  the **Helsinki** region — lowest latency for the operator and the Nordic
-  audience. x86 is chosen over the ARM tier because it is currently cheaper and
-  avoids any ARM container-image concerns for the Rust build.
-- OS is **Debian 13 (trixie)**, matching the rest of the fleet so every dotfiles
-  module and convention applies unchanged.
+- radon is an existing **Hostinger VPS** (KVM, ~1 vCPU / 4 GB RAM / 50 GB SSD)
+  running **Debian 13 (trixie)**, matching the rest of the fleet. The Rust build
+  runs in CI (GHCR), not on the box, so a single vCPU is sufficient to run Traefik +
+  settleup.
+- This replaces the originally-planned Hetzner CX22; the change is a provider swap
+  only and does not affect the isolation, edge, or app decisions below. Its one
+  consequence — backups — is addressed under *Operations* (deferred).
 - The hostname continues the fleet's **noble-gas** naming (helium, neon, argon,
   krypton); `radon` is the unused one and a fitting name for the single box that
-  faces the open internet.
+  faces the open internet. The provider-assigned hostname is renamed to `radon` by
+  the `base` role at provision time.
 
 ### Edge / TLS
 
@@ -93,65 +115,70 @@ on helium.
   and a departure from the fleet's Let's-Encrypt DNS-01 pattern (which exists only
   because the private hosts have no inbound path).
 
-### Deploy & app packaging
+### Provisioning & deploy (Ansible)
 
-- The **stack config** (Traefik + apps) reaches radon via the existing **Gen-1
-  git-push pipeline**: push the dotfiles repo to radon's bare deploy repo; a
-  post-receive hook sparse-checks-out this host's `servers/<host>` tree and runs
-  its `deploy.sh` (sops-decrypt secrets → `docker compose pull && up -d`). This is
-  the same mechanism neon used and is self-contained on the box, with no dependency
-  on an external control node.
+- radon is brought up and kept in state by the fleet's **Ansible** layer, run from
+  krypton over SSH as the box's existing cloud-init **`debian`** admin user (which
+  already carries an SSH key and passwordless sudo — so no bootstrap step and no
+  lockout risk when SSH is hardened). radon is added to a new **`edge`** inventory
+  group; the single `site.yml` gains a second play so `edge` hosts receive their own
+  role set while helium's `nas` play is unchanged.
+- radon reuses the fleet-consistent **`base`** role (hostname/timezone, key-only SSH
+  with root login and password auth disabled, ufw default-deny allowing only
+  22/80/443, a fail2ban sshd jail, unattended security upgrades) and the
+  **`geerlingguy.docker`** role (docker-ce + compose v2 from the official repo). It
+  gets **none** of helium's storage or mesh roles.
+- Secrets remain **sops + age**, but — following the helium pilot — are decrypted
+  **on krypton at run-time** by the `community.sops` vars plugin and passed to the
+  connection in memory. radon holds **no per-host age key**; the sole recipient of
+  its encrypted vars is the admin key. This is the concrete mechanism behind the
+  "least secret material on the exposed box" goal.
+- Updating radon (a config change or a new app image) is a re-run of the playbook
+  from krypton, optionally scoped with `--limit radon` / `--tags`. Deploys are
+  therefore push-from-krypton rather than self-contained on the box; krypton is a
+  soft dependency, accepted for a single toy-app host.
+
+### App packaging (GHCR)
+
 - Each **app image is built by the app's own CI** (GitHub Actions) and published to
   **GHCR as a public package**; radon only ever pulls it. No language toolchain or
   source build runs on the public box. settleup — currently a local-only repo —
   must first be pushed to GitHub and given a multi-stage Dockerfile (slim/distroless
-  runtime) and a build-and-push workflow.
-- Updating an app is therefore: push the app → CI publishes a new image → trigger a
-  radon deploy to pull it. Auto-pull tooling is intentionally not added.
+  runtime) and a build-and-push workflow. Its test suite (`cargo test`) gates the
+  build in CI.
 
-### settleup (first tenant)
+### The `edge_stack` role & settleup (first tenant)
 
-- Runs as a container listening on an internal port only; Traefik routes
-  `settleup.stromdahl.io` to it. No container ports are published to the host —
-  only Traefik binds 80/443.
-- Configured for production via its documented environment: bind on all interfaces
-  internally, `SETTLEUP_BASE_URL=https://settleup.stromdahl.io` (required, or the
-  QR/invite links are built with the wrong scheme), and its SQLite database path
-  pointed at a **Docker named volume on radon's local disk**. Secure cookies switch
-  on automatically with the HTTPS base URL.
-- A **rate-limit** Traefik middleware is applied in addition to the shared
-  security-headers middleware, since the app is unauthenticated.
-
-### Operations, isolation & backups
-
-- radon is **standalone**: it does **not** join the NetBird mesh, so a compromised
-  public box has no network path into the home fleet. This preserves the isolation
-  that justified using a VPS in the first place.
-- Admin access is **key-only SSH over the public internet** using the fleet's
-  `stromdahl.keys`, with root login disabled and a fail2ban sshd jail — standard
-  VPS hygiene, matching the fleet's hardening posture.
-- Backups use **Hetzner's built-in automated daily whole-disk snapshots**. Keeping
-  each app's durable state on a local Docker volume (rather than a separate block
-  volume) ensures the snapshot covers it. No custom backup tooling and no backups
-  to helium — proportional to toy-app stakes, and consistent with keeping radon
-  disconnected from home.
-
-### Secrets, DNS & hardening
-
-- Secrets remain **sops + age**, consumed by `deploy.sh` as a decrypted dotenv
-  written to disk at deploy time (the neon pattern). The one secret radon needs is
-  the **Cloudflare Origin Certificate private key**; a new sops creation-rule and a
-  per-host age key are added for this host.
-- Cloudflare DNS: `settleup.stromdahl.io` → proxied A record → radon;
-  `lunchlund.stromdahl.io` → CNAME → the existing GitHub Pages site, with the custom
-  domain configured on the lunchlund repo's Pages settings. lunchlund's build and
-  hosting are otherwise untouched.
-- Host firewall allows only 22/80/443 inbound. Because Docker inserts its own
-  forwarding rules, care is taken that **only Traefik publishes ports** so nothing
-  bypasses the intended boundary.
-- The host's `modules.conf` mirrors neon's *server* module set (base, hardened
-  sshd, ssh keys, ufw, fail2ban, docker, then deploy-user, sops, bare-git-repo) and
-  omits all NAS/storage/mesh modules.
+- A new **`edge_stack`** Ansible role runs radon's public stack. It mirrors the
+  helium `compose_stack` render-and-up pattern (render `docker-compose.yml` + env
+  from templates, render Traefik dynamic config, `docker compose up -d`) but drops
+  the two helium-specific pieces — the NetBird mesh join and the DOCKER-USER LAN-drop
+  firewall rules — because radon must be publicly reachable, not mesh-restricted.
+- **Traefik** serves the static **Cloudflare Origin certificate** via its file
+  provider (no ACME, no cert resolver). It applies the fleet's shared
+  **security-headers** middleware plus a **rate-limit** middleware (the apps are
+  unauthenticated). Because all traffic arrives from Cloudflare's edge, Traefik is
+  configured to **trust Cloudflare's IP ranges** so the rate-limit keys on — and
+  logs record — the real client IP (via `CF-Connecting-IP`/`X-Forwarded-For`) rather
+  than throttling Cloudflare collectively.
+- The origin cert's **private key** is stored **sops-encrypted for radon** in the
+  Ansible host vars (admin-key-only; it inherits the pilot's existing
+  `ansible/host_vars` creation rule, so **no new sops rule is needed**) and rendered
+  to disk at 0600 by the role for Traefik to read. This key is radon's **only**
+  secret — settleup itself has no secret env vars (a no-account app whose identity is
+  a per-device cookie token).
+- **settleup** runs as a container on Traefik's internal network, `expose`-only —
+  it publishes **no** host ports. It is configured via its documented environment:
+  `SETTLEUP_ADDR=0.0.0.0:3000` (bind all interfaces internally),
+  `SETTLEUP_BASE_URL=https://settleup.stromdahl.io` (required, or the QR/invite
+  links are built with the wrong scheme; secure cookies switch on automatically from
+  the `https` base URL), and `SETTLEUP_DB` pointed at a **Docker named volume** on
+  radon's local disk. The image is a **pinned** GHCR tag.
+- **Only Traefik publishes ports** (80/443, which ufw already allows). The public-box
+  firewall posture is discipline, not extra rules: no container other than Traefik
+  gets a `ports:` mapping, so Docker's iptables-bypass cannot inadvertently expose an
+  app. No DOCKER-USER rules are added (they exist on helium only to *hide* published
+  ports from the LAN — the opposite of radon's need).
 
 ## Testing Decisions
 
@@ -159,19 +186,32 @@ No meaningful unit-test surface — this is infrastructure/config. settleup's ow
 `cargo test` suite runs in its CI as a build gate, but radon's validation is
 operational:
 
+- A second `ansible-playbook site.yml --limit radon` run reports **no changes**
+  (idempotent), the fleet's standard bar for a role being correct.
 - `settleup.stromdahl.io` loads over HTTPS through Cloudflare with a valid
   certificate chain and Full (strict) mode active.
 - An invite link / QR generated by the deployed app uses the correct
   `https://settleup.stromdahl.io` base and opens on a phone.
-- settleup's SQLite data survives a container restart and a Hetzner snapshot
-  restore (state is on the persistent volume).
+- settleup's SQLite data survives a container restart (state is on the persistent
+  named volume).
 - Only 22/80/443 are reachable from the internet; the VPS's real IP is not exposed
-  in DNS.
+  in DNS; only Traefik publishes ports.
+- Traefik logs and the rate-limit show the **real client IP**, not a Cloudflare edge
+  IP (confirms the trusted-ranges config).
 - `lunchlund.stromdahl.io` resolves to the GitHub Pages site with a valid
   certificate.
 
 ## Out of Scope
 
+- **Backups (deferred).** The originally-planned Hetzner daily snapshots do not
+  apply to Hostinger. Nothing critical lives on radon yet and settleup's data is
+  inherently transient (groups with no recovery passphrase auto-delete after ~3 days
+  of inactivity), so no backup is configured for now. Revisit — Hostinger's built-in
+  backups, or restic to an append-only cloud repo — when a tenant lands durable data.
+- **Migrating neon or other fleet hosts onto Ansible.** This build generalizes the
+  Ansible layer to multi-host and adds radon as the first `edge` host; the structure
+  makes later migrations possible, but moving existing hosts is explicitly not part
+  of this work.
 - **Re-hosting lunchlund.** It stays a GitHub-Pages static site, CNAME'd into the
   namespace — not run on radon.
 - **NetBird mesh membership** for radon, and any **backups to helium**. radon is
@@ -186,15 +226,18 @@ operational:
   the intended proportional posture.
 - **Let's Encrypt / DNS-01 / a Cloudflare API token on radon** — replaced by the
   static Origin certificate.
-- **Migrating any other fleet host** onto or off of this pattern — radon is a new,
-  standalone box.
 
 ## Further Notes
 
 - The security and cost posture is intentionally scaled to **toy-project stakes**.
   settleup auto-expires stale groups hourly, so its data is inherently transient —
-  a further reason daily snapshots are sufficient and no elaborate backup regime is
-  warranted.
+  a further reason no elaborate backup regime is warranted while stakes stay low.
+- **Why Ansible over the git-push pipeline for radon:** the git-push model would
+  place a per-host age key, a bare git repo, and a full clone of the dotfiles repo on
+  the most-exposed box. The Ansible model puts none of that there — the decrypting
+  key stays on krypton and secrets are pushed in memory — which realizes ADR-0001's
+  "minimal footprint on the exposed box" goal more completely. This decision warrants
+  a new ADR superseding the relevant bullets of ADR-0001.
 - `stromdahl.tech` (the existing private fleet zone) is left entirely untouched; its
   Cloudflare token is scoped to `home.stromdahl.tech` and does not cover the new
   `stromdahl.io` zone.
@@ -204,3 +247,8 @@ operational:
 - Choosing a dedicated VPS over hosting on helium or a new VM on argon was an
   isolation decision: the public, unauthenticated workload is kept off the home
   network entirely and off known-flaky hardware.
+- **Build order:** the `base` + `docker` roles have no external dependencies and can
+  run first — bringing radon under management and immediately disabling password-auth
+  on the public box. `edge_stack` waits on its human-gated prerequisites: the
+  Cloudflare zone + Origin cert, the settleup GHCR image, and the proxied DNS record.
+  lunchlund's CNAME is independent DNS work.
