@@ -1,6 +1,6 @@
 ---
 title: HDD spin-down so idle drives stay quiet and cool
-status: open
+status: in-progress
 priority: medium
 created: 2026-06-27
 closed: null
