@@ -76,3 +76,4 @@ the existing `stromdahl.tech`.
 
 - Durable spec: `hosts/radon/PRD.md`
 - Backlog: `issues/021`–`issues/025` (`epic:public-apps`)
+- Ansible foundation: `issues/027` (`epic:ansible`) — the multi-host `nas`/`edge` layer radon is built on (per ADR-0002)
