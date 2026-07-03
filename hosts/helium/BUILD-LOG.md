@@ -1478,3 +1478,34 @@ CRLF dump corruption; trap wipes the plaintext dump), a templated `restic-backup
 - Immich's asset table is **`asset`** (singular); its DB sets an empty session `search_path` (hence
   the restore sed) — first restore-test attempt queried `assets` and looked like a failure until
   disambiguated. The backup was correct all along.
+
+## 2026-07-03 — issue 004: HDD spin-down — machine-side deployed + verified; observation pending (needs-human)
+
+Second of the 026/004/010 batch. Deployed from krypton (`--tags storage_hdd`, cherry-picked to main
+`04b7737`). `ok=19 changed=6` first run, **`changed=0`** on re-run (idempotent). Zero container
+disruption. Pre-flight `sdparm --dummy --set=STANDBY_Z=1,SZCT=12000 --save` parsed OK on all 4 drives
+before any real write (agent never ran it live — mesh was down at authoring time).
+
+### What deployed (role `storage_hdd`)
+Installs `/usr/local/sbin/hdd-spin-down.sh` + `hdd-spin-down.service` (oneshot, enabled, re-applies
+each boot), applied `STANDBY_Z=1, SZCT=12000` (=20 min) with `--save` to the 4 HPE MB012000JWDFD
+12 TB SAS drives, and pinned a managed `/etc/smartd.conf` (`DEVICESCAN … -n standby`) as
+config-as-code (→ restart smartd). SnapRAID timers untouched.
+
+### Verified (machine-side, from krypton)
+All 4 drives read back **`STANDBY_Z 1 [sav: 1]`, `SZCT 12000 [sav:12000]`** — applied *and* saved to
+firmware (persists across power cycles independent of the boot service). Boot service `enabled`,
+oneshot `Result=success`. `smartd.conf` carries `-n standby`, `smartmontools active` (won't wake
+sleeping drives on its poll).
+
+### Deviations from the brief (deliberate; box is ground truth — see agent runbook)
+by-id block devices, not fragile `sg` resolution; smartd was already `-n standby` (brief said
+"configured nowhere") so it's pinned not enabled; IDLE_A left at firmware default; idempotency keyed
+on the *current* page (firmware `--save` honoring varies).
+
+### Remaining — needs the user's hands (issue stays `in-progress`)
+The observational ACs can't be confirmed remotely: (1) leave the pool idle >20 min → all 4 reach
+STANDBY (`sudo smartctl -n standby -i /dev/disk/by-id/<wwn>` reads power mode without waking);
+(2) start one Jellyfin stream → exactly one data drive wakes, others stay standby (relies on
+mergerfs `category.create=lfs`); (3) `snapraid-sync` wakes then re-sleeps ~20 min after; (4) after a
+real reboot, `hdd-spin-down.service` ran + values still 1/12000. Close 004 once observed.
