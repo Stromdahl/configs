@@ -875,11 +875,14 @@ services:
     image: docker.io/library/redis:8.8.0
     container_name: paperless_redis
     restart: unless-stopped
-    # issue 010: official redis entrypoint starts root, chowns /data, gosu-drops to uid 999 ->
-    # curated caps (see anchor).
+    # issue 010: the official redis image drops root via `setpriv` (NOT gosu like postgres/valkey).
+    # setpriv clears the capability BOUNDING set (PR_CAPBSET_DROP), which needs CAP_SETPCAP on top
+    # of the curated privdrop caps — without it: "setpriv: apply bounding set: Operation not
+    # permitted" -> crash-loop. So this one image gets the anchor set + SETPCAP (explicit, not the
+    # shared anchor, so the gosu-based images aren't needlessly widened).
     cap_drop:
       - ALL
-    cap_add: *caps-privdrop
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID, SETPCAP]
     security_opt:
       - "no-new-privileges:true"
     healthcheck:
