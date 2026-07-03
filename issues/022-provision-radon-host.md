@@ -1,6 +1,6 @@
 ---
 title: Provision radon via Ansible — the first edge host (base + docker)
-status: open
+status: in-progress
 priority: high
 created: 2026-07-02
 closed: null
