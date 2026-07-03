@@ -1,6 +1,6 @@
 ---
 title: Stand up the radon edge_stack — Traefik + Cloudflare Origin cert + settleup live
-status: open
+status: in-progress
 priority: high
 created: 2026-07-02
 closed: null
