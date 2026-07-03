@@ -1,6 +1,6 @@
 ---
 title: Back up Immich and Paperless data (databases + originals) with restic
-status: open
+status: in-progress
 priority: high
 created: 2026-07-03
 closed: null
