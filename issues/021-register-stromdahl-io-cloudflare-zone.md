@@ -19,8 +19,8 @@ the zone's SSL/TLS mode to **Full (strict)**. Then generate a **Cloudflare Origi
 Certificate** covering `stromdahl.io` and `*.stromdahl.io` — a long-lived cert set
 once, which is what lets radon serve valid TLS with no ACME machinery. The origin
 cert's private key is the single secret radon needs; capture it securely for the
-stack slice to consume (its sops storage happens in `issues/024`, once radon's
-per-host key exists).
+stack slice to consume (`issues/024` stores it sops-encrypted under the existing
+admin-key rule — radon holds no per-host key).
 
 The existing `stromdahl.tech` zone and its `home.stromdahl.tech`-scoped token are
 left completely untouched — this is a separate zone with no shared credentials.
