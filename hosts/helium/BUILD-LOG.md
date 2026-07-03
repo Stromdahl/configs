@@ -1509,3 +1509,46 @@ STANDBY (`sudo smartctl -n standby -i /dev/disk/by-id/<wwn>` reads power mode wi
 (2) start one Jellyfin stream → exactly one data drive wakes, others stay standby (relies on
 mergerfs `category.create=lfs`); (3) `snapraid-sync` wakes then re-sleeps ~20 min after; (4) after a
 real reboot, `hdd-spin-down.service` ran + values still 1/12000. Close 004 once observed.
+
+## 2026-07-03 — issue 010: non-root/hardened compose stack — deployed + verified (all 23), all ACs green
+
+Third of the batch and the disruptive one (recreates all 23 containers). Cherry-picked to main
+(`b59ffde`) + a one-line fix (`e945780`). `cap_drop:[ALL]` + `no-new-privileges:true` on every
+service; a curated cap anchor `[CHOWN,DAC_OVERRIDE,FOWNER,SETGID,SETUID]` for the drop-from-root
+images (the frozen brief's literal "cap_drop:[ALL], no add" would have broken every gosu/s6 image —
+a uid-0 process with an empty cap set cannot `setuid()`). Root-by-design + documented inline:
+gluetun (`NET_ADMIN`+tun), traefik (`NET_BIND_SERVICE`+acme.json), docker-socket-proxy, immich
+server/ML. jellyseerr flipped root→1001 with a pre-up idempotent chown of its appdata.
+
+### The one deploy failure + fix (found by testing, not the weak dry-run)
+First run `failed=1`: **paperless_redis crash-looped** — `setpriv: apply bounding set: Operation not
+permitted`. The **official `redis:8` image drops root via `setpriv`** (not gosu like postgres/valkey),
+and `setpriv` clears the capability BOUNDING set (`PR_CAPBSET_DROP`), which needs **`CAP_SETPCAP`** on
+top of the curated set. Gave that one image an explicit `[…,SETPCAP]` (not the shared anchor, so the
+gosu images aren't widened) — commit `e945780`. Redeploy: `changed=2 failed=0`, paperless_redis
+healthy, paperless up. (immich_redis was fine throughout — it's valkey/gosu.)
+
+### Verified from krypton (all 23 healthy)
+- **All 23 Up/healthy** (socket-proxy/gotenberg/tika/traefik have no healthcheck → bare "Up").
+- **gluetun kill-switch intact** (highest blast radius): healthy, `NET_ADMIN` only; `qbittorrent`
+  egresses via the VPN IP (149.50.216.239), not helium's — the *arr are still tunneled.
+- **Jellyfin QSV survived non-root**: app process runs **uid 1001**, `group_add [992]` matches
+  `renderD128`'s group; jellyfin-ffmpeg's startup detection (which opens the device) enumerated
+  **`qsv` hwaccel + h264/hevc/av1_qsv encoders + scale/vpp_qsv filters** — the render node is
+  accessible to the non-root process. (A live client transcode is the only remaining belt-and-braces.)
+- **jellyseerr** runs `uid=1001 gid=1003` and reads its own state (the pre-up chown worked).
+- **Traefik ingress survived the recreate**: jellyfin 302, immich 200, paperless 302, homepage 200 —
+  all valid LE certs (`ssl_verify=0`) over the mesh.
+- **Read-only mounts (AC3):** jellyfin `/media:ro`, docker.sock `:ro`; bazarr deliberately writable
+  (saves subtitles next to media — documented inline). No `userns-remap` (AC5).
+
+### Idempotence nuance (not a 010 regression)
+The `Bring up the compose stack` task reports `changed=1` on repeat runs because its `changed_when`
+greps `docker compose` stderr for `Started`, and every `up -d` **restarts the gluetun-netns members**
+(qbittorrent/prowlarr/flaresolverr — `network_mode: service:gluetun`). This is the pre-existing
+gluetun-netns churn (noted since issue 009), not something 010 introduced — no other container
+recreates on a repeat run (uptimes stable). Hardening itself is idempotent.
+
+### Recommended user spot-checks (non-blocking; QSV device access already proven)
+Force one Jellyfin transcode and confirm `docker logs jellyfin | grep -i qsv` shows `-hwaccel qsv`;
+do a phone photo upload (Immich) + drop a PDF in Paperless consume (OCR). All plumbing verified green.
