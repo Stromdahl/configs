@@ -28,6 +28,19 @@
 #   - Verify traefik.${DOMAIN} dashboard is accessible over mesh
 name: helium
 
+# issue 010 — non-root / least-privilege hardening. Curated capability set for images
+# whose entrypoint starts as root and drops to a non-root user (linuxserver s6-overlay;
+# official postgres/redis/valkey via gosu; paperless via su-exec): CHOWN + DAC_OVERRIDE +
+# FOWNER cover the init-time chown of the /config|data dir; SETGID + SETUID cover the
+# privilege drop itself. A blanket cap_drop:[ALL] WITHOUT these BREAKS the drop — a uid-0
+# process with an empty capability set cannot setuid()/setgid() (the kernel gates those on
+# CAP_SETUID/CAP_SETGID, not on euid==0), so the app crash-loops or silently stays root.
+# This is the linuxserver / official-image hardening posture, and it deliberately diverges
+# from the frozen task-brief matrix's literal (broken) "cap_drop:[ALL], no cap_add".
+# Images that run directly as a fixed non-root uid (flaresolverr, jellyseerr) or that stay
+# root by design (immich, docker-socket-proxy) take cap_drop:[ALL] with NO cap_add.
+x-caps-privdrop: &caps-privdrop [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+
 networks:
   media:
   socket_proxy:
@@ -57,6 +70,13 @@ services:
     image: tecnativa/docker-socket-proxy:v0.4.2
     container_name: docker-socket-proxy
     restart: unless-stopped
+    # issue 010: stays root to read the root:docker-owned /var/run/docker.sock (uid 0 is the
+    # socket owner -> no DAC_OVERRIDE needed); haproxy binds 2375 (>1024, no NET_BIND_SERVICE).
+    # It IS the socket-access boundary, so no cap is required beyond the empty set.
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
     environment:
       - CONTAINERS=1
       - NETWORKS=1
@@ -72,6 +92,18 @@ services:
     image: traefik:v3.6.11
     container_name: traefik
     restart: unless-stopped
+    # issue 010: DOCUMENTED root exception. Traefik must bind privileged ports 80/443 —
+    # which requires CAP_NET_BIND_SERVICE even as uid 0 (an empty cap set cannot bind <1024) —
+    # and it owns acme.json (0600) inside the root-owned traefik_certs named volume. Running
+    # non-root (65534) would additionally need ambient-cap plumbing for the bind and a chown of
+    # the existing acme.json volume; on the reverse proxy whose failure = total outage that is
+    # not worth the live-box risk. Drop everything else.
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - "no-new-privileges:true"
     depends_on:
       - docker-socket-proxy
     command:
@@ -120,6 +152,14 @@ services:
     image: ghcr.io/linuxserver/jellyfin:10.11.8
     container_name: jellyfin
     restart: unless-stopped
+    # issue 010: linuxserver s6 init drops to PUID 1001 -> curated caps (see anchor). Caps do
+    # NOT gate /dev/dri (device cgroup + render group do) and no-new-privileges does not affect
+    # group_add, so QuickSync/QSV is preserved.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${DOMAIN:?missing DOMAIN}`)"
@@ -169,6 +209,12 @@ services:
     image: ghcr.io/gethomepage/homepage:v1.13.2
     container_name: homepage
     restart: unless-stopped
+    # issue 010: entrypoint drops to PUID 1001 (su-exec) -> curated caps (see anchor).
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.homepage.rule=Host(`homepage.${DOMAIN:?missing DOMAIN}`)"
@@ -224,8 +270,16 @@ services:
     image: qmcgaw/gluetun:v3.41.1
     container_name: gluetun
     restart: unless-stopped
+    # issue 010: DOCUMENTED privileged exception. NET_ADMIN + /dev/net/tun are required for the
+    # WireGuard tunnel, routing table, and iptables kill-switch — drop everything else. This is
+    # the netns provider for qbittorrent/prowlarr/flaresolverr, so it has the largest blast
+    # radius of any change here; if it fails to go healthy, its log names the missing cap.
+    cap_drop:
+      - ALL
     cap_add:
       - NET_ADMIN
+    security_opt:
+      - "no-new-privileges:true"
     devices:
       - /dev/net/tun:/dev/net/tun
     # No custom healthcheck: the gluetun image ships a provider-agnostic built-in
@@ -263,6 +317,13 @@ services:
     image: lscr.io/linuxserver/qbittorrent:5.1.4
     container_name: qbittorrent
     restart: unless-stopped
+    # issue 010: linuxserver s6 -> PUID 1001, curated caps (see anchor). No NET caps despite
+    # torrenting: it uses gluetun's network namespace, so its net stack is gluetun's.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     # Shares gluetun's network stack -> all torrent traffic egresses via the VPN;
     # if gluetun stops, qbit loses connectivity (kill-switch).
     network_mode: "service:gluetun"
@@ -288,6 +349,12 @@ services:
     image: lscr.io/linuxserver/prowlarr:2.3.5
     container_name: prowlarr
     restart: unless-stopped
+    # issue 010: linuxserver s6 -> PUID 1001, curated caps (see anchor); uses gluetun's netns.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     network_mode: "service:gluetun"
     depends_on:
       gluetun:
@@ -310,6 +377,13 @@ services:
     image: flaresolverr/flaresolverr:v3.4.6
     container_name: flaresolverr
     restart: unless-stopped
+    # issue 010: image already runs directly as non-root (uid 1000), so no privilege-drop cap
+    # is needed -> cap_drop:[ALL], no cap_add. Runs headless Chromium with --no-sandbox, so the
+    # dropped caps + no-new-privileges do not touch a sandbox it isn't using. Uses gluetun's netns.
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
     network_mode: "service:gluetun"
     depends_on:
       gluetun:
@@ -333,6 +407,13 @@ services:
     image: lscr.io/linuxserver/radarr:6.1.1
     container_name: radarr
     restart: unless-stopped
+    # issue 010: linuxserver s6 -> PUID 1001, curated caps (see anchor). /data/media stays RW
+    # (radarr imports/renames into the library), so it is NOT made read-only.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN:?missing DOMAIN}`)"
@@ -361,6 +442,12 @@ services:
     image: lscr.io/linuxserver/sonarr:4.0.17
     container_name: sonarr
     restart: unless-stopped
+    # issue 010: linuxserver s6 -> PUID 1001, curated caps (see anchor). /data/media stays RW.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN:?missing DOMAIN}`)"
@@ -389,6 +476,13 @@ services:
     image: lscr.io/linuxserver/bazarr:1.5.6
     container_name: bazarr
     restart: unless-stopped
+    # issue 010: linuxserver s6 -> PUID 1001, curated caps (see anchor). /data/media stays RW
+    # (bazarr writes sidecar subtitle files alongside the media).
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bazarr.rule=Host(`bazarr.${DOMAIN:?missing DOMAIN}`)"
@@ -418,6 +512,13 @@ services:
     image: santiagosayshey/profilarr:v1.1.4
     container_name: profilarr
     restart: unless-stopped
+    # issue 010: honors PUID/PGID; curated caps are the safe superset whether it drops from
+    # root or runs directly (harmless/inert if unused). Runtime uid unchanged -> no chown.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.profilarr.rule=Host(`profilarr.${DOMAIN:?missing DOMAIN}`)"
@@ -444,6 +545,15 @@ services:
     image: fallenbagel/jellyseerr:2.7.3
     container_name: jellyseerr
     restart: unless-stopped
+    # issue 010: upstream image has NO privilege drop and ran as container-root. Flip it to the
+    # jellyfin uid/gid directly (runs as 1001, no drop -> no cap_add). Its /app/config (sqlite
+    # settings + request db) was written root-owned, so the compose_stack role recursively chowns
+    # it to 1001:1003 BEFORE this recreate (see stack.yml) or jellyseerr can't read its own state.
+    user: "${UID:?missing UID}:${GID:?missing GID}"
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jellyseerr.rule=Host(`jellyseerr.${DOMAIN:?missing DOMAIN}`)"
@@ -494,6 +604,13 @@ services:
     image: ghcr.io/cleanuparr/cleanuparr:2.9.14
     container_name: cleanuparr
     restart: unless-stopped
+    # issue 010: honors PUID/PGID (1001); curated caps are the safe superset whether it drops
+    # from root or runs directly. Runtime uid unchanged -> no chown.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.cleanuparr.rule=Host(`cleanuparr.${DOMAIN:?missing DOMAIN}`)"
@@ -554,6 +671,13 @@ services:
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:?missing IMMICH_VERSION}
     container_name: immich_server
     restart: unless-stopped
+    # issue 010: DOCUMENTED root exception. Immich has no PUID/PGID; the official image runs as
+    # root and writes the library (/data) as root (vars.yml). It stays root with no privilege
+    # drop, so cap_drop:[ALL] with NO cap_add is safe (binds 2283 >1024; owns its own files).
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
     depends_on:
       - immich-redis
       - immich-database
@@ -594,6 +718,12 @@ services:
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:?missing IMMICH_VERSION}
     container_name: immich_machine_learning
     restart: unless-stopped
+    # issue 010: DOCUMENTED root exception (same as immich-server). Runs as root with no drop
+    # and only writes its own model cache -> cap_drop:[ALL], no cap_add.
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
     # CPU inference: plain image, NO `extends: hwaccel.ml.yml`. Models cached in a
     # named volume so redeploys/re-pulls don't re-download the CLIP + face models.
     volumes:
@@ -605,6 +735,13 @@ services:
     image: docker.io/valkey/valkey:9@sha256:4963247afc4cd33c7d3b2d2816b9f7f8eeebab148d29056c2ca4d7cbc966f2d9
     container_name: immich_redis
     restart: unless-stopped
+    # issue 010: official valkey entrypoint starts root, chowns /data, gosu-drops to uid 999 ->
+    # curated caps (see anchor). Data dir stays 999-owned; no user override, no chown.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping || exit 1"]
     networks:
@@ -614,6 +751,15 @@ services:
     image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
     container_name: immich_postgres
     restart: unless-stopped
+    # issue 010: official postgres entrypoint starts root, self-chowns PGDATA, gosu-drops to uid
+    # 999 -> curated caps (see anchor). Deliberately NO user: override (per the frozen brief); a
+    # stricter user:"999:999" + zero-cap variant exists as future tightening. PGDATA stays
+    # 999-owned; no chown.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     environment:
       - POSTGRES_PASSWORD=${IMMICH_DB_PASSWORD:?missing IMMICH_DB_PASSWORD}
       - POSTGRES_USER=${IMMICH_DB_USERNAME:-postgres}
@@ -660,6 +806,14 @@ services:
     image: ghcr.io/paperless-ngx/paperless-ngx:${PAPERLESS_VERSION:?missing PAPERLESS_VERSION}
     container_name: paperless
     restart: unless-stopped
+    # issue 010: entrypoint starts root, installs the swe tesseract pkg (dpkg -> needs CHOWN /
+    # DAC_OVERRIDE / FOWNER) and gosu-drops to USERMAP_UID 1001 (needs SETGID / SETUID) -> curated
+    # caps (see anchor). Runtime uid unchanged (already USERMAP 1001) -> no chown.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     depends_on:
       paperless-db:
         condition: service_healthy
@@ -721,6 +875,13 @@ services:
     image: docker.io/library/redis:8.8.0
     container_name: paperless_redis
     restart: unless-stopped
+    # issue 010: official redis entrypoint starts root, chowns /data, gosu-drops to uid 999 ->
+    # curated caps (see anchor).
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping || exit 1"]
     volumes:
@@ -732,6 +893,14 @@ services:
     image: docker.io/library/postgres:17.10
     container_name: paperless_postgres
     restart: unless-stopped
+    # issue 010: official postgres entrypoint starts root, self-chowns PGDATA, gosu-drops to uid
+    # 999 -> curated caps (see anchor). No user: override (per the frozen brief); PGDATA stays
+    # 999-owned, no chown.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PAPERLESS_DB_USERNAME:-paperless} || exit 1"]
       interval: 30s
@@ -754,6 +923,14 @@ services:
     image: docker.io/gotenberg/gotenberg:8.34
     container_name: paperless_gotenberg
     restart: unless-stopped
+    # issue 010: curated caps as the safe superset (drop mechanism unverified — box was
+    # unreachable). Runs headless Chromium with --chromium-* flags (sandbox off), so the dropped
+    # caps + no-new-privileges don't touch a sandbox it isn't using.
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     # Paperless's required gotenberg flags (upstream compose): disable JS, restrict
     # file access to /tmp (where paperless drops files to convert).
     command:
@@ -767,5 +944,12 @@ services:
     image: docker.io/apache/tika:3.3.1.0
     container_name: paperless_tika
     restart: unless-stopped
+    # issue 010: curated caps as the safe superset (drop mechanism unverified). Java on 9998
+    # (>1024, no NET_BIND_SERVICE).
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
     networks:
       - paperless

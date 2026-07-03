@@ -183,6 +183,23 @@
     path: "{{ paperless_data_root }}/pgdata"
     state: directory
 
+# --- issue 010: jellyseerr flips from container-root to the jellyfin uid/gid ---------
+# jellyseerr's upstream image has no privilege drop; it ran as container-root, so its
+# /app/config (sqlite settings + request db + logs) is root-owned. issue 010 sets
+# user: "1001:1003" on the container, so it must own that state BEFORE the recreate or
+# it cannot read/write its own config and the request loop breaks. Recursive + defensive
+# (chowns regardless of current owner); idempotent — a no-op once already 1001:1003, so a
+# clean re-run stays changed=0. Ordered before the compose up below.
+- name: Chown jellyseerr appdata to the container uid/gid (issue 010 non-root flip)
+  become: true
+  ansible.builtin.file:
+    path: "{{ arr_appdata_dir }}/jellyseerr"
+    state: directory
+    owner: "{{ jellyfin_puid }}"
+    group: "{{ jellyfin_pgid }}"
+    recurse: true
+  when: arr_appdata_apps is defined
+
 # .env rendered to 0600 — contains Cloudflare DNS token + Traefik dashboard
 # basic-auth hash. no_log keeps secret values out of the Ansible output.
 - name: Render .env from template (sops secrets + config vars)
