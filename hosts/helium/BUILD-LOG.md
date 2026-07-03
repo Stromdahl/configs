@@ -1348,3 +1348,65 @@ S01E01 transcoded via QSV during the 005 check on 2026-07-02) were both already 
 **Cleanup folded into `issues/009`:** unmount `/mnt/neon-src` on neon-rescue + remove
 the ephemeral key (helium `/root/.ssh/neon_migrate*` and neon-rescue's `authorized_keys`
 line) — it's root/neon-side teardown that belongs with the neon decommission.
+
+## 2026-07-03 — issue 009 (in-progress): DNS cutover verified, Immich routing regression fixed, helium-side teardown done
+
+**State:** `issues/009` claimed. The machine-side of the cutover is done + verified over
+the mesh; what remains is the **physical** neon power-off/retire (AC#3/#4) + its RAM-only
+teardown, which needs the user's hands. A **live Immich outage** was found and fixed in the
+process.
+
+### AC#1 (all services resolve to helium + reachable over the mesh with valid certs) — MET
+Full over-the-mesh sweep from krypton (roaming, so LAN `.191` dark; helium reached at mesh
+`100.65.22.72`). All 12 routed hosts resolve publicly to `100.65.22.72` (the split-horizon
+roaming path: public Cloudflare wildcard `*.home.stromdahl.tech` → mesh IP) and serve valid
+Let's Encrypt certs (`ssl_verify_result=0`, no `-k`): jellyfin, jellyseerr, radarr, sonarr,
+bazarr, prowlarr, **immich**, paperless, homepage, cleanuparr, traefik.
+
+### The Immich regression (found while verifying AC#1; fixed under 009)
+Immich alone was **unreachable over the mesh** (`immich.home.stromdahl.tech` → TLS ok but the
+HTTP request hung, 0 bytes) for ~10–15 h — so **phone photo auto-backup had been silently
+failing** since `immich_server` was last recreated. Nothing alerts on service reachability.
+- **Not** a mesh or Immich-app fault: the container was `healthy` and answered directly
+  (`localhost:2283/api/server/ping → pong`); from the *box's own* localhost, via Traefik it
+  still hung, while jellyfin-via-Traefik returned 302.
+- **Root cause:** `immich_server` is **dual-homed** (`helium_media` 172.18.0.11 + `helium_immich`
+  172.20.0.5). Traefik is on `helium_media`+`helium_socket_proxy` only. With **no
+  `traefik.docker.network` label**, Traefik's docker provider picks one of the container's two
+  IPs non-deterministically on recreate; it had latched onto the **immich-net IP 172.20.0.5**,
+  which Traefik can't route to → silent hang (proved: from the traefik container, `wget`
+  172.18.0.11:2283 → pong, 172.20.0.5:2283 → timeout). `paperless` has the identical latent
+  flaw but happened to pick the routable IP.
+- **Fix (config-as-code):** added `traefik.docker.network={{ compose_stack_dir | basename }}_media`
+  (renders `helium_media`) to **immich-server AND paperless** in `docker-compose.yml.j2`. Value
+  must be the *real* (project-prefixed) docker network name — Traefik does not strip the compose
+  prefix. Deployed `--tags compose,services` (`changed=2`, tight blast radius: only immich_server
+  + paperless recreated for the label + the known gluetun-netns churn; **traefik untouched**, no
+  restart needed). Re-verified from krypton: **immich `/api/server/ping → pong`, http 200, valid
+  cert.** Commit `639af68`.
+- **Ansible gotcha (unrelated to the change):** passing SSH opts as `-e 'ansible_ssh_common_args=-o …'`
+  **crashes the ansible-core 2.19 worker** ("A worker was found in a dead state") — the `-o` leaks
+  into the worker's argv re-parse (`argparse: argument -o: expected one argument`). Set SSH opts via
+  the `ANSIBLE_SSH_ARGS` **env var** instead (not on the CLI). Cost me a long false-trail into
+  /dev/shm / fork limits before `ANSIBLE_DEBUG=1` surfaced the real traceback.
+
+### AC#2 (public `jellyfin.stromdahl.tech` removed; nothing public) — MET
+`dig jellyfin.stromdahl.tech @1.1.1.1` (A/AAAA/CNAME) → **NXDOMAIN** on public resolvers. A
+lingering LAN-IP record would have *resolved*, not NXDOM'd, so nothing is publicly reachable.
+(Optional user tidiness: confirm no dangling record remains in the Cloudflare zone dashboard.)
+
+### helium-side migration teardown — DONE
+Enumerated (avoids the `file`-module no-glob trap) then removed both ephemeral migration-key
+files over the mesh via `become`: `/root/.ssh/neon_migrate` + `/root/.ssh/neon_migrate.pub`
+(`changed=true` ×2; re-`find` → `matched:0`). This was the only *persistent* teardown artifact.
+
+### Remaining — needs the user's hands (AC#3/#4 + neon-side teardown)
+neon has been **bootless since 2026-06-29** (its OS SSD is in helium) and has served nothing
+since; helium has been the sole server for days, so AC#3 ("services work with neon off") holds
+functionally. To close AC#3/#4 the user must **physically power off + retire neon** (the Ventoy
+rescue OS at `192.168.1.153`). Powering it off also completes the **neon-side teardown**: the
+`/mnt/neon-src` bind mount and the `neon_migrate` line in `authorized_keys` live only in neon's
+RAM-based rescue OS and vanish on shutdown (I'm off-LAN and can't reach `.153` to verify). neon's
+Samsung 990 PRO 2 TB NVMe (old media + Steam) stays in the box — a candidate local backup target,
+deferred to the backup work, not part of 009. Repo hygiene (`servers/neon/`, the now-dead
+`git push neon` deploy path) can be dropped in a separate cleanup commit — not a 009 close blocker.
