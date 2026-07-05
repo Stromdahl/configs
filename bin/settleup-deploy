@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# settleup-deploy — pull the newest settleup build onto radon (manual GitOps apply).
+#
+# settleup's CI publishes ghcr.io/stromdahl/settleup:latest (+ :sha-<gitsha>) on every
+# push to main. radon runs a PINNED sha tag — never :latest — recorded in
+# ansible/host_vars/radon/vars.yml (see ADR-0002 / issue 024). This resolves what
+# :latest currently is, finds the matching sha-* tag, rewrites the pin, and — on
+# confirmation — re-runs the edge_stack play on radon, which docker-compose-pulls the
+# new image and recreates the container. Then it commits the bump so git == deployed.
+#
+# No credentials: the GHCR package is public, so :latest and the tag list resolve
+# anonymously. Run from krypton (needs docker, curl, python3, ansible-playbook, and
+# the admin age key the play uses to decrypt radon's sops vars).
+#
+# Usage:
+#   settleup-deploy            resolve newest, bump the pin, confirm, deploy, commit
+#   settleup-deploy --check    report current pin vs newest build; make no changes
+set -euo pipefail
+
+IMAGE=ghcr.io/stromdahl/settleup
+REPO_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+VARS="$REPO_ROOT/ansible/host_vars/radon/vars.yml"
+
+# Digest a tag points at (anonymous; talks to the registry, not the local daemon).
+digest() {
+  docker manifest inspect -v "$IMAGE:$1" 2>/dev/null | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+print((d[0] if isinstance(d, list) else d)["Descriptor"]["digest"])'
+}
+
+# Full tag list via GHCR anonymous pull token.
+tags() {
+  local tok
+  tok=$(curl -fsSL "https://ghcr.io/token?scope=repository:stromdahl/settleup:pull" \
+        | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
+  curl -fsSL -H "Authorization: Bearer $tok" \
+       "https://ghcr.io/v2/stromdahl/settleup/tags/list" \
+    | python3 -c 'import sys, json; print("\n".join(json.load(sys.stdin)["tags"]))'
+}
+
+echo "Resolving newest settleup build from GHCR (:latest) ..."
+want="$(digest latest)"
+[ -n "$want" ] || { echo "ERROR: could not resolve :latest — GHCR unreachable?" >&2; exit 1; }
+
+# The readable tag for the current :latest = the sha-* tag sharing its digest.
+newest=""
+while read -r t; do
+  case "$t" in sha-*) ;; *) continue ;; esac
+  [ "$(digest "$t")" = "$want" ] && { newest="$t"; break; }
+done < <(tags)
+[ -n "$newest" ] || { echo "ERROR: no sha-* tag maps to :latest ($want)" >&2; exit 1; }
+
+current="$(sed -n 's|^settleup_image:.*/settleup:\(.*\)$|\1|p' "$VARS")"
+echo "  newest built : $newest"
+echo "  radon pinned : $current"
+
+if [ "$newest" = "$current" ]; then
+  echo "radon is already on the newest build. Nothing to do."
+  exit 0
+fi
+
+if [ "${1:-}" = "--check" ] || [ "${1:-}" = "-n" ]; then
+  echo "radon is BEHIND — re-run without --check to bump and deploy."
+  exit 0
+fi
+
+sed -i "s|\(^settleup_image: .*/settleup:\).*|\1$newest|" "$VARS"
+echo
+echo "Bumped the pin:"
+git -C "$REPO_ROOT" --no-pager diff -- "$VARS"
+
+read -rp $'\nDeploy '"$newest"' to radon now? [y/N] ' ans
+if [[ ! "$ans" =~ ^[Yy]$ ]]; then
+  git -C "$REPO_ROOT" checkout -- "$VARS"
+  echo "Aborted; reverted the pin. Nothing deployed."
+  exit 0
+fi
+
+echo
+echo "Running edge_stack play on radon ..."
+( cd "$REPO_ROOT/ansible" && ansible-playbook site.yml --limit radon )
+
+git -C "$REPO_ROOT" add "$VARS"
+git -C "$REPO_ROOT" commit -m "radon: bump settleup image -> $newest"
+echo
+echo "Done. radon now serving settleup $newest; pin committed (push when ready)."
