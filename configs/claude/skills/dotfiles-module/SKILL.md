@@ -28,11 +28,11 @@ krypton via the dotfiles".
    | `pkg` | just an apt package, no config | `modules/microcode` |
    | `pkg-snippet` | package + a `~/.bashrc.d` shell snippet (env/aliases/init) | `modules/docker` |
    | `config-file` | package + one config file linked into place | `modules/sway` |
-   | `config-dir` | package + a whole config directory (often + snippet) | `modules/yazi` |
+   | `config-dir` | package + a whole config directory (add a snippet by hand if needed) | `modules/yazi` |
    | `external` | installed via an upstream installer, not apt | `modules/node` |
    | `system` | files into `/etc` via `sudo install`, manual `cmp -s` idempotency | `modules/unattended-upgrades` |
 
-2. **Run the scaffolder** (it refuses to clobber an existing module):
+2. **Run the scaffolder** (it refuses to clobber an existing module or configs dir):
 
    ```bash
    bash ~/.claude/skills/dotfiles-module/scaffold.sh <name> <archetype>

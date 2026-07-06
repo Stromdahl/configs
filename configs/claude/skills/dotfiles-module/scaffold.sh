@@ -2,7 +2,8 @@
 # Scaffold a new dotfiles module from an archetype. Companion to the
 # `dotfiles-module` skill. Creates modules/<name>/install.sh (executable) and
 # stubs configs/<name>/ where the archetype needs it, then prints next steps.
-# Refuses to clobber an existing module. Honors the repo conventions in AGENTS.md.
+# Refuses to clobber an existing module or configs dir. Honors the repo
+# conventions in AGENTS.md.
 set -euo pipefail
 
 usage() {
@@ -44,6 +45,7 @@ fi
 moddir="$root/modules/$name"
 cfgdir="$root/configs/$name"
 [[ -e "$moddir" ]] && { echo "error: module already exists: $moddir" >&2; exit 1; }
+[[ -e "$cfgdir" ]] && { echo "error: configs dir already exists: $cfgdir" >&2; exit 1; }
 
 mkdir -p -- "$moddir"
 install_sh="$moddir/install.sh"
