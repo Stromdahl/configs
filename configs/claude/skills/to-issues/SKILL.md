@@ -34,14 +34,16 @@ label. Check that first, so re-running a scope is **idempotent** and never dups.
      differs by spec version (older repos move closed issues into `issues/closed/`;
      newer ones never move files and key off the `status` field). Follow that file;
      do not assume one. If there is **no `issues/` dir**, *offer to adopt it* — `mkdir
-     issues/`, copy the canonical spec README, then proceed — but don't impose it
-     without consent.
+     issues/` and copy the canonical spec shipped beside this skill,
+     `~/.claude/skills/to-issues/issues-README.md`, to `issues/README.md` — but don't
+     impose it without consent.
    - **The plan:** read the source — conversation context, a plan/PRD doc
      (`PLAN.md`, `docs/PRD.md`), or an issue reference passed as the argument
      (`issues/NNN`) when breaking one large issue into sub-slices.
-   - **The decisions:** read any `docs/decisions/` ADRs and glossary; write issue
-     titles and bodies in that vocabulary and never contradict a locked decision.
-     (This is the context `decision-docs` maintains.)
+   - **The decisions:** read the repo's ADRs and glossary, wherever it keeps them
+     (`adr/`, `docs/adr/`, `docs/decisions/`, … — the dirs `decision-docs` detects);
+     write issue titles and bodies in that vocabulary and never contradict a locked
+     decision.
    - **Existing issues:** scan `issues/` for the highest `NNN` and for which epics
      already have issues.
 
@@ -74,7 +76,8 @@ label. Check that first, so re-running a scope is **idempotent** and never dups.
    slices **in dependency order** (blockers get the lower numbers), starting at
    `max-existing + 1`, so every ``Depends on `issues/NNN``` reference resolves. Then
    write each `issues/NNN-slug.md` in the exact shape the repo's `issues/README.md`
-   defines: frontmatter (`title`, `status: open`, `priority`, `created` from `date
+   defines — that file wins where it differs from the canonical skeleton, which is:
+   frontmatter (`title`, `status: open`, `priority`, `created` from `date
    +%F`, `closed: null`, `labels: [<epic-tag>, …]`) and a body of `## Description`
    (end-to-end behavior, no stale file paths) and `## Acceptance criteria` (a
    checklist). Report each file written and any epic left un-decomposed.
