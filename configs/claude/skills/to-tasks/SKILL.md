@@ -44,8 +44,9 @@ first, so re-running a scope is **idempotent** and never dups.
      open / grabbable). Follow that file; do not assume one.
    - **The source issue(s):** read the in-scope `issues/NNN-*.md` — its
      `## Description`, `## Acceptance criteria`, labels, and any `Depends on` lines.
-   - **The decisions:** read any `docs/decisions/` ADRs and glossary; write the
-     brief in that vocabulary and never contradict a locked decision.
+   - **The decisions:** read the repo's ADRs and glossary, wherever it keeps them
+     (`adr/`, `docs/adr/`, `docs/decisions/`, … — the dirs `decision-docs` detects);
+     write the brief in that vocabulary and never contradict a locked decision.
    - **Existing tasks:** scan `tasks/` for which issues already have a task and for
      the brief shape in use — that repo's `tasks/README.md` is the format authority.
      If there is **no `tasks/` dir**, *offer to adopt it* — `mkdir tasks/` and copy
