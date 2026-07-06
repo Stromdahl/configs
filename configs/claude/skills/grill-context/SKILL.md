@@ -1,14 +1,10 @@
 ---
 name: grill-context
-description: A relentless interview to sharpen a plan or design that also captures crystallized decisions and terminology into the repo's existing convention (an ADR, a glossary, or a decision-doc) as you go. Type /grill-context to start a grilling session that persists context. Use for code/design work where decisions are worth keeping.
+description: A relentless interview to sharpen a plan or design that also persists crystallized decisions and terminology into the repo's existing convention (ADR / glossary / decision-doc) as you go. Type /grill-context to start; prefer it over /grill-me for code/design work where decisions are worth keeping.
 disable-model-invocation: true
 ---
 
-Invoke the `grilling` skill and run a relentless interview on the current plan or
-design — one question at a time, each with a recommended answer, exploring the repo
-to answer what it can. As decisions and terminology crystallize during the
-interview, use the `decision-docs` skill to persist the durable ones into whatever
-convention this repo already uses (ADR / glossary / decision-doc), proposing rather
-than imposing where no convention exists. Close with a synthesized plan — and per
-`grilling`'s closing gate, never spin it into a PRD or issues (`to-prd` /
-`to-issues`) without explicit confirmation.
+Invoke the `grilling` skill in **context-persisting** mode, on the current plan or
+design (or on the argument, if one names a topic): after the one-time up-front
+consent on where decisions land, persist them via `decision-docs` as they
+crystallize.

@@ -1,11 +1,8 @@
 ---
 name: grill-me
-description: A relentless interview to sharpen a plan or design before building (non-code or code). Type /grill-me to start a grilling session.
+description: A relentless interview to sharpen a plan or design before building — works for any plan, code or not. Type /grill-me to start a grilling session.
 disable-model-invocation: true
 ---
 
-Invoke the `grilling` skill and run a relentless interview on the current plan or
-design — one question at a time, each with a recommended answer, exploring the repo
-to answer what it can — until you reach a shared understanding, then close with a
-synthesized plan. Per `grilling`'s closing gate, never spin that synthesis into a
-PRD or issues (`to-prd` / `to-issues`) without explicit confirmation.
+Invoke the `grilling` skill in **plain** mode, on the current plan or design (or on
+the argument, if one names a topic).
