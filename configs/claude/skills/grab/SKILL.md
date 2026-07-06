@@ -22,7 +22,7 @@ away the token win the brief exists to deliver.
 - **`<issue>`** (e.g. `issues/007`, a number, or a slug) → that specific task.
 
 A task is **ready** when it has a `tasks/NNN-*.md` brief, its source issue's `status`
-is still open, and every issue it `Depends on` is closed. "Next" = the lowest such
+is still open, and every issue it `Depends on` is `done`. "Next" = the lowest such
 `NNN`. One task per run — do **not** auto-chain into the next; to run several, use a
 fresh session or an isolated worktree per task, never one marathon.
 
@@ -36,7 +36,7 @@ fresh session or an isolated worktree per task, never one marathon.
      `Depends on`).
 
 2. **Select the task.** Default: the next ready task (above). Named: that one — but if
-   it's already in-progress/closed, blocked, or has unmet dependencies, **say so and
+   it's already in-progress/done, blocked, or has unmet dependencies, **say so and
    stop**, don't force it.
 
 3. **Claim it — best effort, fast.** Re-read the source issue's `status` *immediately*
@@ -57,7 +57,7 @@ fresh session or an isolated worktree per task, never one marathon.
 
 ## Guardrails
 
-- **Respect dependencies.** Never start a task whose `Depends on` issues aren't closed.
+- **Respect dependencies.** Never start a task whose `Depends on` issues aren't `done`.
 - **Claiming is best-effort, not a lock.** File+git claims can race across concurrent
   sessions; the re-check-then-commit in step 3 minimises it, but on conflict you yield.
   Say this plainly rather than implying a guarantee.

@@ -43,7 +43,7 @@ grep-stable anchor costs the agent one cheap search and survives that drift.
 The task file is your entire prompt — execute from it alone.
 
 1. **Pick** a task whose source issue is still open (status not in-progress / done)
-   and whose `Depends on` issues are all closed. Issue status is the only
+   and whose `Depends on` issues are all `done`. Issue status is the only
    coordination; that's how concurrent sessions avoid colliding.
 2. **Claim it — first action:** set the source issue's `status` to in-progress and
    **commit that immediately, directly on `main`.** Status is queue bookkeeping, not
@@ -56,8 +56,8 @@ The task file is your entire prompt — execute from it alone.
    coherent, atomic commit). If they fail and you can't fix it within the brief's
    scope, **leave the change uncommitted, report, and stop** — the issue stays
    in-progress. Never let an unverified change land.
-5. **Close it — last action:** set the issue's `status` to done/closed per this repo's
-   `issues/README.md` spec, and commit (again, fine on `main`). On a PR-based repo,
+5. **Close it — last action:** set the issue's `status: done` (and `closed:` date) per
+   this repo's `issues/README.md` spec, and commit (again, fine on `main`). On a PR-based repo,
    close on merge — not while the code still sits on an open branch.
 6. **Blocked by something needing the user's hands?** Flag the **issue**
    (blocked / needs-human, per this repo's idiom) and **stop** — don't work around it.
