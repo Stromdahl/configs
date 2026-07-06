@@ -1,6 +1,6 @@
 ---
 name: committing
-description: The shared engine behind /commit and /commit-all — enumerates real changes, groups them into atomic commits, writes one-line messages in the repo's convention, commits, and optionally pushes. No confirmation gate — it commits, then reports. Invoked by name from the commit / commit-all slash skills with a scope. Do NOT auto-invoke during ordinary work — committing is a deliberate, history-writing action that runs ONLY when the user explicitly asks to commit (via /commit or /commit-all).
+description: The shared engine behind /commit and /commit-all — enumerates real changes, groups them into atomic commits, writes one-line messages in the repo's convention, commits, and optionally pushes. No confirmation gate — it commits, then reports. Invoked by name from the commit / commit-all slash skills with a scope. Do NOT auto-invoke this skill during ordinary work — routine proactive commits at natural stopping points follow the global git rules without it; this engine runs only when the user explicitly asks to commit (via /commit or /commit-all).
 ---
 
 # Committing
