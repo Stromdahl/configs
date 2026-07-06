@@ -1,6 +1,6 @@
 ---
 name: decision-docs
-description: Capture a crystallized decision or sharpen domain terminology into whatever convention the current repo already uses — an ADR under docs/adr/, a glossary (glossary.md / CONTEXT.md), or a standalone decision-markdown doc. Use when explicitly recording an architectural decision, pinning down terminology, or when grill-context needs to persist decisions as they crystallize. Do NOT auto-fire during ordinary edits.
+description: Capture a crystallized decision or sharpen domain terminology into whatever convention the current repo already uses — an ADR dir (adr/, docs/adr/, docs/decisions/, …), a glossary (glossary.md / CONTEXT.md), or a standalone decision-markdown doc. Use when explicitly recording an architectural decision, pinning down terminology, or when a grill-context session needs to persist decisions as they crystallize. Do NOT auto-fire during ordinary edits, or when merely *reading* the glossary/ADRs for vocabulary — this skill is for changing the recorded model, not consuming it.
 ---
 
 # Decision docs
@@ -15,7 +15,8 @@ already keeps such things.
 Look at the current repo and follow what convention is **already present**. Never
 impose ceremony a repo doesn't already use.
 
-- **`docs/adr/` exists** → offer to add an ADR — but **sparingly**. Only when all
+- **An ADR dir exists** (`adr/`, `docs/adr/`, `docs/decisions/`, or similar — look
+  before concluding there is none) → offer to add an ADR — but **sparingly**. Only when all
   three hold: the decision is *hard to reverse*, *surprising without context*, and
   the result of a *real trade-off*. If any is missing, skip the ADR.
 - **A glossary exists** (`glossary.md`, `CONTEXT.md`, or similar) **or the project
@@ -31,11 +32,16 @@ impose ceremony a repo doesn't already use.
 Create files lazily: only when there's something durable to write, and only with
 consent where no convention exists yet.
 
+In a `grilling` **context-persisting** session, consent is gathered **once, up
+front** (where decisions will land); after that, persist as-you-go without
+re-asking per item — the sparing ADR bar above still applies to each.
+
 ## Formats (inline — discover the repo's own format first if one exists)
 
 If the repo already has examples, match them. Otherwise:
 
-- **ADR** — `docs/adr/NNNN-kebab-title.md`: Title · Status · Context · Decision ·
+- **ADR** — `<adr-dir>/NNNN-kebab-title.md` (match the repo's existing dir and
+  numbering width): Title · Status · Context · Decision ·
   Consequences · Alternatives considered. Short; one decision per file.
 - **Glossary entry** — `Term — precise one-line definition.` Devoid of
   implementation detail; it's a shared-language dictionary, not a spec or scratchpad.
