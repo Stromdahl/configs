@@ -11,6 +11,6 @@ edge_stack_dir: /opt/radon
 # No semver v* is published yet, so this is the current build's sha tag
 # (`skopeo list-tags docker://ghcr.io/stromdahl/settleup` / GHCR tags API).
 # Bump to a released vX.Y.Z tag once one exists.
-settleup_image: ghcr.io/stromdahl/settleup:sha-bbc1ac5
+settleup_image: ghcr.io/stromdahl/settleup:sha-153c7e3
 settleup_host: settleup.stromdahl.io
 settleup_base_url: https://settleup.stromdahl.io
