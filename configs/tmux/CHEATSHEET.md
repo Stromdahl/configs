@@ -100,8 +100,8 @@ You can also just **scroll with the mouse** to enter copy mode, and
 | `C-b U` | Update installed plugins |
 | `C-b M-u` | Remove plugins no longer declared |
 
-Auto-save runs every 15 min, and the last save auto-restores the first time
-you start tmux after a reboot (tmux-continuum).
+Auto-save runs every 15 min (tmux-continuum), but auto-restore is off — tmux
+never revives old sessions on its own; restore by hand with `C-b C-r`.
 
 ## Handy / meta
 
