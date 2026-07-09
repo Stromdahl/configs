@@ -970,8 +970,11 @@ services:
   # encryption to Proton is a separate layer that stays intact. STARTTLS/SSL against the
   # bridge's self-signed cert is the path upstream guides gave up on.
   #
-  # Image: shenxn/protonmail-bridge `deb` line (amd64; pullable, no local build). It
-  # generates a PASSPHRASELESS gpg/pass keyring in /root at `init` (gpgparams %no-protection),
+  # Image: LOCALLY BUILT from ./build/protonmail-bridge/Dockerfile (FROM shenxn's
+  # `deb` image + libfido2). The stock shenxn image ships bridge v3.19.0 but the bridge
+  # auto-updates itself at runtime to a version that needs libfido2, which the dep-stripped
+  # repack omits -> the updated binary won't launch. The Dockerfile adds it back (issue 029).
+  # It generates a PASSPHRASELESS gpg/pass keyring in /root at `init` (gpgparams %no-protection),
   # so there is NO keyring secret to inject — the session + keyring persist in the bind
   # volume alone. Loss of that volume = re-login + 2FA (see the issue runbook).
   #
@@ -986,7 +989,9 @@ services:
   # ===========================================================================
 
   protonmail-bridge:
-    image: shenxn/protonmail-bridge:3.19.0-1
+    build:
+      context: ./build/protonmail-bridge   # -> {{ compose_stack_dir }}/build/protonmail-bridge (Ansible-copied)
+    image: helium/protonmail-bridge:3.19.0-1-fido2   # locally-built patched image (see build task)
     container_name: protonmail-bridge
     restart: unless-stopped
     # issue 010: runs as root by design (init generates a gpg/pass keyring, then runs socat +

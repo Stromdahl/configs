@@ -247,6 +247,44 @@
     group: root
     mode: "0644"
 
+# --- issue 029: build the patched Proton Mail Bridge image (adds libfido2) ---------
+# The stock shenxn image's auto-updated bridge needs libfido2, which its dep-stripped
+# repack omits; our Dockerfile adds it. Build BEFORE the compose up so `up` sees the
+# fresh image and recreates the container when it changes. Skipped when the var is
+# undefined (non-helium deploy that has no protonmail-bridge service).
+- name: Create the Proton Mail Bridge build-context dir (issue 029)
+  become: true
+  ansible.builtin.file:
+    path: "{{ compose_stack_dir }}/build/protonmail-bridge"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: protonmail_bridge_data is defined
+
+- name: Copy the patched Proton Mail Bridge Dockerfile (issue 029)
+  become: true
+  ansible.builtin.copy:
+    src: protonmail-bridge/Dockerfile
+    dest: "{{ compose_stack_dir }}/build/protonmail-bridge/Dockerfile"
+    owner: root
+    group: root
+    mode: "0644"
+  when: protonmail_bridge_data is defined
+
+- name: Build the patched Proton Mail Bridge image (issue 029)
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      docker compose
+      -f {{ compose_stack_dir }}/docker-compose.yml
+      --env-file {{ compose_stack_dir }}/.env
+      build protonmail-bridge
+  # A cached rebuild is a cheap no-op; the meaningful change (a new image -> container
+  # recreate) is reported by the compose-up task below, so don't flag this one as changed.
+  changed_when: false
+  when: protonmail_bridge_data is defined
+
 - name: Bring up the compose stack
   become: true
   ansible.builtin.command:
