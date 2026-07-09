@@ -53,6 +53,14 @@
         #   type: paperlessngx
         #   url: http://paperless:8000
         #   key: "{{HOMEPAGE_VAR_PAPERLESS_KEY}}"
+    - Proton Mail Bridge:
+        icon: mdi-email-sync
+        description: IMAP source for Paperless
+        server: my-docker
+        container: protonmail-bridge
+        # No href/widget: internal-only (no web UI). issue 029 — Proton silently
+        # invalidates the session periodically; this status dot is the tell. If it
+        # drops or ingest goes quiet, re-run the interactive `init` login on helium.
 
 - Automation:
     - Radarr:

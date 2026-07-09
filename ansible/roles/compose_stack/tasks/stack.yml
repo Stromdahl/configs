@@ -183,6 +183,20 @@
     path: "{{ paperless_data_root }}/pgdata"
     state: directory
 
+# --- issue 029: Proton Mail Bridge session/keyring dir on the SSD 'appdata' subvol ---
+# The bridge container runs as root and writes its session + gpg/pass keyring here (mounted
+# at /root). Pre-created root-owned 0700 — it holds the decrypt-capable Proton session, so it
+# must not be world/group readable. Skipped cleanly if the var is undefined (non-helium deploy).
+- name: Create Proton Mail Bridge data dir owned by root, 0700 (issue 029)
+  become: true
+  ansible.builtin.file:
+    path: "{{ protonmail_bridge_data }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  when: protonmail_bridge_data is defined
+
 # --- issue 010: jellyseerr flips from container-root to the jellyfin uid/gid ---------
 # jellyseerr's upstream image has no privilege drop; it ran as container-root, so its
 # /app/config (sqlite settings + request db + logs) is root-owned. issue 010 sets

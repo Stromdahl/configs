@@ -956,3 +956,53 @@ services:
       - "no-new-privileges:true"
     networks:
       - paperless
+
+  # ===========================================================================
+  # issue 029 — Proton Mail Bridge: gives Paperless an IMAP mailbox to ingest from.
+  # Proton exposes NO native IMAP/SMTP; Bridge logs into Proton, decrypts mail locally,
+  # and re-serves it as plaintext IMAP/SMTP on container-localhost. socat (in the image)
+  # forwards container :25/:143 -> the bridge's 127.0.0.1:1025/1143 (the bridge only
+  # accepts loopback). Reached ONLY by the paperless webserver at protonmail-bridge:143
+  # over the shared internal `paperless` bridge — no ports:, no Traefik, off `media`.
+  #
+  # Encryption paperless->bridge = None (Paperless mail-account security: None). Safe:
+  # the plaintext hop is container-to-container on a private docker bridge, and the E2E
+  # encryption to Proton is a separate layer that stays intact. STARTTLS/SSL against the
+  # bridge's self-signed cert is the path upstream guides gave up on.
+  #
+  # Image: shenxn/protonmail-bridge `deb` line (amd64; pullable, no local build). It
+  # generates a PASSPHRASELESS gpg/pass keyring in /root at `init` (gpgparams %no-protection),
+  # so there is NO keyring secret to inject — the session + keyring persist in the bind
+  # volume alone. Loss of that volume = re-login + 2FA (see the issue runbook).
+  #
+  # Post-deploy human steps (needs-human — 2FA can't be Ansible-automated):
+  #   docker stop protonmail-bridge
+  #   docker compose -f {{ compose_stack_dir }}/docker-compose.yml --env-file {{ compose_stack_dir }}/.env \
+  #     run --rm protonmail-bridge init   # -> `login` (Proton creds + TOTP), `info` (IMAP
+  #                                       #    user + generated pass), `exit`; Ctrl-C to detach
+  #   docker start protonmail-bridge
+  #   then in Paperless: add a Mail Account (host protonmail-bridge, port 143, security None,
+  #   user = Proton address, pass = the `info` password) + a Mail Rule (consume attachments).
+  # ===========================================================================
+
+  protonmail-bridge:
+    image: shenxn/protonmail-bridge:3.19.0-1
+    container_name: protonmail-bridge
+    restart: unless-stopped
+    # issue 010: runs as root by design (init generates a gpg/pass keyring, then runs socat +
+    # the bridge). socat binds container ports 25 + 143, both <1024 -> needs CAP_NET_BIND_SERVICE
+    # even as uid 0 (an empty cap set can't bind privileged ports — same as traefik above). No
+    # privilege drop and no other cap is needed; drop everything else.
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - "no-new-privileges:true"
+    volumes:
+      # Bridge session + gpg/pass keyring live under /root. Precious (loss = re-login + 2FA):
+      # the SSD 'appdata' precious subvol. Bound (not a named volume) so the one-shot `init`
+      # login container and this long-running service share the exact same session state.
+      - ${PROTONMAIL_BRIDGE_DATA:?missing PROTONMAIL_BRIDGE_DATA}:/root
+    networks:
+      - paperless   # only the paperless webserver reaches it (protonmail-bridge:143)

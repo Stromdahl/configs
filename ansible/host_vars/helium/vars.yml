@@ -155,6 +155,13 @@ paperless_db_name: paperless               # PAPERLESS_DBNAME / POSTGRES_DB
 # (auto-create on first boot) or interactively on the box:
 #   docker exec -it paperless document_create_superuser
 
+# issue 029 — Proton Mail Bridge (feeds Paperless mail-ingest with an IMAP mailbox;
+# Proton has no native IMAP). Session + gpg/pass keyring persist here under /root in the
+# container. On the SSD 'appdata' precious subvol, so restic (issue 016) covers it — though
+# it is re-creatable by re-running the interactive `init` login. No secret needed: the
+# shenxn `deb` image generates a passphraseless keyring (gpgparams %no-protection).
+protonmail_bridge_data: "{{ ssd_pool_mount }}/appdata/protonmail-bridge"
+
 # issue 016 — restic backup of the SSD 'appdata' precious subvolume to the HDD
 # pool. Deliberately scoped to the 'appdata' subvol only — *arr databases,
 # quality profiles/custom formats, Bazarr's language profile, Jellyseerr
