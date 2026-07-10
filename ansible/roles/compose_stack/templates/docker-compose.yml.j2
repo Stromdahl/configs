@@ -235,6 +235,7 @@ services:
       - HOMEPAGE_VAR_SONARR_KEY=${SONARR_API_KEY:?missing SONARR_API_KEY}
       - HOMEPAGE_VAR_QBIT_USER=${QBIT_WEBUI_USER:-admin}
       - HOMEPAGE_VAR_QBIT_PASS=${QBIT_WEBUI_PASS:?missing QBIT_WEBUI_PASS}
+      - HOMEPAGE_VAR_PAPERLESS_KEY=${PAPERLESS_API_KEY:?missing PAPERLESS_API_KEY}
     volumes:
       - ${HOMEPAGE_CONFIG_DIR:?missing HOMEPAGE_CONFIG_DIR}:/app/config
       # Read-only mount of the HDD union so the resources widget can statvfs the

@@ -46,13 +46,10 @@
         description: Document archive
         server: my-docker
         container: paperless
-        # Stats widget (total/inbox docs) needs a Paperless API token:
-        # Paperless UI -> Settings -> My Profile -> API Token, then wire
-        # HOMEPAGE_VAR_PAPERLESS_KEY via sops -> stack.env.j2 and uncomment:
-        # widget:
-        #   type: paperlessngx
-        #   url: http://paperless:8000
-        #   key: "{{HOMEPAGE_VAR_PAPERLESS_KEY}}"
+        widget:
+          type: paperlessngx
+          url: http://paperless:8000
+          key: "{{HOMEPAGE_VAR_PAPERLESS_KEY}}"
     - Proton Mail Bridge:
         icon: mdi-email-sync
         description: IMAP source for Paperless
