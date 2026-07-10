@@ -125,11 +125,18 @@ function generate_password() {
       	tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${l} | xargs
 }
 
-if [ ! -S ~/.ssh/ssh_auth_sock ]; then
-  eval $(ssh-agent) > /dev/null 2>&1
-  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
-fi
+# Persistent ssh-agent shared across every shell via a stable socket path.
+# Only spawn a new agent when the existing one is genuinely unreachable
+# (ssh-add -l exit 2). A live agent — even an empty one still awaiting its
+# passphrase (exit 1) — is reused, so an already-unlocked key is never lost
+# and background/non-interactive shells can't clobber the interactive one.
 export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+ssh-add -l >/dev/null 2>&1
+if [ $? -eq 2 ]; then
+  eval "$(ssh-agent -s)" >/dev/null 2>&1
+  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+  export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+fi
 
 # =============================================================================
 # - ALIASES
