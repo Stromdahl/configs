@@ -156,6 +156,7 @@ alias rm='rm -vi'
 
 # Calendar
 alias ncal='ncal -w -3 -M'
+alias week='date +%V'
 
 # Quality of life
 alias pubkey='cat $HOME/.ssh/pubkey';
