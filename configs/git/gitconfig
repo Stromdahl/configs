@@ -16,3 +16,9 @@
 	wtr  = "!f(){ git worktree remove \"$1\"; }; f"
 [core]
 	sshCommand = "ssh -i ~/.ssh/id_ed25519"
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
