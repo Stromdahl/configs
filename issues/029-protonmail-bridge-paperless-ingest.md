@@ -1,9 +1,9 @@
 ---
 title: Ingest documents into Paperless from a Proton Mail mailbox via Proton Mail Bridge
-status: in-progress
+status: done
 priority: medium
 created: 2026-07-09
-closed: null
+closed: 2026-07-10
 labels: [epic:services, needs-human]
 ---
 
@@ -41,21 +41,28 @@ bridge status tile).
 
 ## Acceptance criteria
 
-- [ ] The Proton Mail Bridge container runs on helium and is reachable only by the Paperless
+- [x] The Proton Mail Bridge container runs on helium and is reachable only by the Paperless
       webserver over the internal network — it has no published port and no Traefik router,
       and is not reachable from the LAN or the public internet.
-- [ ] After the one-time interactive login, the bridge holds a persistent Proton session that
-      survives a container restart without re-login.
-- [ ] A test email with a PDF attachment sent to the Proton address is ingested by Paperless,
-      OCR'd, and becomes full-text searchable.
-- [ ] The bridge's up/down status is visible on the Homepage dashboard.
-- [ ] The container, its data path, and all non-secret config are defined in the Ansible
+- [x] After the one-time interactive login, the bridge holds a persistent Proton session that
+      survives a container restart without re-login. (Verified: `docker restart` → session
+      re-established, Paperless re-authenticated, no re-login.)
+- [x] A test email with a PDF attachment sent to the Proton address is ingested by Paperless,
+      OCR'd, and becomes full-text searchable. (Verified 2026-07-10: doc id=8; full-text
+      search for the marker `BRIDGE-VERIFY-7Q2` returns the document.)
+- [x] The bridge's up/down status is visible on the Homepage dashboard.
+- [x] The container, its data path, and all non-secret config are defined in the Ansible
       compose-stack role (the login/mail-rule steps are documented as needs-human).
 
-## Remaining (needs-human — blocks close)
+## Outcome (2026-07-10)
 
-The Ansible compose-stack definition is in place. What's left is all on the box and cannot
-be automated (2FA): deploy the stack to helium, run the one-time interactive Bridge `init`
-login over SSH, then create the Paperless mail account + rule in the UI, and confirm a test
-email's attachment is ingested and searchable. The exact command sequence is frozen in the
-`protonmail-bridge` service comment in the compose template.
+Deployed and verified end-to-end. The libfido2 crash from the bridge's runtime self-update
+was fixed with a locally-built patched image (Dockerfile at
+`roles/compose_stack/files/protonmail-bridge/`). Interactive Bridge login done on the box;
+Paperless mail account (id=1) + consume-attachments rule (id=1) created via the REST API.
+A forwarded PDF was fetched over IMAP, consumed, OCR'd, and is full-text searchable
+(doc id=8). Session persistence across a container restart confirmed.
+
+Operational note: mail account + rule live in Paperless's DB (backed up by issue 026), not
+Ansible. If ingest goes quiet, suspect a Proton-expired Bridge session — the Homepage tile
+is the tell; re-run the interactive `init` login.
