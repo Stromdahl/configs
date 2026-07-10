@@ -83,6 +83,21 @@ When in doubt, copy the closest existing shape:
 - `modules/node/install.sh` — external installer (nvm) with explicit `DRY_RUN` handling.
 - `modules/unattended-upgrades/install.sh` — system files in `/etc` via `sudo install`, with a manual `cmp -s` idempotency check.
 
+## SSH to hosts (read before any ssh/scp/rsync)
+
+The private key (`~/.ssh/id_ed25519`) is **passphrase-protected** and lives
+behind a shared ssh-agent. The user unlocks it once per session (`AddKeysToAgent
+yes` loads it on their first ssh); after that every shell — including yours —
+shares the same agent via the stable socket `~/.ssh/ssh_auth_sock`.
+
+**Before any `ssh`, `scp`, or `rsync`-over-ssh, run `ssh-add -l` first.** If it
+prints "The agent has no identities" (or errors), the key is locked: **STOP and
+ask the user to run `ssh-add`.** Do not attempt the ssh — with no key loaded it
+fails with a cryptic `ssh_askpass … No such file` / `Permission denied
+(publickey)` rather than a usable prompt. (Claude's env sets
+`SSH_ASKPASS_REQUIRE=force` + `SSH_ASKPASS=/bin/false` so a locked key fails in
+~40 ms instead of hanging — but `ssh-add -l` is the deterministic check; use it.)
+
 ## Homelab (`servers/`)
 
 Docker Compose services running on remote hosts. Each `servers/<name>/` has a
