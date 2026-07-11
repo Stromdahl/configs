@@ -1,6 +1,6 @@
 ---
 title: Fix the steam & kde modules so a couch-less desk install boots and installs cleanly
-status: open
+status: in-progress
 priority: high
 created: 2026-07-11
 closed: null
