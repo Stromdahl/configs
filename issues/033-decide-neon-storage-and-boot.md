@@ -9,22 +9,23 @@ labels: [epic:neon-gaming, wayfinder:grilling]
 
 ## Description
 
-Depends on `issues/030` (which disks remain) and `issues/031` (library size +
-whether any anti-cheat title forces a Windows dual-boot).
+Depends on `issues/031` (whether any anti-cheat title forces a Windows dual-boot).
+`issues/030` is done: the sole internal drive is the **Samsung 990 PRO 2 TB NVMe**
+(the 480 GB SATA SSD was harvested for helium) — capacity is ample, so the
+capacity/purchase sub-question is closed and only the boot model remains.
 
 ## Question
 
-Where does the OS and the game library live, and is one OS enough?
+Is one OS enough on the 2 TB NVMe, or is a Windows dual-boot needed?
 
-- **Capacity:** if only the 480 GB SATA SSD remains, is that enough for Debian +
-  the intended library, or does storage need buying (an NVMe back in the M.2
-  slot)? The target size from issue 031 decides this.
-- **Boot model:** single-boot Debian, or **dual-boot Windows** — driven entirely
-  by whether issue 031 surfaced anti-cheat/kernel titles that can't run under
-  Proton. If dual-boot, that reshapes partitioning and the install procedure.
-- **Install target:** which physical disk Debian installs to, and what happens to
-  any leftover data on the surviving drives.
+- **Boot model:** single-boot Debian (expected), or **dual-boot Windows** —
+  driven entirely by whether issue 031 surfaced anti-cheat/kernel titles that
+  can't run under Proton. If dual-boot, decide the Windows/Debian split of the
+  2 TB and the partition/install order.
+- **Install target:** confirm Debian installs to `nvme0n1`, and that wiping the
+  old docker-host data on it is fine (nothing to preserve — the role retired to
+  helium).
 
-Resolve with the chosen disk layout, boot model, and install target.
+Resolve with the boot model and the NVMe layout.
 
-Type: grilling (HITL) · Depends on: 030, 031
+Type: grilling (HITL) · Depends on: 031

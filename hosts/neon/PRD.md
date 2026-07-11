@@ -48,7 +48,9 @@ Scope-fixing decisions taken while naming the destination:
 
 <!-- index — one line per closed ticket; zoom the link for detail -->
 
-_(none yet — charting session only)_
+- [Inventory neon's current hardware](../../issues/030-inventory-neon-current-hardware.md) —
+  chassis is intact (GTX 1070 + 2 TB 990 PRO NVMe + 16 GB all present); helium
+  took only the secondary 480 GB SATA SSD. No GPU/storage purchase implied.
 
 ## Not yet specified
 
@@ -60,8 +62,10 @@ _(none yet — charting session only)_
 - **Retire neon's old server role from the repo** — prune the deploy pipeline
   bits (`deploy-user`, `bare-git-repo`, `sops`) and docker-host framing from
   `hosts/neon/`. Graduates alongside the profile rewrite.
-- **`nvidia` module compatibility for Pascal (GTX 1070)** if the GPU decision
-  keeps/adds an NVIDIA card — the module was written for Turing (RTX 2060).
+- **`nvidia` module compatibility for Pascal (GTX 1070)** — the surviving card is
+  Pascal; the module was written for Turing (RTX 2060). Confirm before the profile
+  rewrite relies on it. (The GPU-purchase branch of the fog is closed — issue 030
+  found the 1070 in place.)
 - **Bare-metal Debian 13 install procedure** for the desk rig (which disk, boot
   mode). Graduates once storage/boot (issue 033) is decided.
 

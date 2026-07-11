@@ -1,9 +1,9 @@
 ---
 title: Inventory neon's current hardware after the helium harvest
-status: open
+status: done
 priority: high
 created: 2026-07-11
-closed: null
+closed: 2026-07-11
 labels: [epic:neon-gaming, wayfinder:task]
 ---
 
@@ -29,3 +29,31 @@ SSH (honor the AGENTS.md SSH rules: `ssh-add -l` first). Resolve by refreshing
 (what helium took) in the answer.
 
 Type: task (AFK) · Blocks: 032, 033
+
+## Answer
+
+Inventoried live over SSH via the rescue OS (`debian-rescue` @ 192.168.1.153),
+2026-07-11. **The chassis is almost entirely intact** — the helium harvest took
+far less than assumed:
+
+| Component | Present now | vs. old spec |
+|---|---|---|
+| Board | ASUS Z170I PRO GAMING | unchanged |
+| CPU | i5-6600K, 4C/4T | unchanged |
+| RAM | 16 GB (2× 8 GB DDR4-2133, both slots) | unchanged |
+| GPU | **NVIDIA GTX 1070** (`10de:1b81`) | **still installed** — NOT taken |
+| Internal storage | **Samsung 990 PRO 2 TB NVMe** (`nvme0n1`) | **still installed** — NOT taken |
+| NIC/WiFi | Intel I219-V 1GbE + Atheros QCA6174 | unchanged |
+
+**Only the secondary 480 GB Kingston UV400 SATA SSD was harvested for helium.**
+The issue-009 note about "freeing the 1.8 TB NVMe as a backup candidate" was never
+acted on. (`sda` in `lsblk` is the USB rescue stick, not an internal drive.)
+
+**Consequences for the map:**
+- **No GPU purchase implied** — the GTX 1070 is present and drives 1080p/1440p
+  gaming fine. Issue 032 collapses to: does the 1070 clear the target (issue 031),
+  and does the Turing-written `nvidia` module drive Pascal cleanly?
+- **No storage purchase implied** — a single 2 TB NVMe is ample for OS + library.
+  Issue 033 collapses to the boot-model question only (single Debian vs dual-boot
+  Windows), which still hangs on the anti-cheat question in issue 031.
+- `hosts/neon/HARDWARE.md` refreshed to this ground truth.
