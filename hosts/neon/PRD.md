@@ -56,23 +56,25 @@ Scope-fixing decisions taken while naming the destination:
   (single-boot Debian). Target: **native 3440×1440 ultrawide @ 60 fps**, medium-high
   (panel is 144 Hz — headroom a bonus, not a requirement). Ultrawide load tilts the
   GPU call toward the RTX 2060.
+- [Decide neon's GPU](../../issues/032-decide-neon-gpu.md) —
+  **swap the GTX 1070 for the RTX 2060** (ex-titan-100 card, on the desk). DLSS
+  clears native 3440×1440@60 on Enshrouded; the `nvidia` module is already proven
+  on this exact Turing card, so it enters `modules.conf` as-is and the Pascal-compat
+  question is moot.
 
 ## Not yet specified
 
 <!-- in-scope fog; graduates into tickets as the frontier advances -->
 
 - **Rewrite `hosts/neon/` docker-host profile → gaming-desktop `modules.conf`**
-  (adapt titan-100 minus couch layer). Graduates once the GPU decision settles
-  whether `nvidia` is in the list.
+  (adapt titan-100 minus couch layer). GPU decision is settled (issue 032):
+  **`nvidia` is in the list** (RTX 2060, Turing). Ready to graduate into a build
+  ticket.
 - **Retire neon's old server role from the repo** — prune the deploy pipeline
   bits (`deploy-user`, `bare-git-repo`, `sops`) and docker-host framing from
   `hosts/neon/`. Graduates alongside the profile rewrite.
-- **`nvidia` module compatibility for Pascal (GTX 1070)** — the surviving card is
-  Pascal; the module was written for Turing (RTX 2060). Confirm before the profile
-  rewrite relies on it. (The GPU-purchase branch of the fog is closed — issue 030
-  found the 1070 in place.)
 - **Bare-metal Debian 13 install procedure** for the desk rig (which disk, boot
-  mode). Graduates once storage/boot (issue 033) is decided.
+  mode, partition layout). Graduates once storage/boot (issue 033) is decided.
 
 ## Out of scope
 

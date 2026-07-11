@@ -1,9 +1,9 @@
 ---
 title: Decide neon's GPU — reuse existing / iGPU / buy
-status: open
+status: done
 priority: high
 created: 2026-07-11
-closed: null
+closed: 2026-07-11
 labels: [epic:neon-gaming, wayfinder:grilling]
 ---
 
@@ -38,3 +38,24 @@ Resolve with: reuse the 1070 (expected) or a named upgrade, plus the driver/modu
 implication for the profile rewrite.
 
 Type: grilling (HITL) · Depends on: 031
+
+## Answer
+
+Resolved 2026-07-11. **Swap out the in-place GTX 1070 for the RTX 2060** — the
+ex-titan-100 passthrough card, which the user has physically on the desk.
+
+- **Why the 2060 over the surviving 1070:** the load-bearing title is Enshrouded
+  at native 3440×1440 (~34% heavier than 1440p). The 1070 lands ~40–50 fps there;
+  the 2060's **DLSS** renders internally at ~2293×960 and upscales, clearing the
+  60 fps ultrawide target with headroom — and, because the internal render res is
+  lower, the nominal 6 GB-vs-8 GB VRAM downgrade doesn't bite on this small library.
+  NVENC is a bonus. The 1070 stays comfortable on Valheim/Planet Crafter regardless.
+- **Driver/module implication:** the `nvidia` module is **already proven on this
+  exact Turing card** (titan-100 passthrough) → it goes into neon's `modules.conf`
+  as-is, and the "Pascal / `nvidia`-module compatibility" fog item is **mooted**
+  (we're no longer driving the GP104 Pascal 1070).
+- **VRAM variant** (6 GB / 8 GB Super / 12 GB) is a minor detail to confirm at
+  install; it does not change the decision for this library.
+
+Downstream: the profile-rewrite fog graduates — `nvidia` is confirmed in neon's
+module list.
