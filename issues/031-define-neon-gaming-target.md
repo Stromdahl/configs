@@ -1,6 +1,6 @@
 ---
 title: Define neon's gaming target — game library, resolution, anti-cheat/Windows needs
-status: open
+status: in-progress
 priority: high
 created: 2026-07-11
 closed: null
