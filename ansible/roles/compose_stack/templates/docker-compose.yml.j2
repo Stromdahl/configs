@@ -89,7 +89,7 @@ services:
       - socket_proxy
 
   traefik:
-    image: traefik:v3.6.11
+    image: traefik:v3.6.23
     container_name: traefik
     restart: unless-stopped
     # issue 010: DOCUMENTED root exception. Traefik must bind privileged ports 80/443 —
