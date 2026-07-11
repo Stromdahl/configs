@@ -95,9 +95,9 @@ map's fog graduated into three executable build tickets; the two in-repo ones ar
   `nvme0n1` (ESP / OS / games), install Debian 13, apply the 035 profile, restore the
   library. Depends on 035 (done) + 038; awaits the physical session.
 
-> Housekeeping from 036 (non-blocking): remove the stale local `neon` git remote
-> (`git remote remove neon`); the `bup` offsite target still names neon (a
-> backup-architecture decision, left untouched).
+> Housekeeping from 036: the stale local `neon` git remote is removed (done). The
+> `bup` offsite target still names neon (a backup-architecture decision, left
+> untouched).
 
 ## Out of scope
 
