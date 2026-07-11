@@ -294,6 +294,24 @@ services:
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY:?missing WIREGUARD_PRIVATE_KEY}
       - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESS:?missing WIREGUARD_ADDRESS}
       - SERVER_COUNTRIES=${GLUETUN_SERVER_COUNTRIES:?missing GLUETUN_SERVER_COUNTRIES}
+      # issue 014: ProtonVPN port forwarding (NAT-PMP) so qBittorrent gets an inbound
+      # port -> better connectability on thin swarms. Requires the WireGuard config to
+      # have been generated with NAT-PMP enabled (sops key). PORT_FORWARD_ONLY makes
+      # gluetun only connect to PF-capable Sweden servers.
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_PROVIDER=protonvpn
+      - PORT_FORWARD_ONLY=on
+      # issue 010 interaction: cap_drop:ALL removes root's DAC_OVERRIDE + CAP_CHOWN, so
+      # gluetun (a) can't write its default /tmp/gluetun dir (created mode 0644, no +x)
+      # and (b) can't chown the forwarded_port file to PUID -> the PF renewal service
+      # dies. Fix WITHOUT re-adding caps: write both state files to /tmp (1777,
+      # world-writable), and set PUID/PGID=0 so the post-write chown is root->root — a
+      # same-owner chown the kernel allows without CAP_CHOWN. gluetun's main process
+      # already runs as root (NET_ADMIN), so this changes only its file-write uid.
+      - VPN_PORT_FORWARDING_STATUS_FILE=/tmp/forwarded_port
+      - PUBLICIP_FILE=/tmp/ip
+      - PUID=0
+      - PGID=0
       - TZ=${TZ:-Europe/Stockholm}
     labels:
       - "traefik.enable=true"
