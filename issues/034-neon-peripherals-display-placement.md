@@ -1,9 +1,9 @@
 ---
 title: Settle neon's peripherals, display, and physical placement
-status: open
+status: done
 priority: low
 created: 2026-07-11
-closed: null
+closed: 2026-07-11
 labels: [epic:neon-gaming, wayfinder:task]
 ---
 
@@ -30,3 +30,16 @@ machine. Resolve with a short confirmation (or a shopping note if something's
 missing).
 
 Type: task (HITL) · unblocked
+
+## Answer
+
+Resolved 2026-07-11. Everything is on hand — **no shopping needed.**
+
+- **Display:** 3440×1440 ultrawide, 144 Hz, on **HDMI-A-1** (verified live off the
+  rescue OS in issue 031). The RTX 2060 (issue 032) has HDMI + DP outputs, so the
+  connection is covered.
+- **Input:** keyboard + mouse — user has a set for the desk. Controllers are handled
+  by the `gamepad` module.
+- **Placement:** on the user's desk (desk rig, as scoped in the PRD).
+- **Network:** **wired onboard Intel I219-V 1 GbE** — the Atheros QCA6174 WiFi is not
+  needed.

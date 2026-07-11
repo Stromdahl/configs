@@ -61,6 +61,15 @@ Scope-fixing decisions taken while naming the destination:
   clears native 3440×1440@60 on Enshrouded; the `nvidia` module is already proven
   on this exact Turing card, so it enters `modules.conf` as-is and the Pascal-compat
   question is moot.
+- [Decide storage & boot](../../issues/033-decide-neon-storage-and-boot.md) —
+  **single-boot Debian**; fresh GPT on the 2 TB NVMe: ESP + ~150 GB OS + ~1.85 TB
+  games (both ext4). The NVMe was a raw-ext4 *data* drive — its 1.5 TB old Jellyfin
+  media is disposable, but the **203 GB Steam library is preserved** by backing it up
+  to helium over LAN and restoring it after install. Games on their own partition →
+  ready for a future second drive.
+- [Settle peripherals & placement](../../issues/034-neon-peripherals-display-placement.md) —
+  all on hand, **no shopping:** ultrawide 3440×1440@144 on HDMI, keyboard+mouse ready,
+  desk placement, **wired onboard 1 GbE** (no WiFi).
 
 ## Not yet specified
 
@@ -73,8 +82,14 @@ Scope-fixing decisions taken while naming the destination:
 - **Retire neon's old server role from the repo** — prune the deploy pipeline
   bits (`deploy-user`, `bare-git-repo`, `sops`) and docker-host framing from
   `hosts/neon/`. Graduates alongside the profile rewrite.
-- **Bare-metal Debian 13 install procedure** for the desk rig (which disk, boot
-  mode, partition layout). Graduates once storage/boot (issue 033) is decided.
+- **Bare-metal Debian 13 install procedure** for the desk rig. Storage/boot is
+  settled (issue 033): wipe `nvme0n1`, GPT = ESP / ~150 GB OS / ~1.85 TB games (ext4),
+  with the 203 GB Steam library staged to helium and restored afterward. Ready to
+  graduate into a build ticket.
+
+> **All decision tickets are now resolved (030–034).** The map's remaining fog is
+> three *executable build* tickets ready to be written: the profile rewrite, the
+> old-server-role retirement, and the bare-metal install procedure above.
 
 ## Out of scope
 
