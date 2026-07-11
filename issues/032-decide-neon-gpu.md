@@ -54,8 +54,10 @@ ex-titan-100 passthrough card, which the user has physically on the desk.
   exact Turing card** (titan-100 passthrough) → it goes into neon's `modules.conf`
   as-is, and the "Pascal / `nvidia`-module compatibility" fog item is **mooted**
   (we're no longer driving the GP104 Pascal 1070).
-- **VRAM variant** (6 GB / 8 GB Super / 12 GB) is a minor detail to confirm at
-  install; it does not change the decision for this library.
+- **VRAM variant confirmed (photo of the card):** ASUS **TUF-RTX2060-O6G-GAMING**
+  — vanilla 2060, **6 GB** (factory-OC TUF model), not the 8 GB Super / 12 GB. This
+  is the "6 GB" case; DLSS keeps it comfortable for this small library, so the
+  decision stands unchanged.
 
 Downstream: the profile-rewrite fog graduates — `nvidia` is confirmed in neon's
 module list.
