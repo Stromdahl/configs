@@ -51,6 +51,11 @@ Scope-fixing decisions taken while naming the destination:
 - [Inventory neon's current hardware](../../issues/030-inventory-neon-current-hardware.md) —
   chassis is intact (GTX 1070 + 2 TB 990 PRO NVMe + 16 GB all present); helium
   took only the secondary 480 GB SATA SSD. No GPU/storage purchase implied.
+- [Define neon's gaming target](../../issues/031-define-neon-gaming-target.md) —
+  Valheim / Planet Crafter / Enshrouded, Steam+Proton only, **no Windows**
+  (single-boot Debian). Target: **native 3440×1440 ultrawide @ 60 fps**, medium-high
+  (panel is 144 Hz — headroom a bonus, not a requirement). Ultrawide load tilts the
+  GPU call toward the RTX 2060.
 
 ## Not yet specified
 

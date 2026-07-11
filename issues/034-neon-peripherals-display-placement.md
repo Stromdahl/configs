@@ -7,6 +7,11 @@ closed: null
 labels: [epic:neon-gaming, wayfinder:task]
 ---
 
+> **Display sub-question confirmed via `issues/031` (2026-07-11):** a monitor is
+> present and verified live off the rescue OS — **3440×1440 ultrawide, 144 Hz, on
+> HDMI-A-1.** Remaining here: keyboard + mouse for the desk, physical placement, and
+> wired 1 GbE (onboard I219-V) vs Atheros WiFi.
+
 ## Question
 
 A desk gaming rig needs a place to sit and things to plug into — confirm these

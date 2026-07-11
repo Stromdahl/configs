@@ -14,6 +14,12 @@ Depends on `issues/031` (whether any anti-cheat title forces a Windows dual-boot
 (the 480 GB SATA SSD was harvested for helium) — capacity is ample, so the
 capacity/purchase sub-question is closed and only the boot model remains.
 
+> **Unblocked — `issues/031` resolved (2026-07-11):** boot model is decided —
+> **single-boot Debian, no Windows** (the library is Proton-clean, no kernel
+> anti-cheat). The dual-boot fork is closed. All that remains here is confirming it's
+> fine to **wipe `nvme0n1`** (old docker-host data — nothing to preserve, role retired
+> to helium) and the single-OS NVMe layout. Nearly a formality.
+
 ## Question
 
 Is one OS enough on the 2 TB NVMe, or is a Windows dual-boot needed?
