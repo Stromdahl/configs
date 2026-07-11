@@ -76,18 +76,32 @@ Scope-fixing decisions taken while naming the destination:
 <!-- fog has fully graduated; these are the open executable tickets -->
 
 **All decision tickets (030–034) are resolved — nothing is left to *decide*.** The
-map's fog has graduated into three executable build tickets:
+map's fog graduated into three executable build tickets; the two in-repo ones are now
+**done**:
 
-- [Rewrite neon's profile → gaming desktop](../../issues/035-rewrite-neon-gaming-desktop-profile.md)
-  (035) — compose the titan-100 gaming stack (`nvidia` RTX 2060 confirmed) minus the
-  couch layer, in-repo. Parallel with 036.
-- [Retire neon's old server role](../../issues/036-retire-neon-server-role.md) (036) —
-  prune `servers/neon/`, the git-push deploy pipeline, and the `.sops.yaml` rule.
-  In-repo; parallel with 035.
-- [Provision neon bare-metal](../../issues/037-provision-neon-bare-metal.md) (037,
+- ✅ [Rewrite neon's profile → gaming desktop](../../issues/035-rewrite-neon-gaming-desktop-profile.md)
+  (035, done) — `hosts/neon/modules.conf` is now the titan-100 gaming stack (`nvidia`
+  RTX 2060) minus the couch layer; `--host neon --dry-run` clean. (Also dropped
+  `qemu-guest-agent` — Proxmox-guest-only, meaningless on bare metal.)
+- ✅ [Retire neon's old server role](../../issues/036-retire-neon-server-role.md) (036,
+  done) — `servers/neon/`, its `.sops.yaml` rule, and the deploy-doc references are
+  gone; surviving sops files still decrypt.
+- ⬜ [Provision neon bare-metal](../../issues/037-provision-neon-bare-metal.md) (037,
   needs-human) — GPU swap, back up the 203 GB Steam library to helium, wipe + partition
   `nvme0n1` (ESP / OS / games), install Debian 13, apply the 035 profile, restore the
-  library. Depends on 035.
+  library. Depends on 035 (done → unblocked; awaits the physical session).
+
+> **Two shared-module fixes surfaced by 035 that will bite a *real* neon install**
+> (dry-run masks them; not yet ticketed):
+> 1. The `steam` module hardcodes a Big-Picture autostart for user `couch` and
+>    `die`s if that user is absent — will fail on neon, which has no `couch` and
+>    wants no autostart. Needs gating.
+> 2. Dropping `sddm-autologin` leaves nothing explicitly enabling `sddm` /
+>    `graphical.target` — boot-to-desktop behavior to verify/handle.
+>
+> Do these before/within 037. Housekeeping from 036: remove the stale local `neon`
+> git remote (`git remote remove neon`); the `bup` offsite target still names neon
+> (a backup-architecture decision, left untouched).
 
 ## Out of scope
 
