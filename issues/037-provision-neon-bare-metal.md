@@ -37,7 +37,7 @@ it). The preservation/partition procedure is specified in `issues/033`; `issues/
 
 ## Acceptance criteria
 
-- [ ] The 203 GB Steam library is backed up to helium and verified restorable **before** the wipe — nothing is lost.
+- [x] The 203 GB Steam library is backed up to helium and verified restorable **before** the wipe — nothing is lost. **Done 2026-07-11:** `steam/` (126,856 entries, 216,893,659,834 B) rsync'd from the RO-mounted NVMe to `helium:/mnt/disk1/neon-steam-backup/steam`; byte + entry counts match exactly and a `--checksum` content verify returned zero diffs. NVMe is safe to wipe. Restore this copy in the step below (chown to neon's new user; original uid/gid intentionally not preserved). Do **not** delete the helium copy until the restore is verified on the rebuilt box.
 - [ ] The RTX 2060 is seated and the 1070 removed; `nvidia-smi` on the installed OS reports the RTX 2060.
 - [ ] `nvme0n1` is freshly partitioned ESP / OS / games per `issues/033`; the box boots single-OS Debian 13.
 - [ ] neon's gaming-desktop profile applies cleanly on the box (`./install.sh` succeeds); it boots to a KDE desktop and Steam launches.
