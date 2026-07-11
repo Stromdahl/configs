@@ -36,6 +36,19 @@ install_etc_file htpc-sessions.logrotate /etc/logrotate.d/htpc-sessions || true
 install_etc_file ensure-hdmi-output.sh           /usr/local/bin/htpc-ensure-hdmi-output 755 || true
 install_etc_file htpc-ensure-hdmi-output.desktop /etc/xdg/autostart/htpc-ensure-hdmi-output.desktop || true
 
+# Steam Big-Picture autostart for the couch user (HTPC session boots straight into
+# Big Picture). couch-user runs earlier in modules.conf, so couch is guaranteed here.
+readonly BP_SRC="$DOTFILES_ROOT/configs/htpc-tweaks/steam-big-picture.desktop"
+readonly BP_DST=/home/couch/.config/autostart/steam-big-picture.desktop
+if [[ -r "$BP_DST" ]] && cmp -s -- "$BP_SRC" "$BP_DST"; then
+  ok "Big Picture autostart already current: $BP_DST"
+elif [[ "${DRY_RUN:-0}" == 1 ]]; then
+  info "would install: $BP_SRC -> $BP_DST (owner couch:couch)"
+else
+  sudo install -D -m 644 -o couch -g couch -- "$BP_SRC" "$BP_DST" || die "failed to install $BP_DST"
+  ok "installed: $BP_DST"
+fi
+
 # Mask sleep targets (idempotent — second run is a no-op).
 for unit in sleep.target suspend.target hibernate.target hybrid-sleep.target; do
   state="$(systemctl is-enabled "$unit" 2>/dev/null || echo unknown)"
