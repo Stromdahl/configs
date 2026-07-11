@@ -1,6 +1,6 @@
 ---
 title: Retire neon's old docker-host server role from the repo
-status: open
+status: in-progress
 priority: medium
 created: 2026-07-11
 closed: null
