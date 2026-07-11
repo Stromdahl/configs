@@ -86,10 +86,10 @@ map's fog graduated into three executable build tickets; the two in-repo ones ar
 - ✅ [Retire neon's old server role](../../issues/036-retire-neon-server-role.md) (036,
   done) — `servers/neon/`, its `.sops.yaml` rule, and the deploy-doc references are
   gone; surviving sops files still decrypt.
-- ⬜ [Fix steam & kde modules for couch-less installs](../../issues/038-fix-steam-kde-modules-for-non-couch-desk-installs.md)
-  (038) — the `steam` module `die`s without a `couch` user and its Big-Picture autostart
-  is HTPC-only; `kde` never enables SDDM / `graphical.target` (the dropped autologin
-  module did). In-repo; must not regress titan-100. Blocks 037.
+- ✅ [Fix steam & kde modules for couch-less installs](../../issues/038-fix-steam-kde-modules-for-non-couch-desk-installs.md)
+  (038, done) — `steam` is now package-only (no `couch` `die`); the Big-Picture autostart
+  moved to `htpc-tweaks` (couch layer); `kde` now enables SDDM + sets `graphical.target`
+  on any KDE host. Both host dry-runs clean; titan-100 unregressed. Unblocks 037.
 - ⬜ [Provision neon bare-metal](../../issues/037-provision-neon-bare-metal.md) (037,
   needs-human) — GPU swap, back up the 203 GB Steam library to helium, wipe + partition
   `nvme0n1` (ESP / OS / games), install Debian 13, apply the 035 profile, restore the

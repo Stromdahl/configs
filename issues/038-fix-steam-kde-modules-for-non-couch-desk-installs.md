@@ -1,9 +1,9 @@
 ---
 title: Fix the steam & kde modules so a couch-less desk install boots and installs cleanly
-status: in-progress
+status: done
 priority: high
 created: 2026-07-11
-closed: null
+closed: 2026-07-11
 labels: [epic:neon-gaming, wayfinder:task]
 ---
 
@@ -37,7 +37,7 @@ step runs `steam` on the real box).
 
 ## Acceptance criteria
 
-- [ ] Running the `steam` module on a host **without** a `couch` user completes successfully (exit 0) and installs no `couch`-owned autostart — no `die`.
-- [ ] On a host **with** the couch layer (titan-100), the Steam Big-Picture autostart still installs correctly and re-running is a no-op.
-- [ ] After the `kde` module runs on a host that has **no** autologin module, the box boots to the SDDM graphical login (`systemctl get-default` is `graphical.target` and the display-manager is enabled) — verified on the real neon install, or ensured proactively by the module.
-- [ ] `./install.sh --host neon --dry-run` and `./install.sh --host titan-100 --dry-run` both remain clean.
+- [x] Running the `steam` module on a host **without** a `couch` user completes successfully (exit 0) and installs no `couch`-owned autostart — no `die`. (`steam` is now `apt_ensure` only; the autostart moved to `htpc-tweaks`.)
+- [x] On a host **with** the couch layer (titan-100), the Steam Big-Picture autostart still installs correctly and re-running is a no-op. (`htpc-tweaks` installs it with a `cmp -s` idempotency guard; couch-owned.)
+- [x] After the `kde` module runs on a host that has **no** autologin module, the box boots to the SDDM graphical login (`systemctl get-default` is `graphical.target` and the display-manager is enabled) — ensured proactively by the `kde` module (`set-default graphical.target` + `enable sddm`). Real-neon boot verification defers to `issues/037` (needs-human).
+- [x] `./install.sh --host neon --dry-run` and `./install.sh --host titan-100 --dry-run` both remain clean.
