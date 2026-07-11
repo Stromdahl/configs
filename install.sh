@@ -90,7 +90,7 @@ check_repo_integrity() {
   # (rsync/cp) rather than cloned, which can silently truncate the object store
   # (titan, 2026-05). Non-fatal — modules read the working tree, which may still
   # be usable — so we warn rather than abort. connectivity-only fsck is fast and
-  # catches missing objects. Skips non-git deploys (e.g. neon's bare-repo push).
+  # catches missing objects. Skips non-git deploys (e.g. a bare-repo push checkout).
   REPO_INTEGRITY_BAD=0
   command -v git >/dev/null 2>&1 || return 0
   git -C "$DOTFILES_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
