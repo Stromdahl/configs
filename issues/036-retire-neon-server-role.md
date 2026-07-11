@@ -1,9 +1,9 @@
 ---
 title: Retire neon's old docker-host server role from the repo
-status: in-progress
+status: done
 priority: medium
 created: 2026-07-11
-closed: null
+closed: 2026-07-11
 labels: [epic:neon-gaming, wayfinder:task]
 ---
 
