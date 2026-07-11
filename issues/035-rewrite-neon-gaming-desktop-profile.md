@@ -1,9 +1,9 @@
 ---
 title: Rewrite hosts/neon docker-host profile into a KDE gaming-desktop profile
-status: in-progress
+status: done
 priority: high
 created: 2026-07-11
-closed: null
+closed: 2026-07-11
 labels: [epic:neon-gaming, wayfinder:task]
 ---
 
