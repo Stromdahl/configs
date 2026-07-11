@@ -71,25 +71,23 @@ Scope-fixing decisions taken while naming the destination:
   all on hand, **no shopping:** ultrawide 3440×1440@144 on HDMI, keyboard+mouse ready,
   desk placement, **wired onboard 1 GbE** (no WiFi).
 
-## Not yet specified
+## Charted — the build frontier
 
-<!-- in-scope fog; graduates into tickets as the frontier advances -->
+<!-- fog has fully graduated; these are the open executable tickets -->
 
-- **Rewrite `hosts/neon/` docker-host profile → gaming-desktop `modules.conf`**
-  (adapt titan-100 minus couch layer). GPU decision is settled (issue 032):
-  **`nvidia` is in the list** (RTX 2060, Turing). Ready to graduate into a build
-  ticket.
-- **Retire neon's old server role from the repo** — prune the deploy pipeline
-  bits (`deploy-user`, `bare-git-repo`, `sops`) and docker-host framing from
-  `hosts/neon/`. Graduates alongside the profile rewrite.
-- **Bare-metal Debian 13 install procedure** for the desk rig. Storage/boot is
-  settled (issue 033): wipe `nvme0n1`, GPT = ESP / ~150 GB OS / ~1.85 TB games (ext4),
-  with the 203 GB Steam library staged to helium and restored afterward. Ready to
-  graduate into a build ticket.
+**All decision tickets (030–034) are resolved — nothing is left to *decide*.** The
+map's fog has graduated into three executable build tickets:
 
-> **All decision tickets are now resolved (030–034).** The map's remaining fog is
-> three *executable build* tickets ready to be written: the profile rewrite, the
-> old-server-role retirement, and the bare-metal install procedure above.
+- [Rewrite neon's profile → gaming desktop](../../issues/035-rewrite-neon-gaming-desktop-profile.md)
+  (035) — compose the titan-100 gaming stack (`nvidia` RTX 2060 confirmed) minus the
+  couch layer, in-repo. Parallel with 036.
+- [Retire neon's old server role](../../issues/036-retire-neon-server-role.md) (036) —
+  prune `servers/neon/`, the git-push deploy pipeline, and the `.sops.yaml` rule.
+  In-repo; parallel with 035.
+- [Provision neon bare-metal](../../issues/037-provision-neon-bare-metal.md) (037,
+  needs-human) — GPU swap, back up the 203 GB Steam library to helium, wipe + partition
+  `nvme0n1` (ESP / OS / games), install Debian 13, apply the 035 profile, restore the
+  library. Depends on 035.
 
 ## Out of scope
 
