@@ -29,10 +29,11 @@ Order of operations, drawn from the resolved decisions:
    register it as a Steam library folder so the games show installed without a
    re-download.
 
-Depends on `issues/035` (the gaming profile must exist to apply) and on the physical
-RTX 2060 being on hand (`issues/032`; the user has it). The preservation/partition
-procedure is specified in `issues/033`; `issues/036` (repo cleanup) is independent and
-not a prerequisite.
+Depends on `issues/035` (the gaming profile must exist to apply) and `issues/038`
+(the `steam` module `die`s on a couch-less host — must be fixed before step 4 runs it
+on the real box), plus the physical RTX 2060 being on hand (`issues/032`; the user has
+it). The preservation/partition procedure is specified in `issues/033`; `issues/036`
+(repo cleanup) is independent and not a prerequisite.
 
 ## Acceptance criteria
 
