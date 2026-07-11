@@ -7,6 +7,22 @@
 # base_timezone=Europe/Stockholm, docker_users, compose flags) — same effective
 # values, so this file only carries what is genuinely helium-specific.
 
+# Docker daemon DNS (consumed by the geerlingguy.docker role -> /etc/docker/daemon.json,
+# which restarts dockerd on change). REQUIRED on helium: NetBird rewrites the host
+# /etc/resolv.conf to point only at its own mesh resolver (100.65.22.72). Docker's
+# embedded resolver (127.0.0.11) can't use that as an upstream, so it hands containers
+# a resolv.conf marked "NO EXTERNAL NAMESERVERS DEFINED" and EVERY container loses
+# external DNS (bazarr can't reach api.opensubtitles.com -> subtitles fail; sonarr/
+# radarr/jellyfin lose indexer/metadata lookups too). Pinning explicit upstreams here
+# makes container DNS independent of the NetBird-mutated host file. 192.168.1.1 is the
+# OPNsense resolver (also preserves *.home.stromdahl.tech split-horizon); 1.1.1.1 is a
+# public fallback. Verified: a container on helium_media resolves public names against
+# 192.168.1.1. Without this, NetBird re-breaks container DNS on every reboot.
+docker_daemon_options:
+  dns:
+    - "192.168.1.1"
+    - "1.1.1.1"
+
 # storage_hdd: the four 12 TB SAS drives behind the LSI 9300-8i HBA. Referenced
 # by stable wwn-* by-id symlinks (unique here, unlike the Kingston SSDs). Two
 # data drives unioned by mergerfs, two parity drives for SnapRAID dual-fault.
