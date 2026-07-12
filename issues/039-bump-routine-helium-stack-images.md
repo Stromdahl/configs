@@ -1,9 +1,9 @@
 ---
 title: Bump routine helium stack images to current stable within their version lines
-status: in-progress
+status: done
 priority: medium
 created: 2026-07-11
-closed: null
+closed: 2026-07-12
 labels: [epic:services]
 ---
 
