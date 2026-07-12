@@ -90,10 +90,15 @@ map's fog graduated into three executable build tickets; the two in-repo ones ar
   (038, done) — `steam` is now package-only (no `couch` `die`); the Big-Picture autostart
   moved to `htpc-tweaks` (couch layer); `kde` now enables SDDM + sets `graphical.target`
   on any KDE host. Both host dry-runs clean; titan-100 unregressed. Unblocks 037.
-- ⬜ [Provision neon bare-metal](../../issues/037-provision-neon-bare-metal.md) (037,
-  needs-human) — GPU swap, back up the 203 GB Steam library to helium, wipe + partition
-  `nvme0n1` (ESP / OS / games), install Debian 13, apply the 035 profile, restore the
-  library. Depends on 035 (done) + 038; awaits the physical session.
+- ✅ [Provision neon bare-metal](../../issues/037-provision-neon-bare-metal.md) (037,
+  **done 2026-07-12**) — RTX 2060 swapped in (1070 out), `nvme0n1` partitioned ESP / OS /
+  `/games`, Debian 13 installed, the 035 profile applied clean (all 21 modules), and the
+  203 GB Steam library restored to `/games` + verified (all games installed, Cloud synced,
+  helium backup deleted). Also added a `zram` module (8 GiB zstd cushion, no swap partition,
+  no hibernation). neon is live at `192.168.1.165`, KDE @ 3440×1440 on the 2060.
+
+**The map is fully executed — the neon-gaming epic is complete.** neon is a working
+desk-based Debian gaming desktop.
 
 > Housekeeping from 036: the stale local `neon` git remote is removed (done). The
 > `bup` offsite target still names neon (a backup-architecture decision, left
