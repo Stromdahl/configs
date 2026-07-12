@@ -1,6 +1,6 @@
 ---
 title: Bump routine helium stack images to current stable within their version lines
-status: open
+status: in-progress
 priority: medium
 created: 2026-07-11
 closed: null
