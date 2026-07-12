@@ -1,9 +1,9 @@
 ---
 title: Bump Traefik off v3.6.11 to pick up security fixes and decide the 3.6 vs 3.7 line
-status: in-progress
+status: done
 priority: high
 created: 2026-07-11
-closed: null
+closed: 2026-07-12
 labels: [epic:services]
 ---
 
