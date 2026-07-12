@@ -132,7 +132,7 @@ qbittorrent_webui_username: admin
 # matured v2.x line instead, set immich_version to a v2.x tag AND swap the postgres /
 # valkey image pins in roles/compose_stack/templates/docker-compose.yml.j2 to that
 # release's docker-compose.yml (v2.x used a different postgres image).
-immich_version: "v3.0.0"
+immich_version: "v3.0.2"
 immich_upload_location: "{{ ssd_pool_mount }}/immich/library"   # -> /data/ssd/immich/library
 immich_db_location: "{{ ssd_pool_mount }}/immich/postgres"      # -> /data/ssd/immich/postgres
 immich_db_username: postgres      # POSTGRES_USER (superuser in the immich postgres image)
