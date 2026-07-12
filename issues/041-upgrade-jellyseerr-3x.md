@@ -1,9 +1,9 @@
 ---
 title: Upgrade Jellyseerr from 2.7.3 to the 3.x line
-status: in-progress
+status: done
 priority: medium
 created: 2026-07-11
-closed: null
+closed: 2026-07-12
 labels: [epic:services]
 ---
 
