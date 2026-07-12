@@ -43,3 +43,4 @@ it). The preservation/partition procedure is specified in `issues/033`; `issues/
 - [ ] neon's gaming-desktop profile applies cleanly on the box (`./install.sh` succeeds); it boots to a KDE desktop and Steam launches.
 - [ ] The preserved Steam library is restored on the games partition and Steam lists the games as **installed** (Hogwarts Legacy, Split Fiction, …) without re-downloading.
 - [ ] Display runs native 3440×1440 on the 2060 and wired onboard 1 GbE is up.
+- [ ] **zram** configured post-install as the swap cushion — **no swap partition** at install time and **no hibernation** (desktop uses S3 sleep; decided 2026-07-12 for the 16 GB box: zram is compressed in-RAM swap, avoids NVMe wear, and hibernation is low-value + nvidia-resume-flaky here).
