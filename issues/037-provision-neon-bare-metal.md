@@ -1,10 +1,10 @@
 ---
 title: Provision neon bare-metal as the Debian gaming desktop (GPU swap, install, library restore)
-status: open
+status: done
 priority: high
 created: 2026-07-11
-closed: null
-labels: [epic:neon-gaming, wayfinder:task, needs-human]
+closed: 2026-07-12
+labels: [epic:neon-gaming, wayfinder:task]
 ---
 
 ## Description
@@ -41,6 +41,6 @@ it). The preservation/partition procedure is specified in `issues/033`; `issues/
 - [x] The RTX 2060 is seated and the 1070 removed; `nvidia-smi` on the installed OS reports the RTX 2060. **Done 2026-07-12** — RTX 2060 seated, GTX 1070 pulled; post-reboot `nvidia-smi` reports "NVIDIA GeForce RTX 2060", driver 550.163.01.
 - [x] `nvme0n1` is freshly partitioned ESP / OS / games per `issues/033`; the box boots single-OS Debian 13. **Done 2026-07-12:** GPT with `nvme0n1p1` ESP (`/boot/efi`), `p2` 140 GB ext4 `/`, `p3` 1.7 TB ext4 `/games`; booted Debian 13 trixie at `192.168.1.165`.
 - [x] neon's gaming-desktop profile applies cleanly on the box (`./install.sh` succeeds); it boots to a KDE desktop and Steam launches. **Done 2026-07-12:** all 21 modules succeeded (`base apt-sources locale ssh sshd bash git i386-multiarch nvidia pipewire kde flatpak steam gamepad bluetooth unattended-upgrades gtk userdirs xkb fzf nvim syncthing`); `graphical.target` default, SDDM enabled — post-reboot KDE Plasma session confirmed up (plasmashell + sddm running). Note: the gaming profile lived only on krypton's unpushed `main`; had to push before neon (which clones the public repo) could pull it — the first dry-run applied the stale server profile.
-- [~] The preserved Steam library is restored on the games partition and Steam lists the games as **installed** (Hogwarts Legacy, Split Fiction, …) without re-downloading. **Restore done + verified 2026-07-12:** rsync-pulled `helium:/mnt/disk1/neon-steam-backup/steam/` → `/games/` (over gigabit LAN; neon given its own ed25519 key authorized on helium since agent-forwarding wouldn't carry the key; `sudo chown ms:ms /games` first). `--exclude='*.tmp'` dropped 76 stray appmanifest temp files (expected). A size+mtime dry-run diff returned **zero** files to transfer → content complete. **helium copy left intact** until Steam confirms the games list as installed post-login (add `/games` as a Steam library folder).
+- [x] The preserved Steam library is restored on the games partition and Steam lists the games as **installed** (Hogwarts Legacy, Split Fiction, …) without re-downloading. **Done 2026-07-12:** rsync-pulled `helium:/mnt/disk1/neon-steam-backup/steam/` → `/games/` (over gigabit LAN; neon given its own ed25519 key authorized on helium since agent-forwarding wouldn't carry the key; `sudo chown ms:ms /games` first). `--exclude='*.tmp'` dropped 76 stray appmanifest temp files (expected). Size+mtime dry-run diff returned **zero** files to transfer. Added `/games` as a Steam library folder; all 15 apps show `StateFlags=4` (fully installed), `common/` + `compatdata/` intact, no re-download. Steam Cloud showed an "out of sync" banner (expected — `userdata/` cloud cache is outside the library folder, not backed up); **Retry Sync cleared it**. **helium backup deleted** — `rm -rf` reclaimed the 203 GB (`/mnt/disk1` 223 G → 21 G used); an empty root-owned dir stub `neon-steam-backup/` remains (needs `sudo rmdir` on helium).
 - [x] Display runs native 3440×1440 on the 2060 and wired onboard 1 GbE is up. **Done 2026-07-12:** HDMI-0 connected primary at 3440×1440; wired `enp0s31f6` up (neon at 192.168.1.165).
 - [x] **zram** configured post-install as the swap cushion — **no swap partition** at install time and **no hibernation** (desktop uses S3 sleep; decided 2026-07-12 for the 16 GB box: zram is compressed in-RAM swap, avoids NVMe wear, and hibernation is low-value + nvidia-resume-flaky here). **Done 2026-07-12:** built a reusable `zram` dotfiles module (`systemd-zram-generator` + `configs/zram/zram-generator.conf`, `zram-size = min(ram/2, 8192)`, zstd) and wired it into `hosts/neon/modules.conf`. `swapon --show` reports `/dev/zram0` 7.8 GiB, priority 100; `comp_algorithm = [zstd]`.
