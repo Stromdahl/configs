@@ -1,13 +1,24 @@
 ---
 title: Upgrade Profilarr from v1.1.4 to v1.6.0
-status: open
+status: dropped
 priority: medium
 created: 2026-07-11
-closed: null
+closed: 2026-07-12
 labels: [epic:services]
 ---
 
 ## Description
+
+> **DROPPED 2026-07-12.** The premise is wrong: **v1.6.0 never existed.** The repo
+> moved to `Dictionarry-Hub/profilarr`; the v1 line ends at **v1.1.5** (now EOL) and
+> then jumps straight to a **v2** that is a hard, non-migratable break (new registry
+> `ghcr.io/dictionarry-hub/profilarr`, fresh install, the v1 sync/merge model is gone —
+> profiles + sync targets must be rebuilt by hand). A v1.1.4 → v1.1.5 bump is purely
+> cosmetic and stays on dead software, so it was **not** done — helium keeps running
+> v1.1.4 untouched. The real upgrade (v2.0.9) is split out as its own deliberate
+> migration in `issues/043`. Text below kept for history.
+
+The requested bump (`v1.1.4 → v1.6.0`) does not exist. Original text follows.
 
 Profilarr is pinned at v1.1.4; current stable is v1.6.0 — a five-minor jump. Profilarr is the
 source of truth for the Radarr/Sonarr quality profiles and custom formats (the profile sync
