@@ -528,7 +528,11 @@ services:
       - media
 
   profilarr:
-    image: santiagosayshey/profilarr:v1.1.4
+    # issue 043: migrated v1.1.4 -> v2 (Dictionarry-Hub fork). v2 is a wholesale rewrite;
+    # v1 config is NOT migratable, so this was a fresh /config rebuild (DB/profiles/arrs
+    # re-established via the UI -- v2's arr-connection + push-sync are session-only, no
+    # X-Api-Key path yet, see upstream #401). Tags are plain semver (no 'v' prefix).
+    image: ghcr.io/dictionarry-hub/profilarr:2.0.9
     container_name: profilarr
     restart: unless-stopped
     # issue 010: honors PUID/PGID; curated caps are the safe superset whether it drops from
@@ -538,6 +542,10 @@ services:
     cap_add: *caps-privdrop
     security_opt:
       - "no-new-privileges:true"
+    # issue 043: v2 needs the parser sidecar healthy before it starts (CF/QP validation).
+    depends_on:
+      parser:
+        condition: service_healthy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.profilarr.rule=Host(`profilarr.${DOMAIN:?missing DOMAIN}`)"
@@ -545,18 +553,42 @@ services:
       - "traefik.http.routers.profilarr.tls.certresolver=letsencrypt"
       - "traefik.http.services.profilarr.loadbalancer.server.port=6868"
       - "traefik.http.routers.profilarr.middlewares=security-headers@file"
+    # issue 043: v2 image ships curl, not wget (v1 had wget); hit the v2 /api/v1/health endpoint.
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:6868/ || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:6868/api/v1/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
     environment:
       - PUID=${UID:?missing UID}
       - PGID=${GID:?missing GID}
       - TZ=${TZ:-Europe/Stockholm}
+      # issue 043: AUTH=off -- Profilarr is mesh/LAN-only (never public, same boundary as the
+      # rest of the stack); no interactive first-boot account. PARSER_* points at the sidecar.
+      - AUTH=off
+      - PARSER_HOST=parser
+      - PARSER_PORT=5000
     volumes:
       - ${APPDATA_DIR:?missing APPDATA_DIR}/profilarr:/config
+    networks:
+      - media
+
+  # issue 043: stateless .NET parser microservice for Profilarr v2 (release-title parsing
+  # behind CF/QP validation). Runs as its own baked-in non-root user (uid 1000) -> no
+  # PUID/PGID, no volumes, no published port; profilarr reaches it at parser:5000 on the
+  # media network. Ships its own /health healthcheck, which gates profilarr's depends_on.
+  # Service name MUST stay 'parser' to match PARSER_HOST above.
+  parser:
+    image: ghcr.io/dictionarry-hub/profilarr-parser:2.0.9
+    container_name: profilarr-parser
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    expose:
+      - "5000"
     networks:
       - media
 
