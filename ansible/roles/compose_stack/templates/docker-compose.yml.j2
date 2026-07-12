@@ -561,13 +561,19 @@ services:
       - media
 
   jellyseerr:
-    image: fallenbagel/jellyseerr:2.7.3
+    # issue 041: Jellyseerr rebranded to Seerr at the 3.x line and moved registry to
+    # ghcr.io/seerr-team/seerr; fallenbagel/jellyseerr is frozen at 2.7.3. The 2.x->3.x DB
+    # migration is automatic and forward-only (request history migrates in place). Seerr also
+    # dropped its built-in init process, so init: true reaps zombies. Config path is unchanged
+    # (/app/config), so the existing appdata volume and chown below carry over as-is.
+    image: ghcr.io/seerr-team/seerr:v3.3.0
     container_name: jellyseerr
     restart: unless-stopped
-    # issue 010: upstream image has NO privilege drop and ran as container-root. Flip it to the
+    init: true
+    # issue 010: upstream image has NO privilege drop and defaults to container-root. Flip it to the
     # jellyfin uid/gid directly (runs as 1001, no drop -> no cap_add). Its /app/config (sqlite
-    # settings + request db) was written root-owned, so the compose_stack role recursively chowns
-    # it to 1001:1003 BEFORE this recreate (see stack.yml) or jellyseerr can't read its own state.
+    # settings + request db) is chowned to 1001:1003 BEFORE this recreate (see stack.yml) or
+    # Seerr can't read its own state.
     user: "${UID:?missing UID}:${GID:?missing GID}"
     cap_drop:
       - ALL
