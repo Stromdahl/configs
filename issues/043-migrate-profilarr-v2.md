@@ -1,11 +1,37 @@
 ---
 title: Migrate Profilarr to the v2 line (fresh install, rebuild profiles + sync)
-status: open
+status: closed
 priority: medium
 created: 2026-07-12
-closed: null
+closed: 2026-07-12
 labels: [epic:services]
 ---
+
+## Outcome (2026-07-12)
+
+Done. helium runs `ghcr.io/dictionarry-hub/profilarr:2.0.9` + the new
+`profilarr-parser:2.0.9` sidecar (v2 tags are plain semver, no `v` prefix) on a
+fresh `/config`; v1 config backed up to `/data/ssd/profilarr.v1-pre043` (outside
+the restic source) for rollback. Compose change committed (`74a3cad`), incl. a
+healthcheck fix (v2 image ships `curl`, not `wget`).
+
+v2's arr-connection + profile-selection + push-sync are **UI/session-only** (no
+`X-Api-Key` path — upstream #401 unshipped), so the setup was driven via the app's
+SvelteKit **form-actions** with `AUTH=off` (no session needed): linked+synced the
+pre-listed Dictionarry DB (id 1, `v2` branch) via `POST /api/v1/databases/1/sync`;
+created Radarr (id 1, `http://radarr:7878`) + Sonarr (id 2, `http://sonarr:8989`)
+via `POST /arr/new`; saved selections `1080p Quality` + `2160p Quality` via
+`saveQualityProfiles`; triggered `syncQualityProfiles` (jobs 7+8 succeeded).
+
+**Gotcha:** `apply_default_delay_profiles` defaults ON in v2 and would have written
+a **600-min (10h) grab delay + prefer-torrent** default delay profile into both
+arrs on instance creation — out of scope vs v1. Suppressed it first via the
+`settings/general` `save` form-action (kept all other settings). Sync trigger is
+**manual** (matches v1 intent); DB auto-pull stays on.
+
+Verification (diff vs pre-migration baseline): both arrs keep exactly the two
+profiles with non-zero scored CFs, up slightly from the newer DB — Radarr 1080p
+89→103 / 2160p 117→130; Sonarr 1080p 81→93 / 2160p 105→120. **PASS.**
 
 ## Description
 
@@ -36,12 +62,12 @@ image bump.
 
 ## Acceptance criteria
 
-- [ ] The v1→v2 breaking-change / no-migration notes are captured and the fresh-install
+- [x] The v1→v2 breaking-change / no-migration notes are captured and the fresh-install
       approach is confirmed before touching the running v1 instance.
-- [ ] Profilarr v2 (≥ v2.0.9, `ghcr.io/dictionarry-hub/profilarr`) is running on helium
+- [x] Profilarr v2 (≥ v2.0.9, `ghcr.io/dictionarry-hub/profilarr`) is running on helium
       on a fresh config volume, with the old v1 config preserved/backed up for rollback.
-- [ ] The intended profiles + custom formats are re-established in v2 and its sync
+- [x] The intended profiles + custom formats are re-established in v2 and its sync
       targets point at Radarr and Sonarr.
-- [ ] A profile sync/import runs successfully and the resulting Radarr/Sonarr profiles
+- [x] A profile sync/import runs successfully and the resulting Radarr/Sonarr profiles
       still have **non-zero scored custom formats** (sync not silently broken).
-- [ ] The pin and any config are committed to the repo so the deploy is reproducible.
+- [x] The pin and any config are committed to the repo so the deploy is reproducible.
