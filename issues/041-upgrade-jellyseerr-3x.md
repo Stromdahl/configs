@@ -9,6 +9,19 @@ labels: [epic:services]
 
 ## Description
 
+> **DONE 2026-07-12.** Migrated to **Seerr v3.3.0** — the 3.x line is not on
+> `fallenbagel/jellyseerr` (frozen at 2.7.3); it moved to `ghcr.io/seerr-team/seerr`.
+> Compose now pins `ghcr.io/seerr-team/seerr:v3.3.0` with `init: true`, keeping the
+> issue-010 uid override (1001:1003, config already owned by it — sidesteps the common
+> 1000:1000 permission crash). Container healthy, settings/DB migrations applied clean,
+> no permission errors. **Verified from CLI:** request history intact (live DB matches
+> pre-migration backup: `media_request`=6, `season_request`=24) and connection config
+> survived (Jellyfin server entry + 1 Radarr + 1 Sonarr in `settings.json`).
+> **Residual (accepted & noted):** the runtime "Jellyfin login works + a live test
+> request flows to the *arr apps" is a UI spot-check left to the user. **Rollback:**
+> restore appdata snapshot `/data/ssd/appdata/jellyseerr.pre-seerr-v3-20260712-070255`
+> and re-pin `fallenbagel/jellyseerr:2.7.3` (the migration is forward-only).
+
 Jellyseerr is pinned at 2.7.3; the current stable is v3.3.0 — a major-version jump (2.x → 3.x)
 plus three minors. Unlike the routine bumps in `issues/039`, this crosses a major boundary, so
 the v3.0 release notes must be read for breaking changes (config schema, database migration,
