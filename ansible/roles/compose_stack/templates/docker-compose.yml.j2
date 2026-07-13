@@ -122,6 +122,13 @@ services:
       - "--entryPoints.web.http.redirections.entryPoint.permanent=true"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
+      # issue 044: force the DNS-01 propagation self-check to use PUBLIC resolvers, not the
+      # container's default (127.0.0.11 -> the OPNsense split-horizon resolver). home.stromdahl.tech
+      # is split-horizon (LAN answers point at helium), so the LAN resolver never returns the public
+      # _acme-challenge TXT that lego just set at Cloudflare -> "dns01: time limit exceeded ... NS
+      # 127.0.0.11 did not return the expected TXT record", and issuance for any NEW subdomain fails.
+      # Querying Cloudflare's public resolvers (where the TXT actually lives) makes the check pass.
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?missing ACME_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
     labels:
@@ -1108,11 +1115,15 @@ services:
     image: icereed/paperless-gpt:${PAPERLESS_GPT_VERSION:?missing PAPERLESS_GPT_VERSION}
     container_name: paperless-gpt
     restart: unless-stopped
-    # issue 010: Go binary, no privilege drop and no mounted dir to chown (prompts use the
-    # built-in defaults) -> drop all caps (same posture as flaresolverr/jellyseerr). Serves
-    # its review UI on 8080 (>1024, no NET_BIND_SERVICE).
+    # issue 010: the entrypoint starts as root, chowns /app + /home/paperless-gpt (its
+    # prompts/db/config dirs) and drops to a non-root user -> needs the curated privdrop caps
+    # (CHOWN/DAC_OVERRIDE/FOWNER for the chown, SETGID/SETUID for the drop), same as the
+    # paperless webserver. A blanket cap_drop:[ALL] with no cap_add makes the chown fail
+    # ("Operation not permitted") and the container crash-loops. Serves its UI on 8080
+    # (>1024, no NET_BIND_SERVICE).
     cap_drop:
       - ALL
+    cap_add: *caps-privdrop
     security_opt:
       - "no-new-privileges:true"
     depends_on:

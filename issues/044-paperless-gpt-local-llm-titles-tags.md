@@ -48,21 +48,45 @@ and is cleanly removable if/when v3 goes stable and native AI is adopted.
 
 ## Acceptance criteria
 
-- [ ] **RAM gate (needs-human):** `free -h` on helium confirms headroom for the model
-      (`qwen2.5:3b` ≈ 2.5 GB resident) alongside CPU-only Immich ML + the full stack,
-      before enabling auto-processing or bumping the model.
-- [ ] Ollama runs on helium (internal `paperless` bridge, no published ports) and the
-      model is pulled (automated by the compose-stack role's pull task).
-- [ ] paperless-gpt runs, reaches Paperless (`paperless:8000`) and Ollama
-      (`ollama:11434`), and its UI is reachable at `paperless-gpt.home.stromdahl.tech`
-      over LAN + mesh (never public).
-- [ ] **Token write-scope (needs-human):** the reused `paperless_api_key` belongs to a
-      Paperless user with write access so suggestions can be applied. If the homepage
-      token turns out read-only, mint a dedicated admin token into sops.
+- [x] **RAM gate:** `free -h` on helium = 15 GiB total, ~10 GiB available — `qwen2.5:3b`
+      (1.9 GB) fits comfortably alongside CPU-only Immich ML + the full stack. Headroom for
+      `qwen2.5:7b` later if wanted.
+- [x] Ollama runs on helium (internal `paperless` bridge, no published ports) and the model
+      is pulled (`qwen2.5:3b`, automated by the compose-stack role's idempotent pull task).
+- [x] paperless-gpt runs, reaches Paperless (`paperless:8000`) and Ollama (`ollama:11434`),
+      and its UI is reachable at `paperless-gpt.home.stromdahl.tech` (valid LE cert) over
+      LAN + mesh, never public.
+- [x] **Token write-scope:** the reused `paperless_api_key` belongs to user `ms`
+      (`is_superuser=true`, `change_document` granted) — full write access, no dedicated
+      token needed.
 - [ ] Tagging a real document `paperless-gpt` produces a sensible title + tags in Swedish
-      *and* English documents; applying the suggestion updates the document.
-- [ ] Container + Ollama + all non-secret config live in the Ansible compose-stack role;
+      *and* English documents; applying the suggestion updates the document. **(needs-human:
+      quality check on real docs in the UI.)**
+- [x] Container + Ollama + all non-secret config live in the Ansible compose-stack role;
       no document data leaves helium.
+
+## Outcome (2026-07-13)
+
+Deployed via `ansible-playbook site.yml --limit helium --tags compose`. ollama + paperless-gpt
+up; `qwen2.5:3b` pulled; paperless-gpt authenticated to the Paperless API and OCR gracefully
+self-disabled ("OCR provider is set to LLM, but no VISION_LLM_PROVIDER is set. Disabling OCR.").
+Two fixes were needed during bring-up:
+
+1. **paperless-gpt caps.** Its entrypoint starts root, `chown`s `/app` + `/home/paperless-gpt`
+   and drops to a non-root user, so a blanket `cap_drop:[ALL]` crash-looped it
+   ("chown: Operation not permitted"). Fixed by adding the curated `*caps-privdrop` set (same
+   as the paperless webserver) — the issue-010 pattern for root-entrypoint-then-drop images.
+2. **DNS-01 cert for the new subdomain.** Issuance failed repeatedly ("dns01: time limit
+   exceeded ... NS 127.0.0.11 did not return the expected TXT record"): lego's propagation
+   self-check queried the container's split-horizon resolver, which never returns the public
+   `_acme-challenge` TXT. This was NOT the transient "restart traefik" gotcha — two restarts
+   reproduced it. Fixed durably by pinning the check to public resolvers
+   (`dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53`); cert then issued (LE). This also fixes
+   every future new subdomain on this split-horizon domain.
+
+Remaining: judge suggestion quality on real Swedish + English docs (tag one `paperless-gpt`,
+review in the UI, apply). Then optionally flip `CREATE_NEW_TAGS=true` / add the
+`paperless-gpt-auto` tag for hands-off processing.
 
 ## Notes
 
