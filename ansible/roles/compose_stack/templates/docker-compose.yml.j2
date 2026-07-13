@@ -59,6 +59,10 @@ volumes:
   # issue 007 — Paperless's Redis (task queue) data; persist so in-flight consume tasks
   # survive a restart. Not precious -> a named volume on the OS disk, not the SSD subvol.
   paperless_redis:
+  # issue 044 — Ollama's pulled models (~2.5 GB for qwen2.5:3b). Re-pullable, so a plain
+  # named volume on the OS disk rather than the SSD precious tier; persist it so a redeploy
+  # doesn't re-download the model.
+  ollama_models:
 
 secrets:
   cf_dns_api_token:
@@ -1068,3 +1072,86 @@ services:
       - ${PROTONMAIL_BRIDGE_DATA:?missing PROTONMAIL_BRIDGE_DATA}:/root
     networks:
       - paperless   # only the paperless webserver reaches it (protonmail-bridge:143)
+
+  # ===========================================================================
+  # issue 044 — local-LLM titles/tags for Paperless (Ollama + paperless-gpt).
+  # CPU-only (no GPU on helium); documents never leave the box. OCR stays on
+  # Tesseract — the LLM-vision OCR path is NOT enabled (no OCR_PROVIDER/VISION_*),
+  # which is safe because paperless-gpt's OCR is opt-in per-doc (the ocr tag).
+  # Post-deploy (automated by the compose-stack role): the model is pulled into
+  # Ollama once the stack is up. Native Paperless AI was rejected — it needs v3
+  # (beta); see issues/044.
+  # ===========================================================================
+
+  ollama:
+    image: ollama/ollama:${OLLAMA_VERSION:?missing OLLAMA_VERSION}
+    container_name: ollama
+    restart: unless-stopped
+    # issue 010: runs as root by design (writes models to /root/.ollama, a root-owned
+    # named volume — no chown, no privilege drop) and serves on 11434 (>1024, no
+    # NET_BIND_SERVICE). Nothing else is needed -> drop all caps (same posture as immich).
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    environment:
+      # Shared, RAM-constrained box: unload the model after 5 min idle and never hold
+      # more than one resident, so it doesn't sit on memory next to Immich ML + the stack.
+      - OLLAMA_KEEP_ALIVE=5m
+      - OLLAMA_MAX_LOADED_MODELS=1
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - paperless   # internal only — reached by paperless-gpt at ollama:11434; no Traefik, no ports
+
+  paperless-gpt:
+    image: icereed/paperless-gpt:${PAPERLESS_GPT_VERSION:?missing PAPERLESS_GPT_VERSION}
+    container_name: paperless-gpt
+    restart: unless-stopped
+    # issue 010: Go binary, no privilege drop and no mounted dir to chown (prompts use the
+    # built-in defaults) -> drop all caps (same posture as flaresolverr/jellyseerr). Serves
+    # its review UI on 8080 (>1024, no NET_BIND_SERVICE).
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    depends_on:
+      - paperless
+      - ollama
+    labels:
+      - "traefik.enable=true"
+      # Dual-homed (media + paperless) like the paperless webserver — pin Traefik to the
+      # media bridge so a recreate can't flip it to the unroutable paperless-net IP.
+      - "traefik.docker.network={{ compose_stack_dir | basename }}_media"
+      - "traefik.http.routers.paperless-gpt.rule=Host(`paperless-gpt.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.paperless-gpt.entrypoints=websecure"
+      - "traefik.http.routers.paperless-gpt.tls.certresolver=letsencrypt"
+      - "traefik.http.services.paperless-gpt.loadbalancer.server.port=8080"
+      - "traefik.http.routers.paperless-gpt.middlewares=security-headers@file"
+    environment:
+      # Talk to Paperless over the internal paperless bridge by container name. The API
+      # token reuses the issue-018 homepage token (PAPERLESS_API_KEY) — must have write
+      # access to apply suggestions (see issues/044).
+      - PAPERLESS_BASE_URL=http://paperless:8000
+      - PAPERLESS_API_TOKEN=${PAPERLESS_API_KEY:?missing PAPERLESS_API_KEY}
+      - PAPERLESS_PUBLIC_URL=https://paperless.${DOMAIN:?missing DOMAIN}
+      # Local LLM via the on-box Ollama (no cloud). TOKEN_LIMIT keeps prompts small enough
+      # for a small CPU model; context length matches the model.
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=${PAPERLESS_GPT_LLM_MODEL:?missing PAPERLESS_GPT_LLM_MODEL}
+      - LLM_LANGUAGE=English
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_CONTEXT_LENGTH=8192
+      - TOKEN_LIMIT=1000
+      # What to generate when a doc is tagged. Correspondents on; document-type / created-date
+      # off to start conservative. CREATE_NEW_TAGS=false: only apply tags that already exist,
+      # so evaluation can't pollute the tag list (flip to true later if wanted).
+      - AUTO_GENERATE_TITLE=true
+      - AUTO_GENERATE_TAGS=true
+      - AUTO_GENERATE_CORRESPONDENTS=true
+      - AUTO_GENERATE_DOCUMENT_TYPE=false
+      - AUTO_GENERATE_CREATED_DATE=false
+      - CREATE_NEW_TAGS=false
+    networks:
+      - media       # Traefik reaches the review UI here
+      - paperless   # reaches paperless:8000 + ollama:11434

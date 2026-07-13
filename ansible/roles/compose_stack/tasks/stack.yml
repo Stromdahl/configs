@@ -300,3 +300,28 @@
     'Started' in _compose_up.stderr or
     'Created' in _compose_up.stderr or
     'Recreated' in _compose_up.stderr
+
+# --- issue 044: pull the paperless-gpt LLM model into Ollama --------------------
+# Idempotent by construction: pull only when the exact model:tag is absent from
+# `ollama list`, so a re-run stays changed=0. Runs after the stack is up (the ollama
+# container must be serving). `until` rides out the few seconds between container start
+# and the Ollama API being ready. First pull of qwen2.5:3b is ~2.5 GB (needs external
+# DNS from the container, which docker_daemon_options.dns already provides). Skipped
+# cleanly on any host that doesn't define the model var.
+- name: Pull the paperless-gpt LLM model into Ollama (issue 044)
+  become: true
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail;
+      if docker exec ollama ollama list | awk 'NR>1 {print $1}' | grep -qx '{{ paperless_gpt_llm_model }}'; then
+        echo 'model present';
+      else
+        docker exec ollama ollama pull '{{ paperless_gpt_llm_model }}';
+      fi
+    executable: /bin/bash
+  register: _ollama_pull
+  until: _ollama_pull.rc == 0
+  retries: 10
+  delay: 6
+  changed_when: "'model present' not in _ollama_pull.stdout"
+  when: paperless_gpt_llm_model is defined

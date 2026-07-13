@@ -178,6 +178,27 @@ paperless_db_name: paperless               # PAPERLESS_DBNAME / POSTGRES_DB
 # shenxn `deb` image generates a passphraseless keyring (gpgparams %no-protection).
 protonmail_bridge_data: "{{ ssd_pool_mount }}/appdata/protonmail-bridge"
 
+# issue 044 — paperless-gpt: local-LLM title/tag/correspondent suggestions for Paperless,
+# via an on-box Ollama (CPU-only, no cloud — documents never leave helium). paperless-gpt
+# reads a doc's OCR text over the Paperless REST API, asks Ollama for a title/tags/
+# correspondent, and writes it back. It REUSES the existing paperless_api_key (issue 018,
+# the homepage widget token) as its API token — that token must belong to a Paperless user
+# with WRITE access (the admin) so suggestions can be applied; if the homepage token is
+# read-only, mint a dedicated one into sops. OCR stays on Tesseract (LLM-vision OCR is
+# impractical on this CPU); paperless-gpt is title/tags/correspondent only and the LLM-OCR
+# path is left unconfigured (it is opt-in per-doc, so unconfigured = inert). Reached at
+# paperless-gpt.{{ compose_domain }} behind the internal Traefik; Ollama is internal-only
+# (no published ports, no Traefik).
+#
+# RAM GATE (needs-human): check `free -h` on helium before enabling auto-processing or
+# bumping the model past qwen2.5:3b (~2.5 GB resident) — it shares the box with CPU-only
+# Immich ML and the full stack. Native Paperless AI (PAPERLESS_AI_*) was considered and
+# rejected: it only exists in v3.0.0 (beta), and the store is deliberately pinned to stable
+# v2 (see paperless_version above). See issues/044.
+ollama_version: "0.31.2"                # ollama/ollama image tag (CPU-only)
+paperless_gpt_version: "v0.26.1"        # icereed/paperless-gpt image tag
+paperless_gpt_llm_model: "qwen2.5:3b"   # pulled into Ollama post-deploy; small + multilingual (eng+swe)
+
 # issue 016 — restic backup of the SSD 'appdata' precious subvolume to the HDD
 # pool. Deliberately scoped to the 'appdata' subvol only — *arr databases,
 # quality profiles/custom formats, Bazarr's language profile, Jellyseerr
