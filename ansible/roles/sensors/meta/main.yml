@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: sensors
+  description: lm-sensors + persistent nct6775 for helium hardware temp/fan monitoring (observation only).
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []

@@ -1,0 +1,29 @@
+---
+# Hardware sensor monitoring for helium (Supermicro X11SCV-Q, Nuvoton NCT6106D
+# Super I/O). Purpose is *observation only*: `sensors` lets us watch CPU / board
+# temps and fan RPMs — e.g. to confirm drive/CPU temps stay healthy after slowing
+# the case-fan airflow with Noctua U.L.N.A. adapters.
+#
+# OS fan *control* is a dead end on this box and is deliberately NOT attempted
+# here: only the CPU fan sits on a controllable PWM channel and it is already at
+# its ~970 RPM floor; the three case fans + the HBA Noctua are on always-on 12 V
+# headers the NCT6106D cannot drive (verified in both DC and PWM modes). Noise
+# mitigation is physical (quiet fans + U.L.N.A.), not software. See
+# hosts/helium/BUILD-LOG.md and the fan-control investigation (2026-07-19).
+#
+# nct6775 binds the NCT6106D cleanly (found at 0x2e:0xa30, no ACPI resource
+# conflict — so no acpi_enforce_resources=lax kernel param is needed).
+- name: Install lm-sensors (provides the `sensors` command)
+  become: true
+  ansible.builtin.apt:
+    name: lm-sensors
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Load + persist the nct6775 driver for the NCT6106D Super I/O
+  become: true
+  community.general.modprobe:
+    name: nct6775
+    state: present
+    persistent: present

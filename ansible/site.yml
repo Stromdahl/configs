@@ -19,6 +19,8 @@
       tags: [storage, storage_hdd]
     - role: storage_ssd
       tags: [storage, storage_ssd]
+    - role: sensors
+      tags: [sensors, monitoring]
     - role: compose_stack
       tags: [compose, services]
     - role: restic_backup
