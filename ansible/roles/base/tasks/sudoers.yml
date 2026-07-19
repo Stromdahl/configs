@@ -1,0 +1,20 @@
+---
+# Passwordless sudo for the admin/connecting user ({{ ansible_user }}).
+# Gated by base_passwordless_sudo (default false) so it is opt-in per host —
+# enabled on helium (host_vars/helium/vars.yml), NOT fleet-wide (radon is
+# public-facing and keeps password sudo). Uses community.general.sudoers, which
+# validates with visudo before writing, so a malformed entry can never lock the
+# box out of sudo. Writes /etc/sudoers.d/<user>-nopasswd.
+#
+# Carries its own `sudoers` tag so it can be applied in isolation with
+#   ansible-playbook site.yml --limit helium --tags sudoers
+# WITHOUT re-running the base role's ufw task, which would evict helium's
+# iptables-persistent rules (see issues/028, project_ufw_breaks_iptables_persistent).
+- name: Passwordless sudo for admin user
+  become: true
+  community.general.sudoers:
+    name: "{{ ansible_user }}-nopasswd"
+    user: "{{ ansible_user }}"
+    commands: ALL
+    nopassword: true
+    state: present

@@ -24,3 +24,8 @@
 
 - name: Unattended security upgrades
   ansible.builtin.import_tasks: unattended-upgrades.yml
+
+- name: Passwordless sudo for admin user (opt-in per host)
+  ansible.builtin.import_tasks: sudoers.yml
+  tags: [sudoers]
+  when: base_passwordless_sudo | default(false)

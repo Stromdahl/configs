@@ -7,6 +7,12 @@
 # base_timezone=Europe/Stockholm, docker_users, compose flags) — same effective
 # values, so this file only carries what is genuinely helium-specific.
 
+# Passwordless sudo for the connecting admin user (ms). Opt-in flag consumed by
+# base/tasks/sudoers.yml. Enabled here (not fleet-wide) — radon is public-facing
+# and keeps password sudo. Apply in isolation with:
+#   ansible-playbook site.yml --limit helium --tags sudoers
+base_passwordless_sudo: true
+
 # Docker daemon DNS (consumed by the geerlingguy.docker role -> /etc/docker/daemon.json,
 # which restarts dockerd on change). REQUIRED on helium: NetBird rewrites the host
 # /etc/resolv.conf to point only at its own mesh resolver (100.65.22.72). Docker's
