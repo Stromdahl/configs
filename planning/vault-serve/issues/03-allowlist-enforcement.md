@@ -1,7 +1,7 @@
 # Decide the serve-time allowlist enforcement mechanism
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: 01
 
 ## Question
