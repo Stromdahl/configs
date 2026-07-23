@@ -1,7 +1,7 @@
 # Decide the Syncthing-on-helium approach & full-vault security posture
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: —
 
 ## Question
