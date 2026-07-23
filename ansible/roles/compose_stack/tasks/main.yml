@@ -32,3 +32,6 @@
 
 - name: Template env/compose from sops and bring the stack up
   ansible.builtin.import_tasks: stack.yml
+
+- name: Install the gluetun port-forward watchdog (self-healing NAT-PMP recovery)
+  ansible.builtin.import_tasks: pf_watchdog.yml

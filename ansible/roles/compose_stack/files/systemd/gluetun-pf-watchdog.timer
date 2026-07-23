@@ -1,0 +1,13 @@
+[Unit]
+Description=Periodic gluetun ProtonVPN port-forward health check
+
+[Timer]
+# Check a few minutes after boot, then every 5 min. The script only acts after
+# 3 consecutive empty reads (~15 min of confirmed-dead PF), so a brief blank
+# during a normal NAT-PMP re-lease does not trigger a restart. Persistent=false:
+# a missed check while the box was off is irrelevant — the next tick re-checks.
+OnBootSec=3min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Recover a dead gluetun ProtonVPN port forward and restart its netns siblings
+# Copied verbatim (like the restic/SnapRAID/scrub units) rather than templated.
+# The recovery logic + container names (gluetun, qbittorrent, prowlarr,
+# flaresolverr) live in the script; see roles/compose_stack/tasks/pf_watchdog.yml.
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/gluetun-pf-watchdog.sh

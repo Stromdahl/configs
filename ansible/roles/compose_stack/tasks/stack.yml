@@ -301,6 +301,32 @@
     'Created' in _compose_up.stderr or
     'Recreated' in _compose_up.stderr
 
+# NETNS GOTCHA: qbittorrent/prowlarr/flaresolverr run with
+# `network_mode: service:gluetun`. When a compose change recreates the gluetun
+# container its network namespace is torn down, and `docker compose up -d` does
+# NOT reliably recreate the siblings that were only sharing that namespace — so
+# they end up on a dead netns (no networking; Sonarr then reports the Prowlarr
+# indexer as "Connection refused (gluetun:9696)"). Detect a gluetun recreate and
+# restart the three siblings AFTER gluetun is healthy again. (The gluetun-pf
+# watchdog is the runtime backstop; the deploy must not depend on its next tick.)
+- name: Wait for gluetun to be healthy after a recreate
+  become: true
+  ansible.builtin.command:
+    cmd: "docker inspect -f '{% raw %}{{ .State.Health.Status }}{% endraw %}' gluetun"
+  register: _gluetun_health
+  until: _gluetun_health.stdout == 'healthy'
+  retries: 24
+  delay: 5
+  changed_when: false
+  when: _compose_up.stderr is search('gluetun\s+Recreated')
+
+- name: Restart gluetun's netns siblings after a gluetun recreate
+  become: true
+  ansible.builtin.command:
+    cmd: docker restart qbittorrent prowlarr flaresolverr
+  changed_when: true
+  when: _compose_up.stderr is search('gluetun\s+Recreated')
+
 # --- issue 044: pull the paperless-gpt LLM model into Ollama --------------------
 # Idempotent by construction: pull only when the exact model:tag is absent from
 # `ollama list`, so a re-run stays changed=0. Runs after the stack is up (the ollama

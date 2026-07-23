@@ -320,6 +320,22 @@ services:
       # same-owner chown the kernel allows without CAP_CHOWN. gluetun's main process
       # already runs as root (NET_ADMIN), so this changes only its file-write uid.
       - VPN_PORT_FORWARDING_STATUS_FILE=/tmp/forwarded_port
+      # Self-healing port sync: whenever gluetun (re)acquires a NAT-PMP forwarded
+      # port it POSTs it into qBittorrent's listen_port via qbit's WebUI API. qbit
+      # shares this netns, so 127.0.0.1:8080 is qbit; the call is unauthenticated,
+      # which requires qbit's WebUI\LocalHostAuth=false (bypass auth on localhost —
+      # set in the seeded qbittorrent.conf). Without this the forwarded port rotates
+      # on every gluetun restart while qbit keeps a stale static listen_port, so
+      # incoming peers never connect. {{ '{{PORT}}' }}/{{ '{{PORTS}}' }} are gluetun's own
+      # placeholders (raw-guarded so Ansible's Jinja pass leaves them for gluetun).
+      - >-
+        VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh -c 'wget -O- -nv --retry-connrefused
+        --post-data "json={\"listen_port\":{{ '{{PORT}}' }},\"random_port\":false,\"upnp\":false}"
+        http://127.0.0.1:8080/api/v2/app/setPreferences'
+      - >-
+        VPN_PORT_FORWARDING_DOWN_COMMAND=/bin/sh -c 'wget -O- -nv --retry-connrefused
+        --post-data "json={\"listen_port\":0}"
+        http://127.0.0.1:8080/api/v2/app/setPreferences'
       - PUBLICIP_FILE=/tmp/ip
       - PUID=0
       - PGID=0

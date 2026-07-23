@@ -1,0 +1,43 @@
+---
+# gluetun port-forward watchdog: a host systemd timer that detects a dead
+# ProtonVPN NAT-PMP forward (empty /tmp/forwarded_port for ~15 min) and recovers
+# it by restarting gluetun and — because they share gluetun's netns — qbittorrent,
+# prowlarr and flaresolverr, in that order. See files/gluetun-pf-watchdog.sh.
+#
+# Mirrors restic_backup's timer idiom (verbatim static units + Reload systemd
+# handler, enable the TIMER not the oneshot service). Runs under the `compose`
+# tag with the rest of this role, so the safe scoped deploy
+# (`ansible-playbook site.yml --limit helium --tags compose`) installs it without
+# triggering a full play (see the ufw/iptables-persistent landmine).
+
+- name: Install the gluetun port-forward watchdog script
+  become: true
+  ansible.builtin.copy:
+    src: gluetun-pf-watchdog.sh
+    dest: /usr/local/bin/gluetun-pf-watchdog.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install gluetun-pf-watchdog systemd units
+  become: true
+  ansible.builtin.copy:
+    src: "systemd/{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - gluetun-pf-watchdog.service
+    - gluetun-pf-watchdog.timer
+  notify: Reload systemd
+
+- name: Reload systemd now (before enabling the timer)
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the gluetun-pf-watchdog timer
+  become: true
+  ansible.builtin.systemd_service:
+    name: gluetun-pf-watchdog.timer
+    enabled: true
+    state: started
