@@ -1,7 +1,7 @@
 ---
 # Handlers for the compose_stack role.
 
-- name: Reload systemd
+- name: Reload systemd (compose_stack)
   become: true
   ansible.builtin.systemd_service:
     daemon_reload: true

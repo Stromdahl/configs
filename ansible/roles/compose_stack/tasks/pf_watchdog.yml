@@ -30,7 +30,7 @@
   loop:
     - gluetun-pf-watchdog.service
     - gluetun-pf-watchdog.timer
-  notify: Reload systemd
+  notify: Reload systemd (compose_stack)
 
 - name: Reload systemd now (before enabling the timer)
   ansible.builtin.meta: flush_handlers
