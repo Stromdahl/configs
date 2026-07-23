@@ -1,7 +1,7 @@
 # Choose the live vault renderer
 
 Type: research
-Status: open
+Status: claimed
 Blocked by: —
 
 ## Question
