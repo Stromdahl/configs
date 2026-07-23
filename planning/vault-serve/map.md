@@ -46,14 +46,28 @@ the phone); the allowlist is enforced at the **serve layer** via a strict
   lessons via its bundled nginx, mount only allowlisted folders `:ro` (its
   `HIDE_FOLDERS` denylist is NOT the boundary). Runner-up Emanote. Full research:
   [`assets/01-renderer-research.md`](assets/01-renderer-research.md).
+- [Decide the Syncthing-on-helium approach & full-vault security posture](issues/02-syncthing-on-helium.md) —
+  new **ansible `syncthing` role** (helium is ansible-only); vault at
+  **`/data/ssd/vault`** (new SSD *precious* subvol), owned by **`ms`**, Syncthing
+  as the `ms` user service; **plaintext-at-rest + `700`** (allowlist guards the
+  *site*, not the files — accepted), allowlisted subdirs opened for container read
+  = disk-layer echo of the include-list (→ ticket 03); helium **`Receive Only`**,
+  krypton authoritative, pure passive replica.
 
 ## Not yet specified
 
-- **Deploy wiring** — the chosen renderer as a helium compose service behind
-  Traefik at a chosen `*.home.stromdahl.tech` subdomain, incl. the DNS-01 cert
-  dance (new subdomain → may need `docker restart traefik`, see
-  `project_helium_traefik_acme_restart`). Graduates once the renderer + allowlist
-  decisions land — likely straight into real `issues/NNN`, not a decision ticket.
+- **Deploy wiring (all execution — graduates as real `issues/NNN`, not decision
+  tickets, once ticket 03 lands).** Now spec-complete except the allowlist mount
+  surface (ticket 03):
+  - **Syncthing role** — DECIDED (ticket 02): ansible role installing Syncthing
+    as the `ms` user service on helium, folder `/data/ssd/vault` `Receive Only`,
+    krypton authoritative; open 22000/tcp + 21027/udp on helium's firewall path.
+    Ready to graduate.
+  - **Perlite service** — Perlite (`sec77/perlite` + `nginx:stable`) as a helium
+    compose service behind the internal Traefik at a chosen
+    `*.home.stromdahl.tech` subdomain, incl. the DNS-01 first-cert
+    `docker restart traefik` dance (`project_helium_traefik_acme_restart`).
+    Waits on ticket 03 for the exact `:ro` mount lines + subdir perms.
 - **Recipe render fidelity** — whether the recipe markdown/frontmatter renders
   *acceptably* as-is in the chosen renderer, or wants a `/prototype` pass.
   Graduates once the renderer is chosen.
