@@ -41,6 +41,12 @@ the phone); the allowlist is enforced at the **serve layer** via a strict
 
 <!-- one line per closed ticket: gist + link -->
 
+- [Choose the live vault renderer](issues/01-choose-live-renderer.md) —
+  **Perlite** (secure-77/Perlite): live per-request PHP render, serves the `.html`
+  lessons via its bundled nginx, mount only allowlisted folders `:ro` (its
+  `HIDE_FOLDERS` denylist is NOT the boundary). Runner-up Emanote. Full research:
+  [`assets/01-renderer-research.md`](assets/01-renderer-research.md).
+
 ## Not yet specified
 
 - **Deploy wiring** — the chosen renderer as a helium compose service behind
