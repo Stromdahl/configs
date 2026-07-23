@@ -1,0 +1,61 @@
+# Map: Serve non-sensitive vault folders from helium
+
+`wayfinder:map` — child tickets live in `planning/vault-serve/issues/`.
+
+## Destination
+
+On **helium**, a **live Obsidian-vault web renderer** serves a **strict
+include-list** of non-sensitive vault folders (starting with `recipes/` and
+`learning/`) behind **one private `*.home.stromdahl.tech` URL** (mesh + LAN),
+Traefik-fronted, deployed via helium's existing ansible/compose pattern. The
+**whole vault** reaches helium via **Syncthing** (helium becomes a full peer like
+the phone); the allowlist is enforced at the **serve layer** via a strict
+*include*-list, so sensitive folders are never served.
+
+## Notes
+
+- **Domain:** ~/.dotfiles homelab. helium = bare-metal Debian NAS+services box
+  (ansible-provisioned; media + Immich + Paperless stack behind Traefik + NetBird
+  mesh + split-horizon DNS `*.home.stromdahl.tech`). See `hosts/helium/PRD.md`.
+- **Audience:** just the user + maybe household. Private only — mesh (roaming) +
+  LAN (e.g. a kitchen tablet). No public internet (helium PRD already forbids it).
+- **Sensitive-data boundary is the spine of this effort.** The whole vault
+  (incl. finance/health/people/journal) will physically sit on helium — accepted,
+  since helium already holds Immich photos + Paperless docs, so it's not a new
+  sensitivity class. The allowlist therefore MUST be a strict **include**-list at
+  the serve layer (name what IS served), never a denylist — a future `journal/`
+  folder is invisible by default, not accidentally LAN-readable.
+- **Two content shapes:** recipes = structured Swedish markdown w/ rich
+  frontmatter (`~/vault/templates/recipe.md`); learning = standalone HTML lessons
+  meant to open in a browser (`~/vault/learning/<topic>/lessons/`). One general
+  renderer must handle both. A frontmatter-aware recipe *app* is out of scope.
+- **Current Syncthing topology:** krypton + phone. titan (old peer) is gone;
+  Syncthing is NOT installed on helium yet. Vault Syncthing gotcha: agent deleting
+  `.stfolder` on reorg silently halts sync (see `project_hermes_vault_sync`).
+- **Skills:** use `/grilling` + `/domain-modeling` for the grilling tickets;
+  `/research` for the research ticket.
+- **Plan, don't do:** this map produces decisions; the deploy execution graduates
+  into real `issues/NNN` once the way is clear.
+
+## Decisions so far
+
+<!-- one line per closed ticket: gist + link -->
+
+## Not yet specified
+
+- **Deploy wiring** — the chosen renderer as a helium compose service behind
+  Traefik at a chosen `*.home.stromdahl.tech` subdomain, incl. the DNS-01 cert
+  dance (new subdomain → may need `docker restart traefik`, see
+  `project_helium_traefik_acme_restart`). Graduates once the renderer + allowlist
+  decisions land — likely straight into real `issues/NNN`, not a decision ticket.
+- **Recipe render fidelity** — whether the recipe markdown/frontmatter renders
+  *acceptably* as-is in the chosen renderer, or wants a `/prototype` pass.
+  Graduates once the renderer is chosen.
+
+## Out of scope
+
+- A **frontmatter-aware recipe app** (serving-size scaling, generated shopping
+  lists) — a separate future want, not this effort.
+- **Public internet exposure** — helium PRD forbids it.
+- Serving any **sensitive** vault folder (finance/health/people/journal/…) — never,
+  by construction of the include-list.
