@@ -2,7 +2,7 @@
 
 ## Home Assistant
 
-**Host:** `home.stromdahl.tech` (HTTPS) / `192.168.1.99` (LAN). HAOS, version in `exports/` if exported.
+**Host:** `ha.home.stromdahl.tech` (HTTPS, via helium Traefik) / `192.168.1.99:8123` (LAN, HTTP). HAOS, version in `exports/` if exported. (The apex `home.stromdahl.tech` is the helium homepage dashboard, not HA.)
 
 **SSH:** `root@192.168.1.99:22` (Terminal & SSH add-on, key already authorized). `/config/` is HA's config dir.
 
@@ -37,7 +37,7 @@ ha ws '<json>'                          # raw WS command, prints the result payl
 - `--quiet` / `-q` — silence "saved" / "deleted" / "saved + reloaded" chatter on writes.
 - `-o <key.path>` / `--output <key.path>` — extract a field from JSON output; print scalar if leaf is primitive. E.g. `ha state sensor.foo -o state` prints just the value; `ha flow … -o result` prints just the new entry_id.
 
-`HA_BASE` env var overrides the host. Default `https://home.stromdahl.tech`; set e.g. `HA_BASE=http://192.168.1.99:8123` from environments without public DNS (sandboxes, LAN-only hosts). `http://` switches WS to `ws://` automatically.
+`HA_BASE` env var overrides the host. Default `https://ha.home.stromdahl.tech`; set e.g. `HA_BASE=http://192.168.1.99:8123` from environments without public DNS (sandboxes, LAN-only hosts). `http://` switches WS to `ws://` automatically.
 
 `ha flow` is the verb for config-flow-based integrations and helpers (history_stats, utility_meter, derivative, threshold, integration, switch_as_x, …). Each positional arg is one step's JSON, submitted in order. Example:
 

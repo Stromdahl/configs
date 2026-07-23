@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import type { TokenFile, WSClient, WSFrame } from './types.ts';
 
 const TOKEN_FILE = path.join(process.env.HOME ?? '', '.ha-token.json');
-const BASE = (process.env.HA_BASE ?? 'https://home.stromdahl.tech').replace(/\/+$/, '');
+const BASE = (process.env.HA_BASE ?? 'https://ha.home.stromdahl.tech').replace(/\/+$/, '');
 const WS_BASE = BASE.replace(/^http/, 'ws');
 
 let TOKEN_CACHE: string | null = null;

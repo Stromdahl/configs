@@ -228,7 +228,7 @@ services:
       - "no-new-privileges:true"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.homepage.rule=Host(`homepage.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.homepage.rule=Host(`${DOMAIN:?missing DOMAIN}`) || Host(`homepage.${DOMAIN:?missing DOMAIN}`)"
       - "traefik.http.routers.homepage.entrypoints=websecure"
       - "traefik.http.routers.homepage.tls.certresolver=letsencrypt"
       - "traefik.http.services.homepage.loadbalancer.server.port=3000"
@@ -239,7 +239,7 @@ services:
       - TZ=${TZ:-Europe/Stockholm}
       # Host-header allowlist (required since Homepage 0.9.13). Must match the
       # Traefik router host exactly, or Homepage returns a 400.
-      - HOMEPAGE_ALLOWED_HOSTS=homepage.${DOMAIN:?missing DOMAIN}
+      - HOMEPAGE_ALLOWED_HOSTS=${DOMAIN:?missing DOMAIN},homepage.${DOMAIN:?missing DOMAIN}
       # Secrets for the API-fed widgets, injected as HOMEPAGE_VAR_* and referenced
       # as HOMEPAGE_VAR_* placeholders in services.yaml. Sourced from sops via .env.
       - HOMEPAGE_VAR_RADARR_KEY=${RADARR_API_KEY:?missing RADARR_API_KEY}
