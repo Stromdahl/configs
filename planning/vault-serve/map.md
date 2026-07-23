@@ -53,24 +53,34 @@ the phone); the allowlist is enforced at the **serve layer** via a strict
   *site*, not the files — accepted), allowlisted subdirs opened for container read
   = disk-layer echo of the include-list (→ ticket 03); helium **`Receive Only`**,
   krypton authoritative, pure passive replica.
+- [Decide the serve-time allowlist enforcement mechanism](issues/03-allowlist-enforcement.md) —
+  boundary is the **bind-mount surface alone** (only allowlisted subdirs mounted
+  `:ro`; `HIDE_FOLDERS` denylist left unset). Perlite reads as two "other" uids
+  (php-fpm `www-data`/82, nginx `nginx`/101), so files must be readable-by-other;
+  achieved by setting helium's Syncthing folder to **Ignore Permissions** +
+  pinning `UMask=022` on the `ms` Syncthing service (deterministic `755`/`644`,
+  auto-covers future folders), vault root stays `700`. Allowlist is a first-class
+  ansible list var `vault_serve_allowlist` templating the `:ro` mounts — add a
+  folder = one word + redeploy; default-deny for everything else.
 
 ## Not yet specified
 
-- **Deploy wiring (all execution — graduates as real `issues/NNN`, not decision
-  tickets, once ticket 03 lands).** Now spec-complete except the allowlist mount
-  surface (ticket 03):
-  - **Syncthing role** — DECIDED (ticket 02): ansible role installing Syncthing
-    as the `ms` user service on helium, folder `/data/ssd/vault` `Receive Only`,
-    krypton authoritative; open 22000/tcp + 21027/udp on helium's firewall path.
-    Ready to graduate.
-  - **Perlite service** — Perlite (`sec77/perlite` + `nginx:stable`) as a helium
-    compose service behind the internal Traefik at a chosen
-    `*.home.stromdahl.tech` subdomain, incl. the DNS-01 first-cert
-    `docker restart traefik` dance (`project_helium_traefik_acme_restart`).
-    Waits on ticket 03 for the exact `:ro` mount lines + subdir perms.
-- **Recipe render fidelity** — whether the recipe markdown/frontmatter renders
-  *acceptably* as-is in the chosen renderer, or wants a `/prototype` pass.
-  Graduates once the renderer is chosen.
+_Empty — the map is decision-complete._ Ticket 03 was the last open decision;
+the way to the destination is clear. All remaining work is **execution**, now
+graduated into two implementation issues (no decisions left, just building):
+
+- [`004-syncthing-role`](issues/004-syncthing-role.md) — ansible role installing
+  Syncthing as the `ms` user service on helium: folder `/data/ssd/vault`
+  **Receive Only** + **Ignore Permissions**, `UMask=022` on the service unit,
+  krypton authoritative; open 22000/tcp + 21027/udp on helium's firewall path.
+- [`005-perlite-service`](issues/005-perlite-service.md) — Perlite
+  (`sec77/perlite` + `nginx:stable`) compose service behind the internal Traefik
+  at a `*.home.stromdahl.tech` subdomain, `:ro` mounts driven by the
+  `vault_serve_allowlist` ansible var, incl. the DNS-01 first-cert
+  `docker restart traefik` dance (`project_helium_traefik_acme_restart`); also
+  checks a representative recipe renders acceptably (folds in the former
+  recipe-render-fidelity question — if it disappoints, open a `/prototype`
+  follow-up then).
 
 ## Out of scope
 
