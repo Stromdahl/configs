@@ -56,9 +56,18 @@ volumes:
   traefik_certs:
   # issue 006 — Immich ML model cache (CLIP + face models); persist across redeploys.
   immich_model_cache:
-  # issue 007 — Paperless's Redis (task queue) data; persist so in-flight consume tasks
+  # issue 007 — Paperless's broker (task queue) data; persist so in-flight consume tasks
   # survive a restart. Not precious -> a named volume on the OS disk, not the SSD subvol.
-  paperless_redis:
+  # Deliberately NOT named paperless_redis: the old volume held a Redis 8 RDB
+  # (magic REDIS0014) and Valkey 9 hard-fails on it ("Can't handle RDB format version 14"
+  # -> "Fatal error loading the DB ... Exiting.") rather than ignoring it. Renaming the
+  # volume is what makes the redis->valkey swap deploy cleanly on a fresh, empty RDB while
+  # leaving the old paperless_redis volume on disk as a rollback escape hatch. Reclaim it
+  # with `docker volume rm helium_paperless_redis` once the swap has settled.
+  # Consequence, one-time: the broker starts EMPTY, so anything still queued when the swap
+  # deploys is dropped. Let the consume folder drain first (paperless UI > Tasks idle), or
+  # expect to re-drop those documents.
+  paperless_valkey:
   # issue 044 — Ollama's pulled models (~2.5 GB for qwen2.5:3b). Re-pullable, so a plain
   # named volume on the OS disk rather than the SSD precious tier; persist it so a redeploy
   # doesn't re-download the model.
@@ -867,6 +876,9 @@ services:
   #     compose_restrict_to_mesh=false a published port would be LAN-reachable.
   #   - Services namespaced paperless-* (upstream: webserver/db/broker/gotenberg/
   #     tika) so the generic names stay free; PAPERLESS_DBHOST/REDIS point at them.
+  #   - Broker is VALKEY, not Redis, but the service keeps the name paperless-redis —
+  #     same convention as immich-redis (also valkey). Upstream's bundled compose
+  #     defaults to valkey too; paperless only needs a Redis-wire-compatible broker.
   #   - Postgres 17 with the CLASSIC /var/lib/postgresql/data mount (upstream main
   #     moved to pg18 + /var/lib/postgresql, a version-specific PGDATA footgun). The
   #     image self-chowns PGDATA on init, so pgdata is left root-owned (Ansible only
@@ -955,24 +967,35 @@ services:
     # probe (400), so a naive healthcheck would report unhealthy though the app is up
     # (same reasoning as the homepage service). restart + Traefik suffice.
 
+  # Valkey, not Redis — see the block comment above. Swapped off docker.io/library/redis:8.8.0
+  # to run the same broker ENGINE as immich-redis and, more concretely, to shed the
+  # CAP_SETPCAP exception the redis image forced: that image drops root via `setpriv`, which
+  # clears the capability BOUNDING set (PR_CAPBSET_DROP) and therefore needs SETPCAP on top of
+  # the curated privdrop caps ("setpriv: apply bounding set: Operation not permitted" ->
+  # crash-loop without it). Valkey gosu-drops like postgres, so it takes the shared anchor
+  # unmodified and the widened cap set is gone. `redis-cli` is a symlink to `valkey-cli` in this
+  # image, so the healthcheck below is unchanged. The RDB format is NOT compatible across the
+  # swap — see the paperless_valkey volume comment.
+  # Pinned by exact version TAG, matching the rest of the paperless block (postgres:17.10,
+  # gotenberg:8.34) — deliberately NOT by immich's digest. immich-redis is valkey:9 pinned to
+  # whatever digest the upstream Immich release pins, so sharing that digest would drag the
+  # paperless broker's bumps onto Immich's release cadence. Two valkey images on the host is
+  # the price of keeping the two stacks' upgrade schedules independent.
   paperless-redis:
-    image: docker.io/library/redis:8.8.0
+    image: docker.io/valkey/valkey:9.1.1
     container_name: paperless_redis
     restart: unless-stopped
-    # issue 010: the official redis image drops root via `setpriv` (NOT gosu like postgres/valkey).
-    # setpriv clears the capability BOUNDING set (PR_CAPBSET_DROP), which needs CAP_SETPCAP on top
-    # of the curated privdrop caps — without it: "setpriv: apply bounding set: Operation not
-    # permitted" -> crash-loop. So this one image gets the anchor set + SETPCAP (explicit, not the
-    # shared anchor, so the gosu-based images aren't needlessly widened).
+    # issue 010: official valkey entrypoint starts root, chowns /data, gosu-drops to uid 999 ->
+    # curated caps (see anchor). Data dir stays 999-owned; no user override, no chown.
     cap_drop:
       - ALL
-    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID, SETPCAP]
+    cap_add: *caps-privdrop
     security_opt:
       - "no-new-privileges:true"
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping || exit 1"]
     volumes:
-      - paperless_redis:/data
+      - paperless_valkey:/data
     networks:
       - paperless
 
