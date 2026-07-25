@@ -392,7 +392,7 @@ services:
       - ${DOWNLOADS_SHARE:?missing DOWNLOADS_SHARE}:/downloads
 
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:2.4.0
+    image: lscr.io/linuxserver/prowlarr:2.5.2
     container_name: prowlarr
     restart: unless-stopped
     # issue 010: linuxserver s6 -> PUID 1001, curated caps (see anchor); uses gluetun's netns.
@@ -450,7 +450,7 @@ services:
       - DRIVER=nodriver
 
   radarr:
-    image: lscr.io/linuxserver/radarr:6.2.1
+    image: lscr.io/linuxserver/radarr:6.3.0
     container_name: radarr
     restart: unless-stopped
     # issue 010: linuxserver s6 -> PUID 1001, curated caps (see anchor). /data/media stays RW

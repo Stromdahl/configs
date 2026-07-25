@@ -138,7 +138,7 @@ qbittorrent_webui_username: admin
 # matured v2.x line instead, set immich_version to a v2.x tag AND swap the postgres /
 # valkey image pins in roles/compose_stack/templates/docker-compose.yml.j2 to that
 # release's docker-compose.yml (v2.x used a different postgres image).
-immich_version: "v3.0.2"
+immich_version: "v3.0.3"
 immich_upload_location: "{{ ssd_pool_mount }}/immich/library"   # -> /data/ssd/immich/library
 immich_db_location: "{{ ssd_pool_mount }}/immich/postgres"      # -> /data/ssd/immich/postgres
 immich_db_username: postgres      # POSTGRES_USER (superuser in the immich postgres image)
@@ -201,8 +201,8 @@ protonmail_bridge_data: "{{ ssd_pool_mount }}/appdata/protonmail-bridge"
 # Immich ML and the full stack. Native Paperless AI (PAPERLESS_AI_*) was considered and
 # rejected: it only exists in v3.0.0 (beta), and the store is deliberately pinned to stable
 # v2 (see paperless_version above). See issues/044.
-ollama_version: "0.31.2"                # ollama/ollama image tag (CPU-only)
-paperless_gpt_version: "v0.26.1"        # icereed/paperless-gpt image tag
+ollama_version: "0.32.4"                # ollama/ollama image tag (CPU-only)
+paperless_gpt_version: "v0.27.0"        # icereed/paperless-gpt image tag
 paperless_gpt_llm_model: "qwen2.5:3b"   # pulled into Ollama post-deploy; small + multilingual (eng+swe)
 
 # issue 016 — restic backup of the SSD 'appdata' precious subvolume to the HDD
