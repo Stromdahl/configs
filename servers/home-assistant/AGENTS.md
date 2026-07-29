@@ -28,6 +28,23 @@ ssh helium.home.stromdahl.tech 'sudo docker run --rm --env-file /opt/helium/.env
   sh -c "mosquitto_sub -h \$MQTT_BROKER_HOST -u \$MQTT_USERNAME -P \$MQTT_PASSWORD -t \"homeassistant/#\" -W 4 -v"'
 ```
 
+**Clearing a retained discovery topic (publish an empty payload to it) is how you delete an MQTT entity** — that is the documented mechanism, not a hack.
+
+#### Sweeping orphaned container entities
+
+docker2mqtt **never reconciles retained discovery against reality on startup**: it expires only containers it personally watched being destroyed. So anything orphaned across its own restart — a one-off `docker run --rm`, or a service removed while it was down — leaves twelve dangling entities that persist indefinitely. Compose's transient `<12 hex>_<name>` recreate ghosts are filtered by its `CONTAINER_BLACKLIST`, but random one-off names cannot be.
+
+Find them by diffing HA against reality, then clear those topics:
+
+```bash
+# containers HA thinks exist, vs containers that do
+diff <(ha entities 'binary_sensor.helium_containers_*_state' | tail -n +2 \
+        | sed 's/.*containers_//;s/_state.*//' | sort) \
+     <(ssh helium.home.stromdahl.tech 'docker ps --format "{{.Names}}"' | tr '-' '_' | sort)
+```
+
+Anything only on the HA side is an orphan; feed those names to a `grep -E` over the retained `homeassistant/#` topics and publish an empty retained payload to each.
+
 **HACS + card-mod installed.** Custom Lovelace cards via HACS UI (Settings → HACS).
 
 ### `ha` CLI — use this first

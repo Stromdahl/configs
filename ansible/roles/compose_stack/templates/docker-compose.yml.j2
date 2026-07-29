@@ -1303,5 +1303,17 @@ services:
       # real is lost; a genuinely retired service disappears promptly, which is
       # what you want anyway.
       - DESTROYED_CONTAINER_TTL=600
+      # Ignore the transient containers Docker renames out of the way during a
+      # compose recreate — it moves the outgoing container to
+      # "<12 hex chars>_<name>" for a moment, and docker2mqtt would otherwise
+      # register a full set of entities for that ghost on EVERY deploy. Matched as
+      # a regex (this option takes exact names or regexes). It cannot help with
+      # one-off `docker run --rm` containers, whose random names are
+      # indistinguishable from real service names — those need the manual sweep
+      # documented in servers/home-assistant/AGENTS.md, because docker2mqtt never
+      # reconciles retained discovery against reality on startup: it only expires
+      # containers it personally watched being destroyed, so anything orphaned
+      # across its own restart persists until cleared by hand.
+      - CONTAINER_BLACKLIST=^[0-9a-f]{12}_
     networks:
       - socket_proxy
