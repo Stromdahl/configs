@@ -168,6 +168,32 @@ narrowly each of the two can be scoped, and both scope down cleanly: the host si
 no container escape hatches, and the container side needs no socket mount and no
 capability.
 
+## How both decisions resolved
+
+**Decision 1 went to MQTT**, not on flexibility grounds but because the verification
+above removed the alternative: the polled-agent option cannot produce a per-container
+entity at all, and 28 services' worth of entities are not worth hand-declaring. The
+deciding property was automatic entity discovery.
+
+**The broker is the Mosquitto add-on on the HA box, not a service in this stack.** That
+placement is what makes "adds a broker the fleet doesn't have" an acceptable cost: it is
+supervisor-managed and inside HA's own backups, so it is close to free to own. It also
+behaves better on failure — helium dying leaves the broker alive to carry a last-will,
+whereas a broker hosted on helium would die with the thing it is meant to report on. The
+trade accepted knowingly: the add-on, its dedicated MQTT login, and the HA-side config
+entry are the one part of this slice Ansible does not manage.
+
+**Decision 2 resolved to "both, because it was never a choice"** — see the reasoning
+above. The host publisher is a one-shot systemd timer rather than a daemon, so there is
+no long-lived process to supervise; availability comes from an expiry window on each
+entity instead of a last-will, which a one-shot process could never fire.
+
+One consequence worth recording for whoever builds on this: the container publisher
+registers ten per-container metric sensors whether or not it is collecting them, so the
+entity count is set by the tool, not by this slice's scope. They are collecting real
+data rather than sitting empty, and the high-churn counters are kept out of HA's
+database rather than out of HA.
+
 Adjacent to `issues/013` (storage-timer failure alerting): if HA becomes the metrics
 sink, HA also becomes a plausible notification channel, which partly pre-empts 013's
 open decision between ntfy / healthchecks / msmtp. Neither slice closes the other,
@@ -192,8 +218,16 @@ that there was no substrate to integrate against.
       stopped container flipped its state entity inside 12 s, and back on restart.
       Caveat worth knowing: the separate *health* entity does not clear when a
       container stops, so **state** is the liveness signal, not health.
-- [ ] The entities survive a helium reboot and an HA restart without manual
+- [~] The entities survive a helium reboot and an HA restart without manual
       re-adding, and recover on their own after helium is unreachable for a while.
+      **Two of three halves verified; the reboot is not.** HA was restarted for real
+      (its log stream begins at the restart) and every entity came back on its own
+      with no re-adding. Recovery was measured by stopping the host publisher: the
+      host entities flipped to `unavailable` exactly 300 s after the last publish —
+      to the second — and repopulated on the next tick. The helium reboot itself was
+      deliberately NOT triggered, since rebooting the box that runs the whole stack
+      is the user's call, not a test to run unasked; the mechanism is in place
+      (publisher timer enabled at boot, container on `restart: unless-stopped`).
 - [x] Whatever runs on helium is applied by Ansible from krypton, idempotently, and
       holds the non-root / least-privilege posture of `issues/010` — verified by a
       second run reporting no changes. Second run: `changed=0`.
