@@ -63,13 +63,24 @@ argues for option 1 as the opening move, with option 2 as fallback if per-contai
 coverage proves inadequate — but this is the decision to make, not a settled call,
 and a broker earns its keep if it's wanted for other things later.
 
-**The read-only Docker socket proxy already in the stack is the asset to reuse.**
-It runs with `CONTAINERS=1` / `INFO=1`, a read-only socket mount, and `cap_drop:
-ALL`. If per-container stats are reachable through it as configured, container
-metrics come free *within* the non-root/least-privilege posture established by
-`issues/010`. If they are not, the design needs its own socket grant — a hardening
-regression that would change the recommendation above. **The implementation must
-answer this first**; it is not settled.
+**The read-only Docker socket proxy already in the stack is the asset to reuse, and
+it is sufficient — this is settled.** It runs with `CONTAINERS=1` / `INFO=1`, a
+read-only socket mount, and `cap_drop: ALL`. Upstream's ACL for the pinned version
+gates the container endpoints on a *prefix* match of `/containers`, so per-container
+stats and inspect are both permitted under `CONTAINERS=1`; there is no separate
+stats gate. The mutating endpoints (stop / restart / kill / pause) sit behind their
+own switches, which this stack does not enable, so they stay denied. Its generous
+10-minute client/server timeouts accommodate the streaming form of the stats
+endpoint as well as one-shot polls.
+
+The consequence is that **container metrics come free inside the non-root /
+least-privilege posture of `issues/010`** — the collector joins the existing
+`socket_proxy` network (as Traefik and the homepage dashboard already do) and needs
+no socket mount and no new capability of its own. Any design that instead mounts the
+raw Docker socket is a hardening regression and should be rejected. Note that *host*
+vitals are a separate privilege question from container metrics: reading CPU / memory
+/ temperatures needs host-level visibility, which the socket proxy neither provides
+nor covers.
 
 Adjacent to `issues/013` (storage-timer failure alerting): if HA becomes the metrics
 sink, HA also becomes a plausible notification channel, which partly pre-empts 013's
@@ -95,5 +106,6 @@ that there was no substrate to integrate against.
       second run reporting no changes.
 - [ ] Any new listening port stays inside the intended LAN + mesh boundary; nothing
       new is published to the internet.
-- [ ] Whether the existing read-only socket proxy can serve per-container metrics as
-      configured is answered explicitly, and the resulting choice is recorded.
+- [ ] Container metrics are sourced through the existing read-only socket proxy on
+      the `socket_proxy` network — nothing in the slice mounts the raw Docker socket
+      or adds a capability to reach it.
