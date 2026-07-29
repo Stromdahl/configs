@@ -29,8 +29,11 @@ alerting/automation on top of them are deliberately out of scope for this slice 
 they're cheap follow-ons once the data lands, and bundling them would stall the
 slice on layout bikeshedding.
 
-**Open decision (blocks implementation):** which substrate, at the level of design
-shape rather than product:
+There are **two open decisions** below, and they are independent: the transport
+substrate, and where the host-vitals collector runs. Both block implementation.
+
+**Open decision 1 — which substrate**, at the level of design shape rather than
+product:
 
 1. **Host agent polled by HA** — a lightweight metrics agent on helium exposing a
    local HTTP/REST surface that HA reads on an interval. Smallest new surface,
@@ -82,6 +85,25 @@ vitals are a separate privilege question from container metrics: reading CPU / m
 / temperatures needs host-level visibility, which the socket proxy neither provides
 nor covers.
 
+**Open decision 2 — where the host-vitals collector runs.** This is the genuinely
+awkward half, and unlike the socket path it is a real tension with `issues/010`:
+
+- **As a container.** Keeps the stack uniformly compose-managed, but reading host
+  CPU / memory / uptime wants `pid: host` plus `/proc` and `/sys` mounts, and pool
+  and SSD-tier capacity wants visibility of the host mount points. That is a
+  markedly wider grant than anything else in the stack holds, in a stack whose
+  whole posture is non-root and `cap_drop: ALL`.
+- **As a host service.** A systemd unit reading the host directly needs no container
+  escape hatches at all and sidesteps `issues/010` entirely — but it introduces a
+  non-container component to a stack that is otherwise wholly compose-managed, with
+  its own packaging, upgrade, and Ansible-role story.
+
+Note also that the drive temperatures and the board/CPU temperatures come from
+**different sources** — the SAS drives behind the HBA report temperature via SMART,
+while the board and CPU sensors come from the `nct6775`-backed `sensors` stack
+already installed on the host. A collector that reads one does not necessarily read
+the other, so "temperatures" is not a single integration.
+
 Adjacent to `issues/013` (storage-timer failure alerting): if HA becomes the metrics
 sink, HA also becomes a plausible notification channel, which partly pre-empts 013's
 open decision between ntfy / healthchecks / msmtp. Neither slice closes the other,
@@ -95,8 +117,10 @@ that there was no substrate to integrate against.
 
 - [ ] helium host vitals (at minimum CPU, memory, uptime) are live HA entities with
       sane units and correct device classes.
-- [ ] Storage capacity for the HDD pool and the SSD tier, plus per-drive
-      temperatures, are live HA entities.
+- [ ] Storage capacity for the HDD pool and the SSD tier are live HA entities,
+      reporting figures that match what the host itself reports.
+- [ ] Per-drive temperatures for the pool drives are live HA entities, and board/CPU
+      temperatures are too — whether that takes one collector or two.
 - [ ] Container liveness for the stack's services is visible in HA — a service
       stopped by hand is reflected in HA within one poll interval.
 - [ ] The entities survive a helium reboot and an HA restart without manual
