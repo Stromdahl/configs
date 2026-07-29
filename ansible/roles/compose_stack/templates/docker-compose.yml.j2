@@ -1293,8 +1293,15 @@ services:
       # it registers one device per container, named after the container, with readable ids.
       # The same truthiness trap applies to every flag above — EVENTS/STATS are only "=1"
       # because 1 is genuinely intended to mean on.
-      # Drop an entity a day after its container stops existing, so a renamed or
-      # retired service does not linger in HA forever.
-      - DESTROYED_CONTAINER_TTL=86400
+      # How long an entity outlives the container's *existence* — this fires on
+      # removal, not on stop, so a merely stopped service keeps reporting `off`
+      # as intended. Ten minutes rather than the day-long default because every
+      # throwaway `docker run --rm` on this host (a one-off mosquitto client, a
+      # curl probe) otherwise mints twelve entities named after Docker's random
+      # word-pair and parks them in HA until tomorrow. A compose redeploy removes
+      # and recreates containers within seconds under the same names, so nothing
+      # real is lost; a genuinely retired service disappears promptly, which is
+      # what you want anyway.
+      - DESTROYED_CONTAINER_TTL=600
     networks:
       - socket_proxy
