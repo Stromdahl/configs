@@ -29,8 +29,11 @@ alerting/automation on top of them are deliberately out of scope for this slice 
 they're cheap follow-ons once the data lands, and bundling them would stall the
 slice on layout bikeshedding.
 
-**Open decision (blocks implementation):** which substrate, at the level of design
-shape rather than product:
+There are **two open decisions** below, and they are independent: the transport
+substrate, and where the host-vitals collector runs. Both block implementation.
+
+**Open decision 1 — which substrate**, at the level of design shape rather than
+product:
 
 1. **Host agent polled by HA** — a lightweight metrics agent on helium exposing a
    local HTTP/REST surface that HA reads on an interval. Smallest new surface,
@@ -63,30 +66,60 @@ argues for option 1 as the opening move, with option 2 as fallback if per-contai
 coverage proves inadequate — but this is the decision to make, not a settled call,
 and a broker earns its keep if it's wanted for other things later.
 
-**Container metrics come free from the existing read-only socket proxy — verified
-2026-07-29, no new socket access needed.** The proxy already in the stack
-(`CONTAINERS=1` / `INFO=1`, read-only socket mount, `cap_drop: ALL`) serves
-per-container stats in full: a non-streaming stats call returns cumulative CPU time,
-memory usage and limit, per-interface network counters, and block-IO figures, plus
-the previous-sample CPU block needed to compute a percentage from a single request.
-Container inspect, process list, and daemon info are served too. The ACL is genuinely
-scoped, not a wide-open socket — image and swarm-node endpoints are refused. So
-container metrics are obtainable entirely within the least-privilege posture of
-`issues/010`. Homepage already consumes this proxy for container status, so the
-pattern is proven in-stack rather than theoretical.
+**The read-only Docker socket proxy already in the stack is the asset to reuse, and
+it is sufficient — this is settled.** It runs with `CONTAINERS=1` / `INFO=1`, a
+read-only socket mount, and `cap_drop: ALL`. Its ACL gates the container endpoints on
+a *prefix* match of `/containers`, so per-container stats and inspect are both
+permitted under `CONTAINERS=1`; there is no separate stats gate. The mutating
+endpoints (stop / restart / kill / pause) sit behind their own switches, which this
+stack does not enable, so they stay denied. Its generous 10-minute client/server
+timeouts accommodate the streaming form of the stats endpoint as well as one-shot
+polls.
 
-**That does, however, sharpen the collector's shape.** The proxy is deliberately not
-published — nothing listens on the host, and it is reachable only on its internal
-bridge network (whose current members are the proxy, Traefik, and Homepage). A
-collector installed on the *host* therefore cannot address it by name and would have
-to fall back to either an unstable container IP or its own raw socket mount — the
-hardening regression to avoid. A collector running as a container joined to that
-network reaches it by service name, exactly as Homepage does. Conversely, host vitals
-(CPU, memory, drive temperatures) are trivial for a host-level agent and need
-explicit host mounts / PID namespace access from inside a container. The design must
-resolve this tension — one containerized collector granted the host visibility it
-needs, or a split where host vitals and container metrics come from different
-sources.
+**Confirmed against the live host on 2026-07-29**, not just read off upstream's
+config: stats, inspect, process-list, daemon-info, and container-list all answer,
+while image and swarm-node endpoints are refused — the ACL is genuinely scoped rather
+than an open socket. A single non-streaming stats call returns cumulative CPU time,
+memory usage and limit, per-interface network counters, and block-IO figures, and it
+includes the previous-sample CPU block, so **CPU percentage is computable from one
+one-shot poll** — no streaming connection required. (`num_procs` is a Windows-only
+field and reads 0 here; don't use it for a process count.)
+
+The consequence is that **container metrics come free inside the non-root /
+least-privilege posture of `issues/010`** — the collector joins the existing
+`socket_proxy` network (as Traefik and the homepage dashboard already do) and needs
+no socket mount and no new capability of its own. Any design that instead mounts the
+raw Docker socket is a hardening regression and should be rejected. Note that *host*
+vitals are a separate privilege question from container metrics: reading CPU / memory
+/ temperatures needs host-level visibility, which the socket proxy neither provides
+nor covers.
+
+**Open decision 2 — where the host-vitals collector runs.** This is the genuinely
+awkward half, and unlike the socket path it is a real tension with `issues/010`:
+
+- **As a container.** Keeps the stack uniformly compose-managed, but reading host
+  CPU / memory / uptime wants `pid: host` plus `/proc` and `/sys` mounts, and pool
+  and SSD-tier capacity wants visibility of the host mount points. That is a
+  markedly wider grant than anything else in the stack holds, in a stack whose
+  whole posture is non-root and `cap_drop: ALL`.
+- **As a host service.** A systemd unit reading the host directly needs no container
+  escape hatches at all and sidesteps `issues/010` entirely — but it introduces a
+  non-container component to a stack that is otherwise wholly compose-managed, with
+  its own packaging, upgrade, and Ansible-role story.
+
+A constraint that bears directly on this choice: the socket proxy publishes **no
+port** — nothing listens on the host, and it answers only on its internal bridge
+network. A host-level collector therefore cannot address it by service name and would
+be left with an unstable container IP or its own socket mount. So choosing the host
+service for vitals implies container metrics come from a *separate* containerized
+consumer on that network — i.e. the two open decisions are less independent than they
+look, and "one collector for everything" is only reachable via the container option.
+
+Note also that the drive temperatures and the board/CPU temperatures come from
+**different sources** — the SAS drives behind the HBA report temperature via SMART,
+while the board and CPU sensors come from the `nct6775`-backed `sensors` stack
+already installed on the host. A collector that reads one does not necessarily read
+the other, so "temperatures" is not a single integration.
 
 Adjacent to `issues/013` (storage-timer failure alerting): if HA becomes the metrics
 sink, HA also becomes a plausible notification channel, which partly pre-empts 013's
@@ -101,8 +134,10 @@ that there was no substrate to integrate against.
 
 - [ ] helium host vitals (at minimum CPU, memory, uptime) are live HA entities with
       sane units and correct device classes.
-- [ ] Storage capacity for the HDD pool and the SSD tier, plus per-drive
-      temperatures, are live HA entities.
+- [ ] Storage capacity for the HDD pool and the SSD tier are live HA entities,
+      reporting figures that match what the host itself reports.
+- [ ] Per-drive temperatures for the pool drives are live HA entities, and board/CPU
+      temperatures are too — whether that takes one collector or two.
 - [ ] Container liveness for the stack's services is visible in HA — a service
       stopped by hand is reflected in HA within one poll interval.
 - [ ] The entities survive a helium reboot and an HA restart without manual
@@ -112,5 +147,6 @@ that there was no substrate to integrate against.
       second run reporting no changes.
 - [ ] Any new listening port stays inside the intended LAN + mesh boundary; nothing
       new is published to the internet.
-- [ ] Container metrics are sourced through the existing read-only socket proxy; no
-      additional or broader Docker socket access is granted to anything.
+- [ ] Container metrics are sourced through the existing read-only socket proxy on
+      the `socket_proxy` network — nothing in the slice mounts the raw Docker socket
+      or adds a capability to reach it.
