@@ -237,3 +237,24 @@ restic_password_file: /etc/restic/appdata.pass
 # admin) minted into secrets.sops.yml as cleanuparr_admin_password — used only
 # for the one-time /api/auth/setup/account call, not templated into stack.env.
 cleanuparr_admin_username: admin
+
+# issue 046 — helium metrics into Home Assistant over MQTT. The broker is the
+# Mosquitto HAOS add-on on argon (the HA box), deliberately NOT a service in this
+# stack: helium going down then produces a clean MQTT last-will and HA flips the
+# entities to `unavailable`, whereas a broker living here would die *with* the host
+# and leave HA showing stale retained values with no signal that they are stale.
+# It also comes supervisor-managed and inside HA's own backups, which is what makes
+# "add a broker" cheap enough to be the right call here.
+#
+# Addressed by IP, deliberately. *.home.stromdahl.tech is a WILDCARD record pointing
+# at helium's own Traefik (192.168.1.191), so ha.home.stromdahl.tech does not reach
+# the HA box at all — it reaches Traefik, which speaks only HTTP/HTTPS. MQTT is a
+# plain TCP port on the HA host, so its LAN IP is the only address that works. If a
+# real per-host DNS record ever exists for the HA box, swap it in here.
+mqtt_broker_host: 192.168.1.99
+mqtt_broker_port: 1883
+# Non-secret; the matching password is mqtt_password in secrets.sops.yml. It is
+# configured as a `logins` entry on the Mosquitto add-on rather than as a Home
+# Assistant user account, on purpose: a `logins` entry can only speak MQTT, whereas
+# an HA user account would also be able to log in to the UI.
+mqtt_username: helium

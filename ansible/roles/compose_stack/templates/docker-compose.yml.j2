@@ -8,7 +8,7 @@
 # jellyseerr (issue 014) + homepage (issue 018) + immich-server,
 # immich-machine-learning, immich-redis, immich-database (issue 006) +
 # paperless + paperless-redis/db/gotenberg/tika (issue 007) + cleanuparr
-# (issue 017).
+# (issue 017) + docker2mqtt (issue 046).
 # Excluded vs neon: homer, the alpine `test` probe, the commented `backup`.
 #
 # Divergences from neon's compose:
@@ -1205,3 +1205,70 @@ services:
     networks:
       - media       # Traefik reaches the review UI here
       - paperless   # reaches paperless:8000 + ollama:11434
+
+  # ===========================================================================
+  # issue 046 — docker2mqtt: publishes per-container state to the Mosquitto broker
+  # on the HA box with Home Assistant MQTT discovery, so every service in this stack
+  # shows up in HA as a binary_sensor without a line of hand-written YAML. This is
+  # the *container* half of the slice; host vitals, capacity and drive temperatures
+  # come from the separate host-side collector installed by the mqtt_metrics role
+  # (a host component is unavoidable — reading SMART off the SAS drives needs root
+  # access to the raw block devices, which no container in this stack may have).
+  #
+  # issue 010 posture — this holds the line rather than bending it:
+  #   - NO /var/run/docker.sock mount and no capability. It reaches Docker only
+  #     through the existing READ-ONLY socket proxy over TCP, because the docker CLI
+  #     (which is what this image shells out to) honours DOCKER_HOST. Verified live
+  #     on 2026-07-29: `docker ps`, `docker events` and `docker stats` all work
+  #     through the proxy, while image and swarm endpoints stay refused.
+  #   - Runs non-root. The image ships no USER and would default to root, but with
+  #     TCP transport there is no socket ownership to satisfy, so it has no reason
+  #     to be root — hence the explicit uid/gid. It writes nothing to disk
+  #     (LOG_DIR unset), so it needs no writable bind either.
+  #   - `docker events` is served by the proxy WITHOUT a new grant: EVENTS is
+  #     on by default in the socket-proxy image and only the mutating endpoints
+  #     (stop/restart/kill/pause) are gated behind switches this stack leaves off.
+  #     Do not confuse the container's own EVENTS var below (a docker2mqtt feature
+  #     flag) with the socket proxy's EVENTS ACL switch — same name, different thing.
+  #
+  # On the socket_proxy network ONLY: it needs the proxy and the broker, and the
+  # broker is off-box, reached over the LAN via the default route. It publishes no
+  # port and has no Traefik router — nothing needs to reach *it*.
+  docker2mqtt:
+    image: ghcr.io/miaucl/docker2mqtt:2.6.1
+    container_name: docker2mqtt
+    restart: unless-stopped
+    user: "${UID:?missing UID}:${GID:?missing GID}"
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    depends_on:
+      - docker-socket-proxy
+    environment:
+      - TZ=${TZ:-Europe/Stockholm}
+      # The whole point: Docker API over the read-only proxy, never a socket mount.
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+      - MQTT_HOST=${MQTT_BROKER_HOST:?missing MQTT_BROKER_HOST}
+      - MQTT_PORT=${MQTT_BROKER_PORT:-1883}
+      - MQTT_USER=${MQTT_USERNAME:?missing MQTT_USERNAME}
+      - MQTT_PASSWD=${MQTT_PASSWORD:?missing MQTT_PASSWORD}
+      - MQTT_CLIENT_ID=docker2mqtt-helium
+      - MQTT_TOPIC_PREFIX=docker
+      # Names the HA device and namespaces the topics, so a second stack host later
+      # cannot collide with helium's entities.
+      - DOCKER2MQTT_HOSTNAME=helium
+      - DISCOVERY=homeassistant
+      - HOMEASSISTANT_PREFIX=homeassistant
+      # Liveness first, deliberately: EVENTS on, STATS off. STATS would add several
+      # volatile numeric entities *per container* — 27 services' worth into HA's
+      # recorder — for data the stack does not yet have a consumer for. Turn it on
+      # later per-need; the discovery mechanism makes that a one-flag change.
+      - EVENTS=1
+      # Group all container entities under ONE HA device rather than 27 devices.
+      - HOMEASSISTANT_SINGLE_DEVICE=true
+      # Drop an entity a day after its container stops existing, so a renamed or
+      # retired service does not linger in HA forever.
+      - DESTROYED_CONTAINER_TTL=86400
+    networks:
+      - socket_proxy
