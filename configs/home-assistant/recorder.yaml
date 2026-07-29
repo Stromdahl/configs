@@ -8,15 +8,19 @@
 # `unknown` forever. Stats are therefore enabled, and the churn is dealt with
 # here instead, where it belongs.
 #
-# Excluded: the per-container byte counters and their derived rates. Eight of the
-# ten stats sensors per container, updating every 30 s, with nothing consuming
-# them — left in, they would dominate the database and crowd out the history
-# that is actually wanted.
+# Excluded: the per-container byte counters and their derived rates — eight of the
+# ten stats sensors per container, with nothing consuming them.
 #
-# Deliberately still recorded: each container's CPU and memory (one value each,
-# genuinely useful as a trend), every container liveness binary_sensor, and all
-# of the host metrics from the mqtt_metrics role — drive temperatures especially,
-# since their history is the early warning for a failing drive.
+# Honest sizing, since it is easy to assume otherwise: this is belt-and-braces, not
+# a rescue. Measured over the same ~2 h window, one container's CPU sensor logged 51
+# state changes while its block-input counter logged 3 and network-input 4 — because
+# the recorder only stores *changes*, and those cumulative counters are among the
+# slowest-moving sensors in the set. The CPU and memory sensors are the real churn,
+# and they are deliberately KEPT: their trend is the part worth having.
+#
+# Also still recorded: every container liveness binary_sensor, and all host metrics
+# from the mqtt_metrics role — drive temperatures especially, since their history is
+# the early warning for a failing drive.
 #
 # NOTE: recorder options are not reloadable; changing this file needs an HA
 # restart, not a YAML reload.

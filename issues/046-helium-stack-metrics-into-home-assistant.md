@@ -218,7 +218,7 @@ that there was no substrate to integrate against.
       stopped container flipped its state entity inside 12 s, and back on restart.
       Caveat worth knowing: the separate *health* entity does not clear when a
       container stops, so **state** is the liveness signal, not health.
-- [~] The entities survive a helium reboot and an HA restart without manual
+- [ ] The entities survive a helium reboot and an HA restart without manual
       re-adding, and recover on their own after helium is unreachable for a while.
       **Two of three halves verified; the reboot is not.** HA was restarted for real
       (its log stream begins at the restart) and every entity came back on its own
