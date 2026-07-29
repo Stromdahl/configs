@@ -43,7 +43,10 @@ diff <(ha entities 'binary_sensor.helium_containers_*_state' | tail -n +2 \
      <(ssh helium.home.stromdahl.tech 'docker ps --format "{{.Names}}"' | tr '-' '_' | sort)
 ```
 
-Anything only on the HA side is an orphan; feed those names to a `grep -E` over the retained `homeassistant/#` topics and publish an empty retained payload to each.
+Anything only on the HA side is an orphan; feed those names to a `grep -E` over the retained `homeassistant/#` topics and publish an empty retained payload to each. **Two traps, both hit in practice:**
+
+- **Entity ids are underscore-normalised; topics are not.** `binary_sensor.helium_containers_protonmail_bridge_state` comes from a container named `protonmail-bridge`, so grepping topics with the name lifted from the entity id silently matches nothing and reports a confident `cleared=N` for the other names. Convert back to hyphens, or match on a structural pattern instead — for compose recreate ghosts, `grep -E '[0-9a-f]{12}_'` over both `homeassistant/#` and `containers/#` catches every one regardless of separators.
+- **The sweep container registers itself.** Any `docker run --rm` shows up as a container and mints its own twelve entities. Name it to match the blacklist — `--name 000000000000_mqtt_sweep` — and docker2mqtt ignores it entirely.
 
 **HACS + card-mod installed.** Custom Lovelace cards via HACS UI (Settings → HACS).
 
