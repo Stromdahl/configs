@@ -1254,19 +1254,45 @@ services:
       - MQTT_USER=${MQTT_USERNAME:?missing MQTT_USERNAME}
       - MQTT_PASSWD=${MQTT_PASSWORD:?missing MQTT_PASSWORD}
       - MQTT_CLIENT_ID=docker2mqtt-helium
-      - MQTT_TOPIC_PREFIX=docker
+      # Load-bearing identity, not cosmetics, in TWO ways: it feeds each entity's
+      # unique_id ("<prefix>_<hostname>_<topic>") AND it appears verbatim in every HA
+      # device name ("helium Containers bazarr"), hence entity ids like
+      # binary_sensor.helium_containers_bazarr_state. So it is `containers` — not the
+      # default `docker`, and not the tool's own name, which would put "Docker2Mqtt" in
+      # front of the user on every card.
+      # It must also STAY changed from the default: the first deploy here registered
+      # entities as `docker` while the naming bug above was still in play, and HA hands a
+      # deleted entity's old entity_id back when the same unique_id reappears — so the
+      # ugly ids outlived the fix until the unique_ids themselves changed. Reverting this
+      # to `docker` would resurrect binary_sensor.helium_docker_state_10 and friends.
+      - MQTT_TOPIC_PREFIX=containers
       # Names the HA device and namespaces the topics, so a second stack host later
       # cannot collide with helium's entities.
       - DOCKER2MQTT_HOSTNAME=helium
       - DISCOVERY=homeassistant
       - HOMEASSISTANT_PREFIX=homeassistant
-      # Liveness first, deliberately: EVENTS on, STATS off. STATS would add several
-      # volatile numeric entities *per container* — 27 services' worth into HA's
-      # recorder — for data the stack does not yet have a consumer for. Turn it on
-      # later per-need; the discovery mechanism makes that a one-flag change.
+      # EVENTS drives the liveness entities (state + health) this slice is actually
+      # for. STATS is on for a non-obvious reason: docker2mqtt publishes the *discovery
+      # registrations* for all ten per-container stats sensors unconditionally, without
+      # guarding them behind the stats flag (upstream 2.6.1). Leaving STATS off does not
+      # avoid those entities — it only leaves 280 of them stuck at `unknown` forever.
+      # Given that, having them carry real numbers strictly beats having them dead. The
+      # recorder cost is handled on the HA side by excluding the churny counters rather
+      # than by omitting the data.
       - EVENTS=1
-      # Group all container entities under ONE HA device rather than 27 devices.
-      - HOMEASSISTANT_SINGLE_DEVICE=true
+      - STATS=1
+      - STATS_RECORD_SECONDS=30
+      # HOMEASSISTANT_SINGLE_DEVICE is deliberately NOT SET, and must never be set —
+      # not even to "false". docker2mqtt reads its flags with bare bool(environ.get(...)),
+      # so ANY non-empty value (including the string "false") is true; only absence or an
+      # empty value is false. Learned the hard way here: when it is on, the container name
+      # is dropped from the device definition, all 28 containers collapse onto one device,
+      # and every entity registers under the same generic name ("Docker Health"). HA then
+      # disambiguates with numeric suffixes, giving binary_sensor.helium_docker_health_10
+      # with no way to tell which service that is short of opening its attributes. Absent,
+      # it registers one device per container, named after the container, with readable ids.
+      # The same truthiness trap applies to every flag above — EVENTS/STATS are only "=1"
+      # because 1 is genuinely intended to mean on.
       # Drop an entity a day after its container stops existing, so a renamed or
       # retired service does not linger in HA forever.
       - DESTROYED_CONTAINER_TTL=86400
