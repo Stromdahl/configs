@@ -230,7 +230,13 @@ that there was no substrate to integrate against.
       (publisher timer enabled at boot, container on `restart: unless-stopped`).
 - [x] Whatever runs on helium is applied by Ansible from krypton, idempotently, and
       holds the non-root / least-privilege posture of `issues/010` — verified by a
-      second run reporting no changes. Second run: `changed=0`.
+      second run reporting no changes. The host-side role reports `changed=0` on
+      re-runs, and the container publisher is provably not recreated (its start time
+      survives repeated deploys). One caveat, **pre-existing and unrelated to this
+      slice**: the compose play still reports one change per run because the Proton
+      Mail Bridge service is built from a local Dockerfile and gets recreated on
+      every `up -d`. That is also what was generating the recurring transient
+      container names this slice now filters out.
 - [x] Any new listening port stays inside the intended LAN + mesh boundary; nothing
       new is published to the internet. Stronger than required, as it turned out:
       the slice adds **no listening port at all**. Both publishers are outbound-only
