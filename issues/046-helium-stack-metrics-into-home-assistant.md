@@ -1,6 +1,6 @@
 ---
 title: Surface helium stack + host metrics as Home Assistant entities
-status: open
+status: in-progress
 priority: medium
 created: 2026-07-29
 closed: null
