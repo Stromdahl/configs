@@ -74,6 +74,7 @@ ha flow history_stats \
 
 - `configs/home-assistant/themes/sensative.yaml` — repo source for the Sensative theme; deployed copy is `/config/themes/sensative.yaml` on the host.
 - `configs/home-assistant/template.yaml` — repo source for template entities (e.g. `vacuum.leonardo_smart`); deployed copy is `/config/template.yaml` on the host.
+- `configs/home-assistant/recorder.yaml` — repo source for the recorder scope (issue 046: keeps docker2mqtt's per-container byte counters out of the database); deployed copy is `/config/recorder.yaml`, pulled in by a `recorder: !include recorder.yaml` line added to `/config/configuration.yaml`. Recorder options are **not reloadable** — changing this needs `ha core restart`, and `ha core check` first is worth the ten seconds.
 - `servers/home-assistant/exports/` — version-controlled snapshots of dashboards / automations / helpers / entities. Diff-edit these instead of round-tripping over the network. Re-export with the loop in `bin/ha`'s recipes.
 - `/config/custom_components/hacs/` on host — HACS install (zip-extracted from `hacs/integration` releases).
 - `/config/www/community/` on host — HACS-managed custom Lovelace JS lives here.

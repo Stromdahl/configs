@@ -1,0 +1,26 @@
+# Recorder scope — repo source for /config/recorder.yaml, included from
+# configuration.yaml as `recorder: !include recorder.yaml`. Issue 046.
+#
+# Why this file exists at all: docker2mqtt publishes the discovery registrations
+# for ten stats sensors per container UNCONDITIONALLY, without guarding them
+# behind its own stats flag (upstream 2.6.1). So leaving stats off does not avoid
+# those 280 entities on this stack's 28 containers — it only leaves them stuck at
+# `unknown` forever. Stats are therefore enabled, and the churn is dealt with
+# here instead, where it belongs.
+#
+# Excluded: the per-container byte counters and their derived rates. Eight of the
+# ten stats sensors per container, updating every 30 s, with nothing consuming
+# them — left in, they would dominate the database and crowd out the history
+# that is actually wanted.
+#
+# Deliberately still recorded: each container's CPU and memory (one value each,
+# genuinely useful as a trend), every container liveness binary_sensor, and all
+# of the host metrics from the mqtt_metrics role — drive temperatures especially,
+# since their history is the early warning for a failing drive.
+#
+# NOTE: recorder options are not reloadable; changing this file needs an HA
+# restart, not a YAML reload.
+exclude:
+  entity_globs:
+    - sensor.helium_containers_*_block_*
+    - sensor.helium_containers_*_network_*

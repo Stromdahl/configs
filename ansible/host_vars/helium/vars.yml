@@ -280,9 +280,14 @@ mqtt_metrics_filesystems:
 # The NVMe's own Composite sensor is skipped because smartctl already reports that
 # drive's temperature, and the PECI CPU channel is skipped as a duplicate of
 # coretemp's package reading.
-# Fan mapping comes from the 2026-07-19 fan-control investigation: fan2 is the CPU
-# fan (the only PWM-controllable header, already at its ~970 RPM floor); fan1 and
-# fan3 are the always-on 12 V case headers the chip cannot drive.
+# Fan mapping is INFERRED, not measured — treat these three names as a good guess.
+# The 2026-07-19 fan-control investigation recorded one controllable CPU fan sitting
+# at a ~970 RPM floor and two always-on 12 V case headers at ~1340 and ~880 RPM;
+# the live channels read fan1=1320, fan2=989, fan3=889, which matches that trio
+# one-to-one and is the whole basis for these labels. Confirming it properly means
+# nudging pwm1/pwm2 and watching which fanN_input responds — worth doing before
+# anyone relies on these names to diagnose a thermal problem. The RPM values
+# themselves are correct regardless; only the CPU-vs-case attribution is uncertain.
 mqtt_metrics_hwmon:
   - key: cpu_temperature
     name: CPU temperature
