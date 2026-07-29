@@ -45,13 +45,23 @@ shape rather than product:
    HA's own recorder won't, but it's a second observability system to own,
    secure, and back up.
 
-**Pull vs push is the discriminator, and NetBird decides it.** helium's containers
-cannot resolve external names or `*.home.stromdahl.tech` — NetBird owns the host's
-`resolv.conf`, which is why in-stack services must address each other by container
-name. Any design where a collector on helium *pushes* to HA by hostname walks
-straight into that. HA *pulling* from helium avoids container DNS entirely and is
-therefore the strongly favoured shape — option 1, with option 2 as fallback if
-per-container coverage proves inadequate.
+**Both directions are on the table; DNS does not constrain the choice.** HA, helium,
+and krypton all sit on the same LAN and resolve each other's `*.home.stromdahl.tech`
+names through the OPNsense resolver's split-horizon view (internal answers point at
+LAN IPs). Containers on helium resolve the same way — Docker's daemon DNS is pinned
+to the OPNsense resolver precisely so container name resolution is independent of
+NetBird's rewriting of the host `resolv.conf`, and that includes the internal
+wildcard. So a collector on helium pushing *to* HA is as viable as HA polling
+helium. The one standing caveat is that this only holds while that daemon-DNS pin
+stays in place — NetBird re-breaks the host file on every reboot, and the pin is
+what absorbs it.
+
+**The real discriminator is how much new infrastructure the slice takes on.** Option
+1 adds one agent and no persistent state. Option 2 adds a broker the fleet does not
+have. Option 3 adds a second observability system to own, secure, and back up. That
+argues for option 1 as the opening move, with option 2 as fallback if per-container
+coverage proves inadequate — but this is the decision to make, not a settled call,
+and a broker earns its keep if it's wanted for other things later.
 
 **The read-only Docker socket proxy already in the stack is the asset to reuse.**
 It runs with `CONTAINERS=1` / `INFO=1`, a read-only socket mount, and `cap_drop:
