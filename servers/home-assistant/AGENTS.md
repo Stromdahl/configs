@@ -6,7 +6,27 @@
 
 **SSH:** `root@192.168.1.99:22` (Terminal & SSH add-on, key already authorized). `/config/` is HA's config dir.
 
-**Token:** `~/.ha-token.json` — shape `{headers:{Authorization:"Bearer ..."}}`. The user is admin; the token works for REST, WS, supervisor.
+**Token:** `~/.ha-token.json` — shape `{headers:{Authorization:"Bearer ..."}}`. The user is admin; the token works for REST and WS. **Not for supervisor:** `/api/hassio/...` answers 401 to a long-lived token, so add-on management goes over SSH with HAOS's own `ha` CLI on the box (`ha apps info core_mosquitto`; `apps` is the current name, `addons` is deprecated but aliased). That CLI has no `options` subcommand — to set add-on options, POST to `http://supervisor/addons/<slug>/options` from the box with `$SUPERVISOR_TOKEN`, which the SSH add-on has in its environment.
+
+### MQTT broker (Mosquitto add-on) — the metrics sink for issue 046
+
+**Mosquitto add-on, `boot: auto`, on this box** — not a container in helium's stack, deliberately: helium going down then produces a clean MQTT last-will and HA flips its entities to `unavailable`, whereas a broker living on helium would die *with* helium and leave HA showing stale values with no signal.
+
+Publishers authenticate as the add-on `logins` user **`helium`** (password `mqtt_password` in helium's `secrets.sops.yml`). A `logins` entry, not a Home Assistant user account, on purpose: it can only speak MQTT, whereas an HA account could also log in to the UI.
+
+**This is the one piece of that slice Ansible does not manage** — the add-on install, its `logins` option and the MQTT config entry were set up by hand. If HA is ever rebuilt, redo those three things and both publishers reconnect on their own.
+
+Two things that will bite:
+
+- **Address the broker by IP (`192.168.1.99:1883`) from helium, never by name.** `*.home.stromdahl.tech` is a *wildcard* pointing at helium's own Traefik (192.168.1.191) — `ha.home.stromdahl.tech` reaches Traefik, which speaks only HTTP, so a hostname here fails in a confusing way.
+- **A cleared retained discovery topic deletes the entity, but HA remembers its `entity_id`** and hands it back when the same `unique_id` reappears. So re-registering after a naming fix keeps the *old* ugly id; only changing the `unique_id` (for docker2mqtt, its topic prefix) mints a clean one. Use `ha entity remove` for one-off orphans.
+
+To inspect or clear retained topics, run mosquitto clients on helium with the stack's env file so no password lands in a transcript:
+
+```bash
+ssh helium.home.stromdahl.tech 'sudo docker run --rm --env-file /opt/helium/.env eclipse-mosquitto:2 \
+  sh -c "mosquitto_sub -h \$MQTT_BROKER_HOST -u \$MQTT_USERNAME -P \$MQTT_PASSWORD -t \"homeassistant/#\" -W 4 -v"'
+```
 
 **HACS + card-mod installed.** Custom Lovelace cards via HACS UI (Settings → HACS).
 

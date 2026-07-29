@@ -179,21 +179,30 @@ that there was no substrate to integrate against.
 
 ## Acceptance criteria
 
-- [ ] helium host vitals (at minimum CPU, memory, uptime) are live HA entities with
+- [x] helium host vitals (at minimum CPU, memory, uptime) are live HA entities with
       sane units and correct device classes.
-- [ ] Storage capacity for the HDD pool and the SSD tier are live HA entities,
-      reporting figures that match what the host itself reports.
-- [ ] Per-drive temperatures for the pool drives are live HA entities, and board/CPU
-      temperatures are too — whether that takes one collector or two.
-- [ ] Container liveness for the stack's services is visible in HA — a service
-      stopped by hand is reflected in HA within one poll interval.
+- [x] Storage capacity for the HDD pool and the SSD tier are live HA entities,
+      reporting figures that match what the host itself reports. Verified against
+      `df` on all three filesystems: every figure agrees to the published decimal.
+- [x] Per-drive temperatures for the pool drives are live HA entities, and board/CPU
+      temperatures are too — whether that takes one collector or two. All seven
+      drives report, plus SMART pass/fail per drive, which came free in the same call.
+- [x] Container liveness for the stack's services is visible in HA — a service
+      stopped by hand is reflected in HA within one poll interval. Measured: a
+      stopped container flipped its state entity inside 12 s, and back on restart.
+      Caveat worth knowing: the separate *health* entity does not clear when a
+      container stops, so **state** is the liveness signal, not health.
 - [ ] The entities survive a helium reboot and an HA restart without manual
       re-adding, and recover on their own after helium is unreachable for a while.
-- [ ] Whatever runs on helium is applied by Ansible from krypton, idempotently, and
+- [x] Whatever runs on helium is applied by Ansible from krypton, idempotently, and
       holds the non-root / least-privilege posture of `issues/010` — verified by a
-      second run reporting no changes.
-- [ ] Any new listening port stays inside the intended LAN + mesh boundary; nothing
-      new is published to the internet.
-- [ ] Container metrics are sourced through the existing read-only socket proxy on
+      second run reporting no changes. Second run: `changed=0`.
+- [x] Any new listening port stays inside the intended LAN + mesh boundary; nothing
+      new is published to the internet. Stronger than required, as it turned out:
+      the slice adds **no listening port at all**. Both publishers are outbound-only
+      MQTT clients, and the host's listening set is byte-for-byte what it was before.
+- [x] Container metrics are sourced through the existing read-only socket proxy on
       the `socket_proxy` network — nothing in the slice mounts the raw Docker socket
-      or adds a capability to reach it.
+      or adds a capability to reach it. Verified on the running container: zero
+      mounts, `cap_drop:[ALL]` with nothing added, non-root uid, no port bindings,
+      and the proxy still refuses the image endpoints.
