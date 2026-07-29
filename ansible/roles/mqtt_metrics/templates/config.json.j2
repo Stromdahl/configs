@@ -1,0 +1,26 @@
+{
+  "_comment": [
+    "Rendered by Ansible from roles/mqtt_metrics/templates/config.json.j2 (issue 046).",
+    "Mode 0600, root-owned: contains the MQTT password. Do not edit on the host —",
+    "every value here comes from host_vars, and the next run of the role overwrites it."
+  ],
+  "mqtt": {
+    "host": "{{ mqtt_broker_host }}",
+    "port": {{ mqtt_broker_port }},
+    "username": "{{ mqtt_username }}",
+    "password": "{{ mqtt_password }}",
+    "client_id": "mqtt-metrics-{{ inventory_hostname }}"
+  },
+  "device": {
+    "id": "{{ mqtt_metrics_device_id }}",
+    "name": "{{ mqtt_metrics_device_name }}",
+    "manufacturer": "{{ mqtt_metrics_device_manufacturer }}",
+    "model": "{{ mqtt_metrics_device_model }}"
+  },
+  "discovery_prefix": "{{ mqtt_metrics_discovery_prefix }}",
+  "topic_prefix": "{{ mqtt_metrics_topic_prefix }}",
+  "expire_after": {{ mqtt_metrics_expire_after }},
+  "filesystems": {{ mqtt_metrics_filesystems | to_json }},
+  "hwmon": {{ mqtt_metrics_hwmon | to_json }},
+  "drives": {{ mqtt_metrics_drive_labels | to_json }}
+}

@@ -1,0 +1,42 @@
+[Unit]
+# issue 046 — one-shot host metrics publish to MQTT (Home Assistant discovery).
+# Triggered by mqtt-metrics.timer, not enabled directly. Deliberately NOT a
+# long-running daemon: each run is independent, so there is nothing to crash,
+# leak, or restart after a broker outage. See the header of
+# /usr/local/bin/mqtt-metrics for the full design rationale.
+Description=Publish host metrics to MQTT for Home Assistant
+Documentation=https://github.com/stromdahl/dotfiles
+# The network must be up to reach the broker; a failure here is harmless (the
+# next tick retries), so this is a soft ordering rather than a hard dependency.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mqtt-metrics
+# Root is required, and only for one thing: reading SMART attributes means
+# issuing SCSI commands to the raw block devices through the HBA. Everything
+# else here (/proc, statvfs, sensors) is readable unprivileged. This is exactly
+# the grant that could not be given to a container in the compose stack, which
+# is why this half of the slice is a host unit at all.
+User=root
+# Hardening around that grant: the unit needs to read /proc, /sys and the block
+# devices, and to write nothing at all.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+# smartctl needs SG_IO on the raw devices; sensors needs the ISA/hwmon path.
+# Everything else is dropped.
+CapabilityBoundingSet=CAP_SYS_RAWIO CAP_SYS_ADMIN CAP_DAC_OVERRIDE
+# A hung smartctl must not wedge the timer; the script also caps each child.
+TimeoutStartSec=90
+
+[Install]
+WantedBy=multi-user.target

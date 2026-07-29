@@ -25,6 +25,12 @@
       tags: [compose, services]
     - role: restic_backup
       tags: [backup, restic]
+    # issue 046 — host vitals / capacity / drive temps to MQTT for Home Assistant.
+    # After compose_stack on purpose: the container half (docker2mqtt) ships with
+    # the stack, and running this last means the host publisher is installed once
+    # the broker credentials it shares with the stack are already in place.
+    - role: mqtt_metrics
+      tags: [mqtt_metrics, monitoring]
 
 # edge — public-facing hosts (radon). base + docker, then the public edge_stack
 # role (Traefik serving the Cloudflare Origin cert via the file provider + the

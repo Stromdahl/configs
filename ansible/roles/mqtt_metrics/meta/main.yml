@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: mqtt_metrics
+  description: >-
+    Host-side metrics collector (CPU/memory/uptime, filesystem capacity, hwmon
+    temperatures and fans, per-drive SMART temperature and health) published to
+    MQTT with Home Assistant discovery. Issue 046.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []

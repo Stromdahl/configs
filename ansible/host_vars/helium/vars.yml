@@ -258,3 +258,73 @@ mqtt_broker_port: 1883
 # Assistant user account, on purpose: a `logins` entry can only speak MQTT, whereas
 # an HA user account would also be able to log in to the UI.
 mqtt_username: helium
+
+# --- issue 046: what the host-side collector publishes -----------------------
+# HA groups every host metric under one device; these name it.
+mqtt_metrics_device_name: helium
+mqtt_metrics_device_manufacturer: Supermicro
+mqtt_metrics_device_model: X11SCV-Q
+
+# Capacity entities. NOTE the SSD path: /data/ssd is NOT itself a mount point on
+# this box — only its btrfs subvolumes are mounted, and they all share one pool,
+# so statvfs on /data/ssd would silently report the OS disk instead. Pointing at
+# a subvolume mount reports the real SSD pool.
+mqtt_metrics_filesystems:
+  - { key: media_pool, name: "Media pool", path: "{{ hdd_union_mount }}" }
+  - { key: ssd_tier, name: "SSD tier", path: "{{ ssd_pool_mount }}/appdata" }
+  - { key: os_disk, name: "OS disk", path: "/" }
+
+# Readings lifted out of `sensors -j`; chip and feature names must match that
+# output exactly. Curated deliberately — the NCT6106D also exposes voltages, PWM
+# duty, intrusion flags and several dead PECI/PCH channels that read 0.
+# The NVMe's own Composite sensor is skipped because smartctl already reports that
+# drive's temperature, and the PECI CPU channel is skipped as a duplicate of
+# coretemp's package reading.
+# Fan mapping comes from the 2026-07-19 fan-control investigation: fan2 is the CPU
+# fan (the only PWM-controllable header, already at its ~970 RPM floor); fan1 and
+# fan3 are the always-on 12 V case headers the chip cannot drive.
+mqtt_metrics_hwmon:
+  - key: cpu_temperature
+    name: CPU temperature
+    chip: coretemp-isa-0000
+    feature: Package id 0
+    sub: temp1_input
+    unit: "°C"
+    device_class: temperature
+  - key: board_temperature
+    name: Board temperature
+    chip: nct6106-isa-0a30
+    feature: SYSTIN
+    sub: temp1_input
+    unit: "°C"
+    device_class: temperature
+  - key: fan_cpu
+    name: CPU fan
+    chip: nct6106-isa-0a30
+    feature: fan2
+    sub: fan2_input
+    unit: rpm
+    icon: mdi:fan
+  - key: fan_case_1
+    name: Case fan 1
+    chip: nct6106-isa-0a30
+    feature: fan1
+    sub: fan1_input
+    unit: rpm
+    icon: mdi:fan
+  - key: fan_case_2
+    name: Case fan 2
+    chip: nct6106-isa-0a30
+    feature: fan3
+    sub: fan3_input
+    unit: rpm
+    icon: mdi:fan
+
+# Drive labels, keyed on the identity smartctl reports. The four SAS pool drives
+# are DERIVED from the storage lists above rather than restated, so replacing a
+# drive cannot leave a stale label here: their SAS logical_unit_id is exactly the
+# wwn-* id those lists already pin the mounts on, minus the `wwn-` prefix.
+# The SATA SSDs and the NVMe report no logical unit id, so they are keyed on
+# serial number (case-sensitive, as smartctl prints it) and listed explicitly.
+mqtt_metrics_pool_drive_labels: "{{ dict((hdd_data_drives + hdd_parity_drives) | map(attribute='id') | map('regex_replace', '^wwn-', '') | list | zip((hdd_data_drives + hdd_parity_drives) | map(attribute='label') | list)) }}"
+mqtt_metrics_drive_labels: "{{ mqtt_metrics_pool_drive_labels | combine({'50026B767400167E': 'ssd1', '50026B776705BF4D': 'ssd2', 'S4EUNMFN806315B': 'os disk'}) }}"

@@ -1,0 +1,20 @@
+[Unit]
+# issue 046 — cadence for the host metrics publish. Templated (unlike this
+# repo's other units, which hardcode their schedules) because the interval and
+# HA's expire_after have to stay in step: expire_after must be comfortably
+# larger than this, or one slow run flaps every entity to unavailable.
+Description=Publish host metrics to MQTT every {{ mqtt_metrics_interval }}s
+Documentation=https://github.com/stromdahl/dotfiles
+
+[Timer]
+# Start shortly after boot rather than immediately: the broker may not be
+# reachable yet, and there is no value in a guaranteed-failed first run.
+OnBootSec=90
+OnUnitActiveSec={{ mqtt_metrics_interval }}
+# No Persistent=true: these are instantaneous gauges, so a missed run while the
+# host was down is meaningless and must not be "caught up" on boot.
+AccuracySec=5
+Unit=mqtt-metrics.service
+
+[Install]
+WantedBy=timers.target

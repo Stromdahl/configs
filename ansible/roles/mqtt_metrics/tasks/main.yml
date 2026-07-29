@@ -1,0 +1,100 @@
+---
+# issue 046 — host-side half of "helium metrics into Home Assistant": CPU /
+# memory / uptime, filesystem capacity, board+CPU temperatures and fan RPMs, and
+# per-drive SMART temperature and health, published to the Mosquitto add-on on
+# the HA box with HA MQTT discovery.
+#
+# Why this is a host unit and not a container, given the compose stack's
+# non-root / cap_drop:[ALL] posture (issues/010): reading SMART off the SAS
+# drives means issuing SCSI commands to the raw block devices as root, which is
+# a wider grant than `pid: host` plus /proc and /sys and cannot be reconciled
+# with cap_drop:[ALL] at all. The capability already exists here — smartmontools
+# and smartd are installed by storage_hdd — so nothing new is granted anywhere.
+# The container half (per-container liveness) is docker2mqtt in compose_stack,
+# which reaches Docker only through the read-only socket proxy.
+#
+# The two halves are separate publishers by construction, not by preference: the
+# socket proxy publishes no port, so a host process cannot address it by name,
+# and a container cannot read SMART. There is no single-collector option.
+
+- name: MQTT client library (Debian package, no pip/venv)
+  become: true
+  ansible.builtin.apt:
+    name: python3-paho-mqtt
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+# smartmontools (storage_hdd) and lm-sensors (sensors) are already present on
+# this host, but assert them here so the role stands on its own rather than
+# depending on role ordering in the play.
+- name: Collector dependencies (smartctl for drive SMART, sensors for hwmon)
+  become: true
+  ansible.builtin.apt:
+    name:
+      - smartmontools
+      - lm-sensors
+    state: present
+
+- name: Install the collector
+  become: true
+  ansible.builtin.copy:
+    src: mqtt-metrics.py
+    dest: /usr/local/bin/mqtt-metrics
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Restart mqtt-metrics timer
+
+- name: Config directory (root-only — the rendered config holds the MQTT password)
+  become: true
+  ansible.builtin.file:
+    path: /etc/mqtt-metrics
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Render the collector config
+  become: true
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: /etc/mqtt-metrics/config.json
+    owner: root
+    group: root
+    mode: "0600"
+    # Fail the deploy rather than install a config the collector will reject.
+    validate: "python3 -c 'import json,sys; json.load(open(sys.argv[1]))' %s"
+  notify: Restart mqtt-metrics timer
+
+- name: Install the mqtt-metrics service unit
+  become: true
+  ansible.builtin.copy:
+    src: systemd/mqtt-metrics.service
+    dest: /etc/systemd/system/mqtt-metrics.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Install the mqtt-metrics timer unit
+  become: true
+  ansible.builtin.template:
+    src: mqtt-metrics.timer.j2
+    dest: /etc/systemd/system/mqtt-metrics.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Reload systemd now (before enabling the timer)
+  ansible.builtin.meta: flush_handlers
+
+# The service is oneshot and triggered by the timer, so the TIMER is what gets
+# enabled — mirrors the restic/snapraid/btrfs-scrub pattern in this repo.
+- name: Enable and start the mqtt-metrics timer
+  become: true
+  ansible.builtin.systemd_service:
+    name: mqtt-metrics.timer
+    enabled: true
+    state: started

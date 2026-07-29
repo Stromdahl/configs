@@ -1,0 +1,40 @@
+---
+# Defaults for the host-side MQTT metrics collector (issue 046). Everything
+# hardware-specific is intentionally EMPTY here and set in host_vars: chip names
+# and drive ids differ per box, and a wrong default would publish confidently
+# wrong readings rather than failing visibly.
+
+# HA device the entities group under. One device per host.
+mqtt_metrics_device_id: "{{ inventory_hostname }}"
+mqtt_metrics_device_name: "{{ inventory_hostname }}"
+mqtt_metrics_device_manufacturer: ""
+mqtt_metrics_device_model: ""
+
+mqtt_metrics_discovery_prefix: homeassistant
+# State topic root; entities live at <prefix>/<device_id>/state.
+mqtt_metrics_topic_prefix: host
+
+# How often the timer fires. 60 s is a compromise: fast enough for a live CPU
+# reading, slow enough that the SMART sweep (~1 s across seven devices) stays a
+# rounding error. The drives on this HBA cannot spin down anyway (they ignore
+# STANDBY/STOP UNIT), so polling them often costs nothing in noise or wear.
+mqtt_metrics_interval: 60
+
+# Grace period before HA marks an entity unavailable. Must be comfortably more
+# than the interval or a single slow run flaps every entity; 5x leaves room for
+# a missed tick or two without hiding a genuinely dead host for long.
+mqtt_metrics_expire_after: 300
+
+# Filesystems to report. `key` is the entity id stem, `path` is any path on the
+# filesystem (it need not be the mount point itself).
+mqtt_metrics_filesystems: []
+
+# Readings to pull out of `sensors -j`. Each entry names the chip and feature
+# exactly as that command prints them, plus the raw sub-key holding the value.
+mqtt_metrics_hwmon: []
+
+# Map of drive identity -> friendly label. Identity is the SAS logical unit id
+# (which equals the wwn-* id the storage roles pin mounts on) or, for drives
+# that report none, the serial number. Drives missing from this map are still
+# published, labelled with their model and serial.
+mqtt_metrics_drive_labels: {}
