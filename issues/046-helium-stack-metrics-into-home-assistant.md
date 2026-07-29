@@ -38,8 +38,9 @@ product:
 1. **Host agent polled by HA** — a lightweight metrics agent on helium exposing a
    local HTTP/REST surface that HA reads on an interval. Smallest new surface,
    no broker, no time-series database to back up. Glances is the obvious
-   candidate here; whether its Docker plugin gives usable *per-container* state
-   through HA needs verifying before committing.
+   candidate here, and its own Docker plugin does read per-container data — but
+   HA's Glances integration does not surface any of it as entities. Verified
+   below; it means this option cannot reach container liveness on its own.
 2. **Push to a broker** — a collector on helium publishing to MQTT, with HA
    subscribing. Most flexible and the idiomatic HA path, but it introduces a
    broker as new infrastructure the fleet doesn't have yet.
@@ -62,9 +63,37 @@ what absorbs it.
 **The real discriminator is how much new infrastructure the slice takes on.** Option
 1 adds one agent and no persistent state. Option 2 adds a broker the fleet does not
 have. Option 3 adds a second observability system to own, secure, and back up. That
-argues for option 1 as the opening move, with option 2 as fallback if per-container
-coverage proves inadequate — but this is the decision to make, not a settled call,
-and a broker earns its keep if it's wanted for other things later.
+argued for option 1 as the opening move, with option 2 as fallback if per-container
+coverage proved inadequate — and the verification below is what settles that fallback
+question: per-container coverage *is* inadequate, so footprint alone no longer decides
+it.
+
+**Verified against upstream source on 2026-07-29, not recalled:**
+
+- **HA's Glances integration exposes no per-container entity.** It creates one entity
+  per labelled instance only for filesystems, disk-IO, sensors, RAID, GPU and network;
+  Docker falls into the unlabelled branch and yields exactly three aggregates — an
+  active-container count, total CPU percent, and total memory. A service stopped by
+  hand therefore shows up only as a counter moving from 27 to 26, with no indication of
+  *which* service died. That does not satisfy the container-liveness criterion.
+- **Anything that speaks Docker's API can be pointed at the socket proxy.** Glances
+  builds its Docker client from the environment rather than a hardcoded socket path, so
+  it honours a `DOCKER_HOST` naming a TCP endpoint. This finding outlives the Glances
+  question: it is the general reason a containerized consumer on the proxy's network
+  needs no socket mount, and it holds for the Docker CLI too.
+- **Glances cannot see the pool drives' temperatures at all.** Its HDD temperatures come
+  from the `hddtemp` daemon, not from SMART — so SAS drives behind the HBA are invisible
+  to it regardless of transport. Its core-temperature and fan readings do come from the
+  same kernel hwmon path the host's `sensors` stack uses, so board/CPU coverage is real.
+- **Option 3 has a direction problem worth noting:** HA's Prometheus integration is an
+  *exporter* — it publishes HA's own state for Prometheus to scrape. It is not a reader,
+  so pulling metrics the other way would still mean hand-written per-metric queries and
+  no automatic entity creation. Option 3's footprint cost buys nothing toward this
+  slice's deliverable.
+
+The consequence for the shape of the answer: 27 services' worth of entities should not
+be hand-declared, so a transport with an **entity-discovery mechanism** is worth real
+weight in this decision — that is the property option 1 lacks and option 2 has natively.
 
 **The read-only Docker socket proxy already in the stack is the asset to reuse, and
 it is sufficient — this is settled.** It runs with `CONTAINERS=1` / `INFO=1`, a
@@ -120,6 +149,24 @@ Note also that the drive temperatures and the board/CPU temperatures come from
 while the board and CPU sensors come from the `nct6775`-backed `sensors` stack
 already installed on the host. A collector that reads one does not necessarily read
 the other, so "temperatures" is not a single integration.
+
+**That asymmetry decides decision 2, rather than leaving it a matter of taste.** Reading
+SMART attributes off the pool drives means issuing SCSI commands to the raw block
+devices as root — a materially wider grant than `pid: host` plus `/proc` and `/sys`, and
+one that cannot be reconciled with `cap_drop: ALL` at all. The host already carries the
+SMART tooling and runs a SMART daemon for the spin-down work, so the capability exists
+there and needs no new grant anywhere. The per-drive-temperature criterion therefore
+**forces a host-side component whichever substrate wins.**
+
+Which inverts the earlier reading of this decision: "one collector for everything" is
+not merely hard to reach via the host option, it is unreachable via *either* option. The
+container option cannot cover drive temperatures, and the host option cannot address the
+socket proxy. So the slice takes **two publishers by construction** — a host-side one for
+vitals, capacity and temperatures, and a containerized one on the proxy's network for
+container state. The remaining question is not *where the collector runs* but only how
+narrowly each of the two can be scoped, and both scope down cleanly: the host side needs
+no container escape hatches, and the container side needs no socket mount and no
+capability.
 
 Adjacent to `issues/013` (storage-timer failure alerting): if HA becomes the metrics
 sink, HA also becomes a plausible notification channel, which partly pre-empts 013's
