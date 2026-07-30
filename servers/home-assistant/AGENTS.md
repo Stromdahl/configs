@@ -239,21 +239,18 @@ docker2mqtt's blacklist ignores it — see the orphan-sweep note above.
 
 Both handlers exist and both need a secret that does not exist anywhere on disk:
 
-- **Immich** wants an API key. `immich-admin` (in `immich_server`) has **no** key-creation
-  command — only `reset-admin-password`, which would change the user's own login and is
-  therefore off the table. The one admin account is
-  `immich.rockstar278@passmail.net`, and sops holds only `immich_db_password`.
-  For the record, the DB contract is fully known: `api_key.key` is a `bytea` holding the
-  **raw** `createHash('sha256').update(token).digest()` of the token
-  (`services/api-key.service.js`), validated the same way in `auth.service.js`, and
-  `permissions` is a `varchar[]` where `Permission.All = "all"` short-circuits `isGranted`.
-  **Do not use that to forge a key** — the harness classifier blocks minting credentials by
-  writing into an application's database, twice, and that is the right call. Ask for a
-  UI-minted key instead.
-- **Jellyfin** wants an account password (accounts `ms` and `hj`, both set). Its `ApiKeys`
-  table does store `AccessToken` in **plaintext** — there is already a `Jellyseerr` row —
-  so an inserted key would grant admin API access to create a dedicated `homeassistant`
-  user. Same objection applies: that is credential forgery, not administration. Ask.
+- **Immich** wants an API key, which has to be minted in Immich's own UI. `immich-admin`
+  (in the `immich_server` container) has **no** key-creation command; its only relevant verb
+  is `reset-admin-password`, which is off the table because it would change the user's own
+  login. The single admin account is `immich.rockstar278@passmail.net`, and sops holds only
+  `immich_db_password` — nothing that authenticates to the API.
+- **Jellyfin** wants an account password. The two accounts are `ms` and `hj` and both have
+  one set. Prefer asking for a purpose-made `homeassistant` account over reusing either.
+
+**Ask for these; do not manufacture them.** Both services keep their credentials in
+databases this repo's tooling can reach, so "just insert one" is a visible shortcut — it is
+credential forgery rather than administration, and the harness classifier correctly refuses
+it. The honest move when a credential is missing is to stop and ask the user for it.
 
 #### The stale neon `ping` entry — fixed 2026-07-30
 
