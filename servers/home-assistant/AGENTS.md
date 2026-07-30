@@ -214,13 +214,22 @@ The three that do exist:
 | Handler | Schema | Blocked on |
 |---|---|---|
 | `immich` | `{url, api_key, verify_ssl}` (all required; `verify_ssl` flat, defaults false) | API key must be minted by hand in Immich's UI — no admin credential exists in sops, only `immich_db_password` |
-| `jellyfin` | `{url, username, password}` (password optional) | A Jellyfin account's credentials. `GET /Users/Public` returns `[]`, so there is no passwordless user to borrow — recommend a dedicated `homeassistant` user |
+| `jellyfin` | `{url, username, password}` (password optional, default `""`) | A Jellyfin account's password. The two accounts are `ms` and `hj` and **both have one set**, so the optional-password path is not available — recommend a dedicated `homeassistant` user |
 | `ollama` | `{url, …}` | Nothing, but **deliberately not wired**: it is a conversation-agent integration and contributes no stack sensors, so it does nothing for the dashboard |
 
-One non-obvious possibility: **the core `overseerr` handler (`{url, api_key, …}`) exists and
-Jellyseerr keeps Overseerr's `/api/v1` surface**, so it may well work against
-`jellyseerr.home.stromdahl.tech` with a key from Jellyseerr's own UI. Untested — verify
-before documenting it as supported.
+One non-obvious possibility: **the core `overseerr` handler (`{url, api_key, …}`) exists,
+and Jellyseerr still serves Overseerr's `/api/v1`** — `GET /api/v1/status` on
+`jellyseerr.home.stromdahl.tech` answers `200` with `{"version":"3.3.0",…}` unauthenticated,
+despite the 3.x Seerr rebrand. So the API surface is confirmed present; whether HA's
+`overseerr` integration is happy with it is still untested and needs a key from Jellyseerr's
+own UI to find out.
+
+**Checking a Jellyfin account's password without touching HA:** its SQLite DB is at
+`/data/ssd/appdata/jellyfin/data/data/jellyfin.db` on helium (note the doubled `data/data`).
+Query `Users` for `Username` and whether `Password IS NULL` — select a `CASE` boolean, never
+the column, so no hash lands in a transcript. There is no `IsAdministrator` column on this
+schema (permissions live elsewhere). Name any probe container `000000000000_sqlite_probe` so
+docker2mqtt's blacklist ignores it — see the orphan-sweep note above.
 
 Also present and stale: a `ping` config entry titled `192.168.1.153` (entry
 `01KM4X9HJSMBGPC8MAG71JHH0Q`, entity `binary_sensor.192_168_1_153`, friendly name "Neon
