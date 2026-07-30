@@ -67,7 +67,8 @@ ha entity list|get|update|remove|disable|enable  # config/entity_registry/* via 
 ha device list|update                   # config/device_registry/{list,update} via WS
 ha area list|create|delete              # config/area_registry/{list,create,delete} via WS
 ha helper list|create|delete            # input_*/{create,delete} via WS
-ha flow <handler> '<step1>' ['<step2>'…] # drive multi-step config_entries flow → create_entry
+ha flow <handler> ['<step1>' ['<step2>'…]] # drive multi-step config_entries flow → create_entry
+                                        # with no steps: print the first step's schema, then abort
 ha entry list [domain]|get|delete|reload|flows  # config_entries CRUD + in-progress flows
 ha ws '<json>'                          # raw WS command, prints the result payload
 ```
@@ -87,6 +88,14 @@ ha flow history_stats \
   '{"state":["Work Mattias"]}' \
   '{"start":"{{ today_at() }}","end":"{{ now() }}","state_class":"total_increasing"}'
 ```
+
+**Run `ha flow <handler>` with no step payloads before writing one.** It starts the flow
+only to print the first step's `data_schema`, then aborts it so nothing lingers in
+`ha entry flows`. Two things this settles that guesswork gets wrong: whether the handler
+exists at all (a non-core integration answers `HTTP 404: Invalid handler specified` — this
+is how `prowlarr`, `jellyseerr`, `bazarr`, `traefik`, `cleanuparr` and `profilarr` were
+found to have **no** core integration, contrary to reasonable assumption), and the exact
+field names, which differ per integration — see the `sonarr` `more_options` section below.
 
 `ha helper create input_*` still goes via WS (collection helpers); only config-flow helpers need `ha flow`. Manage the resulting config entries with `ha entry list <domain>` / `ha entry delete <entry_id>` / `ha entry reload <entry_id>`. Note: `options` (the per-entry config payload from a flow's `create_entry`) is not exposed by `entry get` — HA only surfaces it during an options flow.
 
@@ -193,5 +202,29 @@ Getting the keys out of sops without leaking them into a transcript: decrypt wit
 it as `ha flow <handler> "$(cat <file>)"`, and delete the scratch files afterwards. Never
 decrypt to stdout — see the `feedback_sops_no_stdout` rule and its PreToolUse hook.
 
-**Immich and Jellyfin have HA integrations too but are deliberately not wired** — neither
-is a homepage widget today, and both need an API key minted by hand in their own UI.
+#### What is left, and why each one is blocked
+
+Probed with `ha flow <handler>` (no steps) on 2026-07-30, so this is HA's own answer, not
+a guess. **Most of the stack has no core integration at all** — `prowlarr`, `jellyseerr`,
+`bazarr`, `traefik`, `cleanuparr` and `profilarr` all answer `Invalid handler specified`.
+Don't go looking for them again.
+
+The three that do exist:
+
+| Handler | Schema | Blocked on |
+|---|---|---|
+| `immich` | `{url, api_key, verify_ssl}` (all required; `verify_ssl` flat, defaults false) | API key must be minted by hand in Immich's UI — no admin credential exists in sops, only `immich_db_password` |
+| `jellyfin` | `{url, username, password}` (password optional) | A Jellyfin account's credentials. `GET /Users/Public` returns `[]`, so there is no passwordless user to borrow — recommend a dedicated `homeassistant` user |
+| `ollama` | `{url, …}` | Nothing, but **deliberately not wired**: it is a conversation-agent integration and contributes no stack sensors, so it does nothing for the dashboard |
+
+One non-obvious possibility: **the core `overseerr` handler (`{url, api_key, …}`) exists and
+Jellyseerr keeps Overseerr's `/api/v1` surface**, so it may well work against
+`jellyseerr.home.stromdahl.tech` with a key from Jellyseerr's own UI. Untested — verify
+before documenting it as supported.
+
+Also present and stale: a `ping` config entry titled `192.168.1.153` (entry
+`01KM4X9HJSMBGPC8MAG71JHH0Q`, entity `binary_sensor.192_168_1_153`, friendly name "Neon
+Status") that pings **decommissioned neon** and therefore reads `off` permanently.
+Repointing it at helium (`192.168.1.191`) would give an independent liveness check
+alongside the MQTT last-will; `ping` reports `supports_options: true`, so that is an
+options flow rather than a delete-and-recreate.
