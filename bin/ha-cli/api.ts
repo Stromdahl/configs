@@ -92,6 +92,10 @@ export function submitFlowStep(flowId: string, payload: unknown): Promise<HAFlow
   return post<HAFlowResponse>(`/config/config_entries/flow/${flowId}`, payload);
 }
 
+export function abortFlow(flowId: string): Promise<unknown> {
+  return del(`/config/config_entries/flow/${flowId}`);
+}
+
 // ---- WebSocket: escape hatch for `ha ws '<json>'` ----
 
 export function sendRaw(msg: object): Promise<unknown> {

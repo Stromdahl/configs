@@ -1,4 +1,5 @@
 import {
+  abortFlow,
   callService,
   getServices,
   getState,
@@ -34,10 +35,25 @@ export const ws: CmdFn = async ([json]) => {
   printJSON(await sendRaw(JSON.parse(json) as object));
 };
 
-export const flow: CmdFn = async ([handler, ...stepArgs]) => {
-  if (handler === undefined || stepArgs.length === 0) {
-    throw new Error("usage: ha flow <handler> '<step1-json>' ['<step2-json>' ...]");
+// Start a flow purely to read its first step's schema, then abort it so it does
+// not linger in `ha entry flows`. This is the reliable way to learn a handler's
+// real field names — they differ per integration (sonarr wants verify_ssl inside
+// a `more_options` section, radarr takes it flat).
+async function probeFlowSchema(handler: string): Promise<void> {
+  const probe = await startFlow(handler);
+  if (probe.type !== 'form') {
+    printJSON(probe);
+    return;
   }
+  await abortFlow(probe.flow_id);
+  printJSON({ step_id: probe.step_id, data_schema: probe.data_schema });
+}
+
+export const flow: CmdFn = async ([handler, ...stepArgs]) => {
+  if (handler === undefined) {
+    throw new Error("usage: ha flow <handler> ['<step1-json>' ['<step2-json>' ...]]");
+  }
+  if (stepArgs.length === 0) return probeFlowSchema(handler);
   const steps: unknown[] = stepArgs.map((s, idx): unknown => {
     try { return JSON.parse(s) as unknown; }
     catch (e) { throw new Error(`step ${idx + 1} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`); }
