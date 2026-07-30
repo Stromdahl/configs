@@ -201,7 +201,7 @@
             {
               "type": "custom:mushroom-template-card",
               "primary": "Radarr",
-              "secondary": "{% if is_state('binary_sensor.helium_containers_radarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_radarr_state','on') %}no data{% else %}Movies{% endif %}",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_radarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_radarr_state','on') %}no data{% else %}{{ states('sensor.radarr_movies') }} movies · queue {{ states('sensor.radarr_queue') }}{% endif %}",
               "icon": "mdi:movie-open",
               "icon_color": "{% if is_state('binary_sensor.helium_containers_radarr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_radarr_state','on') %}grey{% else %}green{% endif %}",
               "entity": "binary_sensor.helium_containers_radarr_state",
@@ -219,7 +219,7 @@
             {
               "type": "custom:mushroom-template-card",
               "primary": "Sonarr",
-              "secondary": "{% if is_state('binary_sensor.helium_containers_sonarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_sonarr_state','on') %}no data{% else %}Series{% endif %}",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_sonarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_sonarr_state','on') %}no data{% else %}{{ states('sensor.sonarr_shows') }} shows · {{ states('sensor.sonarr_wanted') }} wanted · queue {{ states('sensor.sonarr_queue') }}{% endif %}",
               "icon": "mdi:television-classic",
               "icon_color": "{% if is_state('binary_sensor.helium_containers_sonarr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_sonarr_state','on') %}grey{% else %}green{% endif %}",
               "entity": "binary_sensor.helium_containers_sonarr_state",
@@ -284,7 +284,7 @@
             {
               "type": "custom:mushroom-template-card",
               "primary": "qBittorrent",
-              "secondary": "{% if is_state('binary_sensor.helium_containers_qbittorrent_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_qbittorrent_state','on') %}no data{% else %}Torrent client (VPN){% endif %}",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_qbittorrent_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_qbittorrent_state','on') %}no data{% else %}↓{{ states('sensor.qbittorrent_download_speed') | float(0) | round(1) }} ↑{{ states('sensor.qbittorrent_upload_speed') | float(0) | round(1) }} MB/s · {{ states('sensor.qbittorrent_active_torrents') }} active{% endif %}",
               "icon": "mdi:cloud-download",
               "icon_color": "{% if is_state('binary_sensor.helium_containers_qbittorrent_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_qbittorrent_state','on') %}grey{% else %}green{% endif %}",
               "entity": "binary_sensor.helium_containers_qbittorrent_state",

@@ -96,7 +96,7 @@ ha flow history_stats \
 - `configs/home-assistant/template.yaml` — repo source for template entities (e.g. `vacuum.leonardo_smart`); deployed copy is `/config/template.yaml` on the host.
 - `configs/home-assistant/recorder.yaml` — repo source for the recorder scope (issue 046: keeps docker2mqtt's per-container byte counters out of the database); deployed copy is `/config/recorder.yaml`, pulled in by a `recorder: !include recorder.yaml` line added to `/config/configuration.yaml`. Recorder options are **not reloadable** — changing this needs `ha core restart`, and `ha core check` first is worth the ten seconds.
 - `servers/home-assistant/exports/` — version-controlled snapshots of dashboards / automations / helpers / entities. Diff-edit these instead of round-tripping over the network. Re-export with the loop in `bin/ha`'s recipes.
-- `exports/dashboards/helium-stack.json` — the helium NAS dashboard (issue 046's follow-on). Three views: Overview (host vitals, storage gauges, thermals, seven drives), Services (28 containers in six functional groups), Trends. Deploy with `ha dash save helium-stack <file>`. **The Services view is a hardcoded list of 28 containers, but the Overview hero counts them by scanning `binary_sensor.helium_containers_*_state`** — so adding a service to the stack needs a card added here by hand, and the tell that it was forgotten is the hero reading e.g. 29/29 while Services shows 28 cards. Nothing errors. Two further constraints any edit must respect: **graph cards may only reference recorded entities** — `configs/home-assistant/recorder.yaml` excludes `sensor.helium_containers_*_block_*` and `*_network_*`, so those render blank on a `mini-graph-card` despite having live states; and **liveness is `_state`, not `_health`** — eight containers declare no healthcheck and sit at `_health: unknown` forever, so `_health` is only good for an "unhealthy" badge (`on` = healthy, `off` = unhealthy).
+- `exports/dashboards/helium-stack.json` — the helium NAS dashboard (issue 046's follow-on). Its **Home** view is the replacement for `homepage.home.stromdahl.tech` (issue 018): it mirrors homepage's six service groups and every `href` in `ansible/roles/compose_stack/files/homepage/services.yaml`, with tap-to-open, container-liveness status dots, tier gauges, and live API data. Keep the two in sync — if a service is added to `services.yaml`, add it here too. Then three more views: Overview (host vitals, storage gauges, thermals, seven drives), Services (28 containers in six functional groups), Trends. Deploy with `ha dash save helium-stack <file>`. **The Services view is a hardcoded list of 28 containers, but the Overview hero counts them by scanning `binary_sensor.helium_containers_*_state`** — so adding a service to the stack needs a card added here by hand, and the tell that it was forgotten is the hero reading e.g. 29/29 while Services shows 28 cards. Nothing errors. Two further constraints any edit must respect: **graph cards may only reference recorded entities** — `configs/home-assistant/recorder.yaml` excludes `sensor.helium_containers_*_block_*` and `*_network_*`, so those render blank on a `mini-graph-card` despite having live states; and **liveness is `_state`, not `_health`** — eight containers declare no healthcheck and sit at `_health: unknown` forever, so `_health` is only good for an "unhealthy" badge (`on` = healthy, `off` = unhealthy).
 - `/config/custom_components/hacs/` on host — HACS install (zip-extracted from `hacs/integration` releases).
 - `/config/www/community/` on host — HACS-managed custom Lovelace JS lives here.
 
@@ -151,3 +151,44 @@ The deployed `oled-black.yaml` and `linen-light.yaml` (in `configs/home-assistan
 - Don't ask the user to copy-paste the token. It's at `~/.ha-token.json`. Reading the MCP config is denied by the harness — that's intentional.
 - Don't install third-party JS unpinned from a master branch (the harness will block it). Use HACS.
 - Don't hand-roll websocket boilerplate when `ha ws '<json>'` will do.
+
+### Stack integrations feeding the Home view (homepage parity)
+
+The Home view's live data comes from HA's **native** integrations pointed at helium's
+Traefik, not from scraping homepage. All four API keys already exist in
+`ansible/host_vars/helium/secrets.sops.yml` — no new secrets were minted:
+
+| Integration | URL | Secret key |
+|---|---|---|
+| `radarr` | `https://radarr.home.stromdahl.tech` | `radarr_api_key` |
+| `sonarr` | `https://sonarr.home.stromdahl.tech` | `sonarr_api_key` |
+| `qbittorrent` | `https://qbittorrent.home.stromdahl.tech` | `qbittorrent_webui_password` (user `admin`) |
+| `paperless_ngx` | `https://paperless.home.stromdahl.tech` | `paperless_api_key` |
+
+Four things that cost time when these were wired, all of which will recur on a rebuild:
+
+- **The original three entries pointed at `192.168.1.153`** — neon, decommissioned — and
+  had sat in `setup_retry` unnoticed ever since. None of them support a reconfigure flow,
+  so repointing means `ha entry delete` then a fresh `ha flow`. Delete *first*: that frees
+  the old entity ids so the new entry reclaims `sensor.radarr_queue` instead of minting
+  `sensor.radarr_queue_2`.
+- **`sensor.radarr_queue`, `radarr_movies`, `sonarr_queue`, `sonarr_shows` and
+  `sonarr_wanted` are `disabled_by: integration` on a fresh entry.** They are exactly the
+  values homepage's widgets showed, and they never appear until explicitly enabled —
+  `ha entity enable <id>` for each, then `ha entry reload <entry_id>`.
+- **`sonarr`'s flow schema differs from the others.** It rejects a flat `verify_ssl` and
+  wants a config-flow *section*: `{"url":…, "api_key":…, "more_options":{"verify_ssl":true}}`.
+  Radarr and qBittorrent take `verify_ssl` flat.
+- **`paperless_ngx` names its entities after the URL**, yielding
+  `sensor.https_paperless_home_stromdahl_tech_total_documents`. Rename the device
+  (`ha device update … '{"name_by_user":"Paperless"}'`) and each entity
+  (`ha entity update … '{"new_entity_id":"sensor.paperless_…"}'`). Radarr, Sonarr and
+  qBittorrent title themselves cleanly and need no such fixup.
+
+Getting the keys out of sops without leaking them into a transcript: decrypt with
+`sops --decrypt --output <scratch>/hs.yml`, build the flow payload as a JSON *file*, pass
+it as `ha flow <handler> "$(cat <file>)"`, and delete the scratch files afterwards. Never
+decrypt to stdout — see the `feedback_sops_no_stdout` rule and its PreToolUse hook.
+
+**Immich and Jellyfin have HA integrations too but are deliberately not wired** — neither
+is a homepage widget today, and both need an API key minted by hand in their own UI.
