@@ -27,12 +27,15 @@ Write:
   ha call <domain.service> '<json-data>'
 
 Config-flow integrations & helpers:
-  ha flow <handler> '<json>' ['<json>' ...]    drive a config_entries flow; one JSON per step
+  ha flow <handler> ['<json>' ...]             drive a config_entries flow; one JSON per step
+                                               no JSON: print step 1's schema, then abort
   ha entry list [domain]                       list config entries; optional domain filter
   ha entry get <entry_id>
   ha entry delete <entry_id>
   ha entry reload <entry_id>
   ha entry flows                               in-progress flows awaiting input
+  ha entry options <entry_id> ['<json>']       drive an entry's options flow (edits it in
+                                               place); no JSON: print the schema, then abort
 
 Dashboards:
   ha dash list

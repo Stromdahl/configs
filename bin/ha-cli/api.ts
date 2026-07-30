@@ -96,6 +96,21 @@ export function abortFlow(flowId: string): Promise<unknown> {
   return del(`/config/config_entries/flow/${flowId}`);
 }
 
+// ---- REST: options flow (re-editing an existing entry in place) ----
+// Note the handler here is the *entry_id*, not a domain — unlike a config flow.
+
+export function startOptionsFlow(entryId: string): Promise<HAFlowResponse> {
+  return post<HAFlowResponse>('/config/config_entries/options/flow', { handler: entryId });
+}
+
+export function submitOptionsStep(flowId: string, payload: unknown): Promise<HAFlowResponse> {
+  return post<HAFlowResponse>(`/config/config_entries/options/flow/${flowId}`, payload);
+}
+
+export function abortOptionsFlow(flowId: string): Promise<unknown> {
+  return del(`/config/config_entries/options/flow/${flowId}`);
+}
+
 // ---- WebSocket: escape hatch for `ha ws '<json>'` ----
 
 export function sendRaw(msg: object): Promise<unknown> {
