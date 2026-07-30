@@ -8,7 +8,7 @@ automation.leonardo_reset_area_on_mark_emptied	on	Leonardo: Reset bin counter on
 automation.office_manual_brightness_override_disable_auto	on	Light Auto: Disable on manual override	-
 automation.turn_off_all_lights	on	Remote: All lights off	-
 automation.turn_on_jellyfin_server_on_tv_start	on	Media: Wake servers on TV start	-
-binary_sensor.192_168_1_153	on	Neon Status	connectivity
+binary_sensor.helium_status	on	Helium Status	connectivity
 binary_sensor.leonardo_charging	on	Leonardo Charging	battery_charging
 binary_sensor.leonardo_cleaning	off	Leonardo Cleaning	running
 binary_sensor.leonardo_maintenance_due	off	Leonardo maintenance due	problem

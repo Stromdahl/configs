@@ -100,7 +100,7 @@
             {
               "type": "custom:mushroom-template-card",
               "primary": "Jellyseerr",
-              "secondary": "{% if is_state('binary_sensor.helium_containers_jellyseerr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_jellyseerr_state','on') %}no data{% else %}Requests{% endif %}",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_jellyseerr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_jellyseerr_state','on') %}no data{% else %}{{ states('sensor.seerr_pending_requests') }} pending · {{ states('sensor.seerr_processing_requests') }} processing{% endif %}",
               "icon": "mdi:playlist-star",
               "icon_color": "{% if is_state('binary_sensor.helium_containers_jellyseerr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_jellyseerr_state','on') %}grey{% else %}green{% endif %}",
               "entity": "binary_sensor.helium_containers_jellyseerr_state",

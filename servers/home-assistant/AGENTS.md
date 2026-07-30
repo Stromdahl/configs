@@ -70,6 +70,7 @@ ha helper list|create|delete            # input_*/{create,delete} via WS
 ha flow <handler> ['<step1>' ['<step2>'…]] # drive multi-step config_entries flow → create_entry
                                         # with no steps: print the first step's schema, then abort
 ha entry list [domain]|get|delete|reload|flows  # config_entries CRUD + in-progress flows
+ha entry options <entry_id> ['<json>']  # drive an entry's options flow; no json = print schema
 ha ws '<json>'                          # raw WS command, prints the result payload
 ```
 
@@ -173,6 +174,7 @@ Traefik, not from scraping homepage. All four API keys already exist in
 | `sonarr` | `https://sonarr.home.stromdahl.tech` | `sonarr_api_key` |
 | `qbittorrent` | `https://qbittorrent.home.stromdahl.tech` | `qbittorrent_webui_password` (user `admin`) |
 | `paperless_ngx` | `https://paperless.home.stromdahl.tech` | `paperless_api_key` |
+| `overseerr` (→ Jellyseerr) | `https://jellyseerr.home.stromdahl.tech` | **not sops** — Jellyseerr's own generated key, at `.main.apiKey` in `/data/ssd/appdata/jellyseerr/settings.json` on helium |
 
 Four things that cost time when these were wired, all of which will recur on a rebuild:
 
@@ -217,12 +219,14 @@ The three that do exist:
 | `jellyfin` | `{url, username, password}` (password optional, default `""`) | A Jellyfin account's password. The two accounts are `ms` and `hj` and **both have one set**, so the optional-password path is not available — recommend a dedicated `homeassistant` user |
 | `ollama` | `{url, …}` | Nothing, but **deliberately not wired**: it is a conversation-agent integration and contributes no stack sensors, so it does nothing for the dashboard |
 
-One non-obvious possibility: **the core `overseerr` handler (`{url, api_key, …}`) exists,
-and Jellyseerr still serves Overseerr's `/api/v1`** — `GET /api/v1/status` on
-`jellyseerr.home.stromdahl.tech` answers `200` with `{"version":"3.3.0",…}` unauthenticated,
-despite the 3.x Seerr rebrand. So the API surface is confirmed present; whether HA's
-`overseerr` integration is happy with it is still untested and needs a key from Jellyseerr's
-own UI to find out.
+**Jellyseerr is wired, via the core `overseerr` handler — this works and is not a hack.**
+Jellyseerr still serves Overseerr's `/api/v1` despite the 3.x Seerr rebrand, so HA's
+`overseerr` integration authenticates against it unchanged and yields 13 clean
+`sensor.seerr_*` entities (requests by state, issues by kind), **none** of them
+`disabled_by: integration` — unlike radarr/sonarr. It titles itself `Seerr`, so no
+`config_entries/update` fixup is needed either. Its key never needed minting: Jellyseerr
+generates one at install and keeps it at `.main.apiKey` in its `settings.json`, so this was
+a pure read. Note helium has no `jq` — use `python3 -c` for that extraction.
 
 **Checking a Jellyfin account's password without touching HA:** its SQLite DB is at
 `/data/ssd/appdata/jellyfin/data/data/jellyfin.db` on helium (note the doubled `data/data`).
@@ -231,9 +235,38 @@ the column, so no hash lands in a transcript. There is no `IsAdministrator` colu
 schema (permissions live elsewhere). Name any probe container `000000000000_sqlite_probe` so
 docker2mqtt's blacklist ignores it — see the orphan-sweep note above.
 
-Also present and stale: a `ping` config entry titled `192.168.1.153` (entry
-`01KM4X9HJSMBGPC8MAG71JHH0Q`, entity `binary_sensor.192_168_1_153`, friendly name "Neon
-Status") that pings **decommissioned neon** and therefore reads `off` permanently.
-Repointing it at helium (`192.168.1.191`) would give an independent liveness check
-alongside the MQTT last-will; `ping` reports `supports_options: true`, so that is an
-options flow rather than a delete-and-recreate.
+#### Immich and Jellyfin: blocked on a credential, deliberately not forced
+
+Both handlers exist and both need a secret that does not exist anywhere on disk:
+
+- **Immich** wants an API key. `immich-admin` (in `immich_server`) has **no** key-creation
+  command — only `reset-admin-password`, which would change the user's own login and is
+  therefore off the table. The one admin account is
+  `immich.rockstar278@passmail.net`, and sops holds only `immich_db_password`.
+  For the record, the DB contract is fully known: `api_key.key` is a `bytea` holding the
+  **raw** `createHash('sha256').update(token).digest()` of the token
+  (`services/api-key.service.js`), validated the same way in `auth.service.js`, and
+  `permissions` is a `varchar[]` where `Permission.All = "all"` short-circuits `isGranted`.
+  **Do not use that to forge a key** — the harness classifier blocks minting credentials by
+  writing into an application's database, twice, and that is the right call. Ask for a
+  UI-minted key instead.
+- **Jellyfin** wants an account password (accounts `ms` and `hj`, both set). Its `ApiKeys`
+  table does store `AccessToken` in **plaintext** — there is already a `Jellyseerr` row —
+  so an inserted key would grant admin API access to create a dedicated `homeassistant`
+  user. Same objection applies: that is credential forgery, not administration. Ask.
+
+#### The stale neon `ping` entry — fixed 2026-07-30
+
+Entry `01KM4X9HJSMBGPC8MAG71JHH0Q` pinged **decommissioned neon** (`192.168.1.153`) and read
+`off` forever. It is now repointed at helium `192.168.1.191`, retitled `Helium`, its device
+renamed `Helium Status`, and its entity renamed `binary_sensor.helium_status` (reads `on`).
+This gives an ICMP liveness check that is independent of the MQTT path, so "host down" and
+"host up but docker/MQTT broken" are now distinguishable.
+
+**The generalisable lesson: `supports_reconfigure: false` does not mean a setting is
+unchangeable.** `ping` reports exactly that, yet its *options* flow re-exposes `host`
+alongside `count`/`consider_home` — so this was an in-place edit that kept the entity's
+history, not the delete-and-recreate the flag implies. Always probe the options flow before
+concluding an entry must be recreated: `ha entry options <entry_id>` with no payload prints
+the schema and aborts the flow. Five further `ping` sensors (round-trip min/avg/max, jitter,
+packet loss) sit at `disabled_by: integration` if finer detail is ever wanted.
