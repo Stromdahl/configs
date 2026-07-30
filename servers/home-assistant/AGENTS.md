@@ -179,6 +179,9 @@ Four things that cost time when these were wired, all of which will recur on a r
 - **`sonarr`'s flow schema differs from the others.** It rejects a flat `verify_ssl` and
   wants a config-flow *section*: `{"url":…, "api_key":…, "more_options":{"verify_ssl":true}}`.
   Radarr and qBittorrent take `verify_ssl` flat.
+- **Entry titles come from the URL for `sonarr` and `paperless_ngx`** (`Radarr` and
+  `qBittorrent` title themselves). There is no `ha entry` verb for this; fix it with the
+  raw WS command `ha ws '{"type":"config_entries/update","entry_id":"…","title":"Sonarr"}'`.
 - **`paperless_ngx` names its entities after the URL**, yielding
   `sensor.https_paperless_home_stromdahl_tech_total_documents`. Rename the device
   (`ha device update … '{"name_by_user":"Paperless"}'`) and each entity
