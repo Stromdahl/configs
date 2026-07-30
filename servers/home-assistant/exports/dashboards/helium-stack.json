@@ -1,0 +1,1102 @@
+{
+  "views": [
+    {
+      "title": "Overview",
+      "path": "overview",
+      "icon": "mdi:server",
+      "type": "sections",
+      "max_columns": 3,
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "markdown",
+              "content": "{% set st = states.binary_sensor | selectattr('entity_id','search','^binary_sensor\\\\.helium_containers_.*_state$') | list %}{% set up = st | selectattr('state','eq','on') | list %}{% set bad = st | rejectattr('state','eq','on') | list %}# {{ up | count }}<span>/{{ st | count }} services up</span>\n\n**HELIUM · NAS** &nbsp; 🧠 {{ states('sensor.helium_cpu_usage') }}% &nbsp; 🧮 {{ states('sensor.helium_memory_usage') }}% &nbsp; 💽 {{ (states('sensor.helium_media_pool_free') | float(0) / 1024) | round(1) }} TiB free &nbsp; 🌡 {{ states('sensor.helium_cpu_temperature') | float(0) | round(0) }}°C &nbsp; ⏱ up {{ relative_time(as_datetime(states('sensor.helium_last_boot'))) }}\n\n{% if bad %}**⚠ NOT RUNNING** &nbsp; {{ bad | map(attribute='name') | map('replace','helium Containers ','') | map('replace',' State','') | join(' · ') }}{% else %}**ALL SERVICES RUNNING** &nbsp; nothing needs attention{% endif %}",
+              "card_mod": {
+                "style": "ha-card {\n  padding: 24px 28px;\n  background: radial-gradient(ellipse at top right, rgba(110,171,174,0.18), transparent 60%), var(--card-background-color);\n  border-radius: 22px;\n}\nha-card h1 { font-size: 64px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin: 0 0 14px 0; font-variant-numeric: tabular-nums; }\nha-card h1 span { font-size: 22px; font-weight: 400; color: var(--secondary-text-color); letter-spacing: 0; vertical-align: top; margin-left: 4px; }\nha-card p { color: var(--secondary-text-color); font-size: 13px; margin: 0 0 6px 0; line-height: 1.6; }\nha-card p:last-child { margin-bottom: 0; }\nha-card p strong:first-child { color: var(--secondary-text-color); letter-spacing: 0.16em; font-weight: 800; margin-right: 8px; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:speedometer",
+              "heading": "Load"
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "gauge",
+                  "entity": "sensor.helium_cpu_usage",
+                  "name": "CPU",
+                  "min": 0,
+                  "max": 100,
+                  "needle": true,
+                  "severity": {
+                    "green": 0,
+                    "yellow": 60,
+                    "red": 85
+                  }
+                },
+                {
+                  "type": "gauge",
+                  "entity": "sensor.helium_memory_usage",
+                  "name": "Memory",
+                  "min": 0,
+                  "max": 100,
+                  "needle": true,
+                  "severity": {
+                    "green": 0,
+                    "yellow": 70,
+                    "red": 90
+                  }
+                },
+                {
+                  "type": "gauge",
+                  "entity": "sensor.helium_swap_usage",
+                  "name": "Swap",
+                  "min": 0,
+                  "max": 100,
+                  "needle": true,
+                  "severity": {
+                    "green": 0,
+                    "yellow": 25,
+                    "red": 60
+                  }
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.helium_load_average_1m",
+              "name": "Load average (1m)",
+              "color": "purple",
+              "vertical": false
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.helium_memory_used",
+              "name": "Memory used",
+              "color": "purple",
+              "vertical": false
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.helium_last_boot",
+              "name": "Last boot",
+              "color": "grey",
+              "vertical": false
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:database",
+              "heading": "Storage"
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "gauge",
+                  "entity": "sensor.helium_media_pool_usage",
+                  "name": "Media pool",
+                  "min": 0,
+                  "max": 100,
+                  "needle": true,
+                  "severity": {
+                    "green": 0,
+                    "yellow": 75,
+                    "red": 90
+                  }
+                },
+                {
+                  "type": "gauge",
+                  "entity": "sensor.helium_ssd_tier_usage",
+                  "name": "SSD tier",
+                  "min": 0,
+                  "max": 100,
+                  "needle": true,
+                  "severity": {
+                    "green": 0,
+                    "yellow": 75,
+                    "red": 90
+                  }
+                },
+                {
+                  "type": "gauge",
+                  "entity": "sensor.helium_os_disk_usage",
+                  "name": "OS disk",
+                  "min": 0,
+                  "max": 100,
+                  "needle": true,
+                  "severity": {
+                    "green": 0,
+                    "yellow": 75,
+                    "red": 90
+                  }
+                }
+              ]
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.helium_media_pool_free",
+              "name": "Media pool free",
+              "color": "teal",
+              "vertical": false
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.helium_ssd_tier_free",
+              "name": "SSD tier free",
+              "color": "teal",
+              "vertical": false
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.helium_os_disk_free",
+              "name": "OS disk free",
+              "color": "teal",
+              "vertical": false
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:fan",
+              "heading": "Thermals & fans"
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "sensor.helium_cpu_temperature",
+                  "name": "CPU",
+                  "color": "orange",
+                  "vertical": false,
+                  "hide_state": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.helium_board_temperature",
+                  "name": "Board",
+                  "color": "orange",
+                  "vertical": false,
+                  "hide_state": false
+                }
+              ]
+            },
+            {
+              "type": "horizontal-stack",
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "sensor.helium_cpu_fan",
+                  "name": "CPU fan",
+                  "color": "cyan",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.helium_case_fan_1",
+                  "name": "Case 1",
+                  "color": "cyan",
+                  "vertical": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.helium_case_fan_2",
+                  "name": "Case 2",
+                  "color": "cyan",
+                  "vertical": false
+                }
+              ]
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:harddisk",
+              "heading": "Drives"
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "Data 1",
+              "secondary": "{{ states('sensor.helium_disk1_temperature') | float(0) | round(0) }} °C  ·  {% if is_state('binary_sensor.helium_disk1_smart','on') %}SMART FAULT{% elif is_state('binary_sensor.helium_disk1_smart','off') %}healthy{% else %}no data{% endif %}",
+              "icon": "mdi:harddisk",
+              "icon_color": "{% if is_state('binary_sensor.helium_disk1_smart','on') %}red{% elif states('sensor.helium_disk1_temperature') | float(0) >= 45 %}red{% elif states('sensor.helium_disk1_temperature') | float(0) >= 40 %}orange{% else %}teal{% endif %}",
+              "entity": "binary_sensor.helium_disk1_smart",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "Data 2",
+              "secondary": "{{ states('sensor.helium_disk2_temperature') | float(0) | round(0) }} °C  ·  {% if is_state('binary_sensor.helium_disk2_smart','on') %}SMART FAULT{% elif is_state('binary_sensor.helium_disk2_smart','off') %}healthy{% else %}no data{% endif %}",
+              "icon": "mdi:harddisk",
+              "icon_color": "{% if is_state('binary_sensor.helium_disk2_smart','on') %}red{% elif states('sensor.helium_disk2_temperature') | float(0) >= 45 %}red{% elif states('sensor.helium_disk2_temperature') | float(0) >= 40 %}orange{% else %}teal{% endif %}",
+              "entity": "binary_sensor.helium_disk2_smart",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "Parity 1",
+              "secondary": "{{ states('sensor.helium_parity1_temperature') | float(0) | round(0) }} °C  ·  {% if is_state('binary_sensor.helium_parity1_smart','on') %}SMART FAULT{% elif is_state('binary_sensor.helium_parity1_smart','off') %}healthy{% else %}no data{% endif %}",
+              "icon": "mdi:shield-check",
+              "icon_color": "{% if is_state('binary_sensor.helium_parity1_smart','on') %}red{% elif states('sensor.helium_parity1_temperature') | float(0) >= 45 %}red{% elif states('sensor.helium_parity1_temperature') | float(0) >= 40 %}orange{% else %}teal{% endif %}",
+              "entity": "binary_sensor.helium_parity1_smart",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "Parity 2",
+              "secondary": "{{ states('sensor.helium_parity2_temperature') | float(0) | round(0) }} °C  ·  {% if is_state('binary_sensor.helium_parity2_smart','on') %}SMART FAULT{% elif is_state('binary_sensor.helium_parity2_smart','off') %}healthy{% else %}no data{% endif %}",
+              "icon": "mdi:shield-check",
+              "icon_color": "{% if is_state('binary_sensor.helium_parity2_smart','on') %}red{% elif states('sensor.helium_parity2_temperature') | float(0) >= 45 %}red{% elif states('sensor.helium_parity2_temperature') | float(0) >= 40 %}orange{% else %}teal{% endif %}",
+              "entity": "binary_sensor.helium_parity2_smart",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "SSD 1",
+              "secondary": "{{ states('sensor.helium_ssd1_temperature') | float(0) | round(0) }} °C  ·  {% if is_state('binary_sensor.helium_ssd1_smart','on') %}SMART FAULT{% elif is_state('binary_sensor.helium_ssd1_smart','off') %}healthy{% else %}no data{% endif %}",
+              "icon": "mdi:harddisk-plus",
+              "icon_color": "{% if is_state('binary_sensor.helium_ssd1_smart','on') %}red{% elif states('sensor.helium_ssd1_temperature') | float(0) >= 45 %}red{% elif states('sensor.helium_ssd1_temperature') | float(0) >= 40 %}orange{% else %}teal{% endif %}",
+              "entity": "binary_sensor.helium_ssd1_smart",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "SSD 2",
+              "secondary": "{{ states('sensor.helium_ssd2_temperature') | float(0) | round(0) }} °C  ·  {% if is_state('binary_sensor.helium_ssd2_smart','on') %}SMART FAULT{% elif is_state('binary_sensor.helium_ssd2_smart','off') %}healthy{% else %}no data{% endif %}",
+              "icon": "mdi:harddisk-plus",
+              "icon_color": "{% if is_state('binary_sensor.helium_ssd2_smart','on') %}red{% elif states('sensor.helium_ssd2_temperature') | float(0) >= 45 %}red{% elif states('sensor.helium_ssd2_temperature') | float(0) >= 40 %}orange{% else %}teal{% endif %}",
+              "entity": "binary_sensor.helium_ssd2_smart",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "OS disk",
+              "secondary": "{{ states('sensor.helium_os_disk_temperature') | float(0) | round(0) }} °C  ·  {% if is_state('binary_sensor.helium_os_disk_smart','on') %}SMART FAULT{% elif is_state('binary_sensor.helium_os_disk_smart','off') %}healthy{% else %}no data{% endif %}",
+              "icon": "mdi:disc",
+              "icon_color": "{% if is_state('binary_sensor.helium_os_disk_smart','on') %}red{% elif states('sensor.helium_os_disk_temperature') | float(0) >= 45 %}red{% elif states('sensor.helium_os_disk_temperature') | float(0) >= 40 %}orange{% else %}teal{% endif %}",
+              "entity": "binary_sensor.helium_os_disk_smart",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Services",
+      "path": "services",
+      "icon": "mdi:view-grid",
+      "type": "sections",
+      "max_columns": 3,
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:play-circle",
+              "heading": "Media"
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "jellyfin",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_jellyfin_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_jellyfin_state','on') %}no data{% elif not has_value('sensor.helium_containers_jellyfin_cpu') %}running{% else %}{{ states('sensor.helium_containers_jellyfin_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_jellyfin_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:jellyfish",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_jellyfin_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_jellyfin_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_jellyfin_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_jellyfin_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "jellyseerr",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_jellyseerr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_jellyseerr_state','on') %}no data{% elif not has_value('sensor.helium_containers_jellyseerr_cpu') %}running{% else %}{{ states('sensor.helium_containers_jellyseerr_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_jellyseerr_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:playlist-star",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_jellyseerr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_jellyseerr_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_jellyseerr_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_jellyseerr_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:magnify",
+              "heading": "Acquisition"
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "sonarr",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_sonarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_sonarr_state','on') %}no data{% elif not has_value('sensor.helium_containers_sonarr_cpu') %}running{% else %}{{ states('sensor.helium_containers_sonarr_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_sonarr_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:television-classic",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_sonarr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_sonarr_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_sonarr_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_sonarr_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "radarr",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_radarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_radarr_state','on') %}no data{% elif not has_value('sensor.helium_containers_radarr_cpu') %}running{% else %}{{ states('sensor.helium_containers_radarr_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_radarr_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:movie-open",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_radarr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_radarr_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_radarr_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_radarr_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "prowlarr",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_prowlarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_prowlarr_state','on') %}no data{% elif not has_value('sensor.helium_containers_prowlarr_cpu') %}running{% else %}{{ states('sensor.helium_containers_prowlarr_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_prowlarr_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:radar",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_prowlarr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_prowlarr_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_prowlarr_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_prowlarr_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "bazarr",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_bazarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_bazarr_state','on') %}no data{% elif not has_value('sensor.helium_containers_bazarr_cpu') %}running{% else %}{{ states('sensor.helium_containers_bazarr_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_bazarr_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:subtitles",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_bazarr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_bazarr_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_bazarr_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_bazarr_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "profilarr",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_profilarr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_profilarr_state','on') %}no data{% elif not has_value('sensor.helium_containers_profilarr_cpu') %}running{% else %}{{ states('sensor.helium_containers_profilarr_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_profilarr_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:tune-variant",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_profilarr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_profilarr_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_profilarr_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_profilarr_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "profilarr-parser",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_profilarr_parser_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_profilarr_parser_state','on') %}no data{% elif not has_value('sensor.helium_containers_profilarr_parser_cpu') %}running{% else %}{{ states('sensor.helium_containers_profilarr_parser_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_profilarr_parser_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:code-braces",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_profilarr_parser_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_profilarr_parser_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_profilarr_parser_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_profilarr_parser_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "cleanuparr",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_cleanuparr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_cleanuparr_state','on') %}no data{% elif not has_value('sensor.helium_containers_cleanuparr_cpu') %}running{% else %}{{ states('sensor.helium_containers_cleanuparr_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_cleanuparr_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:broom",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_cleanuparr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_cleanuparr_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_cleanuparr_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_cleanuparr_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:download",
+              "heading": "Downloads"
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "gluetun",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_gluetun_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_gluetun_state','on') %}no data{% elif not has_value('sensor.helium_containers_gluetun_cpu') %}running{% else %}{{ states('sensor.helium_containers_gluetun_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_gluetun_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:shield-lock",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_gluetun_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_gluetun_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_gluetun_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_gluetun_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "qbittorrent",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_qbittorrent_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_qbittorrent_state','on') %}no data{% elif not has_value('sensor.helium_containers_qbittorrent_cpu') %}running{% else %}{{ states('sensor.helium_containers_qbittorrent_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_qbittorrent_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:cloud-download",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_qbittorrent_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_qbittorrent_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_qbittorrent_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_qbittorrent_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "flaresolverr",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_flaresolverr_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_flaresolverr_state','on') %}no data{% elif not has_value('sensor.helium_containers_flaresolverr_cpu') %}running{% else %}{{ states('sensor.helium_containers_flaresolverr_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_flaresolverr_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:fire",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_flaresolverr_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_flaresolverr_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_flaresolverr_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_flaresolverr_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:image-multiple",
+              "heading": "Photos"
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "immich_server",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_immich_server_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_immich_server_state','on') %}no data{% elif not has_value('sensor.helium_containers_immich_server_cpu') %}running{% else %}{{ states('sensor.helium_containers_immich_server_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_immich_server_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:image",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_immich_server_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_immich_server_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_immich_server_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_immich_server_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "immich_machine_learning",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_immich_machine_learning_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_immich_machine_learning_state','on') %}no data{% elif not has_value('sensor.helium_containers_immich_machine_learning_cpu') %}running{% else %}{{ states('sensor.helium_containers_immich_machine_learning_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_immich_machine_learning_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:brain",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_immich_machine_learning_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_immich_machine_learning_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_immich_machine_learning_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_immich_machine_learning_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "immich_postgres",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_immich_postgres_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_immich_postgres_state','on') %}no data{% elif not has_value('sensor.helium_containers_immich_postgres_cpu') %}running{% else %}{{ states('sensor.helium_containers_immich_postgres_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_immich_postgres_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:database",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_immich_postgres_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_immich_postgres_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_immich_postgres_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_immich_postgres_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "immich_redis",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_immich_redis_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_immich_redis_state','on') %}no data{% elif not has_value('sensor.helium_containers_immich_redis_cpu') %}running{% else %}{{ states('sensor.helium_containers_immich_redis_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_immich_redis_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:lightning-bolt",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_immich_redis_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_immich_redis_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_immich_redis_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_immich_redis_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:file-document-multiple",
+              "heading": "Documents"
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "paperless",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_paperless_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_paperless_state','on') %}no data{% elif not has_value('sensor.helium_containers_paperless_cpu') %}running{% else %}{{ states('sensor.helium_containers_paperless_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_paperless_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:file-document",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_paperless_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_paperless_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_paperless_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_paperless_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "paperless-gpt",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_paperless_gpt_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_paperless_gpt_state','on') %}no data{% elif not has_value('sensor.helium_containers_paperless_gpt_cpu') %}running{% else %}{{ states('sensor.helium_containers_paperless_gpt_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_paperless_gpt_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:robot",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_paperless_gpt_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_paperless_gpt_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_paperless_gpt_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_paperless_gpt_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "paperless_postgres",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_paperless_postgres_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_paperless_postgres_state','on') %}no data{% elif not has_value('sensor.helium_containers_paperless_postgres_cpu') %}running{% else %}{{ states('sensor.helium_containers_paperless_postgres_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_paperless_postgres_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:database",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_paperless_postgres_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_paperless_postgres_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_paperless_postgres_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_paperless_postgres_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "paperless_redis",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_paperless_redis_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_paperless_redis_state','on') %}no data{% elif not has_value('sensor.helium_containers_paperless_redis_cpu') %}running{% else %}{{ states('sensor.helium_containers_paperless_redis_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_paperless_redis_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:lightning-bolt",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_paperless_redis_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_paperless_redis_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_paperless_redis_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_paperless_redis_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "paperless_tika",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_paperless_tika_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_paperless_tika_state','on') %}no data{% elif not has_value('sensor.helium_containers_paperless_tika_cpu') %}running{% else %}{{ states('sensor.helium_containers_paperless_tika_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_paperless_tika_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:file-search",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_paperless_tika_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_paperless_tika_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_paperless_tika_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_paperless_tika_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "paperless_gotenberg",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_paperless_gotenberg_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_paperless_gotenberg_state','on') %}no data{% elif not has_value('sensor.helium_containers_paperless_gotenberg_cpu') %}running{% else %}{{ states('sensor.helium_containers_paperless_gotenberg_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_paperless_gotenberg_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:printer",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_paperless_gotenberg_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_paperless_gotenberg_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_paperless_gotenberg_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_paperless_gotenberg_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "protonmail-bridge",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_protonmail_bridge_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_protonmail_bridge_state','on') %}no data{% elif not has_value('sensor.helium_containers_protonmail_bridge_cpu') %}running{% else %}{{ states('sensor.helium_containers_protonmail_bridge_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_protonmail_bridge_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:email-sync",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_protonmail_bridge_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_protonmail_bridge_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_protonmail_bridge_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_protonmail_bridge_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:server",
+              "heading": "Platform"
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "traefik",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_traefik_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_traefik_state','on') %}no data{% elif not has_value('sensor.helium_containers_traefik_cpu') %}running{% else %}{{ states('sensor.helium_containers_traefik_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_traefik_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:sign-direction",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_traefik_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_traefik_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_traefik_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_traefik_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "homepage",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_homepage_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_homepage_state','on') %}no data{% elif not has_value('sensor.helium_containers_homepage_cpu') %}running{% else %}{{ states('sensor.helium_containers_homepage_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_homepage_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:view-dashboard",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_homepage_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_homepage_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_homepage_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_homepage_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "docker-socket-proxy",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_docker_socket_proxy_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_docker_socket_proxy_state','on') %}no data{% elif not has_value('sensor.helium_containers_docker_socket_proxy_cpu') %}running{% else %}{{ states('sensor.helium_containers_docker_socket_proxy_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_docker_socket_proxy_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:shield-key",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_docker_socket_proxy_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_docker_socket_proxy_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_docker_socket_proxy_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_docker_socket_proxy_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "docker2mqtt",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_docker2mqtt_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_docker2mqtt_state','on') %}no data{% elif not has_value('sensor.helium_containers_docker2mqtt_cpu') %}running{% else %}{{ states('sensor.helium_containers_docker2mqtt_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_docker2mqtt_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:transit-connection-variant",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_docker2mqtt_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_docker2mqtt_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_docker2mqtt_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_docker2mqtt_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mushroom-template-card",
+              "primary": "ollama",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_ollama_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_ollama_state','on') %}no data{% elif not has_value('sensor.helium_containers_ollama_cpu') %}running{% else %}{{ states('sensor.helium_containers_ollama_cpu') | float(0) | round(1) }}%  ·  {{ states('sensor.helium_containers_ollama_memory') | float(0) | round(0) }} MB{% endif %}",
+              "icon": "mdi:brain",
+              "icon_color": "{% if is_state('binary_sensor.helium_containers_ollama_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_ollama_state','on') %}grey{% elif is_state('binary_sensor.helium_containers_ollama_health','off') %}orange{% else %}green{% endif %}",
+              "entity": "binary_sensor.helium_containers_ollama_state",
+              "tap_action": {
+                "action": "more-info"
+              },
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Trends",
+      "path": "trends",
+      "icon": "mdi:chart-line",
+      "type": "sections",
+      "max_columns": 2,
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:speedometer",
+              "heading": "Host load — 24 h"
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "CPU & memory",
+              "entities": [
+                {
+                  "entity": "sensor.helium_cpu_usage",
+                  "name": "CPU %",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.helium_memory_usage",
+                  "name": "Mem %",
+                  "color": "#D7B26D"
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 4,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "Load average (1m)",
+              "entities": [
+                {
+                  "entity": "sensor.helium_load_average_1m",
+                  "name": "Load",
+                  "color": "#C97B84"
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 4,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:thermometer",
+              "heading": "Temperatures — 24 h"
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "CPU & board",
+              "entities": [
+                {
+                  "entity": "sensor.helium_cpu_temperature",
+                  "name": "CPU",
+                  "color": "#C97B84"
+                },
+                {
+                  "entity": "sensor.helium_board_temperature",
+                  "name": "Board",
+                  "color": "#8C93A8"
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 4,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "Drive temperatures",
+              "entities": [
+                {
+                  "entity": "sensor.helium_disk1_temperature",
+                  "name": "Data 1",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.helium_disk2_temperature",
+                  "name": "Data 2",
+                  "color": "#D7B26D"
+                },
+                {
+                  "entity": "sensor.helium_parity1_temperature",
+                  "name": "Parity 1",
+                  "color": "#C97B84"
+                },
+                {
+                  "entity": "sensor.helium_parity2_temperature",
+                  "name": "Parity 2",
+                  "color": "#8FAE7F"
+                },
+                {
+                  "entity": "sensor.helium_ssd1_temperature",
+                  "name": "SSD 1",
+                  "color": "#8C93A8"
+                },
+                {
+                  "entity": "sensor.helium_ssd2_temperature",
+                  "name": "SSD 2",
+                  "color": "#B07FAE"
+                },
+                {
+                  "entity": "sensor.helium_os_disk_temperature",
+                  "name": "OS disk",
+                  "color": "#7F9FC9"
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 4,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              },
+              "show": {
+                "state": false
+              }
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "Fans",
+              "entities": [
+                {
+                  "entity": "sensor.helium_cpu_fan",
+                  "name": "CPU",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.helium_case_fan_1",
+                  "name": "Case 1",
+                  "color": "#D7B26D"
+                },
+                {
+                  "entity": "sensor.helium_case_fan_2",
+                  "name": "Case 2",
+                  "color": "#C97B84"
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 4,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              },
+              "show": {
+                "state": false
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:database",
+              "heading": "Capacity — 7 days"
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "Pool usage %",
+              "entities": [
+                {
+                  "entity": "sensor.helium_media_pool_usage",
+                  "name": "Media pool",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.helium_ssd_tier_usage",
+                  "name": "SSD tier",
+                  "color": "#D7B26D"
+                },
+                {
+                  "entity": "sensor.helium_os_disk_usage",
+                  "name": "OS disk",
+                  "color": "#C97B84"
+                }
+              ],
+              "hours_to_show": 168,
+              "points_per_hour": 1,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            },
+            {
+              "type": "heading",
+              "heading_style": "subtitle",
+              "icon": "mdi:chart-areaspline",
+              "heading": "Heaviest services — 24 h"
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "Memory (MB)",
+              "entities": [
+                {
+                  "entity": "sensor.helium_containers_immich_server_memory",
+                  "name": "immich",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.helium_containers_jellyfin_memory",
+                  "name": "jellyfin",
+                  "color": "#D7B26D"
+                },
+                {
+                  "entity": "sensor.helium_containers_paperless_memory",
+                  "name": "paperless",
+                  "color": "#C97B84"
+                },
+                {
+                  "entity": "sensor.helium_containers_bazarr_memory",
+                  "name": "bazarr",
+                  "color": "#8FAE7F"
+                },
+                {
+                  "entity": "sensor.helium_containers_jellyseerr_memory",
+                  "name": "jellyseerr",
+                  "color": "#8C93A8"
+                },
+                {
+                  "entity": "sensor.helium_containers_cleanuparr_memory",
+                  "name": "cleanuparr",
+                  "color": "#B07FAE"
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 4,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              },
+              "show": {
+                "state": false
+              }
+            },
+            {
+              "type": "custom:mini-graph-card",
+              "name": "CPU (%)",
+              "entities": [
+                {
+                  "entity": "sensor.helium_containers_docker2mqtt_cpu",
+                  "name": "docker2mqtt",
+                  "color": "#6EABAE"
+                },
+                {
+                  "entity": "sensor.helium_containers_homepage_cpu",
+                  "name": "homepage",
+                  "color": "#D7B26D"
+                },
+                {
+                  "entity": "sensor.helium_containers_docker_socket_proxy_cpu",
+                  "name": "socket-proxy",
+                  "color": "#C97B84"
+                },
+                {
+                  "entity": "sensor.helium_containers_immich_redis_cpu",
+                  "name": "immich-redis",
+                  "color": "#8FAE7F"
+                },
+                {
+                  "entity": "sensor.helium_containers_immich_machine_learning_cpu",
+                  "name": "immich-ml",
+                  "color": "#8C93A8"
+                }
+              ],
+              "hours_to_show": 24,
+              "points_per_hour": 4,
+              "line_width": 3,
+              "smoothing": true,
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              },
+              "show": {
+                "state": false
+              }
+            },
+            {
+              "type": "markdown",
+              "content": "Per-container **network** and **block I/O** counters exist as live entities but are excluded from the recorder (`configs/home-assistant/recorder.yaml`), so they have no history and cannot be graphed. Read them from the entity's more-info panel instead.",
+              "card_mod": {
+                "style": "ha-card { border-radius: 16px; }"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
