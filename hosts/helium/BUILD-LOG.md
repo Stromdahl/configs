@@ -1598,15 +1598,21 @@ config was copied to `/data/ssd/appdata/.jf-config-backup-20260731-qol/` (`encod
   playback. **Scan-time extraction deliberately left off** — on-import extraction would stall
   every *arr import. Confirmed from the live invocation: `-skip_frame nokey`,
   `hwaccel vaapi` → `scale_vaapi` → `mjpeg_qsv`. The pass is **I/O bound, not GPU bound**
-  (~150 MB/s off the HDD pool, ~56% iowait, load ~8 on 6 cores) so a full 1.2 TB pass is
-  hours, not minutes.
+  (~56% iowait, load ~8 on 6 cores) — keyframe-only still reads every byte of every file, so
+  the pass is bounded by pool read speed: **measured 115 MiB/s sustained, i.e. ~3 h for the
+  1217 GiB library.** Tiles are 10×10 sheets landing in the SSD appdata tier
+  (`.../jellyfin/data/data/trickplay/<xx>/<itemId>/320 - 10x10/`), ~15 MB per feature — a few
+  GB for the whole library, against 151 GB free. Nothing is written near the read-only
+  `/media` mount.
 - **Chapter-image extraction: movies only.** There is no hardware path for chapter images, so
   it is a pure CPU decode pass, and trickplay already supersedes it for scrubbing — not worth
   a second full pass over 400+ episodes.
 - **Transcode hygiene:** throttling + played-segment deletion on (both were off, so a
   transcode ran ahead of playback and kept every segment — needless SSD writes on the
-  appdata tier). `AllowHevcEncoding` on: the iGPU can HEVC-encode and the LG TV decodes it,
-  so 2160p sources no longer have to be re-encoded to H.264.
+  appdata tier). `AllowHevcEncoding` on, since the iGPU can HEVC-encode — but note this only
+  *permits* HEVC output; which clients actually get it depends on their declared device
+  profiles, and the webOS app's profile was **not** verified (its session exposed no
+  `DeviceProfile`). Don't assume the TV benefits from this one.
 - **Plugins (none were installed before this — the plugin dir was empty; AudioDB/MusicBrainz/
   OMDb/Studio Images/TMDb are bundled in the image, not installed):** Intro Skipper
   `1.10.11.22`, Playback Reporting `17`, TMDb Box Sets `13`, Subtitle Extract `7`, Trakt `30`.
