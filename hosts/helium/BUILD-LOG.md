@@ -1583,3 +1583,62 @@ Config kept (harmless, documents intent; firmware-default `IDLE_A` 2 s head-unlo
 noise/wear). **PRD goal #2 (quiet/cool/low-power) now rests on the architecture — hot data on SSD,
 HDD pool touched only by reads + the nightly sync — plus HBA cooling, NOT platter spin-down.**
 Don't re-attempt spin-down on this hardware.
+
+## 2026-07-31 — Jellyfin quality-of-life pass (trickplay, plugins, transcode hygiene)
+
+A batch of Jellyfin-side changes, all driven through the server API (Jellyfin's own state
+lives in appdata, not in the compose template — so these are *not* declarative). Pre-change
+config was copied to `/data/ssd/appdata/.jf-config-backup-20260731-qol/` (`encoding.xml`,
+`system.xml`, both libraries' `options.xml`).
+
+### Landed
+- **Trickplay (scrub-preview thumbnails)** enabled on both libraries. Server-side generation
+  set to hardware-accelerated decode *and* MJPEG encode on the iGPU, plus keyframe-only
+  extraction; `ProcessThreads=1` / `BelowNormal` / non-blocking scan so it can't starve
+  playback. **Scan-time extraction deliberately left off** — on-import extraction would stall
+  every *arr import. Confirmed from the live invocation: `-skip_frame nokey`,
+  `hwaccel vaapi` → `scale_vaapi` → `mjpeg_qsv`. The pass is **I/O bound, not GPU bound**
+  (~150 MB/s off the HDD pool, ~56% iowait, load ~8 on 6 cores) so a full 1.2 TB pass is
+  hours, not minutes.
+- **Chapter-image extraction: movies only.** There is no hardware path for chapter images, so
+  it is a pure CPU decode pass, and trickplay already supersedes it for scrubbing — not worth
+  a second full pass over 400+ episodes.
+- **Transcode hygiene:** throttling + played-segment deletion on (both were off, so a
+  transcode ran ahead of playback and kept every segment — needless SSD writes on the
+  appdata tier). `AllowHevcEncoding` on: the iGPU can HEVC-encode and the LG TV decodes it,
+  so 2160p sources no longer have to be re-encoded to H.264.
+- **Plugins (none were installed before this — the plugin dir was empty; AudioDB/MusicBrainz/
+  OMDb/Studio Images/TMDb are bundled in the image, not installed):** Intro Skipper
+  `1.10.11.22`, Playback Reporting `17`, TMDb Box Sets `13`, Subtitle Extract `7`, Trakt `30`.
+  All `Active` after a graceful restart, no errors in the log.
+- **Collections view** switched on for both human users, and the box-set scan already built
+  collections (Atlantis, The Avengers, …).
+- **`Extract Subtitles` shipped with no trigger at all** — gave it a daily 05:00 one, which
+  slots after the existing nightly cadence (intro/segment detect 00:00, chapter images 02:00,
+  trickplay 03:00; media-segment scan every 12 h).
+
+### Findings worth keeping
+- **The LG TV transcodes; it does not direct-play.** The ffmpeg invocation for a WebOS session
+  rules out the usual suspects — subtitles are dropped (`-map -0:s`, no burn-in) and the video
+  is *not* being resized — but it is re-encoded to `-b:v ~4.4 Mbps` with audio downmixed to
+  2-channel AAC. Every server-side limit is unset (`RemoteClientBitrateLimit: 0` for all
+  users), so the cap is **client-side in the webOS app** — a `needs-human` TV setting, and the
+  single biggest remaining picture-quality win.
+- **Intro Skipper no longer draws a skip button** (since Jellyfin 10.10 it only writes media
+  segments; the client acts on them), and **the webOS client honours auto-skip but never
+  renders the ask-to-skip prompt** — so the segment action must be set to auto-skip on the TV
+  or the feature is invisible there. Recorded in `issues/019`.
+- **The Jellyfin image tag is now version-locked** to the Intro Skipper build (`targetAbi`
+  pins to the exact patch release). A comment on the image pin in the compose template says
+  so, because that is what a future bump routine actually reads.
+- Hardware *decoding* was already fully enabled (h264/hevc/mpeg2/vc1/vp8/vp9) — an earlier
+  read of `encoding.xml` that suggested otherwise was a grep artefact.
+- Users needed nothing: the second human account already exists, has a password, and is
+  hidden from the login list deliberately.
+
+### Not done
+- **HDR→SDR tone mapping** is `issues/047`: UHD 630 (gen 9.5) is OpenCL-only for tone mapping
+  and the container has no Intel OpenCL runtime (`nvidia.icd` only; OpenCL device init fails).
+  Needs a docker-mod env var in the compose template + a redeploy, so it is a separate,
+  confirm-first change.
+- **Trakt** is installed but unlinked — the OAuth device flow is a UI step.
