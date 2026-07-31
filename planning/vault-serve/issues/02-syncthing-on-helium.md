@@ -76,8 +76,10 @@ Perlite mounts the subdirs, not the vault root, so it never sees the marker.
 >    Something does: Hermes. This is the trap's *highest*-exposure host, and local
 >    deletions now propagate to krypton and the phone.
 > 2. **"pure passive replica … can never push a change back upstream" no longer
->    holds.** krypton stays the *first-reconcile source* but is not authoritative;
->    this is a two-writer folder, and `.sync-conflict-*` files are accepted.
+>    holds.** krypton stays the *first-reconcile source* but is not authoritative.
+>    Since this paragraph already has krypton **and the phone** on `Send & Receive`,
+>    helium makes **three read-write peers**; `.sync-conflict-*` files are accepted,
+>    and can arise phone-vs-helium with krypton uninvolved.
 > 3. **"no conflict on first reconcile" still holds, but is now conditional** —
 >    helium's folder must be genuinely empty before first sync, since pre-seeded
 >    content would be pushed upstream rather than kept local.

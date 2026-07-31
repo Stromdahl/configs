@@ -62,8 +62,14 @@ gated to hosts with `~/.hermes` — both need updating for `personal-vault` on h
 
 Done. `Receive Only` → `Send-Receive` is applied to vault-serve `004`, and the
 posture flip turned out to touch **four** files, not the one the ticket named — a
-repo-wide grep for the old posture found two places that *reasoned from*
-Receive-Only rather than merely mentioning it.
+grep for the old posture found two places that *reasoned from* Receive-Only rather
+than merely mentioning it.
+
+Grep scope, stated precisely: `grep -rniI "receive.only\|receiveonly\|sendreceive"`
+run **repo-wide** (excluding `.git`) returned hits in **`planning/` only — zero
+files elsewhere**. So nothing in `ansible/`, `host_vars/`, or `hosts/helium/`
+specifies the folder type yet, and the flip is a planning-only edit: there is no
+built role to correct.
 
 ### What was amended
 
@@ -99,7 +105,10 @@ was *not* the one the ticket predicted:
    sends local changes *including deletions*, where Receive Only does not. This is
    the flip's real cost: a Hermes reorg on helium now destroys files on **krypton
    and the phone** — the exact v0.14 catastrophe, with a wider blast radius.
-   Carried into ticket `08`.
+   Carried into ticket `08`. **The folder now has three read-write peers, not
+   two** — krypton *and the phone* were already `Send & Receive` (vault-serve
+   `02`), so helium is the third, and a phone-vs-helium conflict can occur with
+   krypton uninvolved.
 2. **First reconcile is still clean, but now conditionally.** helium's folder must
    be genuinely **empty** before first sync; under Receive Only pre-seeded content
    was quietly kept local, under Send-Receive it is pushed upstream. A provisioning

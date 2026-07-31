@@ -29,6 +29,11 @@ Also settled there: `.sync-conflict-*` files are **accepted** (item 4 is about
 noticing them, not preventing them), and `Ignore Permissions` must stay on —
 turning it off to tidy modes would break Perlite's read path.
 
+One correction to item 4's framing: the folder has **three** read-write peers, not
+two. krypton *and the phone* were already `Send & Receive` (vault-serve `02`), so
+helium is the third — meaning a phone-vs-helium conflict can occur with krypton
+uninvolved, and whatever notices conflicts cannot assume krypton is one side of them.
+
 ### Why this needs its own ticket
 
 "Narrow write surface" is currently a *principle*, and principles do not survive

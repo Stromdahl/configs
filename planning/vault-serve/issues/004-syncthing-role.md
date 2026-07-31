@@ -39,7 +39,9 @@ with perms normalized so the Perlite container (issue
     created or edited would sit as an undistributed "local change" that the next
     upstream edit silently overwrites. krypton remains the **first-reconcile
     source** (helium starts empty and fills from krypton) but is no longer
-    *authoritative* — this is a two-writer folder by design.
+    *authoritative*. Note the peer count: krypton **and the phone** were already
+    `Send & Receive` (ticket 02), so helium makes **three read-write peers**, not
+    two — conflicts can arise between any pair of them.
   - **Ignore Permissions = true** — helium writes synced files at its own
     filesystem default rather than replicating krypton's inconsistent modes
     (krypton has `learning/` `755`/`644` but `recipes/` `770`/`660`).
@@ -81,10 +83,12 @@ Checked against the Syncthing docs rather than assumed:
   belongs to whoever builds this role — note it targeted the old `hermes-vault`
   folder id and was gated to hosts with `~/.hermes`, so both need updating for
   `personal-vault` on helium.
-- **`.sync-conflict-*` files are now expected.** Two writers on one folder means
-  occasional conflict copies. Accepted: the write surface is deliberately narrow
-  and git is the safety net. Do **not** add conflict-resolution machinery to this
-  role.
+- **`.sync-conflict-*` files are now expected.** **Three** read-write peers
+  (krypton, phone, helium — the phone was already `Send & Receive` per ticket 02)
+  means occasional conflict copies, and not only against krypton: a phone-vs-helium
+  conflict can happen with krypton uninvolved. Accepted: the write surface is
+  deliberately narrow and git is the safety net. Do **not** add
+  conflict-resolution machinery to this role.
 - **Perlite's read path is unaffected** — verified, not assumed. `Ignore
   Permissions` is documented as folder-type independent (receivers "use whatever
   their default permission setting is when creating the files"), so helium still
