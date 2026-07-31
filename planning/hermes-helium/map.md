@@ -118,18 +118,10 @@ channel, replaces-`/daily`, memory-out-of-vault, beachhead scope).
   retention/no-training posture, and bring-your-own-key (the old openrouter setup)
   vs the new paid **Nous Portal** credit tier. Hangs on the engine ticket — a
   non-hermes-agent engine changes the option set entirely.
-- **Proton bridge sharing.** Whether Hermes reuses the live Paperless bridge
-  instance or gets its own. Trade-off: one interactive 2FA login and one silent-death
-  surface to watch, vs. blast-radius isolation between document ingest and the
-  agent. Needs the email-triage contract first.
 - **Telegram identity/authorization.** How the conversational mode establishes that
   it is *you* messaging, given it can read `finance/` and `health/` and act on the
   vault. Old setup pinned a single chat id (8468278488); whether that is sufficient
   is unexamined.
-- **`~/vault/AGENTS.md` rewrite.** It still says the vault is synced to `titan` and
-  "worked on by … Hermes agent (titan)" — stale on both counts. The new arrangement
-  (two writers, Hermes' write surface, memory out of the tree) has to be described
-  there for other agent sessions, but the text depends on tickets 03/08.
 - **Whether `/daily` and the `note` skill get retired or rewired.** Hermes taking
   over ambient capture makes the inbox-file convention partly redundant; can't be
   specified until the board-ownership follow-on is scoped.

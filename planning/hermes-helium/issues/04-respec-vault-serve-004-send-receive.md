@@ -37,10 +37,12 @@ captures and categorizes is a **writer**.
    `.sync-conflict-*` files. That is accepted — the write surface is deliberately
    narrow (ticket `08`) and `~/vault` is a **git repo**, which is the real safety
    net.
-3. **Leave a cross-reference on both maps** — `planning/vault-serve/map.md` and
-   this one — so a fresh session working either effort sees the coupling.
-   vault-serve's map currently declares itself *"decision-complete"*; that claim is
-   no longer strictly true and should say so.
+3. ~~Leave a cross-reference on both maps.~~ **Already done while charting
+   (2026-07-31, commit `5e74c59` + follow-up):** `planning/vault-serve/map.md` carries
+   the coupling note and no longer claims to be decision-complete, and `004` itself
+   carries a SUPERSEDED stop-sign at the top. What remains for this ticket is the
+   **substantive amendment of `004`'s spec body and title** (still says
+   "Receive-Only vault replica"), plus item 5 below.
 4. **Do not build `004`.** It stays execution work for vault-serve; this ticket
    only corrects its spec. Likewise leave `005` (Perlite) alone — Send-Receive does
    not change the serve-layer include-list, which remains vault-serve's spine.

@@ -75,8 +75,8 @@ the phone); the allowlist is enforced at the **serve layer** via a strict
 > `:ro` bind-mount surface, not the folder type. This map is therefore no longer
 > strictly decision-complete.
 
-_Empty — the map is decision-complete._ Ticket 03 was the last open decision;
-the way to the destination is clear. All remaining work is **execution**, now
+_Was decision-complete as of 2026-07-24 — see the coupling note above._ Ticket 03
+was the last open decision then. All remaining work is **execution**, now
 graduated into two implementation issues (no decisions left, just building):
 
 - [`004-syncthing-role`](issues/004-syncthing-role.md) — ansible role installing

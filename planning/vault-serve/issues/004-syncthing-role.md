@@ -3,6 +3,12 @@
 Type: execution
 Status: open
 
+> ⚠️ **SUPERSEDED 2026-07-31 — do not build as written.** `Receive Only` →
+> **`Send-Receive`**: the [hermes-helium map](../../hermes-helium/map.md) puts a
+> *writing* agent on this same replica. Everything else below stands
+> (`/data/ssd/vault`, `ms`-owned, Ignore Permissions, `UMask=022`). The re-spec is
+> [hermes-helium ticket 04](../../hermes-helium/issues/04-respec-vault-serve-004-send-receive.md).
+
 _Graduated from the vault-serve map once the way was clear (decisions in
 tickets [02](02-syncthing-on-helium.md) + [03](03-allowlist-enforcement.md))._
 This is implementation, not a decision — build it per the spec below.
