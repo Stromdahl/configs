@@ -92,6 +92,9 @@ makes silent failure impossible**.
   for goals and `/learn`; v0.19.0 added durable message delivery. Backends are now
   local/**Docker**/SSH/Singularity/Modal. **That cadence is itself a durability
   risk** — pinning and upgrade policy are part of the answer, not an afterthought.
+  **Scope of that comparison was settled 2026-07-31:** it stays, but judged on
+  *unattended-push reliability alone* with the incumbent winning ties — see the
+  scope note on [ticket 01](issues/01-choose-and-pin-engine.md); don't re-ask it.
 - **Reusable prior art:** branch `hermes/briefings` (commit `abb62a6`, never
   merged) holds ~740 lines of already-debugged config deleted from `main` by
   `4ed7e63` — `configs/hermes-agent/` (SOUL.md, morning+weekly briefing scripts and

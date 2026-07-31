@@ -3,6 +3,29 @@
 Type: research
 Status: open
 
+> ✅ **Scope settled 2026-07-31 (owner decision) — the comparison stays, but it is
+> tight and asymmetric. Do not re-ask this.**
+>
+> The alternative was to lock hermes-agent in and collapse this ticket to a pinning
+> policy. Rejected, because that saves no session: the pinning/upgrade policy and
+> the "does v0.19 actually remove v0.14's scaffolding" question are open either way,
+> so collapsing makes this session thinner, not absent — the fair look is nearly free.
+>
+> Two rules for it:
+> 1. **Scope the comparison to one axis: reliability under *unattended* operation
+>    (the push mode).** That is where v0.14 actually failed — not on features. The
+>    real work was a 122-line bash script; the agent prose-ified its output, and the
+>    fake weather went unnoticed. Do **not** run a general feature bake-off; many
+>    candidates do pull well and push badly, and only that gap matters here.
+> 2. **The incumbent wins all ties.** hermes-agent has real sunk knowledge, so an
+>    alternative must be *clearly* better on that axis to displace it — "roughly
+>    comparable" resolves to hermes-agent. Owner's position: *"it's hermes-agent but
+>    I'm open to anything, just need to get it working reliably once and for all."*
+>
+> Everything in requirement 1 below still applies; these rules bound how much effort
+> the candidate survey deserves relative to requirements 4 and 5, which are the
+> ticket's real weight.
+
 ## Question
 
 Is **Nous hermes-agent v0.19.x** the right vehicle for *both* modes this map
