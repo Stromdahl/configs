@@ -169,6 +169,13 @@ services:
       - socket_proxy
 
   jellyfin:
+    # VERSION-LOCKED: the Intro Skipper plugin (issue 019) ships one build per
+    # Jellyfin patch release — its targetAbi is pinned to the exact server version
+    # (1.10.11.22 -> 10.11.11.0). Bumping this tag without installing the matching
+    # plugin build leaves the plugin failing to load. So a Jellyfin bump is a
+    # two-step change: bump the tag, then update the plugin from the Intro Skipper
+    # repo (https://intro-skipper.org/manifest.json serves a version-aware
+    # manifest, so "latest" from that repo is the right build after the bump).
     image: ghcr.io/linuxserver/jellyfin:10.11.11
     container_name: jellyfin
     restart: unless-stopped
