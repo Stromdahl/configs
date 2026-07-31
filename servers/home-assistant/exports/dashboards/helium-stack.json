@@ -82,7 +82,7 @@
             {
               "type": "custom:mushroom-template-card",
               "primary": "Jellyfin",
-              "secondary": "{% if is_state('binary_sensor.helium_containers_jellyfin_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_jellyfin_state','on') %}no data{% else %}Media server{% endif %}",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_jellyfin_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_jellyfin_state','on') %}no data{% else %}{% set c = states('sensor.jellyfin_active_clients') | int(0) %}{% if c > 0 %}{{ c }} streaming{% else %}Media server · idle{% endif %}{% endif %}",
               "icon": "mdi:jellyfish",
               "icon_color": "{% if is_state('binary_sensor.helium_containers_jellyfin_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_jellyfin_state','on') %}grey{% else %}green{% endif %}",
               "entity": "binary_sensor.helium_containers_jellyfin_state",

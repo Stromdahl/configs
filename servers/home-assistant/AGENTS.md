@@ -204,20 +204,23 @@ Getting the keys out of sops without leaking them into a transcript: decrypt wit
 it as `ha flow <handler> "$(cat <file>)"`, and delete the scratch files afterwards. Never
 decrypt to stdout — see the `feedback_sops_no_stdout` rule and its PreToolUse hook.
 
-#### What is left, and why each one is blocked
+#### Integration inventory (probed with `ha flow <handler>`, no steps — HA's own answer)
 
-Probed with `ha flow <handler>` (no steps) on 2026-07-30, so this is HA's own answer, not
-a guess. **Most of the stack has no core integration at all** — `prowlarr`, `jellyseerr`,
-`bazarr`, `traefik`, `cleanuparr` and `profilarr` all answer `Invalid handler specified`.
-Don't go looking for them again.
+**Most of the stack has no core integration at all** — `prowlarr`, `jellyseerr`, `bazarr`,
+`traefik`, `cleanuparr` and `profilarr` all answer `Invalid handler specified`. Don't go
+looking for them again.
 
-The three that do exist:
+The three real handlers beyond the arr/qbit/paperless four are **all now wired** — see the
+per-integration notes below for how each was done:
 
-| Handler | Schema | Blocked on |
+| Handler | Schema | Status |
 |---|---|---|
-| `immich` | `{url, api_key, verify_ssl}` (all required; `verify_ssl` flat, defaults false) | API key must be minted by hand in Immich's UI — no admin credential exists in sops, only `immich_db_password` |
-| `jellyfin` | `{url, username, password}` (password optional, default `""`) | A Jellyfin account's password. The two accounts are `ms` and `hj` and **both have one set**, so the optional-password path is not available — recommend a dedicated `homeassistant` user |
-| `ollama` | `{url, …}` | Nothing, but **deliberately not wired**: it is a conversation-agent integration and contributes no stack sensors, so it does nothing for the dashboard |
+| `immich` | `{url, api_key, verify_ssl}` (all required; `verify_ssl` flat, defaults false) | **Wired** — user-supplied API key |
+| `jellyfin` | `{url, username, password}` (password optional, default `""`) | **Wired** — dedicated `homeassistant` user |
+| `ollama` | `{url, …}` | **Not wired, deliberately** — a conversation-agent integration, contributes no stack sensors, so it does nothing for the dashboard |
+
+`overseerr` also exists and is wired against **Jellyseerr** (below). So of the stack, only
+`ollama` is intentionally left out.
 
 **Jellyseerr is wired, via the core `overseerr` handler — this works and is not a hack.**
 Jellyseerr still serves Overseerr's `/api/v1` despite the 3.x Seerr rebrand, so HA's
@@ -256,22 +259,46 @@ Two naming quirks, both different from what the paperless note above predicts:
   `disk_usage` (used space + percent for the Photos card); left the by-type pair disabled.
   `photos_count`, `videos_count`, `disk_size`, `disk_available` are enabled by default.
 
-#### Jellyfin — still open, blocked on a credential
+#### Jellyfin — wired 2026-07-31 via a dedicated `homeassistant` user
 
-Wants an account password. The two accounts are `ms` and `hj` and both have one set, so
-there is no passwordless account to borrow. Ask the user for a Jellyfin **API key** (minted
-in Dashboard → API Keys, handed over in a temp file), then create a dedicated
-`homeassistant` user via the official API with *that* key, and point HA's `jellyfin` flow
-(`{url, username, password}`) at it.
+HA's `jellyfin` flow authenticates as a real account (`{url, username, password}`), and both
+human accounts (`ms`, `hj`) have passwords, so the right move was a **dedicated non-admin
+`homeassistant` user** rather than borrowing anyone's login. The user minted a short-lived
+Jellyfin **API key** in Dashboard → API Keys and handed it over in a temp file; that key
+created the user through the official API, so the action is properly attributed and the key
+can be revoked afterward.
 
-**Do not lift Jellyfin's existing API key out of its `ApiKeys` table to do this.** It is
-stored in plaintext and Jellyfin's keys are unscoped-admin, so it is *technically* possible
-— which is exactly why it is tempting and wrong. It reuses a credential the user
-provisioned for another service (there is a `Jellyseerr` row), for an action they did not
-authorize, and misattributes the change in Jellyfin's audit trail. "Create a user"
-authorizes the *user*, never the *method*. The classifier refused two adjacent
-credential-minting patterns already; a missing credential is a stop-and-ask, not a puzzle to
-route around.
+**Do NOT lift Jellyfin's existing API key out of its `ApiKeys` table for this.** It is
+plaintext and Jellyfin keys are unscoped-admin, so it is *technically* possible — which is
+why it is tempting and wrong: it reuses a credential provisioned for another service (there
+is a `Jellyseerr` row), for an action the user did not authorize that way, and misattributes
+it in the audit trail. "Create a user" authorizes the *user*, never the *method*. Ask for a
+key; a missing credential is a stop-and-ask, not a puzzle to route around.
+
+The endpoint shapes, **verified against the running 10.11.11 via `/api-docs/openapi.json`**
+(do this rather than trusting recall — Jellyfin has moved these across versions):
+
+- Create, one call: `POST /Users/New` with `{"Name":"homeassistant","Password":"…"}` —
+  `CreateUserByName` takes `Password` inline, so no separate password call is needed. New
+  users default to `Policy.IsAdministrator = false`, which is what HA wants.
+- (Password-only update, if ever needed, is `POST /Users/Password?userId=<id>` with
+  `UpdateUserPassword` `{CurrentPw, NewPw}` — **not** `/Users/{id}/Password`, which 404s on
+  this version.)
+- Auth as the new user to prove the password before wiring HA:
+  `POST /Users/AuthenticateByName` `{"Username":…,"Pw":…}` with an
+  `Authorization: MediaBrowser Client=…, Device=…, DeviceId=…, Version=…` header.
+
+Handle both the API key and the generated password entirely in scratch files: pass the key
+as `-H "Authorization: MediaBrowser Token=\"$(cat <keyfile>)\""` (the `$(cat …)` keeps it out
+of the transcript), and generate the password with `python3 -c "import secrets"` into a
+mode-0600 file used to build the create-user body and the `ha flow` payload, then delete it.
+
+**Naming quirk:** a fresh entry titles itself after the Jellyfin **ServerName** (the
+container hostname, e.g. `9b32c31b3e02`), and names the clients sensor to match
+(`sensor.9b32c31b3e02_active_clients`). Fix the entry title with `config_entries/update`,
+rename the device to `Jellyfin`, and rename the sensor to `sensor.jellyfin_active_clients`.
+The integration also mints a `media_player.<client-device-name>` per streaming session — HA
+worked from krypton, so `media_player.krypton` appeared; that is expected, not a stray.
 
 #### The stale neon `ping` entry — fixed 2026-07-30
 
