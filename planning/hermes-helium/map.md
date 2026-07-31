@@ -166,21 +166,53 @@ makes silent failure impossible**.
   commented out and the live host was wired by hand*. The marker guard's owner is
   already vault-serve `004`.
 
+- [Decide the deployment shape and state placement on helium](issues/03-deployment-shape-and-state.md)
+  — compose service in helium's one stack, derived image (`protonmail-bridge`
+  pattern), `command: ["gateway", "run"]`, state at `/data/ssd/appdata/hermes`,
+  vault at `/vault`, secrets in one sops-fed `.env` **inside** the volume. Four boots
+  of the pinned image on helium overturned four assumptions, three of them agreed
+  earlier in the same session — read the ✅ tags before re-deriving anything.
+  **`--user` is rejected by the image**; `HERMES_UID=1000`/`HERMES_GID=1000` is the
+  supported path and works, so Hermes runs as `ms` and **vault-serve `004` needs no
+  second re-spec**. **The default CMD exits 0** (it's the interactive CLI; s6 then
+  stops the container) — under `restart: unless-stopped` that is a restart loop
+  reporting success. **`hermes cron status` exits 0 even when the gateway is dead**,
+  so the healthcheck parses output, never the exit code — it greps the affirmative
+  line *and* bounds the ticker-heartbeat age, accepting false alarms on upgrade as
+  the correct failure direction. **Scripts cannot be baked into the image** (the
+  bind mount masks them and `resolve()`-then-`relative_to` rejects a symlink out),
+  so ansible copies them onto the volume — which also closes `02`'s
+  porting worry, since v0.14's symlink mechanism would now be rejected outright.
+  **Nothing listens on 8642 or 9119** (API server and dashboard are both opt-in), so
+  no Traefik router and no HTTP probe — a correction to `01`. Rebuild is **split by
+  authorship** — human-authored → git, agent-accumulated → restic — with the
+  falsifiable test handed to `05`: *a rebuild from git alone must yield a working but
+  amnesiac Hermes.* And the git-audit-trail idea died: `.stignore` excludes `.git`,
+  `.gitignore` untracks finance data, and **versioning was off on every krypton
+  folder**, so the vault's only undo is now a rider to vault-serve `004` (ticket `11`).
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._
 
 ## Not yet specified
 
-- **Telegram identity/authorization.** How the conversational mode establishes that
-  it is *you* messaging, given it can read `finance/` and `health/` and act on the
-  vault. Old setup pinned a single chat id (8468278488); whether that is sufficient
-  is unexamined. `01` turned up that the gateway has a **layered user-authorization
-  system** rather than only a chat-id pin — sharper than before, but still needs the
-  deployment shape (`03`) before it can be decided.
 - **Whether `/daily` and the `note` skill get retired or rewired.** Hermes taking
   over ambient capture makes the inbox-file convention partly redundant; can't be
   specified until the board-ownership follow-on is scoped.
+- **The human's inspection surface for Hermes' own state.** `03` established there is
+  **nothing listening** on the dashboard (`9119`, opt-in via `HERMES_DASHBOARD`) or
+  the gateway API (`8642`, needs `API_SERVER_KEY`), upstream warns against exposing
+  the dashboard on a LAN because it stores API keys, and `/journey` is CLI-only — so
+  today the only way to read the agent's memory is a shell on helium. Whether that is
+  acceptable, or whether some read-only surface is wanted (and if so behind what
+  auth), is a real question but not yet sharp: it depends on what `05` decides the
+  owner needs to *see* routinely versus only during an incident.
+
+_(The **Telegram identity/authorization** patch graduated to
+[ticket 10](issues/10-telegram-authorization.md) once `03` landed the deployment
+shape and a real boot surfaced `TELEGRAM_ALLOWED_USERS` plus the deny-by-default
+posture.)_
 
 ## Out of scope
 
