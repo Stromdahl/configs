@@ -34,6 +34,10 @@ From [assets/01-engine-research.md](../assets/01-engine-research.md) §2, §7:
   `nousresearch/hermes-agent:v2026.7.30@sha256:b869e64d6496d4763d5e4fb675b5f504cb23b0e35ec9b790481a56118602b10f`.
   **Never `:latest`** — CI tags `:latest` and `:main` on *every* main-branch
   commit and tags releases with the release tag only, so `:latest` is main HEAD.
+  (Digest verified as the multi-arch OCI index, so it is arch-portable.)
+  **Pin `himalaya` in that Dockerfile too** — its documented install is an unpinned
+  `curl … /master/install.sh | sh`, so an unpinned layer makes a rebuild move two
+  things while a rollback restores only one, and "pinned by digest" stops being true.
 - **Cron scripts must resolve inside `$HERMES_HOME/scripts/`** (paths escaping it
   are rejected) **and do not inherit credentials** — the subprocess env is
   sanitized, so provider keys and Hermes-managed secrets are stripped. How a

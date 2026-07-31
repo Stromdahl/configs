@@ -395,9 +395,20 @@ available:
 nousresearch/hermes-agent:v2026.7.30@sha256:b869e64d6496d4763d5e4fb675b5f504cb23b0e35ec9b790481a56118602b10f
 ```
 
-Pin by **digest**, with the version tag retained for human readability. Because
-`03` needs a derived image for `himalaya` anyway, the digest belongs in our
-`FROM` line, and our own build tag becomes what compose references.
+Pin by **digest** (verified as the multi-arch OCI *index* —
+`application/vnd.oci.image.index.v1+json` — not a per-arch child, so the pin stays
+portable), with the version tag retained for human readability. Because `03` needs
+a derived image for `himalaya` anyway, the digest belongs in our `FROM` line, and
+our own build tag becomes what compose references.
+
+**Caveat the derived image introduces: "pinned by digest" is only half true unless
+the added layer is pinned too.** Himalaya's documented install is
+`curl -sSL .../pimalaya/himalaya/master/install.sh | PREFIX=~/.local sh` [DOC] — an
+unpinned pipe-to-shell off `master`. So a rebuild moves *two* things: the base
+digest and whatever `himalaya` happens to be current. And a rollback restores only
+the base. **Pin the `himalaya` version explicitly in the derived Dockerfile** (a
+release tag or checksum, not `master`), or the upgrade/rollback recipe below
+doesn't actually bound what changed. Ticket `03` owns this.
 
 ### Upgrade policy
 
