@@ -108,9 +108,18 @@ makes silent failure impossible**.
 
 <!-- one line per closed ticket: gist + link -->
 
-_None yet — the map was just charted._ The destination-shaping decisions taken
-during charting are recorded in **Notes** above (egress posture, write posture,
-channel, replaces-`/daily`, memory-out-of-vault, beachhead scope).
+- [Re-spec vault-serve 004 to Send-Receive and cross-link both maps](issues/04-respec-vault-serve-004-send-receive.md) —
+  applied; the flip touched **four** files, not one (`02` and `03` *reasoned from*
+  Receive-Only). Perlite's read path is **unaffected — verified**: `Ignore
+  Permissions` is folder-type independent, so `UMask=022` still yields `755`/`644`.
+  New ground truth for tickets `05`/`08`: **Send-Receive propagates local deletions
+  upstream**, so a Hermes reorg on helium destroys files on krypton *and* the phone;
+  and the replica folder must be created **empty** or provisioning content is pushed
+  upstream. vault-serve `004` stays open execution work.
+
+_The destination-shaping decisions taken during charting are recorded in **Notes**
+above (egress posture, write posture, channel, replaces-`/daily`,
+memory-out-of-vault, beachhead scope)._
 
 ## Not yet specified
 

@@ -67,6 +67,26 @@ back upstream. The `.stfolder` silent-halt trap
 helium's copy) but the rule stands — nothing on helium may delete `.stfolder`;
 Perlite mounts the subdirs, not the vault root, so it never sees the marker.
 
+> ⚠️ **This paragraph is partly overturned (2026-07-31,
+> [hermes-helium ticket 04](../../hermes-helium/issues/04-respec-vault-serve-004-send-receive.md)).**
+> helium is now **`Send-Receive`**, because the
+> [hermes-helium map](../../hermes-helium/map.md) puts a *writing* agent (Hermes)
+> on this replica. Three corrections, in order of how badly they bite:
+> 1. **"low-exposure … nothing edits or reorganizes helium's copy" is now false.**
+>    Something does: Hermes. This is the trap's *highest*-exposure host, and local
+>    deletions now propagate to krypton and the phone.
+> 2. **"pure passive replica … can never push a change back upstream" no longer
+>    holds.** krypton stays the *first-reconcile source* but is not authoritative;
+>    this is a two-writer folder, and `.sync-conflict-*` files are accepted.
+> 3. **"no conflict on first reconcile" still holds, but is now conditional** —
+>    helium's folder must be genuinely empty before first sync, since pre-seeded
+>    content would be pushed upstream rather than kept local.
+>
+> The rest of this answer stands unchanged: the ansible-role deploy method,
+> `/data/ssd/vault` as a precious subvol owned by `ms`, the `ms` user service, and
+> the plaintext-at-rest + `700`-root posture. The re-spec lives in
+> [`004`](004-syncthing-role.md); the reasoning is on the hermes-helium map.
+
 **Graduation:** no new *decision* tickets — this answer is self-contained. The
 Syncthing role's *execution* is now fully specified but is held to graduate into
 real `issues/NNN` together with the rest of the deploy wiring once ticket 03 (the

@@ -11,6 +11,24 @@ of the vault** (map Notes). **Now make "narrow" concrete:** exactly which paths 
 Hermes write, how are conflicts and git history used as the safety net, and how is
 the boundary enforced rather than merely intended?
 
+### Inherited from ticket `04` (verified 2026-07-31 — don't re-derive)
+
+Send-Receive was applied to `vault-serve` 004, and checking the Syncthing docs
+turned up the fact this ticket most needs: **local deletions propagate upstream.**
+`Send-Receive` distributes local changes *including deletions* to every peer;
+`Receive Only` did not. So a Hermes reorg or delete on helium's copy destroys the
+same files on **krypton and the phone** — the blast radius of item 2's
+"capability, not motive" is the whole cluster, not one replica. Two corollaries:
+
+- The `:ro`-mount option in item 2 is not merely tidy — it is the only thing that
+  makes deletion of non-`inbox/` paths *impossible* rather than *discouraged*.
+- Item 5's git question is load-bearing for the same reason: an uncommitted write
+  that Syncthing has already pushed is gone everywhere at once.
+
+Also settled there: `.sync-conflict-*` files are **accepted** (item 4 is about
+noticing them, not preventing them), and `Ignore Permissions` must stay on —
+turning it off to tidy modes would break Perlite's read path.
+
 ### Why this needs its own ticket
 
 "Narrow write surface" is currently a *principle*, and principles do not survive

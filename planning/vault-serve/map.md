@@ -52,7 +52,10 @@ the phone); the allowlist is enforced at the **serve layer** via a strict
   as the `ms` user service; **plaintext-at-rest + `700`** (allowlist guards the
   *site*, not the files — accepted), allowlisted subdirs opened for container read
   = disk-layer echo of the include-list (→ ticket 03); helium **`Receive Only`**,
-  krypton authoritative, pure passive replica.
+  krypton authoritative, pure passive replica — **the sync-posture half of this is
+  superseded: helium is now `Send-Receive` and a two-writer folder** (2026-07-31,
+  [hermes-helium 04](../hermes-helium/issues/04-respec-vault-serve-004-send-receive.md));
+  everything else in 02 stands.
 - [Decide the serve-time allowlist enforcement mechanism](issues/03-allowlist-enforcement.md) —
   boundary is the **bind-mount surface alone** (only allowlisted subdirs mounted
   `:ro`; `HIDE_FOLDERS` denylist left unset). Perlite reads as two "other" uids
@@ -67,13 +70,18 @@ the phone); the allowlist is enforced at the **serve layer** via a strict
 
 > ⚠️ **Cross-map coupling — read before working ticket 004.** The
 > [hermes-helium map](../hermes-helium/map.md) puts a *writing* agent on the same
-> helium vault replica, so **004's `Receive Only` spec is superseded by
-> `Send-Receive`** (decided 2026-07-31; the re-spec itself is
-> [hermes-helium ticket 04](../hermes-helium/issues/04-respec-vault-serve-004-send-receive.md)).
+> helium vault replica, so **004's `Receive Only` spec was superseded by
+> `Send-Receive`** (decided 2026-07-31). **The re-spec has landed** — 004 is
+> amended and buildable as written, and carries a verified *Consequences of
+> Send-Receive* section (deletions propagate upstream; `.sync-conflict-*` accepted;
+> the `.stfolder` trap is now high-exposure). Tickets 02 and 03 carry inline
+> amendment notes. Done by
+> [hermes-helium ticket 04](../hermes-helium/issues/04-respec-vault-serve-004-send-receive.md).
 > Everything else in 004 stands — `/data/ssd/vault`, `ms`-owned, Ignore
-> Permissions, `UMask=022`. Ticket 005 (Perlite) is unaffected: its boundary is the
-> `:ro` bind-mount surface, not the folder type. This map is therefore no longer
-> strictly decision-complete.
+> Permissions, `UMask=022`. Ticket 005 (Perlite) is **unaffected — verified, not
+> assumed**: its boundary is the `:ro` bind-mount surface, and `Ignore Permissions`
+> is folder-type independent. This map is no longer strictly decision-complete,
+> since the write posture was decided on the other map.
 
 _Was decision-complete as of 2026-07-24 — see the coupling note above._ Ticket 03
 was the last open decision then. All remaining work is **execution**, now
@@ -81,8 +89,10 @@ graduated into two implementation issues (no decisions left, just building):
 
 - [`004-syncthing-role`](issues/004-syncthing-role.md) — ansible role installing
   Syncthing as the `ms` user service on helium: folder `/data/ssd/vault`
-  **Receive Only** + **Ignore Permissions**, `UMask=022` on the service unit,
-  krypton authoritative; open 22000/tcp + 21027/udp on helium's firewall path.
+  **Send-Receive** (re-specced 2026-07-31) + **Ignore Permissions**, `UMask=022`
+  on the service unit, krypton the first-reconcile source; open 22000/tcp +
+  21027/udp on helium's firewall path. Must create the folder **empty** — under
+  Send-Receive, pre-seeded content is pushed upstream.
 - [`005-perlite-service`](issues/005-perlite-service.md) — Perlite
   (`sec77/perlite` + `nginx:stable`) compose service behind the internal Traefik
   at a `*.home.stromdahl.tech` subdomain, `:ro` mounts driven by the

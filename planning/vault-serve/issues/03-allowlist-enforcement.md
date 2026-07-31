@@ -86,6 +86,18 @@ uid 82 and uid 101 with no shared-group scaffolding.
 Rather than chmod-per-file (which helium, as a **Receive Only** replica, would
 have Syncthing revert), the readable bit is arranged so it survives sync:
 
+> 📝 **Reason updated, conclusion unchanged (2026-07-31,
+> [hermes-helium ticket 04](../../hermes-helium/issues/04-respec-vault-serve-004-send-receive.md)):**
+> helium is now **`Send-Receive`**, so the "Syncthing would revert it" argument
+> against chmod-per-file no longer applies. The conclusion holds anyway, and for a
+> stronger reason: with `Ignore Permissions` on, permission bits are not tracked at
+> all, so a chmod is neither reverted *nor* propagated — chmod-per-file simply has
+> no durable effect. `Ignore Permissions` + `UMask=022` remains the mechanism, and
+> is now *more* load-bearing: it is also what stops helium's `755`/`644` modes
+> being pushed **upstream** onto krypton. Perlite's read path is unaffected by the
+> flip — the boundary is the bind-mount surface, and `Ignore Permissions` is
+> documented as folder-type independent.
+
 - helium's Syncthing vault folder is set to **Ignore Permissions**, so helium
   writes every synced file using its own filesystem default rather than
   replicating krypton's (inconsistent) modes — verified on krypton: `learning/`
@@ -117,8 +129,9 @@ is not mounted, hence **not served** — default-deny by construction.
 ### Deploy wiring (graduates to execution issues)
 
 This was the last open decision. The deploy graduates into execution issues
-[`004-syncthing-role`](004-syncthing-role.md) (the Receive-Only + Ignore-Perms +
-`UMask=022` Syncthing role) and [`005-perlite-service`](005-perlite-service.md)
+[`004-syncthing-role`](004-syncthing-role.md) (the Send-Receive + Ignore-Perms +
+`UMask=022` Syncthing role — re-specced from Receive-Only, see the note above)
+and [`005-perlite-service`](005-perlite-service.md)
 (the Perlite/nginx compose service, Traefik router, allowlist-driven mounts, and
 a check that a representative recipe renders acceptably — retiring the
 recipe-render-fidelity fog).
