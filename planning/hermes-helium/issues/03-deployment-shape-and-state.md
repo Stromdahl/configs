@@ -51,6 +51,47 @@ From [assets/01-engine-research.md](../assets/01-engine-research.md) §2, §7:
   migrations run on boot (writing timestamped backups). Rollback therefore needs
   the previous digest **and** the pre-upgrade `~/.hermes` snapshot together.
 
+### Inherited from ticket `02` (verified 2026-07-31 — don't re-derive)
+
+From [ticket 02's verdict table](02-recover-briefings-branch-inventory.md#answer):
+
+- **Two claims below are now falsified — read this before "Rebuild survivability".**
+  The briefing scripts **were** in version control (on `main`, 2026-05-29 → deleted
+  2026-06-21) and the module **did** symlink them (`link`, not `cp`). What actually
+  failed is narrower and worse: **`hermes-agent` was commented out in
+  `hosts/titan-hermes-agent/modules.conf`**, and the prompt's own deployment
+  checklist says to *"do it manually after pulling dotfiles"* — so the declarative
+  path existed in the repo and was **bypassed**, with the live host hand-symlinked
+  and `SOUL.md` hand-copied. Also: the branch was **not** unmerged (`abb62a6` is an
+  ancestor of `main`); it was only never *pushed*. So the thing to design out is a
+  **disabled-but-present declarative path**, not missing version control.
+- **The genuinely unversioned artifacts were the gateway's own**: `~/.hermes/cron/jobs.json`
+  (gateway-owned, "do not patch directly"), the installed `~/.hermes/SOUL.md`, and
+  the fake-weather script itself — which **never existed in this repo at any path**
+  (`git log --all -S'11.3'` hits only the map-charting commit). That is why it ran
+  for "an unknown span" unnoticed. This ticket owns how much of `jobs.json` becomes
+  reproducible, and how a hand-installed `SOUL.md` is verified rather than assumed.
+- **Sizing floor:** the VM that ran v0.14 was **2 vCPU / 4 GB RAM / 32 GB disk**
+  (`hosts/titan-hermes-agent/HARDWARE.md`, recoverable from `4ed7e63^`). helium is
+  i5-9400 6C/6T / 16 GB, so headroom is not a constraint — but it bounds what to
+  reserve.
+- **Script placement is a real decision, and the old answer doesn't port.** The
+  gathering scripts were symlinked out of the dotfiles checkout into
+  `~/.hermes/scripts/`; helium has **no dotfiles checkout**, and `01` established
+  cron scripts must resolve inside `$HERMES_HOME/scripts/`. So: baked into the
+  derived image, or mounted onto the state volume — pick one, and note that a baked
+  script is versioned while a mounted one is only as versioned as ansible makes it.
+- **The credential path is already solved, don't re-solve it.** The recovered script
+  does `set -a; . "$HOME/.hermes/.env"; set +a` — reading the file rather than
+  relying on inherited env. Given cron's sanitized subprocess env, that *is* the
+  workaround; preserve it. It does mean any gathering script can read every key in
+  `.env`, which is a mode/ownership question for this ticket.
+- **The marker guard constrains this ticket in two ways** (from
+  `modules/hermes-vault/install.sh`): it was a **`--user`** systemd unit, and it was
+  **gated on `[[ -d "$HOME/.hermes" ]]`** — a gate that becomes meaningless once the
+  agent is a container. Its ownership now sits with vault-serve
+  [`004`](../../vault-serve/issues/004-syncthing-role.md), not here.
+
 ### The decisions bundled here
 
 - **Process shape.** Compose service in helium's `compose_stack` (the house

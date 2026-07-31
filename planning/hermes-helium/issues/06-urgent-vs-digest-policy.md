@@ -45,6 +45,38 @@ assistant is a dead one. That is a plausible fifth death.
    (11=Mattias, 5=Hanna, 2=Both). Calendar is out of scope for this map, but if an
    interrupt could concern Hanna, note it rather than discovering it later.
 
+### Inherited from ticket `02` (verified 2026-07-31 — don't re-derive)
+
+The prior art point 3 leans on has been read and judged
+([verdict table](02-recover-briefings-branch-inventory.md#answer)). It is mostly
+good, but it implements the **wrong side of a tension this ticket must resolve**:
+
+- **Empty-section suppression and always-report are in direct conflict.** The
+  recovered prompt's rule is *"`STATUS=OK count=0`: the source is healthy and empty —
+  OMIT that section"*. That is the same mechanism that makes `emit_labs` disappear
+  silently once its hardcoded schedule expires (see `05`). Point 3 wants the brief to
+  arrive **even on empty days so silence is the alarm** — so decide explicitly which
+  wins per section, and note that suppressing a section is only safe when the source
+  can distinguish *nothing due* from *config exhausted*.
+- **Confirmed reusable, verbatim:** the BLUF first line (`"Top priority: …"` — for an
+  evening brief, reword), Telegram `*bold*` labels with one leading emoji from a
+  fixed set, one item per line, ~150–250 words to fit one phone screen, and *"use the
+  date/weekday from the META line — do not compute dates yourself."*
+- **A section you may want has no data source.** The 💊/🩸 content came from
+  `~/hermes-vault/Areas/Health/Medication.md`, which is gone; `~/vault/health/` has
+  no replacement, and standing medical facts now sit as prose in
+  `projects/strength-and-weight/map.md`'s Notes. Keeping either section therefore
+  requires **creating a structured source first** — a prerequisite decision for this
+  ticket, not an adaptation. `~/vault/health/README.md` also routes anything dated to
+  `tasks.md`, which may be the better source given board ownership is out of scope.
+- **Point 5 rests on a stale premise:** *"Automation Blueprints replace raw cron"* is
+  wrong per `01` — v0.19 still has the gateway cron ticker, cron expressions and
+  `~/.hermes/cron/jobs.json`. The timezone hazard is unchanged and real: set `TZ` in
+  the container **and** `timezone: Europe/Stockholm` in config.
+- **Delivery is not prompt text.** All three recovered prompts end with *"Then send
+  the finished briefing to Mattias on Telegram"* — unexecutable in a cron job
+  (`messaging` toolset disabled). Drop it; configure the delivery target on the job.
+
 ### Note
 
 This ticket is about **policy**, not plumbing. The channel is settled (Telegram);

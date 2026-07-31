@@ -98,12 +98,16 @@ makes silent failure impossible**.
   agent in a container — those are separate settings and only the sandbox one is a
   `terminal.backend`. The release cadence is worse than assumed (six named releases
   in ~2 months), which is why the pin is by digest and upgrades are rare.
-- **Reusable prior art:** branch `hermes/briefings` (commit `abb62a6`, never
-  merged) holds ~740 lines of already-debugged config deleted from `main` by
-  `4ed7e63` — `configs/hermes-agent/` (SOUL.md, morning+weekly briefing scripts and
-  prompts, env.example, vault-skeleton), `modules/hermes-agent/`,
-  `modules/hermes-vault/`, `bin/hermes-vault-ensure-marker.sh`, and
-  `hosts/titan-hermes-agent/`. Recover, don't rewrite.
+- **Reusable prior art — inventoried, and the recovery recipe is not what it looks
+  like.** ~740 lines of already-debugged config were deleted from `main` by
+  `4ed7e63`. **Do not try to merge `hermes/briefings`: `abb62a6` is an *ancestor of
+  `main`* (and of `origin/main`), so merging it is a no-op** — the branch is a stale
+  local pointer, never pushed. **Recover with `git checkout 4ed7e63^ -- <path>`**,
+  which is also one commit richer than the branch. All 21 files are judged
+  keep/adapt/discard in
+  [ticket 02](issues/02-recover-briefings-branch-inventory.md) — read that verdict
+  table before recovering anything; several items are stale or actively harmful, and
+  only `SOUL.md` is a straight keep.
 - **Skills:** `/grilling` + `/domain-modeling` for the grilling tickets;
   `/research` for the research ticket.
 - **Plan, don't do:** this map produces decisions. Execution graduates into
@@ -139,6 +143,28 @@ makes silent failure impossible**.
   the hosted product), there is **no container `HEALTHCHECK`**, `himalaya` isn't in
   the image, and the Email *gateway adapter* marks the whole inbox seen on first
   start — inherited into `03`/`05`/`07`/`08`.
+
+- [Inventory the hermes/briefings branch: what survives, what is superseded](issues/02-recover-briefings-branch-inventory.md)
+  — **Of 21 files, exactly one is a straight keep: `SOUL.md`** — and it matters more
+  than its 18 lines suggest, because it states the two anti-fabrication rules `01`
+  found *no engine primitive enforces*, making it the only current defence against
+  the fake-weather class (so `05` must verify it loads, not assume it). Four files
+  adapt, and what survives in the briefing scripts is the **shape, not the sections**
+  — the per-source `STATUS=OK/ERROR` contract, `<verbatim>` passthrough, date-math-in-script,
+  and a credential read from `.env` that is *accidentally correct* given cron's
+  sanitized env. Every emitter is out of scope (calendar, inbox/board, news) or
+  **sourceless**: the medication note the script read no longer exists in `~/vault`,
+  so a 💊 section is a prerequisite for `06`, not an adaptation. The
+  `vault-skeleton/` three-tier memory pattern and both dotfiles modules are
+  **discarded** — superseded by v0.19 memory, and by ansible-only helium. Four
+  defects must not be carried forward, the worst being **"send the briefing to
+  Telegram" in all three prompts** — cron jobs have `messaging` disabled, so it is
+  unexecutable *and* invites a silent non-delivery. Three provenance corrections
+  (see Notes): the branch was already merged, recovery point is `4ed7e63^`, and
+  **the fake-weather script was never in this repo** — `abb62a6` is the fix, born
+  clean, which narrows `03`'s "never in version control" claim to *the module was
+  commented out and the live host was wired by hand*. The marker guard's owner is
+  already vault-serve `004`.
 
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,

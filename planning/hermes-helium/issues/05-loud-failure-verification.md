@@ -62,6 +62,44 @@ runs; unreadable `jobs.json` → *"the scheduler will fail silently"*; two gatew
 instances → jobs *"delayed or skipped"*; any response *containing* `[SILENT]`;
 and a per-job `last_error` field upstream itself hedges as *"(if available)"*.
 
+### Inherited from ticket `02` (verified 2026-07-31 — don't re-derive)
+
+The prior art this ticket kept referring to has now been read and judged
+([verdict table](02-recover-briefings-branch-inventory.md#answer)). Four things:
+
+- **`SOUL.md` is a control, not decoration — assert on it.** It already states, in
+  prose, the two rules §4 found no primitive enforces: *"When data is missing or a
+  source failed, say so plainly. Never paper over a gap or present a failed lookup
+  as 'nothing to report'"* and *"Only state what you can verify from the data in
+  front of you. Do not invent events, news, or reminders from prior knowledge."*
+  Given that nothing catches plausible-but-fabricated content, **this file is
+  currently the only defence** — so verification must confirm it is present and
+  loaded (it was hand-copied on titan, and the original there was the empty
+  default), not assume it.
+- **The reusable contract, exactly as written:** each source emits
+  `<name>: STATUS=OK count=<n>` or `<name>: STATUS=ERROR reason="…"`; the renderer
+  shows OK-with-data, omits `count=0`, and surfaces `ERROR` as `⚠️ <section>:
+  unavailable` — *never* as empty or quiet. Plus `<verbatim>…</verbatim>` for
+  character-for-character passthrough of safety-critical text, and all date math in
+  the script so the model never computes a date.
+- **A worked example of exactly the failure this ticket hunts — in the file that
+  fixed the previous one.** `emit_labs` hardcodes a month list (`2026-05..2026-10`,
+  `2027-01`, `2027-04`) and its fallthrough emits `STATUS=OK count=0`, which the
+  prompt then *omits*. From **2027-05** a health source silently vanishes forever
+  while reporting healthy-and-empty. Generalize it: **an expired or exhausted
+  schedule must be `ERROR`, not `count=0`** — "no data because the config ran out"
+  and "no data because nothing is due" must not share a status.
+- **One prompt line is now unexecutable, and its failure mode is silent.** All three
+  recovered prompts end with *"Then send the finished briefing to Mattias on
+  Telegram"* — impossible inside a cron job (`messaging` disabled; delivery is
+  scheduler-only). An agent instructed to do something it cannot may well report
+  having done it. Delivery is job configuration; keep it out of prompt text.
+- **Cleared, so don't design against it:** the fake-weather script was **never in
+  this repo** — the recovered `emit_weather` genuinely queries HA and returns
+  `STATUS=ERROR` on every failure path. The bug lived only on titan, outside version
+  control. The lesson is the per-source status lines, which is why they are the thing
+  to keep.
+
 ### The evidence this ticket exists to answer
 
 - The morning briefing shipped **hardcoded fake weather** (11.3 °C / Sunny / 63% /
