@@ -119,6 +119,24 @@ function psearch () {
 }
 
 
+# Dump the clipboard into a temp file and print its path.
+# Mirrors the `xco` alias from the wl-clipboard / xclip snippets, but has to
+# pick the tool itself — aliases don't expand inside a function body.
+function xcotemp () {
+    local f
+    f=$(mktemp --tmpdir clipboard-XXXXXX.txt) || return 1
+    if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-paste >/dev/null 2>&1; then
+        wl-paste --no-newline > "$f"
+    elif command -v xclip >/dev/null 2>&1; then
+        xclip -out -selection clipboard > "$f"
+    else
+        echo "xcotemp: neither wl-paste nor xclip available" >&2
+        command rm -f "$f"
+        return 1
+    fi
+    echo "$f"
+}
+
 function generate_password() {
 	local l=$1
        	[ "$l" == "" ] && l=32
