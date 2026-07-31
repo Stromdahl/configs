@@ -82,7 +82,19 @@ Checked against the Syncthing docs rather than assumed:
   [hermes-helium 02](../../hermes-helium/issues/02-recover-briefings-branch-inventory.md))
   belongs to whoever builds this role — note it targeted the old `hermes-vault`
   folder id and was gated to hosts with `~/.hermes`, so both need updating for
-  `personal-vault` on helium.
+  `personal-vault` on helium. **The full change list is now in
+  [hermes-helium 02's verdict table](../../hermes-helium/issues/02-recover-briefings-branch-inventory.md#answer)
+  (inventoried 2026-07-31) — read it before porting.** One item from it must not be
+  missed: **the script as written fails silent by construction.** It opens with
+  `[[ -d "$VAULT" ]] || exit 0` on a hardcoded `$HOME/hermes-vault`, and also
+  `exit 0`s on a missing Syncthing `config.xml` and on an empty GUI API key. Ported
+  against a path that no longer exists, it reports success and guards nothing — on a
+  Send-Receive folder where deletions propagate upstream. **Make every one of those
+  three paths fail loudly.** Its packaging also has to change: it was a
+  `--user` unit with `ExecStart=%h/.dotfiles/bin/…`, and helium has no dotfiles
+  checkout — but an `ms`-user unit still fits, since Syncthing already runs that way
+  here with lingering enabled. The mechanism itself is sound: read the API key and
+  port out of Syncthing's own `config.xml`, then `POST /rest/db/scan?folder=<id>`.
 - **`.sync-conflict-*` files are now expected.** **Three** read-write peers
   (krypton, phone, helium — the phone was already `Send & Receive` per ticket 02)
   means occasional conflict copies, and not only against krypton: a phone-vs-helium

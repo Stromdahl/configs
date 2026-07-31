@@ -94,8 +94,8 @@ The prior art this ticket kept referring to has now been read and judged
   Telegram"* — impossible inside a cron job (`messaging` disabled; delivery is
   scheduler-only). An agent instructed to do something it cannot may well report
   having done it. Delivery is job configuration; keep it out of prompt text.
-- **Cleared, so don't design against it:** the fake-weather script was **never in
-  this repo** — the recovered `emit_weather` genuinely queries HA and returns
+- **No artifact to purge — the threat is unchanged:** the fake-weather script was
+  **never in this repo** — the recovered `emit_weather` genuinely queries HA and returns
   `STATUS=ERROR` on every failure path. The bug lived only on titan, outside version
   control. The lesson is the per-source status lines, which is why they are the thing
   to keep.
