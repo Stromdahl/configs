@@ -68,12 +68,22 @@ makes silent failure impossible**.
   into — never as its brain.** Then it has no reason to restructure the tree.
   Ticket `01` verified this is now the *default*: the official image ships
   `HERMES_WRITE_SAFE_ROOT=/opt/data`, so the vault isn't writable until we open it.
+  `03` adds that it is a **`:`-separated list of prefixes**, not a single root, so
+  opening it is a narrow act — and that the vault mounts at **`/vault`**, outside
+  `HERMES_HOME`, beyond the reach of the image's boot-time chown.
 - **Scope escalated vs. every prior attempt:** old Hermes read its own separate,
   sparse `~/hermes-vault` (different structure — `Areas/Health/…`). That folder is
   **gone**; krypton's Syncthing now shares `personal-vault` (`~/vault`) and `Notes`
   (`~/notes`). This effort puts the agent in the **real** vault — `finance/`,
-  `health/`, `journal/`, `people/`, and the live `tasks.md` board. `~/vault` **is a
-  git repo** with real history: that is the safety net for agent writes.
+  `health/`, `journal/`, `people/`, and the live `tasks.md` board. **Correction from
+  `03`: git is NOT the safety net for agent writes** — this note used to say it was.
+  `~/vault/.stignore` excludes `.git`, so helium's replica has **no repo at all**;
+  `.gitignore` deliberately untracks finance *data* (`.stignore` says why: *"the
+  sensitive-data boundary is git"*); and Syncthing file versioning was **off on every
+  krypton folder**. The owner declined a git audit repo on helium ("dont think we need
+  git for the vault"). The undo is now **staggered Syncthing versioning on krypton**
+  — see [ticket 11](issues/11-vault-undo-riders-to-vault-serve-004.md). Git still
+  covers the 215 tracked files on krypton, and nothing on helium.
 - **Hermes replaces `/daily`, which is dead.** The vault's charter in
   `~/vault/AGENTS.md` ("keep the owner's personal life organized — board,
   inbox/reminders, records, planning, drafts; do not do project execution work") is
@@ -186,7 +196,7 @@ makes silent failure impossible**.
   **Nothing listens on 8642 or 9119** (API server and dashboard are both opt-in), so
   no Traefik router and no HTTP probe — a correction to `01`. Rebuild is **split by
   authorship** — human-authored → git, agent-accumulated → restic — with the
-  falsifiable test handed to `05`: *a rebuild from git alone must yield a working but
+  falsifiable test handed to `05`: *a rebuild from git **plus the age key** must yield a working but
   amnesiac Hermes.* And the git-audit-trail idea died: `.stignore` excludes `.git`,
   `.gitignore` untracks finance data, and **versioning was off on every krypton
   folder**, so the vault's only undo is now a rider to vault-serve `004` (ticket `11`).

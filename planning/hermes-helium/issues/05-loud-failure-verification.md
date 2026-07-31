@@ -106,11 +106,19 @@ Every item here was produced by booting the pinned image on helium, not read fro
 docs. See [ticket 03's Answer](03-deployment-shape-and-state.md#answer).
 
 - **This ticket inherits an acceptance test, agreed with the owner:** *a rebuild from
-  git alone must yield a working but amnesiac Hermes.* `03` split rebuild state by
-  authorship (human-authored → git/ansible; agent-accumulated → restic), and that
-  test is what makes the split falsifiable. If it fails, something is hand-installed
-  and the v0.14 trap has been rebuilt. **Designing how that test is actually run — and
-  how often — is this ticket's.**
+  git **plus the age key** must yield a working but amnesiac Hermes.* `03` split
+  rebuild state by authorship (human-authored → git/ansible; agent-accumulated →
+  restic), and that test is what makes the split falsifiable. If it fails, something
+  is hand-installed and the v0.14 trap has been rebuilt. **Designing how that test is
+  actually run — and how often — is this ticket's.**
+  - **Mind the precondition; it is not pedantry.** `.env` sits on *both* sides of the
+    split — ansible templates it from sops, *and* restic holds it because it lives in
+    `/data/ssd/appdata/hermes`. Since the secrets are sops-encrypted in git, a
+    rebuild from git *without* the age key yields a Hermes that **boots and cannot
+    talk to anything**: gateway up, healthcheck arguably green, no provider, no
+    Telegram. That is a plausible-looking half-success, which is precisely the class
+    this ticket exists to catch — so the verification story should be able to
+    distinguish "amnesiac" from "mute", not just "up" from "down".
 - **A probe now exists and `03` guarantees only one property**: it cannot report
   healthy while cron is dead. What it *alerts*, to whom, and how loudly is yours.
   The path `HEALTHCHECK` → docker2mqtt health entity → MQTT → HA already exists

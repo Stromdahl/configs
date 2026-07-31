@@ -313,11 +313,22 @@ regenerate and the reason v0.19 has `~/.hermes` memory at all.
 | agent | restic (`/data/ssd/appdata/hermes`) | restore, as a separate step |
 | | → `memories/ sessions/ logs/ state.db auth` | |
 
-**Acceptance test (agreed, and handed to `05`): a rebuild from git alone must yield
-a working but amnesiac Hermes.** If it doesn't, something is hand-installed and the
-v0.14 trap has been rebuilt. Restic then restores the memory as a second,
+**Acceptance test (agreed, and handed to `05`): a rebuild from git *plus the age key*
+must yield a working but amnesiac Hermes.** If it doesn't, something is hand-installed
+and the v0.14 trap has been rebuilt. Restic then restores the memory as a second,
 independently-verifiable step. Two mechanisms, each testable alone — versus one blob
 testable only by disaster.
+
+The "plus the age key" is not a weakening — it is the honest wording, and the sloppy
+version would have mis-specified `05`'s work. `.env` sits on **both** sides of the
+table: ansible templates it from sops (human-authored), *and* it is inside
+`/data/ssd/appdata/hermes` so restic holds it and `hermes backup --quick` lists it as
+critical state. Since the secrets are sops-encrypted in git, "git alone" yields a
+Hermes that **boots and cannot talk to anything** — gateway up, no provider, no
+Telegram. That is a *different* and much more confusing outcome than "amnesiac", and
+it is exactly the sort of plausible-looking half-success this map exists to catch. So
+the test's precondition is git **+ the age key**; the three needs-human items on a
+rebuild reduce to *having the age key* plus the Proton 2FA login if `07` needs it.
 
 Mechanics that make the human half real:
 
