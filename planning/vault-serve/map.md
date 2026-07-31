@@ -65,6 +65,16 @@ the phone); the allowlist is enforced at the **serve layer** via a strict
 
 ## Not yet specified
 
+> ⚠️ **Cross-map coupling — read before working ticket 004.** The
+> [hermes-helium map](../hermes-helium/map.md) puts a *writing* agent on the same
+> helium vault replica, so **004's `Receive Only` spec is superseded by
+> `Send-Receive`** (decided 2026-07-31; the re-spec itself is
+> [hermes-helium ticket 04](../hermes-helium/issues/04-respec-vault-serve-004-send-receive.md)).
+> Everything else in 004 stands — `/data/ssd/vault`, `ms`-owned, Ignore
+> Permissions, `UMask=022`. Ticket 005 (Perlite) is unaffected: its boundary is the
+> `:ro` bind-mount surface, not the folder type. This map is therefore no longer
+> strictly decision-complete.
+
 _Empty — the map is decision-complete._ Ticket 03 was the last open decision;
 the way to the destination is clear. All remaining work is **execution**, now
 graduated into two implementation issues (no decisions left, just building):
