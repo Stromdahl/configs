@@ -11,6 +11,39 @@ of the vault** (map Notes). **Now make "narrow" concrete:** exactly which paths 
 Hermes write, how are conflicts and git history used as the safety net, and how is
 the boundary enforced rather than merely intended?
 
+### Inherited from ticket `01` (verified 2026-07-31 — don't re-derive)
+
+From [assets/01-engine-research.md](../assets/01-engine-research.md) §5. The engine
+now ships a real write-confinement mechanism — and upstream is explicit that it is
+**not** a boundary.
+
+- **`HERMES_WRITE_SAFE_ROOT=/opt/data` is set in the official image.** So
+  `write_file` and `patch` are *hard-blocked* outside the state volume — not routed
+  through approval. **The vault is therefore not writable by default; opening it is
+  an explicit act** (adding paths to a `:`-separated safe root). That inverts the
+  v0.14 posture, where the vault *was* the working directory. Item 2's "capability,
+  not motive" now starts from deny.
+- An always-on protected-path denylist applies regardless: `~/.ssh/`, `~/.aws/`,
+  `~/.netrc`, Hermes credential stores, and `.env` / `.envrc` **anywhere on disk**.
+- **But the terminal tool escapes all of it.** Upstream: *"Write guards apply to
+  `write_file` and `patch` only. The `terminal` tool runs as the same OS user and
+  can still … overwrite denied paths via shell commands … it does not sandbox a
+  hostile or compromised agent."* The managed-scope doc likewise lists *"a hard
+  boundary that the agent itself cannot escape"* as out of scope for v1.
+- **⇒ The container bind-mount is the only real boundary** — the same conclusion
+  vault-serve `03` reached with per-folder `:ro` mounts. Treat
+  `HERMES_WRITE_SAFE_ROOT` as defence-in-depth layered on top, and answer item 6's
+  "enforced rather than intended" at the mount layer.
+- **Two extra levers worth considering here:** `checkpoints` (filesystem snapshots
+  before destructive file operations — opt-in, `enabled: false` by default, 20 per
+  directory) composes with `~/vault` already being a git repo; and `approvals.deny`
+  is a glob list that blocks matching terminal commands **unconditionally, even
+  under `--yolo` or `approvals.mode: off`** — the only hard lever against the
+  terminal escape hatch, and the only one that works unattended (a `smart`-mode
+  escalation cannot reach a human from inside a cron job).
+- Memory placement needs no work: memory is files under `~/.hermes/memories/` and
+  sessions are SQLite at `~/.hermes/state.db`. Brain-out-of-vault is the default.
+
 ### Inherited from ticket `04` (verified 2026-07-31 — don't re-derive)
 
 Send-Receive was applied to `vault-serve` 004, and checking the Syncthing docs

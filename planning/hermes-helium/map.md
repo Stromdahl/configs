@@ -55,15 +55,19 @@ makes silent failure impossible**.
   boundary. **The vault-serve map's "helium already holds Immich photos + Paperless
   docs, so it's not a new sensitivity class" reasoning does NOT transfer here** —
   at-rest on own hardware ≠ streamed to an inference endpoint. Provider choice
-  therefore carries the weight (still fog).
+  therefore carries the weight — now [ticket 09](issues/09-choose-inference-provider.md),
+  graduated from fog once `01` confirmed BYO key is still first-class.
 - **The last catastrophe was self-inflicted by making the vault the agent's brain.**
   v0.14 Hermes autonomously reorganized its vault, deleted `.stfolder`, and
   Syncthing safety-halted with no self-heal → silent stall up to an hour, badly
   diverged sides (see `project_hermes_vault_sync`; a marker-guard path-unit was
   built to babysit it). v0.19 has first-class persistent memory of its own in
-  `~/.hermes` plus `/journey` to inspect it. **Keep Hermes' memory in `~/.hermes`
-  and treat `~/vault` as a data source it reads and files into — never as its
-  brain.** Then it has no reason to restructure the tree.
+  `~/.hermes` plus `/journey` to inspect it — **`/journey` is CLI-only though**, so
+  inspecting memory needs a shell into the container, not Telegram. **Keep Hermes'
+  memory in `~/.hermes` and treat `~/vault` as a data source it reads and files
+  into — never as its brain.** Then it has no reason to restructure the tree.
+  Ticket `01` verified this is now the *default*: the official image ships
+  `HERMES_WRITE_SAFE_ROOT=/opt/data`, so the vault isn't writable until we open it.
 - **Scope escalated vs. every prior attempt:** old Hermes read its own separate,
   sparse `~/hermes-vault` (different structure — `Areas/Health/…`). That folder is
   **gone**; krypton's Syncthing now shares `personal-vault` (`~/vault`) and `Notes`
@@ -86,15 +90,14 @@ makes silent failure impossible**.
   Details in `project_helium_protonmail_bridge_paperless`.
 - **Channel:** Telegram. Proven, a hermes-agent first-class integration, and
   outbound-only — fits helium's no-ingress posture with no port to open.
-- **Engine is open, but hermes-agent is the incumbent.** Nous hermes-agent is now
-  **v0.19.1** (2026-07-30) vs the v0.14 that ran on titan — named releases every
-  2–3 weeks. v0.18.0 claims 700+ P0/P1 issues resolved plus completion contracts
-  for goals and `/learn`; v0.19.0 added durable message delivery. Backends are now
-  local/**Docker**/SSH/Singularity/Modal. **That cadence is itself a durability
-  risk** — pinning and upgrade policy are part of the answer, not an afterthought.
-  **Scope of that comparison was settled 2026-07-31:** it stays, but judged on
-  *unattended-push reliability alone* with the incumbent winning ties — see the
-  scope note on [ticket 01](issues/01-choose-and-pin-engine.md); don't re-ask it.
+- **Engine is settled: hermes-agent v0.19.1, pinned by digest** —
+  `v2026.7.30@sha256:b869e64d…`. See the decision below; don't reopen. Two things
+  that note used to get wrong: `:latest` is **main HEAD**, not the newest release
+  (CI tags it on every main commit), and the "local/**Docker**/SSH/Singularity/Modal
+  backends" list is about the agent's *own tool sandbox*, **not** about running the
+  agent in a container — those are separate settings and only the sandbox one is a
+  `terminal.backend`. The release cadence is worse than assumed (six named releases
+  in ~2 months), which is why the pin is by digest and upgrades are rare.
 - **Reusable prior art:** branch `hermes/briefings` (commit `abb62a6`, never
   merged) holds ~740 lines of already-debugged config deleted from `main` by
   `4ed7e63` — `configs/hermes-agent/` (SOUL.md, morning+weekly briefing scripts and
@@ -119,6 +122,23 @@ makes silent failure impossible**.
   upstream**, so a Hermes reorg on helium destroys files on krypton *and* the phone;
   and the replica folder must be created **empty** or provisioning content is pushed
   upstream. vault-serve `004` stays open execution work.
+- [Choose the engine and land a version-pinning policy](issues/01-choose-and-pin-engine.md) —
+  **hermes-agent v0.19.1 stays**, pinned by digest
+  (`v2026.7.30@sha256:b869e64d…`); nothing was *clearly* better on unattended-push
+  reliability so the tie rule decided it. Full findings, per-claim verification
+  tags, in [assets/01-engine-research.md](assets/01-engine-research.md). The three
+  findings that change other tickets: **`:latest` is main HEAD**, not the newest
+  release, and every upstream compose example uses it; **the container bind-mount is
+  the only real write boundary** — `HERMES_WRITE_SAFE_ROOT` and the denylist don't
+  bind the `terminal` tool, and upstream says so; and **v0.19 doesn't remove v0.14's
+  gathering-script scaffolding, it blesses it** (`no_agent` jobs make it first-class
+  and alert on non-zero exit). Real fail-closed primitives now exist (drift guard,
+  failed-jobs-always-deliver, mutation verifier) but **none catches
+  plausible-but-fabricated content** — the fake weather would still ship, so `05`
+  carries this map's weight, not `01`. Also: BYO key stayed first-class (no drift to
+  the hosted product), there is **no container `HEALTHCHECK`**, `himalaya` isn't in
+  the image, and the Email *gateway adapter* marks the whole inbox seen on first
+  start — inherited into `03`/`05`/`07`/`08`.
 
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
@@ -126,14 +146,12 @@ memory-out-of-vault, beachhead scope)._
 
 ## Not yet specified
 
-- **Model/provider choice under full egress.** Which inference provider, on what
-  retention/no-training posture, and bring-your-own-key (the old openrouter setup)
-  vs the new paid **Nous Portal** credit tier. Hangs on the engine ticket — a
-  non-hermes-agent engine changes the option set entirely.
 - **Telegram identity/authorization.** How the conversational mode establishes that
   it is *you* messaging, given it can read `finance/` and `health/` and act on the
   vault. Old setup pinned a single chat id (8468278488); whether that is sufficient
-  is unexamined.
+  is unexamined. `01` turned up that the gateway has a **layered user-authorization
+  system** rather than only a chat-id pin — sharper than before, but still needs the
+  deployment shape (`03`) before it can be decided.
 - **Whether `/daily` and the `note` skill get retired or rewired.** Hermes taking
   over ambient capture makes the inbox-file convention partly redundant; can't be
   specified until the board-ownership follow-on is scoped.

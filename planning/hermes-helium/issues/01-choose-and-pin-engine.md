@@ -1,7 +1,7 @@
 # Choose the engine and land a version-pinning policy
 
 Type: research
-Status: open
+Status: resolved
 
 > ✅ **Scope settled 2026-07-31 (owner decision) — the comparison stays, but it is
 > tight and asymmetric. Do not re-ask this.**
@@ -79,3 +79,176 @@ sunk knowledge. Answer it fast and fairly rather than assuming either way.
 
 Capture findings as a markdown asset under `planning/hermes-helium/assets/` and
 link it from the resolution.
+
+## Answer
+
+**Verdict: hermes-agent v0.19.1 stays, pinned by digest.** Full findings,
+with per-claim verification tags, in
+[assets/01-engine-research.md](../assets/01-engine-research.md).
+
+```
+nousresearch/hermes-agent:v2026.7.30@sha256:b869e64d6496d4763d5e4fb675b5f504cb23b0e35ec9b790481a56118602b10f
+```
+
+Requirement-by-requirement:
+
+### 1 — Verdict vs alternatives (unattended-push axis only)
+
+Nothing is *clearly* better, so the tie rule decides it. The predicted pattern
+held exactly: the strongest push candidate (n8n-class — real scheduler,
+per-execution history, error workflows) has no conversational pull mode;
+OpenWebUI-class has no scheduler at all. **Claude Code headless / the Claude
+Agent SDK is a harness only — you host it, and it ships no scheduler, no
+messaging channel, and no failure alerting**, so every fail-loud primitive below
+would become homework. (Anthropic's *Managed Agents* does offer cron-scheduled
+deployments, but Anthropic hosts the agent loop *and* the tool sandbox — not a
+helium workload, and it would stream vault contents into a hosted container.)
+hermes-agent is the only candidate covering both modes in one supervised process.
+
+### 2 — How each mode is served
+
+One container, one long-running gateway. Telegram via the gateway's messaging
+adapter; push via the **gateway's background cron ticker (60 s)**. Consequence
+worth carrying: a CLI session does **not** fire cron jobs, so no gateway = no
+push mode, and there is no container healthcheck to notice (see 3).
+
+### 3 — Docker fitness: confirmed, and the two senses are genuinely different
+
+**Mode 1 (agent in a container) is fully supported** — official multi-arch image,
+s6-overlay PID 1, non-root `hermes` UID 10000, one volume at `/opt/data`, gateway
+on 8642. **No privileged, no host network, no docker socket required.** Mode 2
+(`terminal.backend: docker`) is the agent's *own tool sandbox* and is a separate
+choice; keep `terminal.backend: local`. The map's Notes conflated the two — `03`
+should keep them apart.
+
+Two things `03` must own, both verified from the `Dockerfile`:
+
+- **No `HEALTHCHECK` exists**, and the gateway is *supervised* (auto-restarts).
+  So a crash-looping gateway presents as a healthy container. We add our own probe.
+- **`himalaya` is not in the image** ⇒ a derived image is required, which is also
+  where the digest pin belongs.
+
+### 4 — The pin and upgrade policy
+
+**`:latest` is a trap and the docs walk you into it.** Verified in
+`.github/workflows/docker.yml`: on main pushes CI tags both `:main` **and**
+`:latest`; on releases it tags **only** the release tag. The registry confirms
+`latest` == `main` by digest, distinct from `v2026.7.30`. Every compose example
+in the upstream docs says `:latest` — following the quickstart verbatim puts
+helium on unreviewed main HEAD.
+
+Policy: pin by digest; upgrade quarterly or on a *named* need; never
+`:latest`/`:main`/Watchtower. Pre-upgrade restic snapshot of `~/.hermes` **is**
+the rollback plan, because the container runs non-interactive config-schema
+migrations on boot and those don't roll back with the image. Verification after
+upgrade is `hermes doctor` + `hermes cron list` + one forced `cron run` that must
+**arrive on Telegram** — "container is up" proves nothing.
+
+Cadence is worse than the map assumed: **six named releases in ~2 months**, and
+v0.19.1 rolled up ~1,000 merged PRs in the *ten days* after v0.19.0. Reading the
+delta is not feasible; time-in-the-wild is the only stability proxy we have.
+
+### 5 — v0.14 defects
+
+**Memory placement: the map's premise is verified.** Memory is files under
+`~/.hermes/memories/`, sessions are SQLite at `~/.hermes/state.db`. Keeping the
+brain out of the vault is the *default*, not something we engineer. One
+correction: **`/journey` is CLI-only** — not available on messaging platforms, so
+inspecting memory needs a shell into the container.
+
+**Working-directory restructuring: a real mechanism now exists, and it's on by
+default.** `HERMES_WRITE_SAFE_ROOT=/opt/data` is set in the official image, so
+`write_file`/`patch` are hard-blocked outside the state volume — **the vault is
+not writable by default; opening it is an explicit act.** Plus an always-on
+protected-path denylist (`~/.ssh/`, `.env` anywhere, Hermes credential stores),
+opt-in `checkpoints` (filesystem snapshots before destructive file ops), and
+`approvals.deny` globs that block commands *unconditionally, even under
+`--yolo`*.
+
+But upstream is explicit that this is **not** a boundary: *"Write guards apply to
+`write_file` and `patch` only. The `terminal` tool runs as the same OS user and
+can still … overwrite denied paths via shell commands … it does not sandbox a
+hostile or compromised agent."* The managed-scope doc lists *"a hard boundary
+that the agent itself cannot escape"* as out of scope for v1.
+
+⇒ **The container bind-mount is the only real write boundary** — the same
+conclusion vault-serve `03` reached with `:ro` mounts. Inherited by `08`.
+
+**Confabulation about its own internals: not answerable from docs, and I am not
+inferring a fix.** The upstream issue tracker has zero hits for `confabulat`, so
+there is no record to verify as closed. Routed to `05` as a working rule instead:
+never ask the agent about its own state — read `hermes cron list`,
+`hermes doctor`, `hermes logs`, and the files under `~/.hermes/`.
+
+### 6 — BYO key vs Nous Portal
+
+**BYO key stayed first-class.** Portal is *"the recommended way"* — recommended,
+not required. 30+ providers configure by plain env var, `OPENROUTER_API_KEY`
+among them: the exact titan setup is a supported configuration today. The
+monetization shift did **not** narrow the self-host path, which retires that
+durability worry. `cron.model` additionally routes unattended spend
+independently of the interactive default.
+
+---
+
+## The finding that actually matters
+
+**Does v0.19 remove v0.14's scaffolding, or rename it? Neither — it blesses it.**
+`no_agent=True` makes the 122-line-gathering-script shape a *first-class
+supported mode* and bolts loud failure onto it (*"non-zero exit or timeout → an
+error alert is delivered, so a broken watchdog can't fail silently"*). That is
+the right answer for reliability — determinate content should have no LLM in its
+path — but plan for maintaining scripts, not for built-ins replacing them.
+
+v0.19 does bring real fail-closed primitives that did not exist in the v0.14 era:
+a **model/provider drift guard on by default** (an unpinned cron job whose global
+default changed *skips the run, makes no inference call, and alerts you*);
+*"failed jobs always deliver regardless of the `[SILENT]` marker"*; zero delivery
+targets recorded as a delivery failure; and `display.file_mutation_verifier`,
+documented as catching *"the 'batch of parallel patches, half silently fail,
+model summarises success' class of over-claim."*
+
+**And yet the verdict is conditional, because none of it closes the gap that
+burned us.** Every primitive above catches **crashes, non-delivery, and failed
+writes**. None catches **plausible-but-fabricated content**. The v0.14 fake
+weather was hardcoded constants inside the gathering script: exit 0, non-empty
+stdout, delivery succeeded. `no_agent` mode would have shipped it too.
+
+So the engine choice is **not** the load-bearing decision on this map — the
+verification story is. Ticket `05` must assert on *freshness of content*, from
+outside hermes-agent's own cron. Two structural constraints bound how:
+
+- Cron jobs run with the `cronjob`, `messaging`, and `clarify` toolsets
+  **disabled** — the agent **cannot message you from inside a cron job**, and an
+  approval escalation has nowhere to escalate to.
+- Cron scripts get a **sanitized environment**: provider API keys and
+  Hermes-managed secrets are *not* inherited, and scripts must resolve inside
+  `$HERMES_HOME/scripts/`.
+
+The engine's own troubleshooting guide documents six further silent-failure
+paths (misformatted schedule "silently defaults to one-shot"; misconfigured
+delivery target "silently drops the response"; unreadable `jobs.json` → "the
+scheduler will fail silently"; lock contention → jobs "delayed or skipped"; any
+response *containing* `[SILENT]`; and a `last_error` field upstream itself hedges
+as *"(if available)"*). They are real but enumerable and mostly
+configuration-time — which is why they inform `05` rather than sink the engine.
+
+## Also corrected: the email half points at the wrong mechanism
+
+There are **two** email paths, and the map's framing implies the wrong one. The
+**Email gateway adapter** makes email a chat channel — it needs SMTP (broken on
+Proton Bridge) and **at startup it marks every existing inbox message as
+"seen"**. Aimed at the real personal inbox that silently marks the whole backlog
+read. The triage path is the **bundled Himalaya skill** (installed by default,
+explicitly *"separate from the Hermes Email gateway adapter"*), driving the
+external `himalaya` CLI over IMAP — inspect/move/flag with no SMTP. Written into
+`07`; the binary requirement is written into `03`.
+
+## Graduated
+
+`Model/provider choice under full egress` explicitly hung on this ticket and is
+now specifiable — created as
+[09 — Choose the inference provider under full egress](09-choose-inference-provider.md)
+and cleared from the map's fog.
+
+No ticket turned out to be mis-scoped; nothing ruled out of scope.

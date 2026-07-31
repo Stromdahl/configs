@@ -10,6 +10,29 @@ The owner's ask: *"I shouldn't need to check my emails all the time. The agent
 should categorize and file whatever is needed."* **What does "file" actually mean,
 given what the Proton bridge can and cannot do?**
 
+### Inherited from ticket `01` (verified 2026-07-31 — don't re-derive)
+
+From [assets/01-engine-research.md](../assets/01-engine-research.md) §6. **There are
+two email mechanisms and the obvious one is wrong for us.**
+
+- **The Email gateway adapter is disqualified twice over.** It makes email a *chat
+  channel* (people mail the bot, it replies) — so it needs SMTP, which Proton
+  Bridge cannot do — and **at startup it "marks all existing inbox messages as
+  'seen'"** so it only handles new mail. Pointed at the real personal inbox that
+  silently marks the entire backlog read. Do not use it, and do not let a future
+  session reach for it because it is the first thing the docs show.
+- **The triage path is the bundled Himalaya skill** (`skills/email/himalaya`,
+  v1.1.0, installed by default, documented as *"separate from the Hermes Email
+  gateway adapter"*). It drives the external `himalaya` CLI over IMAP/SMTP and can
+  inspect, move, and flag **without SMTP** — so "filing" can mean IMAP flags and
+  folder moves, with no send path involved.
+- **The binary is not in the image** — a derived image layer is required (written
+  into `03`), plus a config at `~/.config/himalaya/config.toml`, which lands on
+  the `/opt/data` state volume rather than in git.
+- Consequence for item 6: the broken SMTP most likely **is** just a documented
+  non-capability rather than a blocker, exactly as that item hoped — but confirm
+  it against whatever "file" turns out to mean here.
+
 ### The constraint that shapes this
 
 Proton Mail Bridge is live on helium (issue `029`, since 2026-07-10) serving IMAP
