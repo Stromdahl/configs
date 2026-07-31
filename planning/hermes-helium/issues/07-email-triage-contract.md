@@ -33,6 +33,32 @@ two email mechanisms and the obvious one is wrong for us.**
   non-capability rather than a blocker, exactly as that item hoped — but confirm
   it against whatever "file" turns out to mean here.
 
+### Inherited from ticket `03` (verified on the box 2026-07-31 — don't re-derive)
+
+- **Reachability is settled and needs no new plumbing.** The Hermes container sits on
+  helium's `paperless` network, which is a **plain bridge with `internal=false`**
+  (checked live) — so it reaches `protonmail-bridge:143` *by container name* **and**
+  the internet, on one network. The "internal" in the compose comments means
+  *unpublished*, not docker's `internal:` flag. No shared netns is involved, so the
+  `project_helium_gluetun_netns_restart` hazard does not apply; the only coupling is
+  that a `protonmail-bridge` recreate is invisible to Hermes until its next poll.
+- **`himalaya` comes from the derived image**, pinned there alongside the base digest
+  (ticket `01`'s requirement). It is *not* in the base image.
+- **Scripts live at `/data/ssd/appdata/hermes/scripts/`, ansible-copied** — not baked
+  into the image. `cron/scheduler.py` resolves script paths and rejects anything
+  outside `$HERMES_HOME/scripts`, and a bind mount masks baked content anyway. So a
+  himalaya-driven triage script is an ansible role file, versioned in git.
+- **Credentials reach the script by *reading* the file, not by inheritance.** Cron
+  subprocesses get a sanitized env, so the script does
+  `set -a; . "$HOME/.hermes/.env"; set +a` — ticket `02`'s "accidentally correct"
+  pattern, now the deliberate one. Ansible templates that `.env` from sops
+  (`0600`, owner `1000:1000`), **single-quoting every value** so a `$` in a token
+  survives bash sourcing. Any Proton/IMAP credential this ticket needs goes there.
+- **Writes land as `ms` (uid 1000)**, and the vault is mounted at **`/vault`**.
+- **The Proton Bridge login remains needs-human on a rebuild** (2FA) — already known
+  from `project_helium_protonmail_bridge_paperless`, and `03` confirms it is one of
+  only three needs-human items in the whole design.
+
 ### The constraint that shapes this
 
 Proton Mail Bridge is live on helium (issue `029`, since 2026-07-10) serving IMAP

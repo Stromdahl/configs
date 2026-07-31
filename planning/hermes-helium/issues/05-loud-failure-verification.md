@@ -100,6 +100,61 @@ The prior art this ticket kept referring to has now been read and judged
   control. The lesson is the per-source status lines, which is why they are the thing
   to keep.
 
+### Inherited from ticket `03` (verified on the box 2026-07-31 — don't re-derive)
+
+Every item here was produced by booting the pinned image on helium, not read from
+docs. See [ticket 03's Answer](03-deployment-shape-and-state.md#answer).
+
+- **This ticket inherits an acceptance test, agreed with the owner:** *a rebuild from
+  git alone must yield a working but amnesiac Hermes.* `03` split rebuild state by
+  authorship (human-authored → git/ansible; agent-accumulated → restic), and that
+  test is what makes the split falsifiable. If it fails, something is hand-installed
+  and the v0.14 trap has been rebuilt. **Designing how that test is actually run — and
+  how often — is this ticket's.**
+- **A probe now exists and `03` guarantees only one property**: it cannot report
+  healthy while cron is dead. What it *alerts*, to whom, and how loudly is yours.
+  The path `HEALTHCHECK` → docker2mqtt health entity → MQTT → HA already exists
+  (issue `046`).
+- **Two silent-success traps were found and closed; treat them as the calibration for
+  what else to look for.**
+  1. **The image's default CMD exits 0.** It is the interactive `hermes` CLI; with no
+     TTY it completes, and s6-overlay stops the container when its main program ends.
+     Under `restart: unless-stopped` that is a restart loop reporting success.
+     `command: ["gateway", "run"]` fixes it. `main-hermes` is a no-op `sleep infinity`
+     by design — the gateway is *not* an s6 service unless you ask for it.
+  2. **`hermes cron status` exits 0 even when the gateway is dead.** It prints
+     `✗ Gateway is not running — cron jobs will NOT fire` and returns 0. **The exit
+     code is unusable**; the healthcheck parses output. Assume this class is not
+     unique to this one command — check the exit code of anything else you build on.
+- **There is no HTTP endpoint to probe.** Nothing listens on `9119` (dashboard,
+  opt-in via `HERMES_DASHBOARD`) or `8642` (API server, needs `API_SERVER_KEY` +
+  `API_SERVER_HOST`). Upstream warns the dashboard *"stores API keys; exposing it on
+  LAN without auth is unsafe … do NOT pass `--insecure --host 0.0.0.0`"*, so `03`
+  ruled out a Traefik router. This corrects ticket `01`'s "Gateway API on `8642`".
+- **`hermes cron status` reports `Ticker heartbeat: NNs ago`** — a real liveness
+  signal, and the healthcheck bounds it at 180 s. **Caveat to confirm rather than
+  inherit:** only the `NNs ago` format was observed. If longer ages render as
+  `2m ago` the parse fails → false alarm. `03` accepted false alarms as the correct
+  failure direction, but the format itself is unverified.
+- **Two building blocks exist that you should not rebuild:**
+  - `hermes backup --quick` — snapshots "config, state.db, .env, auth, cron". Ticket
+    `01` established rollback needs the previous digest **and** the pre-upgrade state
+    together; this is the state half. **Making the *restore* a tested path is yours** —
+    `03`'s whole argument against a restore-only rebuild story is that an unrestored
+    blob is not a backup.
+  - `hermes doctor` — built-in diagnostics (`hermes_cli/doctor.py`), including
+    per-provider connectivity checks with a `supports_health_check` notion.
+- **`SOUL.md` is now placed declaratively** by ansible, not hand-copied as on titan.
+  Ticket `02` said `05` must *verify it loads* rather than assume — that check is now
+  meaningful rather than aspirational.
+- **The write record lives in `$HERMES_HOME/logs`**, which is restic-covered. `03`
+  moved traceability there deliberately, because the git-audit-trail idea died (see
+  its Answer) and Syncthing versioning — the replacement undo — is author-agnostic.
+- **A failure mode to separate from a dead gateway:** messaging platforms
+  **deny unknown senders by default**, so a wrong Telegram allowlist presents as
+  "Hermes ignores me" — indistinguishable from a dead gateway unless this ticket's
+  verification story tells them apart. See [ticket 10](10-telegram-authorization.md).
+
 ### The evidence this ticket exists to answer
 
 - The morning briefing shipped **hardcoded fake weather** (11.3 °C / Sunny / 63% /

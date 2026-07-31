@@ -67,6 +67,47 @@ two. krypton *and the phone* were already `Send & Receive` (vault-serve `02`), s
 helium is the third — meaning a phone-vs-helium conflict can occur with krypton
 uninvolved, and whatever notices conflicts cannot assume krypton is one side of them.
 
+### Inherited from ticket `03` (verified on the box 2026-07-31 — don't re-derive)
+
+This is the ticket `03` changed most, and one item makes "narrow" far cheaper to
+express than either ticket assumed.
+
+- **`HERMES_WRITE_SAFE_ROOT` is a `:`-separated list of path *prefixes*, not a single
+  root** (`agent/file_safety.py:84`, plus `tips.py`: *"restricts write_file/patch to
+  directory prefixes; multiple paths via os.pathsep"*). So "narrow" is expressible
+  **natively** — `/opt/data:/vault/inbox:/vault/journal` — with no bespoke mechanism
+  to build. `03` sets the baseline to `/opt/data:/vault`; **narrowing the `/vault`
+  half is this ticket's job.** Ticket `01`'s caveat still stands and is the reason
+  this is not the whole answer: it constrains `write_file`/`patch` but **does not bind
+  the `terminal` tool**, and upstream says so — so it is a strong guardrail against
+  the agent's *ordinary* file path, not a boundary.
+- **The vault is mounted at `/vault`, outside `HERMES_HOME`.** That is deliberate:
+  `stage2-hook.sh` chowns `$HERMES_HOME` non-recursively and then recurses over a
+  fixed subdir list (`cron sessions logs hooks memories skills skins plans workspace
+  home profiles pairing platforms/pairing lazy-packages`), and mounting the vault
+  outside puts it beyond that mechanism entirely. **The bind mount remains the only
+  real boundary** (ticket `01`), so what is mounted is the outermost control.
+- **Hermes writes as `ms` (uid 1000:1000)**, via `HERMES_UID`/`HERMES_GID` — the
+  image *rejects* `docker run --user`. So vault-serve `004`'s permission model is
+  unchanged (root `700 ms`, contents `755`/`644`) and **file ownership carries no
+  information** about whether the agent or the owner wrote a file. Do not design an
+  enforcement or audit mechanism that leans on ownership.
+- **The git-as-undo premise is gone — do not build on it.** `~/vault/.stignore`
+  excludes `.git`, so helium's replica has **no repo**; `.gitignore` deliberately
+  untracks finance *data*; and Syncthing versioning was **off on every krypton
+  folder**. The owner declined a git audit repo on helium. The vault's undo is now
+  **staggered Syncthing versioning on krypton** (ticket `11`) — path-agnostic, covers
+  deletions and untracked files, and is author-agnostic. Ticket `04`'s note that
+  `004` *"leans on `~/vault` being a git repo as the real undo"* is therefore
+  narrowed: git covers only the 215 tracked files on **krypton**, and nothing on helium.
+- **`--workdir <dir>` injects `AGENTS.md`/`CLAUDE.md` from that directory.** A job
+  with `--workdir /vault` picks up the vault charter for free — which is a *soft*
+  instruction channel worth considering alongside the hard prefix list, given the
+  map's "Hermes replaces `/daily`" framing.
+- **Traceability now lives in `$HERMES_HOME/logs`** (restic-covered), not in the
+  vault. If this ticket wants a per-write record inside the vault, that is a new
+  decision, not an inherited one.
+
 ### Why this needs its own ticket
 
 "Narrow write surface" is currently a *principle*, and principles do not survive

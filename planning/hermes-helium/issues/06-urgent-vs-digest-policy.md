@@ -45,6 +45,37 @@ assistant is a dead one. That is a plausible fifth death.
    (11=Mattias, 5=Hanna, 2=Both). Calendar is out of scope for this map, but if an
    interrupt could concern Hanna, note it rather than discovering it later.
 
+### Inherited from ticket `03` (verified on the box 2026-07-31 — don't re-derive)
+
+- **`--deliver telegram` is the sanctioned delivery mechanism**, and it fixes ticket
+  `02`'s worst carried-forward defect. `02` found all three recovered prompts said
+  *"send the briefing to Telegram"* as a **prompt instruction**, which is
+  unexecutable because cron jobs run with messaging tools disabled — inviting a
+  silent non-delivery. `hermes cron create --deliver <origin|local|telegram|discord|signal|platform:chat_id>`
+  is the supported path and does not depend on the agent choosing to call a tool.
+- **`--no-agent` makes a script's stdout the message, verbatim** — "the script IS the
+  job", and **empty stdout is silent**. That is the classic watchdog shape and it is
+  directly relevant to the urgent-vs-digest split: an urgent check that emits nothing
+  when all is well costs no attention, whereas a digest is an agent job. It also means
+  a *broken* watchdog and a *quiet* one look identical — coordinate with `05`.
+- **`--workdir <dir>` injects `AGENTS.md` / `CLAUDE.md` from that directory** into the
+  job. A job with `--workdir /vault` therefore picks up the vault charter
+  (`~/vault/AGENTS.md`) for free, which the map's Notes describe as *"almost exactly
+  this ask"*. Relevant to how much routing policy has to be restated in each prompt.
+- **`--model` / `--provider` can be pinned per job**, and the help notes this is
+  user-owned — *"the agent's cronjob tool cannot set this"*. So an urgent-triage job
+  and an evening-digest job can run on different models, and the agent cannot
+  silently change that itself.
+- **Cron jobs are seeded declaratively** by ansible via `docker exec … hermes cron
+  create`, guarded by `hermes cron list` — never by patching the gateway-owned
+  `jobs.json`. So whatever policy this ticket lands must be expressible as job
+  definitions in git.
+- **`TZ=Europe/Stockholm` is set on the container**, so "end of day" means local time.
+  Ticket `01` flagged that a wrong `TZ` fires briefings at the wrong hour silently.
+- **A 💊 medication section is still sourceless.** `02` found the file the old script
+  read no longer exists in `~/vault`; `03` did not change that. It remains a
+  prerequisite for this ticket, not an adaptation.
+
 ### Inherited from ticket `02` (verified 2026-07-31 — don't re-derive)
 
 The prior art point 3 leans on has been read and judged
