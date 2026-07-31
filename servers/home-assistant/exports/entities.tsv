@@ -75,14 +75,14 @@ binary_sensor.helium_ssd1_smart	off	helium ssd1 SMART	problem
 binary_sensor.helium_ssd2_smart	off	helium ssd2 SMART	problem
 binary_sensor.helium_status	on	Helium Status	connectivity
 binary_sensor.iphone_kiosk_mode	off	iPhone Kiosk Mode	-
-binary_sensor.leonardo_charging	off	Leonardo Charging	battery_charging
-binary_sensor.leonardo_cleaning	off	Leonardo Cleaning	running
-binary_sensor.leonardo_dock_mop_drying	off	Leonardo Dock Mop drying	running
-binary_sensor.leonardo_maintenance_due	on	Leonardo maintenance due	problem
-binary_sensor.leonardo_mop_attached	off	Leonardo Mop attached	connectivity
+binary_sensor.leonardo_charging	unavailable	Leonardo Charging	battery_charging
+binary_sensor.leonardo_cleaning	unavailable	Leonardo Cleaning	running
+binary_sensor.leonardo_dock_mop_drying	unavailable	Leonardo Dock Mop drying	running
+binary_sensor.leonardo_maintenance_due	off	Leonardo maintenance due	problem
+binary_sensor.leonardo_mop_attached	unavailable	Leonardo Mop attached	connectivity
 binary_sensor.leonardo_needs_empty	off	Leonardo needs empty	problem
-binary_sensor.leonardo_water_box_attached	on	Leonardo Water box attached	connectivity
-binary_sensor.leonardo_water_shortage	off	Leonardo Water shortage	problem
+binary_sensor.leonardo_water_box_attached	unavailable	Leonardo Water box attached	connectivity
+binary_sensor.leonardo_water_shortage	unavailable	Leonardo Water shortage	problem
 binary_sensor.radarr_health	off	Radarr Health	problem
 binary_sensor.remote_ui	on	Remote UI	connectivity
 button.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_identify	unknown	light_bulb_03 Identify	identify
@@ -91,7 +91,7 @@ button.ikea_of_sweden_tradfri_on_off_switch_identify	unavailable	IKEA of Sweden 
 button.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_identify	unknown	light_boulb_02 Identify	identify
 button.light_bulb_01_identify	unknown	light_bulb_01 Identify	identify
 button.lumi_lumi_weather_identify	unknown	Fridge Identify	identify
-button.on_off_switch_01_identify	unavailable	on_off_switch_01 Identify	identify
+button.on_off_switch_01_identify	unknown	on_off_switch_01 Identify	identify
 button.sonoff_snzb_02d_identify	unknown	temp_hum_01 Identify	identify
 button.sonoff_snzb_02d_identify_2	unknown	SONOFF SNZB-02D Identify	identify
 button.sonoff_snzb_02d_identify_3	unknown	SONOFF SNZB-02D Identify	identify
@@ -100,16 +100,16 @@ button.test_favorite_current_song	unknown	Test Favorite current song	-
 button.vardagsrum_cast_favorite_current_song	unknown	Vardagsrum Cast Favorite current song	-
 button.vardagsrumtv_favorite_current_song	unknown	VardagsrumTV Favorite current song	-
 button.wake_on_lan_20_17_42_85_0b_20	2026-05-19T13:22:24.946730+00:00	TV	-
-button.wake_on_lan_70_8b_cd_a2_dd_2b	2026-07-30T05:39:20.557021+00:00	neon	-
-button.wake_on_lan_80_e8_2c_22_05_96	2026-07-30T05:39:20.557152+00:00	litium	-
+button.wake_on_lan_70_8b_cd_a2_dd_2b	2026-07-31T05:45:41.897379+00:00	neon	-
+button.wake_on_lan_80_e8_2c_22_05_96	2026-07-31T05:45:41.897541+00:00	litium	-
 button.xiaomi_lumi_sen_ill_mgl01_identify	unknown	XIAOMI lumi.sen_ill.mgl01 Identify	identify
 calendar.radarr	off	Radarr	-
 conversation.home_assistant	2026-05-23T11:21:35.270436+00:00	Home Assistant	-
 device_tracker.cph2581	home	CPH2581	-
 device_tracker.iphone	home	iPhone	-
 device_tracker.sm_x920	home	SM-X920	-
-event.backup_automatic_backup	2026-07-30T03:38:44.176+00:00	Backup Automatic backup	-
-image.leonardo_map_0	2026-07-30T13:51:13.970341+00:00	Leonardo Map 0	-
+event.backup_automatic_backup	2026-07-31T03:17:35.272+00:00	Backup Automatic backup	-
+image.leonardo_map_0	unavailable	Leonardo Map 0	-
 input_boolean.auto_brightness_on	on	Auto brightness on	-
 input_boolean.leonardo_auto_bedroom	off	Leonardo auto bedroom	-
 input_boolean.leonardo_auto_entrance	on	Leonardo auto entrance	-
@@ -135,7 +135,7 @@ media_player.test	off	Test	speaker
 media_player.test_2	off	Test	speaker
 media_player.vardagsrum_cast	off	Vardagsrum Cast	-
 media_player.vardagsrum_cast_2	idle	Vardagsrum Cast	speaker
-media_player.vardagsrumtv	unavailable	VardagsrumTV	tv
+media_player.vardagsrumtv	on	VardagsrumTV	tv
 media_player.vardagsrumtv_2	idle	VardagsrumTV	speaker
 notify.cph2581	2026-07-30T12:37:23.884241+00:00	CPH2581	-
 notify.iphone	2026-07-30T12:37:24.598921+00:00	iPhone	-
@@ -178,7 +178,7 @@ number.sonoff_snzb_02d_temperature_offset_2	0.0	SONOFF SNZB-02D Temperature offs
 number.sonoff_snzb_02d_temperature_offset_3	0.0	SONOFF SNZB-02D Temperature offset	temperature_delta
 person.hanna	home	Hanna	-
 person.mattias	home	Mattias	-
-scene.all_off	2026-07-25T21:46:59.159245+00:00	All off	-
+scene.all_off	2026-07-30T22:49:01.402703+00:00	All off	-
 scene.bright	2026-07-25T17:25:58.139184+00:00	Bright	-
 scene.evening	2026-05-31T17:47:59.631981+00:00	Evening	-
 scene.movie	2026-07-29T20:50:07.166181+00:00	Movie	-
@@ -187,330 +187,336 @@ select.balcony_balcony_display_unit	Celsius	Balcony Display unit	-
 select.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_power_on_behavior	On	light_bulb_03 Power-on behavior	-
 select.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_power_on_behavior_2	On	light_bulb_04 Power-on behavior	-
 select.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_power_on_behavior	On	light_boulb_02 Power-on behavior	-
-select.leonardo_mop_intensity	intense	Leonardo Mop intensity	-
-select.leonardo_mop_mode	standard	Leonardo Mop mode	-
-select.leonardo_selected_map	Map 0	Leonardo Selected map	-
+select.leonardo_mop_intensity	unavailable	Leonardo Mop intensity	-
+select.leonardo_mop_mode	unavailable	Leonardo Mop mode	-
+select.leonardo_selected_map	unavailable	Leonardo Selected map	-
 select.light_bulb_01_power_on_behavior	On	light_bulb_01 Power-on behavior	-
 select.sonoff_snzb_02d_display_unit	Celsius	temp_hum_01 Display unit	-
 select.sonoff_snzb_02d_display_unit_2	Celsius	SONOFF SNZB-02D Display unit	-
 select.sonoff_snzb_02d_display_unit_3	Celsius	SONOFF SNZB-02D Display unit	-
 sensor.backup_backup_manager_state	idle	Backup Backup Manager state	enum
-sensor.backup_last_attempted_automatic_backup	2026-07-30T03:38:41+00:00	Backup Last attempted automatic backup	timestamp
-sensor.backup_last_successful_automatic_backup	2026-07-30T03:38:43+00:00	Backup Last successful automatic backup	timestamp
-sensor.backup_next_scheduled_automatic_backup	2026-07-31T03:17:32+00:00	Backup Next scheduled automatic backup	timestamp
+sensor.backup_last_attempted_automatic_backup	2026-07-31T03:17:32+00:00	Backup Last attempted automatic backup	timestamp
+sensor.backup_last_successful_automatic_backup	2026-07-31T03:17:35+00:00	Backup Last successful automatic backup	timestamp
+sensor.backup_next_scheduled_automatic_backup	2026-08-01T02:59:35+00:00	Backup Next scheduled automatic backup	timestamp
 sensor.brightness	0	brightness	-
-sensor.cph2581_battery_level	60	CPH2581 Battery level	battery
-sensor.cph2581_battery_state	charging	CPH2581 Battery state	enum
-sensor.cph2581_charger_type	ac	CPH2581 Charger type	enum
-sensor.helium_board_temperature	32.0	helium Board temperature	temperature
-sensor.helium_case_fan_1	1327.0	helium Case fan 1	-
-sensor.helium_case_fan_2	897.0	helium Case fan 2	-
-sensor.helium_containers_bazarr_block_input	105.0	helium Containers bazarr Block Input	data_size
+sensor.cph2581_battery_level	46	CPH2581 Battery level	battery
+sensor.cph2581_battery_state	discharging	CPH2581 Battery state	enum
+sensor.cph2581_charger_type	none	CPH2581 Charger type	enum
+sensor.helium_board_temperature	31.0	helium Board temperature	temperature
+sensor.helium_case_fan_1	1326.0	helium Case fan 1	-
+sensor.helium_case_fan_2	886.0	helium Case fan 2	-
+sensor.helium_containers_bazarr_block_input	585.0	helium Containers bazarr Block Input	data_size
 sensor.helium_containers_bazarr_block_input_rate	0.0	helium Containers bazarr Block Input Rate	data_rate
-sensor.helium_containers_bazarr_block_output	310.0	helium Containers bazarr Block Output	data_size
+sensor.helium_containers_bazarr_block_output	734.0	helium Containers bazarr Block Output	data_size
 sensor.helium_containers_bazarr_block_output_rate	0.0	helium Containers bazarr Block Output Rate	data_rate
-sensor.helium_containers_bazarr_cpu	0.16	helium Containers bazarr CPU	-
-sensor.helium_containers_bazarr_memory	263.3	helium Containers bazarr Memory	data_size
-sensor.helium_containers_bazarr_network_input	19.7	helium Containers bazarr Network Input	data_size
+sensor.helium_containers_bazarr_cpu	0.19	helium Containers bazarr CPU	-
+sensor.helium_containers_bazarr_memory	176.8	helium Containers bazarr Memory	data_size
+sensor.helium_containers_bazarr_network_input	35.8	helium Containers bazarr Network Input	data_size
 sensor.helium_containers_bazarr_network_input_rate	0.0	helium Containers bazarr Network Input Rate	data_rate
-sensor.helium_containers_bazarr_network_output	4.94	helium Containers bazarr Network Output	data_size
-sensor.helium_containers_bazarr_network_output_rate	0.0	helium Containers bazarr Network Output Rate	data_rate
-sensor.helium_containers_cleanuparr_block_input	398.0	helium Containers cleanuparr Block Input	data_size
+sensor.helium_containers_bazarr_network_output	8.9	helium Containers bazarr Network Output	data_size
+sensor.helium_containers_bazarr_network_output_rate	0.000327693563262792	helium Containers bazarr Network Output Rate	data_rate
+sensor.helium_containers_cleanuparr_block_input	602.0	helium Containers cleanuparr Block Input	data_size
 sensor.helium_containers_cleanuparr_block_input_rate	0.0	helium Containers cleanuparr Block Input Rate	data_rate
-sensor.helium_containers_cleanuparr_block_output	614.0	helium Containers cleanuparr Block Output	data_size
+sensor.helium_containers_cleanuparr_block_output	788.0	helium Containers cleanuparr Block Output	data_size
 sensor.helium_containers_cleanuparr_block_output_rate	0.0	helium Containers cleanuparr Block Output Rate	data_rate
-sensor.helium_containers_cleanuparr_cpu	0.08	helium Containers cleanuparr CPU	-
-sensor.helium_containers_cleanuparr_memory	193.1	helium Containers cleanuparr Memory	data_size
-sensor.helium_containers_cleanuparr_network_input	14.4	helium Containers cleanuparr Network Input	data_size
+sensor.helium_containers_cleanuparr_cpu	0.18	helium Containers cleanuparr CPU	-
+sensor.helium_containers_cleanuparr_memory	97.72	helium Containers cleanuparr Memory	data_size
+sensor.helium_containers_cleanuparr_network_input	20.5	helium Containers cleanuparr Network Input	data_size
 sensor.helium_containers_cleanuparr_network_input_rate	0.0	helium Containers cleanuparr Network Input Rate	data_rate
-sensor.helium_containers_cleanuparr_network_output	8.18	helium Containers cleanuparr Network Output	data_size
+sensor.helium_containers_cleanuparr_network_output	9.36	helium Containers cleanuparr Network Output	data_size
 sensor.helium_containers_cleanuparr_network_output_rate	0.0	helium Containers cleanuparr Network Output Rate	data_rate
-sensor.helium_containers_docker2mqtt_block_input	0.0	helium Containers docker2mqtt Block Input	data_size
+sensor.helium_containers_docker2mqtt_block_input	11.0	helium Containers docker2mqtt Block Input	data_size
 sensor.helium_containers_docker2mqtt_block_input_rate	0.0	helium Containers docker2mqtt Block Input Rate	data_rate
-sensor.helium_containers_docker2mqtt_block_output	0.0	helium Containers docker2mqtt Block Output	data_size
+sensor.helium_containers_docker2mqtt_block_output	18.1	helium Containers docker2mqtt Block Output	data_size
 sensor.helium_containers_docker2mqtt_block_output_rate	0.0	helium Containers docker2mqtt Block Output Rate	data_rate
-sensor.helium_containers_docker2mqtt_cpu	4.07	helium Containers docker2mqtt CPU	-
-sensor.helium_containers_docker2mqtt_memory	51.17	helium Containers docker2mqtt Memory	data_size
-sensor.helium_containers_docker2mqtt_network_input	7956.48	helium Containers docker2mqtt Network Input	data_size
-sensor.helium_containers_docker2mqtt_network_input_rate	0.3357192348565145	helium Containers docker2mqtt Network Input Rate	data_rate
-sensor.helium_containers_docker2mqtt_network_output	495.0	helium Containers docker2mqtt Network Output	data_size
-sensor.helium_containers_docker2mqtt_network_output_rate	0.0	helium Containers docker2mqtt Network Output Rate	data_rate
-sensor.helium_containers_docker_socket_proxy_block_input	18.4	helium Containers docker-socket-proxy Block Input	data_size
+sensor.helium_containers_docker2mqtt_cpu	5.89	helium Containers docker2mqtt CPU	-
+sensor.helium_containers_docker2mqtt_memory	34.73	helium Containers docker2mqtt Memory	data_size
+sensor.helium_containers_docker2mqtt_network_input	12595.2	helium Containers docker2mqtt Network Input	data_size
+sensor.helium_containers_docker2mqtt_network_input_rate	0.0	helium Containers docker2mqtt Network Input Rate	data_rate
+sensor.helium_containers_docker2mqtt_network_output	778.0	helium Containers docker2mqtt Network Output	data_size
+sensor.helium_containers_docker2mqtt_network_output_rate	0.03281754759520723	helium Containers docker2mqtt Network Output Rate	data_rate
+sensor.helium_containers_docker_socket_proxy_block_input	19.5	helium Containers docker-socket-proxy Block Input	data_size
 sensor.helium_containers_docker_socket_proxy_block_input_rate	0.0	helium Containers docker-socket-proxy Block Input Rate	data_rate
-sensor.helium_containers_docker_socket_proxy_block_output	11.1	helium Containers docker-socket-proxy Block Output	data_size
+sensor.helium_containers_docker_socket_proxy_block_output	11.7	helium Containers docker-socket-proxy Block Output	data_size
 sensor.helium_containers_docker_socket_proxy_block_output_rate	0.0	helium Containers docker-socket-proxy Block Output Rate	data_rate
-sensor.helium_containers_docker_socket_proxy_cpu	0.44	helium Containers docker-socket-proxy CPU	-
-sensor.helium_containers_docker_socket_proxy_memory	8.5	helium Containers docker-socket-proxy Memory	data_size
-sensor.helium_containers_docker_socket_proxy_network_input	560.0	helium Containers docker-socket-proxy Network Input	data_size
+sensor.helium_containers_docker_socket_proxy_cpu	0.56	helium Containers docker-socket-proxy CPU	-
+sensor.helium_containers_docker_socket_proxy_memory	3.746	helium Containers docker-socket-proxy Memory	data_size
+sensor.helium_containers_docker_socket_proxy_network_input	831.0	helium Containers docker-socket-proxy Network Input	data_size
 sensor.helium_containers_docker_socket_proxy_network_input_rate	0.0	helium Containers docker-socket-proxy Network Input Rate	data_rate
-sensor.helium_containers_docker_socket_proxy_network_output	10752.0	helium Containers docker-socket-proxy Network Output	data_size
+sensor.helium_containers_docker_socket_proxy_network_output	15667.2	helium Containers docker-socket-proxy Network Output	data_size
 sensor.helium_containers_docker_socket_proxy_network_output_rate	0.0	helium Containers docker-socket-proxy Network Output Rate	data_rate
-sensor.helium_containers_flaresolverr_block_input	17.5	helium Containers flaresolverr Block Input	data_size
+sensor.helium_containers_flaresolverr_block_input	718.0	helium Containers flaresolverr Block Input	data_size
 sensor.helium_containers_flaresolverr_block_input_rate	0.0	helium Containers flaresolverr Block Input Rate	data_rate
-sensor.helium_containers_flaresolverr_block_output	10.4	helium Containers flaresolverr Block Output	data_size
+sensor.helium_containers_flaresolverr_block_output	142.0	helium Containers flaresolverr Block Output	data_size
 sensor.helium_containers_flaresolverr_block_output_rate	0.0	helium Containers flaresolverr Block Output Rate	data_rate
-sensor.helium_containers_flaresolverr_cpu	0.01	helium Containers flaresolverr CPU	-
-sensor.helium_containers_flaresolverr_memory	123.9	helium Containers flaresolverr Memory	data_size
-sensor.helium_containers_flaresolverr_network_input	113.0	helium Containers flaresolverr Network Input	data_size
+sensor.helium_containers_flaresolverr_cpu	0.02	helium Containers flaresolverr CPU	-
+sensor.helium_containers_flaresolverr_memory	76.39	helium Containers flaresolverr Memory	data_size
+sensor.helium_containers_flaresolverr_network_input	78540.8	helium Containers flaresolverr Network Input	data_size
 sensor.helium_containers_flaresolverr_network_input_rate	0.0	helium Containers flaresolverr Network Input Rate	data_rate
-sensor.helium_containers_flaresolverr_network_output	250.0	helium Containers flaresolverr Network Output	data_size
-sensor.helium_containers_flaresolverr_network_output_rate	0.03331839114551761	helium Containers flaresolverr Network Output Rate	data_rate
-sensor.helium_containers_gluetun_block_input	3.01	helium Containers gluetun Block Input	data_size
+sensor.helium_containers_flaresolverr_network_output	34611.2	helium Containers flaresolverr Network Output	data_size
+sensor.helium_containers_flaresolverr_network_output_rate	0.0	helium Containers flaresolverr Network Output Rate	data_rate
+sensor.helium_containers_gluetun_block_input	24.3	helium Containers gluetun Block Input	data_size
 sensor.helium_containers_gluetun_block_input_rate	0.0	helium Containers gluetun Block Input Rate	data_rate
-sensor.helium_containers_gluetun_block_output	0.016015625	helium Containers gluetun Block Output	data_size
+sensor.helium_containers_gluetun_block_output	5.04	helium Containers gluetun Block Output	data_size
 sensor.helium_containers_gluetun_block_output_rate	0.0	helium Containers gluetun Block Output Rate	data_rate
-sensor.helium_containers_gluetun_cpu	0.0	helium Containers gluetun CPU	-
-sensor.helium_containers_gluetun_memory	78.5	helium Containers gluetun Memory	data_size
-sensor.helium_containers_gluetun_network_input	113.0	helium Containers gluetun Network Input	data_size
+sensor.helium_containers_gluetun_cpu	0.03	helium Containers gluetun CPU	-
+sensor.helium_containers_gluetun_memory	70.4	helium Containers gluetun Memory	data_size
+sensor.helium_containers_gluetun_network_input	78540.8	helium Containers gluetun Network Input	data_size
 sensor.helium_containers_gluetun_network_input_rate	0.0	helium Containers gluetun Network Input Rate	data_rate
-sensor.helium_containers_gluetun_network_output	250.0	helium Containers gluetun Network Output	data_size
+sensor.helium_containers_gluetun_network_output	34611.2	helium Containers gluetun Network Output	data_size
 sensor.helium_containers_gluetun_network_output_rate	0.0	helium Containers gluetun Network Output Rate	data_rate
-sensor.helium_containers_homepage_block_input	90.2	helium Containers homepage Block Input	data_size
+sensor.helium_containers_homepage_block_input	269.0	helium Containers homepage Block Input	data_size
 sensor.helium_containers_homepage_block_input_rate	0.0	helium Containers homepage Block Input Rate	data_rate
-sensor.helium_containers_homepage_block_output	0.0	helium Containers homepage Block Output	data_size
+sensor.helium_containers_homepage_block_output	131.0	helium Containers homepage Block Output	data_size
 sensor.helium_containers_homepage_block_output_rate	0.0	helium Containers homepage Block Output Rate	data_rate
-sensor.helium_containers_homepage_cpu	7.24	helium Containers homepage CPU	-
-sensor.helium_containers_homepage_memory	178.7	helium Containers homepage Memory	data_size
-sensor.helium_containers_homepage_network_input	12.7	helium Containers homepage Network Input	data_size
+sensor.helium_containers_homepage_cpu	2.97	helium Containers homepage CPU	-
+sensor.helium_containers_homepage_memory	83.52	helium Containers homepage Memory	data_size
+sensor.helium_containers_homepage_network_input	13.0	helium Containers homepage Network Input	data_size
 sensor.helium_containers_homepage_network_input_rate	0.0	helium Containers homepage Network Input Rate	data_rate
-sensor.helium_containers_homepage_network_output	1.08	helium Containers homepage Network Output	data_size
+sensor.helium_containers_homepage_network_output	1.59	helium Containers homepage Network Output	data_size
 sensor.helium_containers_homepage_network_output_rate	0.0	helium Containers homepage Network Output Rate	data_rate
-sensor.helium_containers_immich_machine_learning_block_input	1167.36	helium Containers immich_machine_learning Block Input	data_size
+sensor.helium_containers_immich_machine_learning_block_input	1198.08	helium Containers immich_machine_learning Block Input	data_size
 sensor.helium_containers_immich_machine_learning_block_input_rate	0.0	helium Containers immich_machine_learning Block Input Rate	data_rate
-sensor.helium_containers_immich_machine_learning_block_output	235.0	helium Containers immich_machine_learning Block Output	data_size
+sensor.helium_containers_immich_machine_learning_block_output	352.0	helium Containers immich_machine_learning Block Output	data_size
 sensor.helium_containers_immich_machine_learning_block_output_rate	0.0	helium Containers immich_machine_learning Block Output Rate	data_rate
-sensor.helium_containers_immich_machine_learning_cpu	0.2	helium Containers immich_machine_learning CPU	-
-sensor.helium_containers_immich_machine_learning_memory	430.0	helium Containers immich_machine_learning Memory	data_size
-sensor.helium_containers_immich_machine_learning_network_input	31.0	helium Containers immich_machine_learning Network Input	data_size
+sensor.helium_containers_immich_machine_learning_cpu	0.21	helium Containers immich_machine_learning CPU	-
+sensor.helium_containers_immich_machine_learning_memory	61.31	helium Containers immich_machine_learning Memory	data_size
+sensor.helium_containers_immich_machine_learning_network_input	33.0	helium Containers immich_machine_learning Network Input	data_size
 sensor.helium_containers_immich_machine_learning_network_input_rate	0.0	helium Containers immich_machine_learning Network Input Rate	data_rate
-sensor.helium_containers_immich_machine_learning_network_output	13.1	helium Containers immich_machine_learning Network Output	data_size
+sensor.helium_containers_immich_machine_learning_network_output	14.9	helium Containers immich_machine_learning Network Output	data_size
 sensor.helium_containers_immich_machine_learning_network_output_rate	0.0	helium Containers immich_machine_learning Network Output Rate	data_rate
-sensor.helium_containers_immich_postgres_block_input	264.0	helium Containers immich_postgres Block Input	data_size
+sensor.helium_containers_immich_postgres_block_input	531.0	helium Containers immich_postgres Block Input	data_size
 sensor.helium_containers_immich_postgres_block_input_rate	0.0	helium Containers immich_postgres Block Input Rate	data_rate
-sensor.helium_containers_immich_postgres_block_output	2191.36	helium Containers immich_postgres Block Output	data_size
+sensor.helium_containers_immich_postgres_block_output	2693.12	helium Containers immich_postgres Block Output	data_size
 sensor.helium_containers_immich_postgres_block_output_rate	0.0	helium Containers immich_postgres Block Output Rate	data_rate
-sensor.helium_containers_immich_postgres_cpu	0.0	helium Containers immich_postgres CPU	-
-sensor.helium_containers_immich_postgres_memory	125.9	helium Containers immich_postgres Memory	data_size
-sensor.helium_containers_immich_postgres_network_input	30.9	helium Containers immich_postgres Network Input	data_size
+sensor.helium_containers_immich_postgres_cpu	0.01	helium Containers immich_postgres CPU	-
+sensor.helium_containers_immich_postgres_memory	92.41	helium Containers immich_postgres Memory	data_size
+sensor.helium_containers_immich_postgres_network_input	41.9	helium Containers immich_postgres Network Input	data_size
 sensor.helium_containers_immich_postgres_network_input_rate	0.0	helium Containers immich_postgres Network Input Rate	data_rate
-sensor.helium_containers_immich_postgres_network_output	527.0	helium Containers immich_postgres Network Output	data_size
+sensor.helium_containers_immich_postgres_network_output	635.0	helium Containers immich_postgres Network Output	data_size
 sensor.helium_containers_immich_postgres_network_output_rate	0.0	helium Containers immich_postgres Network Output Rate	data_rate
-sensor.helium_containers_immich_redis_block_input	48.3	helium Containers immich_redis Block Input	data_size
+sensor.helium_containers_immich_redis_block_input	108.0	helium Containers immich_redis Block Input	data_size
 sensor.helium_containers_immich_redis_block_input_rate	0.0	helium Containers immich_redis Block Input Rate	data_rate
-sensor.helium_containers_immich_redis_block_output	910.0	helium Containers immich_redis Block Output	data_size
+sensor.helium_containers_immich_redis_block_output	1064.96	helium Containers immich_redis Block Output	data_size
 sensor.helium_containers_immich_redis_block_output_rate	0.0	helium Containers immich_redis Block Output Rate	data_rate
-sensor.helium_containers_immich_redis_cpu	0.54	helium Containers immich_redis CPU	-
-sensor.helium_containers_immich_redis_memory	14.61	helium Containers immich_redis Memory	data_size
-sensor.helium_containers_immich_redis_network_input	1638.4	helium Containers immich_redis Network Input	data_size
+sensor.helium_containers_immich_redis_cpu	0.63	helium Containers immich_redis CPU	-
+sensor.helium_containers_immich_redis_memory	16.97	helium Containers immich_redis Memory	data_size
+sensor.helium_containers_immich_redis_network_input	1863.68	helium Containers immich_redis Network Input	data_size
 sensor.helium_containers_immich_redis_network_input_rate	0.0	helium Containers immich_redis Network Input Rate	data_rate
-sensor.helium_containers_immich_redis_network_output	790.0	helium Containers immich_redis Network Output	data_size
+sensor.helium_containers_immich_redis_network_output	899.0	helium Containers immich_redis Network Output	data_size
 sensor.helium_containers_immich_redis_network_output_rate	0.0	helium Containers immich_redis Network Output Rate	data_rate
-sensor.helium_containers_immich_server_block_input	117760.0	helium Containers immich_server Block Input	data_size
+sensor.helium_containers_immich_server_block_input	143360.0	helium Containers immich_server Block Input	data_size
 sensor.helium_containers_immich_server_block_input_rate	0.0	helium Containers immich_server Block Input Rate	data_rate
-sensor.helium_containers_immich_server_block_output	24576.0	helium Containers immich_server Block Output	data_size
+sensor.helium_containers_immich_server_block_output	25292.8	helium Containers immich_server Block Output	data_size
 sensor.helium_containers_immich_server_block_output_rate	0.0	helium Containers immich_server Block Output Rate	data_rate
-sensor.helium_containers_immich_server_cpu	0.73	helium Containers immich_server CPU	-
-sensor.helium_containers_immich_server_memory	943.9	helium Containers immich_server Memory	data_size
-sensor.helium_containers_immich_server_network_input	18432.0	helium Containers immich_server Network Input	data_size
+sensor.helium_containers_immich_server_cpu	0.34	helium Containers immich_server CPU	-
+sensor.helium_containers_immich_server_memory	459.8	helium Containers immich_server Memory	data_size
+sensor.helium_containers_immich_server_network_input	18636.8	helium Containers immich_server Network Input	data_size
 sensor.helium_containers_immich_server_network_input_rate	0.0	helium Containers immich_server Network Input Rate	data_rate
-sensor.helium_containers_immich_server_network_output	1761.28	helium Containers immich_server Network Output	data_size
+sensor.helium_containers_immich_server_network_output	2007.04	helium Containers immich_server Network Output	data_size
 sensor.helium_containers_immich_server_network_output_rate	0.0	helium Containers immich_server Network Output Rate	data_rate
-sensor.helium_containers_jellyfin_block_input	140.0	helium Containers jellyfin Block Input	data_size
+sensor.helium_containers_jellyfin_block_input	599.0	helium Containers jellyfin Block Input	data_size
 sensor.helium_containers_jellyfin_block_input_rate	0.0	helium Containers jellyfin Block Input Rate	data_rate
-sensor.helium_containers_jellyfin_block_output	207.0	helium Containers jellyfin Block Output	data_size
+sensor.helium_containers_jellyfin_block_output	891.0	helium Containers jellyfin Block Output	data_size
 sensor.helium_containers_jellyfin_block_output_rate	0.0	helium Containers jellyfin Block Output Rate	data_rate
-sensor.helium_containers_jellyfin_cpu	0.01	helium Containers jellyfin CPU	-
-sensor.helium_containers_jellyfin_memory	418.4	helium Containers jellyfin Memory	data_size
-sensor.helium_containers_jellyfin_network_input	12.9	helium Containers jellyfin Network Input	data_size
+sensor.helium_containers_jellyfin_cpu	0.08	helium Containers jellyfin CPU	-
+sensor.helium_containers_jellyfin_memory	256.4	helium Containers jellyfin Memory	data_size
+sensor.helium_containers_jellyfin_network_input	66.2	helium Containers jellyfin Network Input	data_size
 sensor.helium_containers_jellyfin_network_input_rate	0.0	helium Containers jellyfin Network Input Rate	data_rate
-sensor.helium_containers_jellyfin_network_output	69.0	helium Containers jellyfin Network Output	data_size
+sensor.helium_containers_jellyfin_network_output	120.0	helium Containers jellyfin Network Output	data_size
 sensor.helium_containers_jellyfin_network_output_rate	0.0	helium Containers jellyfin Network Output Rate	data_rate
-sensor.helium_containers_jellyseerr_block_input	256.0	helium Containers jellyseerr Block Input	data_size
+sensor.helium_containers_jellyseerr_block_input	283.0	helium Containers jellyseerr Block Input	data_size
 sensor.helium_containers_jellyseerr_block_input_rate	0.0	helium Containers jellyseerr Block Input Rate	data_rate
-sensor.helium_containers_jellyseerr_block_output	223.0	helium Containers jellyseerr Block Output	data_size
+sensor.helium_containers_jellyseerr_block_output	244.0	helium Containers jellyseerr Block Output	data_size
 sensor.helium_containers_jellyseerr_block_output_rate	0.0	helium Containers jellyseerr Block Output Rate	data_rate
-sensor.helium_containers_jellyseerr_cpu	0.0	helium Containers jellyseerr CPU	-
-sensor.helium_containers_jellyseerr_memory	176.4	helium Containers jellyseerr Memory	data_size
-sensor.helium_containers_jellyseerr_network_input	484.0	helium Containers jellyseerr Network Input	data_size
+sensor.helium_containers_jellyseerr_cpu	0.01	helium Containers jellyseerr CPU	-
+sensor.helium_containers_jellyseerr_memory	161.0	helium Containers jellyseerr Memory	data_size
+sensor.helium_containers_jellyseerr_network_input	551.0	helium Containers jellyseerr Network Input	data_size
 sensor.helium_containers_jellyseerr_network_input_rate	0.0	helium Containers jellyseerr Network Input Rate	data_rate
-sensor.helium_containers_jellyseerr_network_output	109.0	helium Containers jellyseerr Network Output	data_size
+sensor.helium_containers_jellyseerr_network_output	127.0	helium Containers jellyseerr Network Output	data_size
 sensor.helium_containers_jellyseerr_network_output_rate	0.0	helium Containers jellyseerr Network Output Rate	data_rate
-sensor.helium_containers_ollama_block_input	202.0	helium Containers ollama Block Input	data_size
+sensor.helium_containers_ollama_block_input	225.0	helium Containers ollama Block Input	data_size
 sensor.helium_containers_ollama_block_input_rate	0.0	helium Containers ollama Block Input Rate	data_rate
-sensor.helium_containers_ollama_block_output	3.64	helium Containers ollama Block Output	data_size
+sensor.helium_containers_ollama_block_output	6.13	helium Containers ollama Block Output	data_size
 sensor.helium_containers_ollama_block_output_rate	0.0	helium Containers ollama Block Output Rate	data_rate
-sensor.helium_containers_ollama_cpu	0.0	helium Containers ollama CPU	-
-sensor.helium_containers_ollama_memory	45.36	helium Containers ollama Memory	data_size
-sensor.helium_containers_ollama_network_input	0.2392578125	helium Containers ollama Network Input	data_size
+sensor.helium_containers_ollama_cpu	0.01	helium Containers ollama CPU	-
+sensor.helium_containers_ollama_memory	16.37	helium Containers ollama Memory	data_size
+sensor.helium_containers_ollama_network_input	0.2705078125	helium Containers ollama Network Input	data_size
 sensor.helium_containers_ollama_network_input_rate	0.0	helium Containers ollama Network Input Rate	data_rate
-sensor.helium_containers_ollama_network_output	0.0986328125	helium Containers ollama Network Output	data_size
+sensor.helium_containers_ollama_network_output	0.1123046875	helium Containers ollama Network Output	data_size
 sensor.helium_containers_ollama_network_output_rate	0.0	helium Containers ollama Network Output Rate	data_rate
-sensor.helium_containers_paperless_block_input	736.0	helium Containers paperless Block Input	data_size
+sensor.helium_containers_paperless_block_input	1361.92	helium Containers paperless Block Input	data_size
 sensor.helium_containers_paperless_block_input_rate	0.0	helium Containers paperless Block Input Rate	data_rate
-sensor.helium_containers_paperless_block_output	499.0	helium Containers paperless Block Output	data_size
+sensor.helium_containers_paperless_block_output	649.0	helium Containers paperless Block Output	data_size
 sensor.helium_containers_paperless_block_output_rate	0.0	helium Containers paperless Block Output Rate	data_rate
-sensor.helium_containers_paperless_cpu	0.23	helium Containers paperless CPU	-
-sensor.helium_containers_paperless_gotenberg_block_input	27.8	helium Containers paperless_gotenberg Block Input	data_size
+sensor.helium_containers_paperless_cpu	0.24	helium Containers paperless CPU	-
+sensor.helium_containers_paperless_gotenberg_block_input	31.6	helium Containers paperless_gotenberg Block Input	data_size
 sensor.helium_containers_paperless_gotenberg_block_input_rate	0.0	helium Containers paperless_gotenberg Block Input Rate	data_rate
-sensor.helium_containers_paperless_gotenberg_block_output	0.248046875	helium Containers paperless_gotenberg Block Output	data_size
+sensor.helium_containers_paperless_gotenberg_block_output	0.3876953125	helium Containers paperless_gotenberg Block Output	data_size
 sensor.helium_containers_paperless_gotenberg_block_output_rate	0.0	helium Containers paperless_gotenberg Block Output Rate	data_rate
 sensor.helium_containers_paperless_gotenberg_cpu	0.11	helium Containers paperless_gotenberg CPU	-
-sensor.helium_containers_paperless_gotenberg_memory	13.73	helium Containers paperless_gotenberg Memory	data_size
-sensor.helium_containers_paperless_gotenberg_network_input	0.01494140625	helium Containers paperless_gotenberg Network Input	data_size
+sensor.helium_containers_paperless_gotenberg_memory	11.59	helium Containers paperless_gotenberg Memory	data_size
+sensor.helium_containers_paperless_gotenberg_network_input	0.016015625	helium Containers paperless_gotenberg Network Input	data_size
 sensor.helium_containers_paperless_gotenberg_network_input_rate	0.0	helium Containers paperless_gotenberg Network Input Rate	data_rate
 sensor.helium_containers_paperless_gotenberg_network_output	0.0001201629638671875	helium Containers paperless_gotenberg Network Output	data_size
 sensor.helium_containers_paperless_gotenberg_network_output_rate	0.0	helium Containers paperless_gotenberg Network Output Rate	data_rate
-sensor.helium_containers_paperless_gpt_block_input	46.4	helium Containers paperless-gpt Block Input	data_size
+sensor.helium_containers_paperless_gpt_block_input	60.8	helium Containers paperless-gpt Block Input	data_size
 sensor.helium_containers_paperless_gpt_block_input_rate	0.0	helium Containers paperless-gpt Block Input Rate	data_rate
-sensor.helium_containers_paperless_gpt_block_output	0.34765625	helium Containers paperless-gpt Block Output	data_size
+sensor.helium_containers_paperless_gpt_block_output	0.50390625	helium Containers paperless-gpt Block Output	data_size
 sensor.helium_containers_paperless_gpt_block_output_rate	0.0	helium Containers paperless-gpt Block Output Rate	data_rate
 sensor.helium_containers_paperless_gpt_cpu	0.1	helium Containers paperless-gpt CPU	-
-sensor.helium_containers_paperless_gpt_memory	14.28	helium Containers paperless-gpt Memory	data_size
-sensor.helium_containers_paperless_gpt_network_input	22.5	helium Containers paperless-gpt Network Input	data_size
+sensor.helium_containers_paperless_gpt_memory	13.89	helium Containers paperless-gpt Memory	data_size
+sensor.helium_containers_paperless_gpt_network_input	25.7	helium Containers paperless-gpt Network Input	data_size
 sensor.helium_containers_paperless_gpt_network_input_rate	0.0	helium Containers paperless-gpt Network Input Rate	data_rate
-sensor.helium_containers_paperless_gpt_network_output	13.5	helium Containers paperless-gpt Network Output	data_size
+sensor.helium_containers_paperless_gpt_network_output	15.3	helium Containers paperless-gpt Network Output	data_size
 sensor.helium_containers_paperless_gpt_network_output_rate	0.0	helium Containers paperless-gpt Network Output Rate	data_rate
-sensor.helium_containers_paperless_memory	356.3	helium Containers paperless Memory	data_size
-sensor.helium_containers_paperless_network_input	1945.6	helium Containers paperless Network Input	data_size
+sensor.helium_containers_paperless_memory	363.7	helium Containers paperless Memory	data_size
+sensor.helium_containers_paperless_network_input	2007.04	helium Containers paperless Network Input	data_size
 sensor.helium_containers_paperless_network_input_rate	0.0	helium Containers paperless Network Input Rate	data_rate
-sensor.helium_containers_paperless_network_output	512.0	helium Containers paperless Network Output	data_size
+sensor.helium_containers_paperless_network_output	586.0	helium Containers paperless Network Output	data_size
 sensor.helium_containers_paperless_network_output_rate	0.0	helium Containers paperless Network Output Rate	data_rate
-sensor.helium_containers_paperless_postgres_block_input	76.4	helium Containers paperless_postgres Block Input	data_size
+sensor.helium_containers_paperless_postgres_block_input	149.0	helium Containers paperless_postgres Block Input	data_size
 sensor.helium_containers_paperless_postgres_block_input_rate	0.0	helium Containers paperless_postgres Block Input Rate	data_rate
-sensor.helium_containers_paperless_postgres_block_output	1914.88	helium Containers paperless_postgres Block Output	data_size
+sensor.helium_containers_paperless_postgres_block_output	2211.84	helium Containers paperless_postgres Block Output	data_size
 sensor.helium_containers_paperless_postgres_block_output_rate	0.0	helium Containers paperless_postgres Block Output Rate	data_rate
-sensor.helium_containers_paperless_postgres_cpu	0.0	helium Containers paperless_postgres CPU	-
-sensor.helium_containers_paperless_postgres_memory	35.24	helium Containers paperless_postgres Memory	data_size
-sensor.helium_containers_paperless_postgres_network_input	218.0	helium Containers paperless_postgres Network Input	data_size
+sensor.helium_containers_paperless_postgres_cpu	0.83	helium Containers paperless_postgres CPU	-
+sensor.helium_containers_paperless_postgres_memory	19.74	helium Containers paperless_postgres Memory	data_size
+sensor.helium_containers_paperless_postgres_network_input	251.0	helium Containers paperless_postgres Network Input	data_size
 sensor.helium_containers_paperless_postgres_network_input_rate	0.0	helium Containers paperless_postgres Network Input Rate	data_rate
-sensor.helium_containers_paperless_postgres_network_output	220.0	helium Containers paperless_postgres Network Output	data_size
+sensor.helium_containers_paperless_postgres_network_output	261.0	helium Containers paperless_postgres Network Output	data_size
 sensor.helium_containers_paperless_postgres_network_output_rate	0.0	helium Containers paperless_postgres Network Output Rate	data_rate
-sensor.helium_containers_paperless_redis_block_input	17.7	helium Containers paperless_redis Block Input	data_size
+sensor.helium_containers_paperless_redis_block_input	48.6	helium Containers paperless_redis Block Input	data_size
 sensor.helium_containers_paperless_redis_block_input_rate	0.0	helium Containers paperless_redis Block Input Rate	data_rate
-sensor.helium_containers_paperless_redis_block_output	2.36	helium Containers paperless_redis Block Output	data_size
+sensor.helium_containers_paperless_redis_block_output	3.28	helium Containers paperless_redis Block Output	data_size
 sensor.helium_containers_paperless_redis_block_output_rate	0.0	helium Containers paperless_redis Block Output Rate	data_rate
-sensor.helium_containers_paperless_redis_cpu	0.44	helium Containers paperless_redis CPU	-
-sensor.helium_containers_paperless_redis_memory	13.37	helium Containers paperless_redis Memory	data_size
-sensor.helium_containers_paperless_redis_network_input	257.0	helium Containers paperless_redis Network Input	data_size
+sensor.helium_containers_paperless_redis_cpu	0.4	helium Containers paperless_redis CPU	-
+sensor.helium_containers_paperless_redis_memory	7.117	helium Containers paperless_redis Memory	data_size
+sensor.helium_containers_paperless_redis_network_input	293.0	helium Containers paperless_redis Network Input	data_size
 sensor.helium_containers_paperless_redis_network_input_rate	0.0	helium Containers paperless_redis Network Input Rate	data_rate
-sensor.helium_containers_paperless_redis_network_output	76.3	helium Containers paperless_redis Network Output	data_size
+sensor.helium_containers_paperless_redis_network_output	87.3	helium Containers paperless_redis Network Output	data_size
 sensor.helium_containers_paperless_redis_network_output_rate	0.0	helium Containers paperless_redis Network Output Rate	data_rate
-sensor.helium_containers_paperless_tika_block_input	161.0	helium Containers paperless_tika Block Input	data_size
+sensor.helium_containers_paperless_tika_block_input	258.0	helium Containers paperless_tika Block Input	data_size
 sensor.helium_containers_paperless_tika_block_input_rate	0.0	helium Containers paperless_tika Block Input Rate	data_rate
-sensor.helium_containers_paperless_tika_block_output	316.0	helium Containers paperless_tika Block Output	data_size
+sensor.helium_containers_paperless_tika_block_output	530.0	helium Containers paperless_tika Block Output	data_size
 sensor.helium_containers_paperless_tika_block_output_rate	0.0	helium Containers paperless_tika Block Output Rate	data_rate
-sensor.helium_containers_paperless_tika_cpu	0.29	helium Containers paperless_tika CPU	-
-sensor.helium_containers_paperless_tika_memory	191.8	helium Containers paperless_tika Memory	data_size
-sensor.helium_containers_paperless_tika_network_input	0.0154296875	helium Containers paperless_tika Network Input	data_size
+sensor.helium_containers_paperless_tika_cpu	0.3	helium Containers paperless_tika CPU	-
+sensor.helium_containers_paperless_tika_memory	58.41	helium Containers paperless_tika Memory	data_size
+sensor.helium_containers_paperless_tika_network_input	0.01640625	helium Containers paperless_tika Network Input	data_size
 sensor.helium_containers_paperless_tika_network_input_rate	0.0	helium Containers paperless_tika Network Input Rate	data_rate
 sensor.helium_containers_paperless_tika_network_output	0.0001201629638671875	helium Containers paperless_tika Network Output	data_size
 sensor.helium_containers_paperless_tika_network_output_rate	0.0	helium Containers paperless_tika Network Output Rate	data_rate
-sensor.helium_containers_profilarr_block_input	555.0	helium Containers profilarr Block Input	data_size
+sensor.helium_containers_profilarr_block_input	844.0	helium Containers profilarr Block Input	data_size
 sensor.helium_containers_profilarr_block_input_rate	0.0	helium Containers profilarr Block Input Rate	data_rate
-sensor.helium_containers_profilarr_block_output	427.0	helium Containers profilarr Block Output	data_size
+sensor.helium_containers_profilarr_block_output	487.0	helium Containers profilarr Block Output	data_size
 sensor.helium_containers_profilarr_block_output_rate	0.0	helium Containers profilarr Block Output Rate	data_rate
-sensor.helium_containers_profilarr_cpu	0.0	helium Containers profilarr CPU	-
-sensor.helium_containers_profilarr_memory	69.07	helium Containers profilarr Memory	data_size
-sensor.helium_containers_profilarr_network_input	1.75	helium Containers profilarr Network Input	data_size
+sensor.helium_containers_profilarr_cpu	2.66	helium Containers profilarr CPU	-
+sensor.helium_containers_profilarr_memory	48.67	helium Containers profilarr Memory	data_size
+sensor.helium_containers_profilarr_network_input	1.98	helium Containers profilarr Network Input	data_size
 sensor.helium_containers_profilarr_network_input_rate	0.0	helium Containers profilarr Network Input Rate	data_rate
-sensor.helium_containers_profilarr_network_output	0.7548828125	helium Containers profilarr Network Output	data_size
+sensor.helium_containers_profilarr_network_output	0.8564453125	helium Containers profilarr Network Output	data_size
 sensor.helium_containers_profilarr_network_output_rate	0.0	helium Containers profilarr Network Output Rate	data_rate
-sensor.helium_containers_profilarr_parser_block_input	108.0	helium Containers profilarr-parser Block Input	data_size
+sensor.helium_containers_profilarr_parser_block_input	173.0	helium Containers profilarr-parser Block Input	data_size
 sensor.helium_containers_profilarr_parser_block_input_rate	0.0	helium Containers profilarr-parser Block Input Rate	data_rate
-sensor.helium_containers_profilarr_parser_block_output	33.7	helium Containers profilarr-parser Block Output	data_size
+sensor.helium_containers_profilarr_parser_block_output	64.9	helium Containers profilarr-parser Block Output	data_size
 sensor.helium_containers_profilarr_parser_block_output_rate	0.0	helium Containers profilarr-parser Block Output Rate	data_rate
 sensor.helium_containers_profilarr_parser_cpu	0.01	helium Containers profilarr-parser CPU	-
-sensor.helium_containers_profilarr_parser_memory	38.91	helium Containers profilarr-parser Memory	data_size
-sensor.helium_containers_profilarr_parser_network_input	0.07958984375	helium Containers profilarr-parser Network Input	data_size
+sensor.helium_containers_profilarr_parser_memory	19.04	helium Containers profilarr-parser Memory	data_size
+sensor.helium_containers_profilarr_parser_network_input	0.0837890625	helium Containers profilarr-parser Network Input	data_size
 sensor.helium_containers_profilarr_parser_network_input_rate	0.0	helium Containers profilarr-parser Network Input Rate	data_rate
 sensor.helium_containers_profilarr_parser_network_output	0.0001201629638671875	helium Containers profilarr-parser Network Output	data_size
 sensor.helium_containers_profilarr_parser_network_output_rate	0.0	helium Containers profilarr-parser Network Output Rate	data_rate
-sensor.helium_containers_prowlarr_block_input	2.56	helium Containers prowlarr Block Input	data_size
+sensor.helium_containers_prowlarr_block_input	155.0	helium Containers prowlarr Block Input	data_size
 sensor.helium_containers_prowlarr_block_input_rate	0.0	helium Containers prowlarr Block Input Rate	data_rate
-sensor.helium_containers_prowlarr_block_output	1075.2	helium Containers prowlarr Block Output	data_size
+sensor.helium_containers_prowlarr_block_output	1474.56	helium Containers prowlarr Block Output	data_size
 sensor.helium_containers_prowlarr_block_output_rate	0.0	helium Containers prowlarr Block Output Rate	data_rate
-sensor.helium_containers_prowlarr_cpu	0.09	helium Containers prowlarr CPU	-
-sensor.helium_containers_prowlarr_memory	129.2	helium Containers prowlarr Memory	data_size
-sensor.helium_containers_prowlarr_network_input	113.0	helium Containers prowlarr Network Input	data_size
+sensor.helium_containers_prowlarr_cpu	0.13	helium Containers prowlarr CPU	-
+sensor.helium_containers_prowlarr_memory	90.51	helium Containers prowlarr Memory	data_size
+sensor.helium_containers_prowlarr_network_input	78540.8	helium Containers prowlarr Network Input	data_size
 sensor.helium_containers_prowlarr_network_input_rate	0.0	helium Containers prowlarr Network Input Rate	data_rate
-sensor.helium_containers_prowlarr_network_output	250.0	helium Containers prowlarr Network Output	data_size
-sensor.helium_containers_prowlarr_network_output_rate	0.03332405924764471	helium Containers prowlarr Network Output Rate	data_rate
-sensor.helium_containers_qbittorrent_block_input	0.03203125	helium Containers qbittorrent Block Input	data_size
+sensor.helium_containers_prowlarr_network_output	34611.2	helium Containers prowlarr Network Output	data_size
+sensor.helium_containers_prowlarr_network_output_rate	0.0	helium Containers prowlarr Network Output Rate	data_rate
+sensor.helium_containers_qbittorrent_block_input	37683.2	helium Containers qbittorrent Block Input	data_size
 sensor.helium_containers_qbittorrent_block_input_rate	0.0	helium Containers qbittorrent Block Input Rate	data_rate
-sensor.helium_containers_qbittorrent_block_output	33.2	helium Containers qbittorrent Block Output	data_size
+sensor.helium_containers_qbittorrent_block_output	68403.2	helium Containers qbittorrent Block Output	data_size
 sensor.helium_containers_qbittorrent_block_output_rate	0.0	helium Containers qbittorrent Block Output Rate	data_rate
-sensor.helium_containers_qbittorrent_cpu	2.62	helium Containers qbittorrent CPU	-
-sensor.helium_containers_qbittorrent_memory	23.91	helium Containers qbittorrent Memory	data_size
-sensor.helium_containers_qbittorrent_network_input	113.0	helium Containers qbittorrent Network Input	data_size
+sensor.helium_containers_qbittorrent_cpu	0.51	helium Containers qbittorrent CPU	-
+sensor.helium_containers_qbittorrent_memory	6779.904	helium Containers qbittorrent Memory	data_size
+sensor.helium_containers_qbittorrent_network_input	78540.8	helium Containers qbittorrent Network Input	data_size
 sensor.helium_containers_qbittorrent_network_input_rate	0.0	helium Containers qbittorrent Network Input Rate	data_rate
-sensor.helium_containers_qbittorrent_network_output	250.0	helium Containers qbittorrent Network Output	data_size
-sensor.helium_containers_qbittorrent_network_output_rate	0.033324292452790893	helium Containers qbittorrent Network Output Rate	data_rate
-sensor.helium_containers_radarr_block_input	93.5	helium Containers radarr Block Input	data_size
+sensor.helium_containers_qbittorrent_network_output	34611.2	helium Containers qbittorrent Network Output	data_size
+sensor.helium_containers_qbittorrent_network_output_rate	0.0	helium Containers qbittorrent Network Output Rate	data_rate
+sensor.helium_containers_radarr_block_input	13004.8	helium Containers radarr Block Input	data_size
 sensor.helium_containers_radarr_block_input_rate	0.0	helium Containers radarr Block Input Rate	data_rate
-sensor.helium_containers_radarr_block_output	1044.48	helium Containers radarr Block Output	data_size
+sensor.helium_containers_radarr_block_output	2416.64	helium Containers radarr Block Output	data_size
 sensor.helium_containers_radarr_block_output_rate	0.0	helium Containers radarr Block Output Rate	data_rate
-sensor.helium_containers_radarr_cpu	0.1	helium Containers radarr CPU	-
-sensor.helium_containers_radarr_memory	236.4	helium Containers radarr Memory	data_size
-sensor.helium_containers_radarr_network_input	37.8	helium Containers radarr Network Input	data_size
+sensor.helium_containers_radarr_cpu	0.23	helium Containers radarr CPU	-
+sensor.helium_containers_radarr_memory	145.7	helium Containers radarr Memory	data_size
+sensor.helium_containers_radarr_network_input	79.6	helium Containers radarr Network Input	data_size
 sensor.helium_containers_radarr_network_input_rate	0.0	helium Containers radarr Network Input Rate	data_rate
-sensor.helium_containers_radarr_network_output	77.4	helium Containers radarr Network Output	data_size
+sensor.helium_containers_radarr_network_output	169.0	helium Containers radarr Network Output	data_size
 sensor.helium_containers_radarr_network_output_rate	0.0	helium Containers radarr Network Output Rate	data_rate
-sensor.helium_containers_sonarr_block_input	97.6	helium Containers sonarr Block Input	data_size
+sensor.helium_containers_sonarr_block_input	48025.6	helium Containers sonarr Block Input	data_size
 sensor.helium_containers_sonarr_block_input_rate	0.0	helium Containers sonarr Block Input Rate	data_rate
-sensor.helium_containers_sonarr_block_output	1761.28	helium Containers sonarr Block Output	data_size
+sensor.helium_containers_sonarr_block_output	3665.92	helium Containers sonarr Block Output	data_size
 sensor.helium_containers_sonarr_block_output_rate	0.0	helium Containers sonarr Block Output Rate	data_rate
-sensor.helium_containers_sonarr_cpu	0.08	helium Containers sonarr CPU	-
-sensor.helium_containers_sonarr_memory	233.7	helium Containers sonarr Memory	data_size
-sensor.helium_containers_sonarr_network_input	28.7	helium Containers sonarr Network Input	data_size
+sensor.helium_containers_sonarr_cpu	0.06	helium Containers sonarr CPU	-
+sensor.helium_containers_sonarr_memory	168.0	helium Containers sonarr Memory	data_size
+sensor.helium_containers_sonarr_network_input	54.5	helium Containers sonarr Network Input	data_size
 sensor.helium_containers_sonarr_network_input_rate	0.0	helium Containers sonarr Network Input Rate	data_rate
-sensor.helium_containers_sonarr_network_output	170.0	helium Containers sonarr Network Output	data_size
+sensor.helium_containers_sonarr_network_output	469.0	helium Containers sonarr Network Output	data_size
 sensor.helium_containers_sonarr_network_output_rate	0.0	helium Containers sonarr Network Output Rate	data_rate
-sensor.helium_containers_traefik_block_input	168.0	helium Containers traefik Block Input	data_size
+sensor.helium_containers_traefik_block_input	200.0	helium Containers traefik Block Input	data_size
 sensor.helium_containers_traefik_block_input_rate	0.0	helium Containers traefik Block Input Rate	data_rate
-sensor.helium_containers_traefik_block_output	4.17	helium Containers traefik Block Output	data_size
+sensor.helium_containers_traefik_block_output	5.79	helium Containers traefik Block Output	data_size
 sensor.helium_containers_traefik_block_output_rate	0.0	helium Containers traefik Block Output Rate	data_rate
-sensor.helium_containers_traefik_cpu	0.07	helium Containers traefik CPU	-
-sensor.helium_containers_traefik_memory	77.99	helium Containers traefik Memory	data_size
-sensor.helium_containers_traefik_network_input	20172.8	helium Containers traefik Network Input	data_size
+sensor.helium_containers_traefik_cpu	0.09	helium Containers traefik CPU	-
+sensor.helium_containers_traefik_memory	44.94	helium Containers traefik Memory	data_size
+sensor.helium_containers_traefik_network_input	20889.6	helium Containers traefik Network Input	data_size
 sensor.helium_containers_traefik_network_input_rate	0.0	helium Containers traefik Network Input Rate	data_rate
-sensor.helium_containers_traefik_network_output	17715.2	helium Containers traefik Network Output	data_size
+sensor.helium_containers_traefik_network_output	18227.2	helium Containers traefik Network Output	data_size
 sensor.helium_containers_traefik_network_output_rate	0.0	helium Containers traefik Network Output Rate	data_rate
-sensor.helium_cpu_fan	990.0	helium CPU fan	-
-sensor.helium_cpu_temperature	37.0	helium CPU temperature	temperature
-sensor.helium_cpu_usage	4.7	helium CPU usage	-
-sensor.helium_disk1_temperature	37.0	helium disk1 temperature	temperature
-sensor.helium_disk2_temperature	38.0	helium disk2 temperature	temperature
+sensor.helium_cpu_fan	987.0	helium CPU fan	-
+sensor.helium_cpu_temperature	35.0	helium CPU temperature	temperature
+sensor.helium_cpu_usage	3.4	helium CPU usage	-
+sensor.helium_disk1_temperature	35.0	helium disk1 temperature	temperature
+sensor.helium_disk2_temperature	37.0	helium disk2 temperature	temperature
 sensor.helium_last_boot	2026-07-25T21:02:02+00:00	helium Last boot	timestamp
-sensor.helium_load_average_1m	0.52	helium Load average 1m	-
-sensor.helium_media_pool_free	20988.1	helium Media pool free	data_size
+sensor.helium_load_average_1m	0.74	helium Load average 1m	-
+sensor.helium_media_pool_free	20926.2	helium Media pool free	data_size
 sensor.helium_media_pool_size	22173.6	helium Media pool size	data_size
-sensor.helium_media_pool_usage	5.3	helium Media pool usage	-
-sensor.helium_media_pool_used	1185.5	helium Media pool used	data_size
-sensor.helium_memory_usage	29.2	helium Memory usage	-
-sensor.helium_memory_used	4608.3	helium Memory used	data_size
-sensor.helium_os_disk_free	150.2	helium OS disk free	data_size
+sensor.helium_media_pool_usage	5.6	helium Media pool usage	-
+sensor.helium_media_pool_used	1247.4	helium Media pool used	data_size
+sensor.helium_memory_usage	22.1	helium Memory usage	-
+sensor.helium_memory_used	3495.4	helium Memory used	data_size
+sensor.helium_os_disk_free	150.1	helium OS disk free	data_size
 sensor.helium_os_disk_size	215.4	helium OS disk size	data_size
-sensor.helium_os_disk_temperature	35.0	helium os disk temperature	temperature
+sensor.helium_os_disk_temperature	34.0	helium os disk temperature	temperature
 sensor.helium_os_disk_usage	26.5	helium OS disk usage	-
-sensor.helium_os_disk_used	54.2	helium OS disk used	data_size
-sensor.helium_parity1_temperature	34.0	helium parity1 temperature	temperature
-sensor.helium_parity2_temperature	36.0	helium parity2 temperature	temperature
-sensor.helium_ssd1_temperature	34.0	helium ssd1 temperature	temperature
-sensor.helium_ssd2_temperature	33.0	helium ssd2 temperature	temperature
-sensor.helium_ssd_tier_free	414.0	helium SSD tier free	data_size
+sensor.helium_os_disk_used	54.3	helium OS disk used	data_size
+sensor.helium_parity1_temperature	33.0	helium parity1 temperature	temperature
+sensor.helium_parity2_temperature	35.0	helium parity2 temperature	temperature
+sensor.helium_ssd1_temperature	33.0	helium ssd1 temperature	temperature
+sensor.helium_ssd2_temperature	32.0	helium ssd2 temperature	temperature
+sensor.helium_ssd_tier_free	356.4	helium SSD tier free	data_size
 sensor.helium_ssd_tier_size	447.1	helium SSD tier size	data_size
-sensor.helium_ssd_tier_usage	7.2	helium SSD tier usage	-
-sensor.helium_ssd_tier_used	32.2	helium SSD tier used	data_size
-sensor.helium_swap_usage	11.6	helium Swap usage	-
-sensor.home_assistant_core_cpu_percent	0.18	Home Assistant Core CPU percent	-
-sensor.home_assistant_core_memory_percent	17.28	Home Assistant Core Memory percent	-
+sensor.helium_ssd_tier_usage	20.1	helium SSD tier usage	-
+sensor.helium_ssd_tier_used	89.8	helium SSD tier used	data_size
+sensor.helium_swap_usage	21.1	helium Swap usage	-
+sensor.home_assistant_core_cpu_percent	0.13	Home Assistant Core CPU percent	-
+sensor.home_assistant_core_memory_percent	18.56	Home Assistant Core Memory percent	-
 sensor.home_frozen_precipitation	0	Home Frozen precipitation	-
 sensor.home_precipitation_category	no_precipitation	Home Precipitation category	enum
-sensor.home_thunder_probability	2	Home Thunder probability	-
-sensor.humidity_median	40.7	Humidity median	humidity
+sensor.home_thunder_probability	1	Home Thunder probability	-
+sensor.humidity_median	55.3	Humidity median	humidity
 sensor.ikea_of_sweden_tradfri_on_off_switch_battery	unavailable	IKEA of Sweden TRADFRI on/off switch Battery	battery
-sensor.illumination	3593	Illumination	illuminance
-sensor.illumination_smooth	3611.97	Illumination Smooth	illuminance
+sensor.illumination	4884	Illumination	illuminance
+sensor.illumination_smooth	4328.22	Illumination Smooth	illuminance
+sensor.immich_disk_available	356.360103607178	Immich Disk available	data_size
+sensor.immich_disk_size	447.131675720215	Immich Disk size	data_size
+sensor.immich_disk_usage	20.09	Immich Disk usage	-
+sensor.immich_disk_used	89.8351173400879	Immich Disk used	data_size
+sensor.immich_photos_count	3947	Immich Photos count	-
+sensor.immich_videos_count	238	Immich Videos count	-
 sensor.iphone_app_version	2026.7.1	iPhone App Version	-
 sensor.iphone_audio_output	unavailable	iPhone Audio Output	-
 sensor.iphone_battery_level	5	iPhone Battery Level	battery
@@ -526,48 +532,48 @@ sensor.iphone_sim_1	unavailable	iPhone SIM 1	-
 sensor.iphone_sim_2	unavailable	iPhone SIM 2	-
 sensor.iphone_ssid	unavailable	iPhone SSID	-
 sensor.iphone_storage	unavailable	iPhone Storage	-
-sensor.leonardo_battery	63	Leonardo Battery	battery
-sensor.leonardo_cleaning_area	33.5	Leonardo Cleaning area	-
-sensor.leonardo_cleaning_time	37.3833333333333	Leonardo Cleaning time	duration
-sensor.leonardo_current_room	Kitchen	Leonardo Current room	enum
-sensor.leonardo_filter_time_left	119.884166666667	Leonardo Filter time left	duration
-sensor.leonardo_last_clean_begin	2026-07-30T12:00:00+00:00	Leonardo Last clean begin	timestamp
-sensor.leonardo_last_clean_end	2026-07-30T13:48:24+00:00	Leonardo Last clean end	timestamp
-sensor.leonardo_main_brush_time_left	269.884166666667	Leonardo Main brush time left	duration
-sensor.leonardo_maintenance_message	Clean sensors	Leonardo maintenance message	-
-sensor.leonardo_sensor_time_left	-0.115833333333333	Leonardo Sensor time left	duration
-sensor.leonardo_side_brush_time_left	169.884166666667	Leonardo Side brush time left	duration
-sensor.leonardo_status	charger_disconnected	Leonardo Status	enum
-sensor.leonardo_total_cleaning_area	24386.2	Leonardo Total cleaning area	-
-sensor.leonardo_total_cleaning_count	800	Leonardo Total cleaning count	-
-sensor.leonardo_total_cleaning_time	441.773611111111	Leonardo Total cleaning time	duration
-sensor.leonardo_vacuum_error	none	Leonardo Vacuum error	enum
+sensor.leonardo_battery	unavailable	Leonardo Battery	battery
+sensor.leonardo_cleaning_area	unavailable	Leonardo Cleaning area	-
+sensor.leonardo_cleaning_time	unavailable	Leonardo Cleaning time	duration
+sensor.leonardo_current_room	unavailable	Leonardo Current room	enum
+sensor.leonardo_filter_time_left	unavailable	Leonardo Filter time left	duration
+sensor.leonardo_last_clean_begin	unavailable	Leonardo Last clean begin	timestamp
+sensor.leonardo_last_clean_end	unavailable	Leonardo Last clean end	timestamp
+sensor.leonardo_main_brush_time_left	unavailable	Leonardo Main brush time left	duration
+sensor.leonardo_maintenance_message	OK	Leonardo maintenance message	-
+sensor.leonardo_sensor_time_left	unavailable	Leonardo Sensor time left	duration
+sensor.leonardo_side_brush_time_left	unavailable	Leonardo Side brush time left	duration
+sensor.leonardo_status	unavailable	Leonardo Status	enum
+sensor.leonardo_total_cleaning_area	unavailable	Leonardo Total cleaning area	-
+sensor.leonardo_total_cleaning_count	unavailable	Leonardo Total cleaning count	-
+sensor.leonardo_total_cleaning_time	unavailable	Leonardo Total cleaning time	duration
+sensor.leonardo_vacuum_error	unavailable	Leonardo Vacuum error	enum
 sensor.lumi_lumi_weather_battery	52.0	Fridge Battery	battery
-sensor.lumi_lumi_weather_humidity	65.32	Fridge Humidity	humidity
-sensor.lumi_lumi_weather_pressure	1000.03	Fridge Pressure	pressure
-sensor.lumi_lumi_weather_temperature	7.54	Fridge	temperature
-sensor.on_off_switch_01_battery	unavailable	on_off_switch_01 Battery	battery
-sensor.paperless_available_storage	444.49	Paperless Available storage	data_size
+sensor.lumi_lumi_weather_humidity	62.42	Fridge Humidity	humidity
+sensor.lumi_lumi_weather_pressure	1002.9	Fridge Pressure	pressure
+sensor.lumi_lumi_weather_temperature	6.2	Fridge	temperature
+sensor.on_off_switch_01_battery	60.0	on_off_switch_01 Battery	battery
+sensor.paperless_available_storage	382.64	Paperless Available storage	data_size
 sensor.paperless_documents_in_inbox	4	Paperless Documents in inbox	-
 sensor.paperless_status_database	ok	Paperless Status database	enum
 sensor.paperless_status_redis	ok	Paperless Status Redis	enum
 sensor.paperless_status_sanity	ok	Paperless Status sanity	enum
 sensor.paperless_total_documents	19	Paperless Total documents	-
 sensor.paperless_total_storage	480.1	Paperless Total storage	data_size
-sensor.qbittorrent_active_torrents	0	qBittorrent Active torrents	-
-sensor.qbittorrent_all_time_download	0.602006765250735	qBittorrent All-time download	data_size
-sensor.qbittorrent_all_time_upload	0.159363036346804	qBittorrent All-time upload	data_size
-sensor.qbittorrent_all_torrents	0	qBittorrent All torrents	-
+sensor.qbittorrent_active_torrents	1	qBittorrent Active torrents	-
+sensor.qbittorrent_all_time_download	0.665393097967353	qBittorrent All-time download	data_size
+sensor.qbittorrent_all_time_upload	0.187595279887319	qBittorrent All-time upload	data_size
+sensor.qbittorrent_all_torrents	3	qBittorrent All torrents	-
 sensor.qbittorrent_connection_status	connected	qBittorrent Connection status	enum
 sensor.qbittorrent_download_speed	0.0	qBittorrent Download speed	data_rate
 sensor.qbittorrent_errored_torrents	0	qBittorrent Errored torrents	-
-sensor.qbittorrent_global_ratio	0.26	qBittorrent Global ratio	-
-sensor.qbittorrent_inactive_torrents	0	qBittorrent Inactive torrents	-
+sensor.qbittorrent_global_ratio	0.28	qBittorrent Global ratio	-
+sensor.qbittorrent_inactive_torrents	2	qBittorrent Inactive torrents	-
 sensor.qbittorrent_paused_torrents	0	qBittorrent Paused torrents	-
-sensor.qbittorrent_status	idle	qBittorrent Status	enum
-sensor.qbittorrent_upload_speed	0.0	qBittorrent Upload speed	data_rate
-sensor.radarr_disk_space_movies	20988.14	Radarr Disk space movies	data_size
-sensor.radarr_movies	22	Radarr Movies	-
+sensor.qbittorrent_status	seeding	qBittorrent Status	enum
+sensor.qbittorrent_upload_speed	0.030584	qBittorrent Upload speed	data_rate
+sensor.radarr_disk_space_movies	20926.21	Radarr Disk space movies	data_size
+sensor.radarr_movies	25	Radarr Movies	-
 sensor.radarr_queue	0	Radarr Queue	-
 sensor.seerr_audio_issues	0	Seerr Audio issues	-
 sensor.seerr_available_requests	0	Seerr Available requests	-
@@ -586,29 +592,29 @@ sensor.sm_x920_battery_level	69	SM-X920 Battery level	battery
 sensor.sm_x920_battery_state	discharging	SM-X920 Battery state	enum
 sensor.sm_x920_charger_type	none	SM-X920 Charger type	enum
 sensor.sonarr_queue	0	Sonarr Queue	-
-sensor.sonarr_shows	20	Sonarr Shows	-
+sensor.sonarr_shows	21	Sonarr Shows	-
 sensor.sonarr_upcoming	0	Sonarr Upcoming	-
 sensor.sonarr_wanted	7	Sonarr Wanted	-
 sensor.sonoff_snzb_02d_battery	100.0	temp_hum_01 Battery	battery
 sensor.sonoff_snzb_02d_battery_2	100.0	SONOFF SNZB-02D Battery	battery
 sensor.sonoff_snzb_02d_battery_3	100.0	SONOFF SNZB-02D Battery	battery
-sensor.sonoff_snzb_02d_humidity	40.7	temp_hum_01 Humidity	humidity
-sensor.sonoff_snzb_02d_humidity_2	42.5	SONOFF SNZB-02D Humidity	humidity
-sensor.sonoff_snzb_02d_humidity_3	44.4	SONOFF SNZB-02D Humidity	humidity
-sensor.sonoff_snzb_02d_temperature	27.0	Living Room	temperature
-sensor.sonoff_snzb_02d_temperature_2	26.2	Bedroom	temperature
-sensor.sonoff_snzb_02d_temperature_3	26.2	Office	temperature
-sensor.sonoff_snzb_02ld	30.8	Balcony	temperature
+sensor.sonoff_snzb_02d_humidity	55.3	temp_hum_01 Humidity	humidity
+sensor.sonoff_snzb_02d_humidity_2	57.3	SONOFF SNZB-02D Humidity	humidity
+sensor.sonoff_snzb_02d_humidity_3	56.4	SONOFF SNZB-02D Humidity	humidity
+sensor.sonoff_snzb_02d_temperature	25.8	Living Room	temperature
+sensor.sonoff_snzb_02d_temperature_2	24.0	Bedroom	temperature
+sensor.sonoff_snzb_02d_temperature_3	24.8	Office	temperature
+sensor.sonoff_snzb_02ld	18.8	Balcony	temperature
 sensor.sonoff_snzb_02ld_battery	100.0	Balcony Battery	battery
-sensor.sun_next_dawn	2026-07-31T02:21:32+00:00	Sun Next dawn	timestamp
-sensor.sun_next_dusk	2026-07-30T20:06:06+00:00	Sun Next dusk	timestamp
-sensor.sun_next_midnight	2026-07-30T23:13:30+00:00	Sun Next midnight	timestamp
+sensor.sun_next_dawn	2026-08-01T02:23:46+00:00	Sun Next dawn	timestamp
+sensor.sun_next_dusk	2026-07-31T20:03:46+00:00	Sun Next dusk	timestamp
+sensor.sun_next_midnight	2026-07-31T23:13:27+00:00	Sun Next midnight	timestamp
 sensor.sun_next_noon	2026-07-31T11:13:31+00:00	Sun Next noon	timestamp
-sensor.sun_next_rising	2026-07-31T03:10:48+00:00	Sun Next rising	timestamp
-sensor.sun_next_setting	2026-07-30T19:16:52+00:00	Sun Next setting	timestamp
-sensor.temperature_median	26.2	Temperaturen median	temperature
+sensor.sun_next_rising	2026-08-01T03:12:38+00:00	Sun Next rising	timestamp
+sensor.sun_next_setting	2026-07-31T19:14:56+00:00	Sun Next setting	timestamp
+sensor.temperature_median	24.8	Temperaturen median	temperature
 sensor.time_at_work_today	0.0	Time at work today	duration
-sensor.waze_drive_to_work	27.55	Drive to work (Hanna)	duration
+sensor.waze_drive_to_work	26.85	Drive to work (Hanna)	duration
 sensor.work_hours_daily	0	Work hours daily	duration
 sensor.xiaomi_lumi_sen_ill_mgl01_battery	unknown	XIAOMI lumi.sen_ill.mgl01 Battery	battery
 stt.home_assistant_cloud	unknown	Home Assistant Cloud	-
@@ -636,23 +642,24 @@ update.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_firmware	unknown	light_bulb_03 F
 update.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_firmware_2	unknown	light_bulb_04 Firmware	firmware
 update.ikea_of_sweden_tradfri_on_off_switch_firmware	unavailable	IKEA of Sweden TRADFRI on/off switch Firmware	firmware
 update.ikea_of_sweden_tradfribulbe27wsglobeopal1055lm_firmware	unknown	light_boulb_02 Firmware	firmware
+update.immich_version	on	Immich Version	-
 update.let_s_encrypt_update	off	Let's Encrypt Update	-
 update.light_bulb_01_firmware	unknown	light_bulb_01 Firmware	firmware
 update.matter_server_update	off	Matter Server Update	-
 update.mini_graph_card_update	off	mini-graph-card Update	-
 update.mosquitto_broker_update	off	Mosquitto broker Update	-
 update.mushroom_update	off	Mushroom Update	-
-update.music_assistant_update	off	Music Assistant Update	-
+update.music_assistant_update	on	Music Assistant Update	-
 update.nginx_home_assistant_ssl_proxy_update	off	NGINX Home Assistant SSL proxy Update	-
-update.on_off_switch_01_firmware	unavailable	on_off_switch_01 Firmware	firmware
+update.on_off_switch_01_firmware	unknown	on_off_switch_01 Firmware	firmware
 update.openthread_border_router_update	off	OpenThread Border Router Update	-
 update.sonoff_snzb_02d_firmware	off	temp_hum_01 Firmware	firmware
 update.sonoff_snzb_02d_firmware_2	off	SONOFF SNZB-02D Firmware	firmware
 update.sonoff_snzb_02d_firmware_3	off	SONOFF SNZB-02D Firmware	firmware
 update.sonoff_snzb_02ld_firmware	off	Balcony Firmware	firmware
 update.terminal_ssh_update	off	Terminal & SSH Update	-
-vacuum.leonardo	idle	Leonardo	-
-vacuum.leonardo_smart	idle	Leonardo Smart	-
+vacuum.leonardo	unavailable	Leonardo	-
+vacuum.leonardo_smart	unknown	Leonardo Smart	-
 weather.forecast_home	partlycloudy	Forecast Home	-
 weather.smhi_home	sunny	Home	-
 zone.hannas_mother	0	Hannas Mother	-

@@ -129,7 +129,7 @@
             {
               "type": "custom:mushroom-template-card",
               "primary": "Immich",
-              "secondary": "{% if is_state('binary_sensor.helium_containers_immich_server_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_immich_server_state','on') %}no data{% else %}Photo library{% endif %}",
+              "secondary": "{% if is_state('binary_sensor.helium_containers_immich_server_state','off') %}stopped{% elif not is_state('binary_sensor.helium_containers_immich_server_state','on') %}no data{% else %}{{ states('sensor.immich_photos_count') }} photos · {{ states('sensor.immich_videos_count') }} videos{% endif %}",
               "icon": "mdi:image",
               "icon_color": "{% if is_state('binary_sensor.helium_containers_immich_server_state','off') %}red{% elif not is_state('binary_sensor.helium_containers_immich_server_state','on') %}grey{% else %}green{% endif %}",
               "entity": "binary_sensor.helium_containers_immich_server_state",

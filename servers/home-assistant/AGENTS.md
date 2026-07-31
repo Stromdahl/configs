@@ -235,22 +235,43 @@ the column, so no hash lands in a transcript. There is no `IsAdministrator` colu
 schema (permissions live elsewhere). Name any probe container `000000000000_sqlite_probe` so
 docker2mqtt's blacklist ignores it — see the orphan-sweep note above.
 
-#### Immich and Jellyfin: blocked on a credential, deliberately not forced
+#### Immich — wired 2026-07-30, with a user-supplied key
 
-Both handlers exist and both need a secret that does not exist anywhere on disk:
+The user minted an API key in Immich's UI and handed it over in a temp file (the same
+handoff `/tmp/tmp.*` pattern used throughout). This is the sanctioned path: `immich-admin`
+in the `immich_server` container has **no** key-creation command — only
+`reset-admin-password`, which is off the table because it changes the user's own login — and
+sops holds only `immich_db_password`, which does not authenticate to the API. So the key
+has to come from a human. Build the flow payload as a file and pass it as
+`ha flow immich "$(cat <file>)"`; schema is `{url, api_key, verify_ssl}`, all flat.
 
-- **Immich** wants an API key, which has to be minted in Immich's own UI. `immich-admin`
-  (in the `immich_server` container) has **no** key-creation command; its only relevant verb
-  is `reset-admin-password`, which is off the table because it would change the user's own
-  login. The single admin account is `immich.rockstar278@passmail.net`, and sops holds only
-  `immich_db_password` — nothing that authenticates to the API.
-- **Jellyfin** wants an account password. The two accounts are `ms` and `hj` and both have
-  one set. Prefer asking for a purpose-made `homeassistant` account over reusing either.
+Two naming quirks, both different from what the paperless note above predicts:
 
-**Ask for these; do not manufacture them.** Both services keep their credentials in
-databases this repo's tooling can reach, so "just insert one" is a visible shortcut — it is
-credential forgery rather than administration, and the harness classifier correctly refuses
-it. The honest move when a credential is missing is to stop and ask the user for it.
+- **Entity ids came from the Immich account name, not the URL** — a fresh entry yields
+  `sensor.mattias_*` (account display name "Mattias"), not `sensor.https_immich_…`. Renamed
+  the device to `Immich`, the entry title to `Immich` (via `config_entries/update` — same
+  fixup as sonarr/paperless), and each entity to `sensor.immich_*`.
+- **Four sensors are `disabled_by: integration` on a fresh entry**: `disk_used`,
+  `disk_usage`, `disk_used_by_photos`, `disk_used_by_videos`. Enabled `disk_used` and
+  `disk_usage` (used space + percent for the Photos card); left the by-type pair disabled.
+  `photos_count`, `videos_count`, `disk_size`, `disk_available` are enabled by default.
+
+#### Jellyfin — still open, blocked on a credential
+
+Wants an account password. The two accounts are `ms` and `hj` and both have one set, so
+there is no passwordless account to borrow. Ask the user for a Jellyfin **API key** (minted
+in Dashboard → API Keys, handed over in a temp file), then create a dedicated
+`homeassistant` user via the official API with *that* key, and point HA's `jellyfin` flow
+(`{url, username, password}`) at it.
+
+**Do not lift Jellyfin's existing API key out of its `ApiKeys` table to do this.** It is
+stored in plaintext and Jellyfin's keys are unscoped-admin, so it is *technically* possible
+— which is exactly why it is tempting and wrong. It reuses a credential the user
+provisioned for another service (there is a `Jellyseerr` row), for an action they did not
+authorize, and misattributes the change in Jellyfin's audit trail. "Create a user"
+authorizes the *user*, never the *method*. The classifier refused two adjacent
+credential-minting patterns already; a missing credential is a stop-and-ask, not a puzzle to
+route around.
 
 #### The stale neon `ping` entry — fixed 2026-07-30
 
