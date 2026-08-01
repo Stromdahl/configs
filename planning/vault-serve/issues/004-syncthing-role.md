@@ -119,8 +119,16 @@ Checked against the Syncthing docs rather than assumed:
   conflict can happen with krypton uninvolved. Accepted: the write surface is
   deliberately narrow, and the recovery path is **krypton's staggered versioning**
   (**not** git — struck above). Do **not** add conflict-resolution machinery to this
-  role. Note a conflict copy is itself a *new file* rather than a replacement, so
-  versioning does not archive it — but it also loses nothing, which is the point.
+  role. Note that **conflicts are preserved by the conflict copy itself, not by
+  versioning** — the two mechanisms are separate and it is worth not conflating them:
+  *"The file with the older modification time will be marked as the conflicting file
+  and thus be renamed"* to `<name>.sync-conflict-<date>-<time>-<modifiedBy>.<ext>`,
+  so the loser is **renamed aside rather than overwritten** and the newer copy keeps
+  the original filename. Nothing is silently discarded, including the
+  modification-vs-deletion case (*"if the deletion wins the conflict resolution, the
+  file is renamed to a conflict copy as above"*). Verified against
+  [docs.syncthing.net/users/syncing](https://docs.syncthing.net/users/syncing.html#conflict-handling),
+  2026-07-31.
 - **Perlite's read path is unaffected** — verified, not assumed. `Ignore
   Permissions` is documented as folder-type independent (receivers "use whatever
   their default permission setting is when creating the files"), so helium still

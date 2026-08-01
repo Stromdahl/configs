@@ -82,7 +82,8 @@ makes silent failure impossible**.
   sensitive-data boundary is git"*); and Syncthing file versioning was **off on every
   krypton folder**. The owner declined a git audit repo on helium ("dont think we need
   git for the vault"). The undo is now **staggered Syncthing versioning on krypton**
-  — see [ticket 11](issues/11-vault-undo-riders-to-vault-serve-004.md). Git still
+  — see [ticket 11](issues/11-vault-undo-riders-to-vault-serve-004.md), and note its
+  `maxAge` is in **seconds** (`31536000`), a trap that looks configured when wrong. Git still
   covers the 215 tracked files on krypton, and nothing on helium.
 - **Hermes replaces `/daily`, which is dead.** The vault's charter in
   `~/vault/AGENTS.md` ("keep the owner's personal life organized — board,

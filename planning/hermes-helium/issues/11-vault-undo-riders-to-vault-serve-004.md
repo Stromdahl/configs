@@ -41,7 +41,8 @@ new files, deletions).
 ## The change list for vault-serve `004`
 
 1. **Enable staggered file versioning on krypton's `personal-vault` folder**,
-   `maxAge` 365 days. **krypton only** — the reasoning matters, so carry it across
+   `maxAge` 365 days — ⚠️ **which is `31536000` in `config.xml`; the field is in
+   seconds and only the GUI takes days. See the Answer.** **krypton only** — the reasoning matters, so carry it across
    rather than restating the conclusion: Syncthing versioning fires when *Syncthing*
    replaces or deletes a file, i.e. on **incoming** changes. Hermes' own writes on
    helium are *sent*, not versioned, so versioning on helium would archive nothing
@@ -135,4 +136,10 @@ in place (visibly, not silently deleted, so a reader who remembers the old reaso
 sees it was retracted rather than lost) and redirected to the new section. One
 addition of my own: a `.sync-conflict-*` copy is a **new file**, not a replacement,
 so versioning does not archive it — worth stating next to the conflict paragraph so
-nobody reads versioning as conflict machinery.
+nobody reads versioning as conflict machinery. On checking rather than asserting it,
+the real rule is cleaner than my first phrasing and is now quoted in `004`: the
+**older** copy is *renamed aside*, not overwritten (*"The file with the older
+modification time will be marked as the conflicting file and thus be renamed"*), and
+even a losing deletion becomes a conflict copy. So conflicts are preserved by the
+conflict copy, versioning is for *replacements* — separate mechanisms, and neither
+substitutes for the other.
