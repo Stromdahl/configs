@@ -332,3 +332,39 @@ Three consequences, none of them optional:
    the watchdog for a non-event, so D1 is necessary but not sufficient — the
    machine-side staleness alarm (item 4) is required alongside it, not instead of
    it. Owner agreed this rides regardless of the brief's shape.
+
+### D2 — Provenance is structural; the variance tripwire backs it up. No cross-fetch. *(owner, 2026-08-01)*
+
+Settles **item 6 (proof-of-correctness)**. First, the reframe that shaped it:
+
+**There are two fabrication surfaces, not one, and this map has been conflating
+them.** `SOUL.md` (per `02`, the only defence against fabricated content) guards
+the **model** confabulating. The v0.14 fake weather was **hardcoded constants in
+the gathering script** — the model never lied; it faithfully rendered numbers the
+script fabricated. **`SOUL.md` would not have caught it.** Script-side fabrication
+needs its own control, and that is what D2 is.
+
+- **(A) Provenance timestamps — primary.** Every emitter reports the **upstream's
+  own** last-updated time beside the value (HA `last_changed`; IMAP message dates;
+  vault file mtimes). A value whose provenance exceeds its per-source bound renders
+  `⚠ stale`, never as a number. This is chosen because it is **structural, not
+  detective**: a hardcoded constant has no provenance to report, so an emitter
+  physically cannot produce a fresh upstream timestamp without querying. It makes
+  the fake-weather bug *unwritable* rather than merely observable. Extends `02`'s
+  `<name>: STATUS=OK count=<n>` contract with a provenance field rather than
+  replacing it.
+- **(B) Variance tripwire — near-free backstop.** Flag any numeric field
+  byte-identical across N consecutive days. Catches what A cannot: a **real but
+  wedged** source whose timestamp keeps advancing while its value never moves (a
+  stuck HA sensor passes A cleanly). Accepts occasional false positives on
+  genuinely static values — the correct failure direction.
+- **(C) Independent re-fetch — rejected.** A second script cross-checking each
+  source duplicates every integration, and the duplicate rots exactly as the
+  original did; the result is two things to trust instead of one. Explicitly
+  offered for the mail path (the most-repeated real failure) and explicitly
+  declined — the dead-bridge case is covered by A, since an unauthenticated IMAP
+  session yields no message dates at all and therefore no provenance.
+
+**Carry into `07`:** A gives the email-triage contract its freshness primitive for
+free — "newest message date" *is* the inbox's provenance, so a bridge session that
+dies live-but-unauthenticated surfaces as `⚠ stale`, not as an empty inbox.
