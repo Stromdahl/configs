@@ -368,3 +368,55 @@ needs its own control, and that is what D2 is.
 **Carry into `07`:** A gives the email-triage contract its freshness primitive for
 free — "newest message date" *is* the inbox's provenance, so a bridge session that
 dies live-but-unauthenticated surfaces as `⚠ stale`, not as an empty inbox.
+
+### D3 — Alerts ride the existing MQTT→HA path, keyed on `state`, never on `health` *(agent decision on settled facts, 2026-08-01)*
+
+Settles **item 4 (where alerts land when the agent itself is down)**. Not put to the
+owner: 05 pre-committed to *"prefer riding existing plumbing"*, and the plumbing
+question turned out to be already answered on the box.
+
+**What actually exists** (verified on helium + `issues/046`): a real MQTT broker at
+`192.168.1.99`, with `docker2mqtt` on helium publishing under topic prefix
+`containers` as an **outbound-only client — no listening port**, ansible-applied,
+through the read-only socket proxy. `046` is effectively landed (7 of 8 acceptance
+criteria met). So the path `HEALTHCHECK` → docker2mqtt → MQTT → HA → phone exists
+today and costs this map nothing.
+
+**🔴 But `03`'s one-line version of that path is wrong, and wrong in this map's own
+failure direction.** `03` says *"`HEALTHCHECK` → docker2mqtt health entity → MQTT →
+HA"*. `046`'s own verified caveat contradicts it:
+
+> *"the separate **health** entity does not clear when a container stops, so
+> **state** is the liveness signal, not health."*
+
+So if the Hermes container **stops**, the health entity **retains its last value** —
+plausibly `healthy`. An automation keyed on the health entity therefore stays green
+across the most basic failure there is. **Alert on the `state` entity for "is it
+running", and use `health` only to distinguish degraded-while-running.** Both are
+needed; neither alone is sufficient. (Cited from `046`, which records it as
+measured; not independently re-verified here — a broker subscribe was blocked.)
+
+**Three alarms, and every one of them fires on *absence*, not on a bad value** —
+absence-means-healthy is the bug class this map exists to kill:
+
+1. **Container state** — `state != running`, from docker2mqtt. Catches the crash
+   loop `03` found (default CMD exits 0), because s6 stopping the container flips
+   `state`.
+2. **Container health** — the `HEALTHCHECK` from `03`, **with the hole fixed**: it
+   must read `$HERMES_HOME/cron/ticker_last_success` directly and fail when that
+   file is **missing** past the start-period, not merely when it is stale. As shown
+   above, `hermes cron status` renders "never succeeded" inside its *healthy* branch.
+3. **Brief-arrival staleness** — an HA entity stamped each time the evening brief is
+   delivered; if it ages past ~26 h, alert. This is the control that makes **D1**
+   real: it is the machine noticing the non-event, which the owner cannot be relied
+   on to do. It is also the only one of the three that survives "gateway healthy,
+   delivery target silently misconfigured" — a documented upstream failure where the
+   job runs and the response is dropped.
+
+**Rejected: the OTLP exporter**, despite `hermes.cron.jobs.overdue` being the single
+best signal in the system. It needs a collector helium does not have, and standing
+one up to watch the watchman is one more thing that fails silently. Revisit only if
+a collector arrives for another reason. **Also rejected: a Homepage tile** — `05`'s
+evidence already records that a Homepage container-status tile was the *only* tell
+built for the Proton bridge and it *"does not catch a live-but-unauthenticated
+bridge"*. A dashboard nobody is looking at is not an alarm.
