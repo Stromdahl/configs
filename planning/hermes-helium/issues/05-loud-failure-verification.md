@@ -303,3 +303,32 @@ genuine briefing whose **last line** canonicalizes to a marker — the *entire*
 brief is dropped, not the line. Also note `is_intentional_silence_agent_result`:
 markers suppress **only successful turns**, which is consistent with `01`'s
 "failed jobs always deliver".
+
+---
+
+## Decisions taken (running log — owner rulings, in order)
+
+### D1 — The brief always arrives. Silence is never "nothing to report". *(owner, 2026-08-01)*
+
+Settles **item 2 (the no-news problem)**. The evening brief is delivered **every
+day, unconditionally**, in the **adaptive-length** shape: a quiet day renders one
+line plus a compact status footer (`✓ mail 12 · vault ok · HA ok`); any source in
+`ERROR` expands into a full `⚠` section. Chosen over an always-full footer because
+alarm fatigue is itself a silent failure — a brief the owner stops reading cannot
+alert him.
+
+Three consequences, none of them optional:
+
+1. **No job prompt may ever instruct `[SILENT]`.** The always-report rule and the
+   cron framework's silence affordance are mutually exclusive; this map picks
+   always-report. (`02` already found the inverse defect — three recovered prompts
+   ordered a Telegram send that cron cannot perform.)
+2. **The renderer must guard its own last line.** Verified above: a marker on the
+   response's **first or last line** suppresses the *whole* brief. A brief that
+   happens to end with a line canonicalizing to a marker vanishes entirely — and
+   the suppression is indistinguishable from a calm day. Assert the rendered brief
+   does not begin or end with a silence marker before handing it to delivery.
+3. **A human noticing an *absent* message is not a control.** The owner cannot be
+   the watchdog for a non-event, so D1 is necessary but not sufficient — the
+   machine-side staleness alarm (item 4) is required alongside it, not instead of
+   it. Owner agreed this rides regardless of the brief's shape.
