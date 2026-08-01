@@ -1,7 +1,7 @@
 # Design the loud-failure / verification story
 
 Type: grilling
-Status: claimed
+Status: resolved
 Blocked by: 01, 03
 
 ## Question
@@ -457,3 +457,116 @@ Why this shape rather than a place to go and look:
 **This graduates the map's "human inspection surface" fog patch**: routine
 visibility is pushed into the brief; deep inspection stays CLI-only and that is
 now an accepted answer, not an open question.
+
+### D5 — The rebuild drill is automated, on role-change plus a monthly floor *(owner, 2026-08-01)*
+
+Settles the acceptance test `03` handed down: *a rebuild from git **plus the age
+key** must yield a working but amnesiac Hermes.*
+
+**Where it runs:** a **throwaway second instance** on helium — fresh `HERMES_HOME`,
+ansible-templated config, separate container — never the live one. (Feasible as
+demonstrated: this ticket's AFK pass booted fresh volumes repeatedly without
+touching anything.)
+
+**What it asserts — three things, and the second is the one with teeth:**
+
+1. **Amnesiac** — memory, sessions and accumulated state are empty.
+2. **Working, meaning *reachable*, not merely running.** Provider connectivity and
+   an actual Telegram send must both succeed. `03`'s precondition is that a rebuild
+   *without* the age key yields a Hermes that boots fine and can talk to nothing —
+   no provider, no Telegram, healthcheck arguably green. Asserting on "the process
+   is up" would pass that. The test must separate **amnesiac** from **mute**.
+3. **The negative case fails loudly** — run it *without* the key and require the
+   drill to fail. "Boots but mute" is the plausible half-success this map exists to
+   catch, so it gets tested directly rather than assumed.
+
+**Cadence:** automated, on **every change to the ansible role**, plus a **monthly
+floor** (drift can originate outside the role — a `docker exec` fix six months
+later is invisible to a role-triggered test). Silent on pass; a failure surfaces as
+a `⚠` line in the evening brief, riding **D1** rather than growing its own alerting
+path. Rejected: once-at-build-time (rots, and rediscovery during a real rebuild is
+the worst possible moment) and a manual quarterly drill (rehearses the owner, but
+depends on the owner remembering — the same class of control this map keeps finding
+broken).
+
+---
+
+## Answer
+
+**The verification story: three liveness alarms that fire on absence, four
+correctness controls that make fabrication structurally hard, and one drill that
+proves the rebuild path still works.** Rationale for each ruling is in **D1–D5**
+above; this section is the consolidated result plus the two items D1–D5 did not
+cover on their own.
+
+### Liveness vs correctness — item 1
+
+They are different failures and get different tells. **Do not let one stand in for
+the other**; `03`'s healthcheck is a liveness tell and this ticket's evidence is
+that every historical loss was a *correctness* failure that liveness checks passed.
+
+**Liveness — "is it running?"** (all three from **D3**, all keyed on *absence*):
+container `state != running` via docker2mqtt; the corrected `HEALTHCHECK` reading
+`ticker_last_success` **as a file**, treating missing-past-start-period as
+unhealthy; and brief-arrival staleness past ~26 h. The third is the only one that
+survives a healthy gateway with a silently misconfigured delivery target.
+
+**Correctness — "is what it says true?"**: per-source `STATUS=OK/ERROR` with
+**provenance timestamps** (**D2** A); the **variance tripwire** (**D2** B); the
+**`no_agent` write list beside the agent's prose** (**D4**), which catches
+claim-vs-ground-truth contradictions; and a **content assertion on `SOUL.md`** —
+grep for its two anti-fabrication sentences, because (verified above) `hermes
+doctor` reports `✓ persona configured` for the image's own 513-byte default.
+
+### Per-source status — item 3
+
+Every input carries an explicit `STATUS=OK/ERROR` **and** a provenance timestamp.
+Enumerated, with the failure each one's provenance actually catches:
+
+| Source | Provenance field | The silent failure it kills |
+|---|---|---|
+| **Proton inbox** (IMAP via the bridge container) | newest message date | The map's most-repeated failure: the bridge session dies live-but-unauthenticated and Paperless *"surfaces no error"*. No auth → no message dates → `⚠ stale`, not "0 new mail". |
+| **`/vault`** (Syncthing replica) | newest mtime under the read paths | A **stalled Syncthing replica looks exactly like a quiet vault**. v0.14 halted sync for up to an hour with badly diverged sides; a frozen replica would otherwise read as "nothing changed today". |
+| **Home Assistant** (if the brief carries household data) | entity `last_changed` | The original sin — fake weather. A hardcoded constant has no `last_changed` to report. |
+| **Inference provider** | last successful completion | Expired/rate-limited key. Upstream's `classify_cron_error` already buckets `auth_failed` / `rate_limited`; surface the bucket, don't re-derive it. |
+| **Telegram delivery** | last successful send | Zero delivery targets is *"recorded as a delivery failure upstream"* (`01`); a wrong allowlist presents as "Hermes ignores me" (`10`). |
+
+**The rule that generalizes `02`'s `emit_labs` bug: an expired or exhausted
+configuration must be `ERROR`, never `count=0`.** "No data because nothing is due"
+and "no data because the config ran out" must not share a status line.
+
+**Not enumerated here on purpose:** what each source's *content* means is
+elsewhere — mail semantics are `07`, brief composition is `06`. This ticket fixes
+the **contract** every source reports through, not the sources' payloads.
+
+### Corrections this ticket makes to already-closed work
+
+- **`03`'s healthcheck must change before it is built.** Its `ticker_last_success`
+  blind spot (verified above) reports healthy when **no tick has ever succeeded**.
+  The corrected probe is **D3** item 2. `03` is closed; this supersedes it.
+- **`03`'s "docker2mqtt health entity" is the wrong entity.** `046`'s own verified
+  caveat: `health` does not clear when a container stops. Key on `state` (**D3**).
+- **`01`'s `[SILENT]` hazard was overstated** — see the verified block above;
+  mid-sentence mentions are delivered. The real trap is a first/last-line marker
+  suppressing the *whole* brief (**D1** consequence 2).
+- **Item 5 of this ticket's own question was stale** (git-as-audit-trail) and was
+  struck before the grilling began; **D4** answers the rewritten version.
+
+### Carried forward
+
+- **→ `06`:** if the brief carries Home Assistant data, **how Hermes reaches HA
+  (token, network path) and which entities it may read is undecided** — nothing in
+  `03` provisioned it. This is a prerequisite for `06`'s brief composition in the
+  same way `02` made a 💊 source a prerequisite. Also: `06` inherits **D1** — the
+  brief is unconditional and adaptive-length, and **no job prompt may instruct
+  `[SILENT]`**.
+- **→ `07`:** **D2**'s provenance gives email triage its freshness primitive free —
+  "newest message date" *is* the inbox's provenance.
+- **→ `08`:** the write surface must be **enumerable from `$HERMES_HOME/logs`**, or
+  **D4**'s write list cannot be generated.
+- **→ implementation:** the corrected healthcheck, the three HA alarms, the
+  provenance contract, the variance tripwire, the `SOUL.md` content assertion, and
+  the rebuild drill are all execution work for the graduation issues, per the map's
+  *plan-don't-do* note.
+
+**Status: resolved.**

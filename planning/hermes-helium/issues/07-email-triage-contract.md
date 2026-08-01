@@ -112,3 +112,22 @@ for `mattias.stromdahl@pm.me`. But:
 7. **Shared vs dedicated bridge instance.** Currently fog on the map; this ticket
    may sharpen it enough to graduate. One 2FA login and one silent-death surface, vs
    blast-radius isolation from document ingest.
+
+### Inherited from ticket `05` (resolved 2026-08-01 — don't re-derive)
+
+- **Freshness comes free — use it, don't rebuild it.** `05`'s **D2** requires every
+  source to emit the **upstream's own** last-updated time. For the inbox that is the
+  **newest message date**, and it is the control for this map's most-repeated real
+  failure: the Proton bridge session dies *live-but-unauthenticated* and Paperless
+  *"surfaces no error"*. No auth → no message dates → the brief renders **`⚠ stale`,
+  not "0 new mail"**. **`07` must not let "inbox empty" and "inbox unreachable"
+  share a status.**
+- **An independent cross-fetch was explicitly offered for mail and declined**
+  (`05` **D2**, option C). Don't reopen it: a second IMAP client rots the same way
+  the first does. Provenance covers the dead-session case.
+- **Generalized from `02`'s `emit_labs` bug:** an expired or exhausted
+  configuration must be **`ERROR`, never `count=0`**.
+- **The write list is generated from `$HERMES_HOME/logs`** (`05` **D4**), so
+  whatever "filing" means, it must leave a trace there — see the `08` note below.
+- **Delivery is job configuration, never prompt text**, and no prompt may instruct
+  `[SILENT]` (`05` **D1**).

@@ -142,14 +142,45 @@ badly. The redesign (memory in `~/.hermes`, vault as data source) removes the
    mechanism; this ticket owns *whether it's a condition worth alerting on*.) Also:
    does Hermes ever *resolve* conflicts, or only report them? Recommended: report
    only.
-5. **git as the safety net — made real.** `~/vault` is a git repo, but an
-   uncommitted agent write is not revertable, and Syncthing will happily sync
-   `.git/` into a race between peers. Settle: who commits, when, and whether `.git/`
-   is excluded from Syncthing via `.stignore`. This is the difference between "git
-   is the safety net" and "there happens to be a git repo here".
+5. ~~**git as the safety net — made real.**~~ **Struck 2026-08-01 — the premise is
+   dead** (`03`, `11`, and now `05`). `~/vault/.stignore` excludes `.git`, so
+   **helium's replica has no repo at all**; `.gitignore` untracks finance data; and
+   Syncthing versioning was off on every krypton folder. There is nothing on helium
+   to commit. **The undo is staggered Syncthing versioning on krypton**
+   ([ticket 11](11-vault-undo-riders-to-vault-serve-004.md), `maxAge=31536000` —
+   *seconds*), and **the write record is `$HERMES_HOME/logs`** (`03`,
+   restic-covered). What survives for this ticket: the two are complementary, and
+   **the authorship question is still yours** — versioning is author-agnostic and
+   cannot say *who* changed a file, so `$HERMES_HOME/logs` is the only thing that
+   attributes a write to Hermes. See the `05` inheritance below, which depends on it.
 6. **The `.stfolder` marker guard.** Carry the prior-art unit forward (ticket `02`),
    updated for `personal-vault` on helium. Cheap insurance; should never fire.
 7. **`~/vault/AGENTS.md` must be rewritten.** It currently says the vault is synced
    to `titan` and "worked on by … Hermes agent (titan)" — stale on both counts, and
    other agent sessions read it as ground truth. This ticket produces the content;
    the map lists it as fog until then.
+
+### Inherited from ticket `05` (resolved 2026-08-01 — don't re-derive)
+
+- **🔴 A hard constraint on the write surface: it must be enumerable from
+  `$HERMES_HOME/logs`.** `05`'s **D4** puts a **`no_agent`-generated list of every
+  vault write** into the evening brief, printed beside the agent's own prose account
+  of its day — so that *"filed 3 invoices"* above an empty write list is a visible
+  contradiction. **If a write path exists that does not land in
+  `$HERMES_HOME/logs`, D4's cross-check has a blind spot** and this map's
+  headline correctness control is holed. Verify per write mechanism, don't assume.
+- **Attribution is the reason this matters.** Syncthing versioning (`11`, the only
+  undo) is **author-agnostic** — it cannot distinguish a Hermes write from the
+  owner's own edit arriving over sync. `$HERMES_HOME/logs` is the *only* thing that
+  attributes a change to Hermes. Undo and record are separate mechanisms; this
+  ticket needs both to be real.
+- **`05` closed the "inspection surface" fog patch, which narrows `08`'s options.**
+  There will be **no read-only web surface** — no dashboard (upstream: it stores API
+  keys, unsafe on LAN), no Traefik router. Routine visibility is the brief; deep
+  inspection is `docker exec`. So "the owner can go and look" is **not** available
+  as an enforcement or review story here.
+- **Every source carries provenance** (`05` **D2**), and for `/vault` that is the
+  **newest mtime under the read paths**. This exists because a **stalled Syncthing
+  replica is indistinguishable from a quiet vault** — precisely the v0.14 failure,
+  where sync safety-halted with badly diverged sides. `08` should confirm its chosen
+  read paths make that mtime meaningful.

@@ -395,6 +395,19 @@ would have been checking a closed port.
 
 The probe, baked into the derived image:
 
+> 🔴 **SUPERSEDED 2026-08-01 by [ticket 05](05-loud-failure-verification.md) — do
+> not build the script below as written.** Two defects, both verified on helium:
+> (1) it bounds only `ticker_heartbeat`, but `cron status` also tracks
+> `ticker_last_success`, and the **never-succeeded** case (`ok_age is None`) falls
+> through to the *healthy* branch and prints a fresh heartbeat — so this probe
+> reports **healthy while cron has never once fired**. The fix reads
+> `$HERMES_HOME/cron/ticker_last_success` as a file and treats *missing* past the
+> start-period as unhealthy. (2) The onward path described below as the
+> "docker2mqtt **health** entity" must key on the **`state`** entity — `issues/046`
+> verified that `health` does not clear when a container stops. See `05`'s **D3**.
+> ✅ Unaffected: the `Ticker heartbeat: NNs ago` format worry was unfounded —
+> `cron.py:306` is unconditional integer seconds, so the parse below is safe.
+
 ```dockerfile
 HEALTHCHECK --interval=60s --timeout=15s --start-period=120s --retries=3 \
   CMD /usr/local/bin/hermes-healthcheck

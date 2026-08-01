@@ -112,3 +112,33 @@ good, but it implements the **wrong side of a tension this ticket must resolve**
 
 This ticket is about **policy**, not plumbing. The channel is settled (Telegram);
 how failure alerts reach you when the agent is dead belongs to ticket `05`.
+
+### Inherited from ticket `05` (resolved 2026-08-01 — don't re-derive)
+
+- **The brief is unconditional.** `05`'s **D1**: it arrives **every day**, in
+  **adaptive-length** shape — a quiet day is one line plus a compact status footer
+  (`✓ mail 12 · vault ok · HA ok`); anything in `ERROR` expands into a full `⚠`
+  section. Chosen over an always-full footer because alarm fatigue is itself a
+  silent failure. **This constrains `06`: there is no "no brief today" branch to
+  design.** What varies is length, not existence.
+- **No job prompt may ever instruct `[SILENT]`** — and the hazard is narrower than
+  `01` recorded but nastier. Verified in `gateway/response_filters.py`: a marker
+  mid-sentence *is* delivered, but a marker on the response's **first or last
+  line** suppresses **the entire brief**. So a brief that happens to end with such
+  a line vanishes, indistinguishably from a calm day. `06` must ensure its rendered
+  output cannot begin or end with a silence marker.
+- **Every source carries a provenance timestamp** (`05` **D2**) — the upstream's
+  *own* last-updated time, not the script's clock. `06` composes sections **from**
+  that contract; a source whose provenance is stale renders `⚠ stale`, never as a
+  value and never as an empty section.
+- **🔴 A prerequisite `06` now owns: Home Assistant access is unprovisioned.** If
+  the brief carries household data (weather — the original fake-weather source),
+  **nothing in `03` gave Hermes an HA token or a network path to it**, and no
+  ticket has decided which entities it may read. This is a prerequisite for brief
+  composition in exactly the way `02` made a 💊 source one. Decide it here or rule
+  HA out of the brief.
+- **The failure-alert path is settled and is not `06`'s** — `05` **D3** puts it on
+  the existing MQTT→HA plumbing, keyed on docker2mqtt's **`state`** entity. `06`
+  covers *content* urgency only.
+- **The rebuild drill reports through you** — `05` **D5**: a failed drill surfaces
+  as a `⚠` line in the brief rather than its own alert.

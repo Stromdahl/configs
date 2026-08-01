@@ -219,6 +219,25 @@ makes silent failure impossible**.
   open on purpose: **item 1 is a krypton change, outside helium's ansible play** —
   `004` owns that it happens, not how.
 
+- [Design the loud-failure / verification story](issues/05-loud-failure-verification.md)
+  — the trust half, settled: **three liveness alarms that fire on *absence*, four
+  correctness controls, one rebuild drill.** The brief **always arrives**
+  (adaptive-length), so silence is itself the alarm and **no job prompt may instruct
+  `[SILENT]`**. Correctness rests on **provenance timestamps** — every source emits the
+  *upstream's own* last-updated time, which makes the fake-weather bug *unwritable*
+  rather than merely detectable — plus a variance tripwire for real-but-wedged
+  sources. The audit trail is a **`no_agent` write list printed beside the agent's own
+  prose**, so a claim with no matching writes is visibly contradicted. Alerts ride the
+  **existing MQTT→HA** path; no OTLP collector, no dashboard. **Two corrections to
+  closed work, both this map's own enemy class:** `03`'s healthcheck reports
+  **healthy when no cron tick has *ever* succeeded** (it bounds `ticker_heartbeat`
+  but not `ticker_last_success`), and its onward path must key on docker2mqtt's
+  **`state`** entity — `046` verified **`health` does not clear when a container
+  stops**. Also verified on the box: **`hermes doctor` exits 0 with `✗` failures**,
+  and its `✓ SOUL.md exists` is **green on the image's own 513-byte default**, so
+  `02`'s "verify it loads" must assert on *content*. Restore is **`hermes import`**,
+  not `hermes restore`.
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._
@@ -228,19 +247,16 @@ memory-out-of-vault, beachhead scope)._
 - **Whether `/daily` and the `note` skill get retired or rewired.** Hermes taking
   over ambient capture makes the inbox-file convention partly redundant; can't be
   specified until the board-ownership follow-on is scoped.
-- **The human's inspection surface for Hermes' own state.** `03` established there is
-  **nothing listening** on the dashboard (`9119`, opt-in via `HERMES_DASHBOARD`) or
-  the gateway API (`8642`, needs `API_SERVER_KEY`), upstream warns against exposing
-  the dashboard on a LAN because it stores API keys, and `/journey` is CLI-only — so
-  today the only way to read the agent's memory is a shell on helium. Whether that is
-  acceptable, or whether some read-only surface is wanted (and if so behind what
-  auth), is a real question but not yet sharp: it depends on what `05` decides the
-  owner needs to *see* routinely versus only during an incident.
-
 _(The **Telegram identity/authorization** patch graduated to
 [ticket 10](issues/10-telegram-authorization.md) once `03` landed the deployment
 shape and a real boot surfaced `TELEGRAM_ALLOWED_USERS` plus the deny-by-default
 posture.)_
+
+_(The **human inspection surface** patch is **closed, not graduated** — `05` answered
+it rather than sharpening it into a ticket. Routine visibility is pushed into the
+evening brief as a script-generated write list; deep inspection stays CLI-only via
+`docker exec`, and that is now an accepted answer. No read-only web surface. See
+`05`'s **D4**.)_
 
 ## Out of scope
 
