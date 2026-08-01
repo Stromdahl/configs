@@ -201,6 +201,23 @@ makes silent failure impossible**.
   `.gitignore` untracks finance data, and **versioning was off on every krypton
   folder**, so the vault's only undo is now a rider to vault-serve `004` (ticket `11`).
 
+- [Hand the vault-undo riders to vault-serve 004](issues/11-vault-undo-riders-to-vault-serve-004.md)
+  — applied; `004` now carries staggered versioning on **krypton** (`maxAge`
+  365 days), `.git` in helium's ignore patterns, and the cross-link, under a
+  **"required — the only undo there is"** heading. Re-verifying rather than
+  propagating caught one defect: **`maxAge` is in *seconds*** — the "365 days" this
+  map has been repeating is the GUI's unit, and a role templating `config.xml` with
+  `365` gets **six minutes** of history while *looking* correctly configured. That is
+  this map's own enemy class reached through its own undo, so `004`'s Done-when now
+  demands `31536000` plus a round-trip test (edit on helium → prior version appears
+  in krypton's `.stversions/`). Both docs claims behind the krypton-only choice are
+  now quoted inline in `004`: versioning fires **only on incoming changes** (so
+  helium, where Hermes writes *locally*, is the wrong side), and `.stignore` is
+  **never synced** (so krypton's `.git` exclusion doesn't travel). Also struck `004`'s
+  two remaining *"git is the safety net"* claims, stale since `03`. One seam left
+  open on purpose: **item 1 is a krypton change, outside helium's ansible play** —
+  `004` owns that it happens, not how.
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._
