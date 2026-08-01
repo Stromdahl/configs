@@ -420,3 +420,40 @@ a collector arrives for another reason. **Also rejected: a Homepage tile** — `
 evidence already records that a Homepage container-status tile was the *only* tell
 built for the Proton bridge and it *"does not catch a live-but-unauthenticated
 bridge"*. A dashboard nobody is looking at is not an alarm.
+
+### D4 — The audit trail is a section of the brief, not a surface to visit *(owner, 2026-08-01)*
+
+Settles **item 5 (an audit trail you can read without asking the agent)**, as
+rewritten above after `03`/`11` killed the git premise.
+
+The evening brief carries a **"what I changed"** section: every vault write since
+the last brief, emitted by a **`no_agent` script** reading `$HERMES_HOME/logs`
+directly. Rejected: leaving it to `docker exec` (option 1) and standing up a
+read-only web surface (option 3).
+
+Why this shape rather than a place to go and look:
+
+- **A trail nobody reads is not a control.** This map's own evidence:
+  `Sync/Hermes-Claude-Bridge.md` was written to for weeks and grep-confirmed
+  *nothing ever read it*. Option 3 rebuilds that failure with better styling, and
+  upstream independently warns against exposing the dashboard (it stores API keys).
+- **It is confabulation-proof by construction.** `no_agent` means no LLM in the
+  path — the list is the filesystem's account, not the agent's. Contrast `/journey`
+  and "ask Hermes what it did", which `05`'s evidence already rules out as
+  verification channels (v0.14 confabulated its own internals).
+- **It gives item 6 a second, free channel.** The script-generated write list sits
+  directly beneath the agent's own prose account of its day. *"Filed 3 invoices"*
+  above an empty write list is a contradiction visible at a glance — an
+  agent-claim-vs-ground-truth cross-check that costs nothing and needs no
+  judgement. This is precisely the Hermes-Claude-Bridge failure (agent believed it
+  was integrating with something real) rendered impossible to miss.
+- **It answers the authorship question `11` left open.** Syncthing versioning is
+  author-agnostic and cannot say *who* changed a file; `$HERMES_HOME/logs` is
+  Hermes' own write record, so it is authoritative for *"what did **Hermes** do"* —
+  the two are complementary, not redundant (versioning is the undo, this is the
+  record).
+
+`docker exec` remains the incident-depth path, including `/journey` for memory.
+**This graduates the map's "human inspection surface" fog patch**: routine
+visibility is pushed into the brief; deep inspection stays CLI-only and that is
+now an accepted answer, not an open question.
