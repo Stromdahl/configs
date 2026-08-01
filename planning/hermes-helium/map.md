@@ -258,6 +258,12 @@ evening brief as a script-generated write list; deep inspection stays CLI-only v
 `docker exec`, and that is now an accepted answer. No read-only web surface. See
 `05`'s **D4**.)_
 
+_(**Home Assistant access** became [ticket 12](issues/12-home-assistant-access.md),
+**blocked by `06`**, once `05` found that nothing in `03` ever provisioned an HA
+token or network path — while HA is the source the original fake-weather bug
+pretended to query. `06` decides whether the brief carries household data at all;
+`12` decides how it is reached and what may be read.)_
+
 ## Out of scope
 
 - **Owning `tasks.md` and the inbox drain** (i.e. fully replacing `/daily`'s write
@@ -274,3 +280,17 @@ evening brief as a script-generated write list; deep inspection stays CLI-only v
   16 GB RAM won't carry it. Not revisitable without different hardware.
 - **Public internet exposure** — helium PRD forbids it; Telegram is outbound-only
   by design.
+- **A metrics collector on helium, and with it hermes-agent's OTLP exporter** —
+  ruled out by [ticket 05](issues/05-loud-failure-verification.md)'s **D3**, and
+  it costs something real, so it is recorded rather than buried. The exporter
+  publishes `hermes.cron.jobs.overdue` (a job whose run time passed its grace
+  window) — **the single best correctness signal in the system**, content-free by
+  construction and therefore clear of the egress posture. It is rejected anyway
+  because helium has no OTLP collector, and standing one up to watch the watchman is
+  one more thing that can fail silently — the map's own enemy class. Verification
+  rides the existing MQTT→HA path instead. **Building metrics infrastructure belongs
+  to `issues/046`'s follow-on, not to this destination**; if a collector ever arrives
+  for other reasons, wiring Hermes to it is a cheap addition — but it will not be
+  this map that decides to build one. (Noted trap if it ever is: each metric is
+  emitted **only when non-null**, so "never succeeded" is an *absent* metric, not a
+  zero — alert on absence or not at all.)

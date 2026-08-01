@@ -317,6 +317,12 @@ line plus a compact status footer (`✓ mail 12 · vault ok · HA ok`); any sour
 alarm fatigue is itself a silent failure — a brief the owner stops reading cannot
 alert him.
 
+**Attribution, precisely:** the owner ruled *"always arrives"* — that half is his
+and is load-bearing. **Adaptive-length was the agent's recommendation, put to him
+and unobjected, not an explicit ruling.** Downstream tickets should treat
+*always-arrives* as fixed and *adaptive-length* as a strong default that `06` may
+revisit when it composes the brief.
+
 Three consequences, none of them optional:
 
 1. **No job prompt may ever instruct `[SILENT]`.** The always-report rule and the

@@ -131,12 +131,14 @@ how failure alerts reach you when the agent is dead belongs to ticket `05`.
   *own* last-updated time, not the script's clock. `06` composes sections **from**
   that contract; a source whose provenance is stale renders `⚠ stale`, never as a
   value and never as an empty section.
-- **🔴 A prerequisite `06` now owns: Home Assistant access is unprovisioned.** If
-  the brief carries household data (weather — the original fake-weather source),
-  **nothing in `03` gave Hermes an HA token or a network path to it**, and no
-  ticket has decided which entities it may read. This is a prerequisite for brief
-  composition in exactly the way `02` made a 💊 source one. Decide it here or rule
-  HA out of the brief.
+- **🔴 `06` gates a prerequisite it does not itself own: Home Assistant access is
+  unprovisioned.** If the brief carries household data (weather — the original
+  fake-weather source), **nothing in `03` gave Hermes an HA token or a network path
+  to it**, and no ticket had decided which entities it may read. That question is
+  sharp enough to ticket, so it is now
+  [ticket 12](12-home-assistant-access.md), **blocked by `06`**. **What `06` decides
+  is whether the brief carries HA data at all** — rule it in and `12` becomes a hard
+  prerequisite for building the brief; rule it out and `12` closes as out of scope.
 - **The failure-alert path is settled and is not `06`'s** — `05` **D3** puts it on
   the existing MQTT→HA plumbing, keyed on docker2mqtt's **`state`** entity. `06`
   covers *content* urgency only.
