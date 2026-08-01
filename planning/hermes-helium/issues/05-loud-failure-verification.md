@@ -1,7 +1,7 @@
 # Design the loud-failure / verification story
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: 01, 03
 
 ## Question
@@ -203,10 +203,18 @@ tell from the outside. That ambiguity is the thing to design away.
    Home Assistant + MQTT path already carrying helium's metrics (`issues/046`,
    `project_helium_metrics_mqtt_ha`), or a Homepage tile. HA/MQTT is already wired
    and already reaches the phone — likely the cheapest real answer.
-5. **An audit trail you can read without asking the agent.** `~/vault` is a git
+5. **An audit trail you can read without asking the agent.** ~~`~/vault` is a git
    repo, so every vault write Hermes makes is a commit-able, diffable, revertable
-   record — decide whether Hermes commits its own writes, or something else does,
-   and whether `/journey` (v0.19 memory timeline) is part of the trail.
+   record.~~ **Struck 2026-08-01 — stale, and it contradicted this same ticket's
+   §03 block.** `.stignore` excludes `.git`, so helium's replica **has no repo at
+   all**; `.gitignore` untracks finance data; and versioning was off on every krypton
+   folder (`03`, `11`). There is nothing on helium to `git log`. So the real question:
+   **what constitutes the readable write record, given the trail is now
+   `$HERMES_HOME/logs` (restic-covered, `03`) plus author-agnostic Syncthing
+   versioning on krypton (`11`)?** Specifically — can you answer *"what did Hermes
+   change in the vault yesterday?"* without shelling into the container or asking the
+   agent; does the answer distinguish Hermes' writes from the owner's own (Syncthing
+   versioning cannot); and is `/journey` part of the trail given it is **CLI-only**?
 6. **A periodic proof-of-correctness, not just proof-of-life.** The fake-weather bug
    would have survived every liveness check ever written. What check would have
    caught it?
@@ -216,3 +224,82 @@ tell from the outside. That ambiguity is the thing to design away.
 Whether this needs its own monitoring plumbing or can ride entirely on what helium
 already has (MQTT→HA, Homepage, restic/timer alerting). Prefer riding existing
 plumbing — new monitoring is one more thing that can fail silently.
+
+---
+
+## Verified on helium 2026-08-01 (this ticket's own AFK pass — don't re-derive)
+
+Method: the pinned image
+(`nousresearch/hermes-agent@sha256:b869e64d…`) is present on helium; findings are
+from reading its source (`docker run --entrypoint sh`) and running its CLI, not
+from docs. Items 05 flagged as *"confirm rather than inherit"* are settled below.
+
+**✅ The `Ticker heartbeat: NNs ago` format is stable — `03`'s parse worry is
+unfounded.** `hermes_cli/cron.py:306` is
+`print(f"  Ticker heartbeat: {int(hb_age)}s ago")` — unconditional integer
+seconds. There is no `2m ago` rendering at any age. `03`'s sed parse is safe.
+
+**🔴 But `03`'s probe has a real hole, and it is this map's enemy class exactly.**
+`hermes cron status` tracks **two** markers, not one — `ticker_heartbeat` and
+`ticker_last_success` — and upstream's own comment says why:
+
+> *"a ticker stuck failing every tick would otherwise keep the plain heartbeat
+> fresh and falsely report healthy (#32612, #32895)"*
+
+`cron status` has four branches. The `Ticker heartbeat:` line is printed **only in
+the healthy branch**, so `03`'s probe accidentally gets the right verdict on the
+two degraded ones (their text doesn't yield a parsable age). **The hole is the
+fourth case: `ok_age is None`** — `ticker_last_success` never written, i.e. *no
+tick has ever succeeded*. The `elif` requires `ok_age is not None`, so that state
+falls through to the healthy `else`: prints `✓ Gateway is running` **plus a fresh
+heartbeat**. `03`'s probe reports **HEALTHY while cron has never once fired.**
+Upstream's field example is a root-owned `jobs.json` (#68483) that failed every
+tick for ~14 h. **The probe must read `$HERMES_HOME/cron/ticker_last_success`
+directly and treat *missing* as unhealthy** (past the start-period), not lean on
+`cron status` prose — absence-means-healthy is the exact bug this map exists to kill.
+
+**🔴 `hermes doctor` exits 0 with unaddressed `✗` failures.** Ran it on a fresh
+`HERMES_HOME`: it printed `✗ ~/./.env file missing` and *"Found 5 issue(s) to
+address"*, and **exited 0**. `03` warned this class may not be unique to
+`cron status`; it isn't. Anything built on `doctor` must parse output. (The
+earlier `141` seen here was SIGPIPE from `head`, not doctor.)
+
+**🔴 `doctor`'s `SOUL.md` check cannot detect the failure `02` warned about.** On a
+**fresh, empty** `HERMES_HOME` the image auto-creates a **513-byte default
+`SOUL.md`**, and doctor reports `✓ ~/./SOUL.md exists (persona configured)`.
+Existence is all it tests — so the stock default is **green**, and the titan
+failure (`02`: *"the original there was the empty default"*) would pass. **Verifying
+`SOUL.md` must assert on content** (grep the two anti-fabrication sentences), never
+on doctor's tick.
+
+**✅ The image does not clobber an existing `SOUL.md`.** Seeded a marker file,
+booted, marker intact and byte count unchanged — so `03`'s ansible placement is
+safe, and a content assertion is meaningful.
+
+**✅ Restore exists, but it is not called restore.** `hermes backup [-q]` creates;
+**`hermes import`** restores ("Restore a Hermes backup from a zip file"). There is
+no `hermes restore` — a rebuild runbook that greps for one finds nothing.
+
+**🟡 A content-free telemetry projection already exists — likely the cheapest real
+answer to item 4.** `agent/monitoring/cron_health.py` exports
+`hermes.cron.scheduler.heartbeat_age_seconds`, `…last_success_age_seconds`,
+`…catch_up_occurrences`, `hermes.cron.jobs.enabled`, `…jobs.running`, and — the
+strong one — **`hermes.cron.jobs.overdue`** (a job whose `next_run_at` passed
+beyond its grace window). `hermes monitoring status` inspects it; transport is
+**OTLP** to an operator-configured endpoint, in-process and *"fail-open"*,
+*"content-free by construction — no prompts, messages, tool args/results"* (so it
+clears the egress posture). **Two cautions:** OTLP is *not* helium's existing
+MQTT→HA plumbing, so riding it means a collector; and each metric is appended
+**only `if value is not None`**, so `last_success_age_seconds` is *absent* rather
+than zero in the never-succeeded case — an alert rule keyed on the metric's value
+silently never fires. **Alert on metric absence, or don't use it.**
+
+**🟢 The `[SILENT]` risk is narrower than inherited — and nastier.** `01` recorded
+the hazard as *"any response **containing** `[SILENT]`"*. Not so
+(`gateway/response_filters.py`): a token buried mid-sentence **is** delivered.
+Suppression fires when the marker is the whole response, **sits on its own first
+or last line**, or opens the response as `[SILENT] …`. So the real trap is a
+genuine briefing whose **last line** canonicalizes to a marker — the *entire*
+brief is dropped, not the line. Also note `is_intentional_silence_agent_result`:
+markers suppress **only successful turns**, which is consistent with `01`'s
+"failed jobs always deliver".
