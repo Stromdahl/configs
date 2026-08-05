@@ -2,7 +2,9 @@
 
 ## Home Assistant
 
-**Host:** `ha.home.stromdahl.tech` (HTTPS, via helium Traefik) / `192.168.1.99:8123` (LAN, HTTP). HAOS, version in `exports/` if exported. (The apex `home.stromdahl.tech` is the helium homepage dashboard, not HA.)
+**Host:** `home.stromdahl.tech` (HTTPS, via helium Traefik) / `192.168.1.99:8123` (LAN, HTTP). HAOS, version in `exports/` if exported.
+
+HA's Traefik router matches **both** the apex `home.stromdahl.tech` and `ha.home.stromdahl.tech`. That is not redundancy for its own sake: the public Cloudflare record is the *wildcard* `*.home.stromdahl.tech`, and a wildcard never matches the zero-label apex — so **the apex resolves only on-LAN** (OPNsense split-horizon), while `ha.*` also resolves while roaming over NetBird. Prefer the apex on-LAN, `ha.*` from anywhere; `bin/ha` defaults to `ha.*` for that reason. The homepage dashboard now answers on `homepage.home.stromdahl.tech` only.
 
 **SSH:** `root@192.168.1.99:22` (Terminal & SSH add-on, key already authorized). `/config/` is HA's config dir.
 

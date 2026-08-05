@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// ha — small CLI for poking the Home Assistant on ha.home.stromdahl.tech.
+// ha — small CLI for poking the Home Assistant on home.stromdahl.tech
+// (also reachable, and resolvable while roaming, as ha.home.stromdahl.tech).
 // Run `ha --help` (or `ha` with no args) to print the USAGE block below.
 
 import { area } from './commands/area.ts';
@@ -82,7 +83,8 @@ Global flags (any position):
   -o <key.path>, --output <key.path>           extract a field from JSON output; print scalar if leaf is primitive
 
 Env:
-  HA_BASE                                      override the host (default https://ha.home.stromdahl.tech).
+  HA_BASE                                      override the host (default https://ha.home.stromdahl.tech;
+                                               https://home.stromdahl.tech works too, but only on-LAN).
                                                http:// implies ws://; https:// implies wss://.
 
 Auth: reads the bearer token from ~/.ha-token.json.

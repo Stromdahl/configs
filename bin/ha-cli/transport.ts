@@ -4,6 +4,9 @@ import * as path from 'node:path';
 import type { TokenFile, WSClient, WSFrame } from './types.ts';
 
 const TOKEN_FILE = path.join(process.env.HOME ?? '', '.ha-token.json');
+// HA answers on both home.stromdahl.tech and ha.home.stromdahl.tech. The default
+// stays on the ha.* name on purpose: the public Cloudflare record is a wildcard,
+// which does not match the apex, so only ha.* resolves while roaming.
 const BASE = (process.env.HA_BASE ?? 'https://ha.home.stromdahl.tech').replace(/\/+$/, '');
 const WS_BASE = BASE.replace(/^http/, 'ws');
 

@@ -37,10 +37,15 @@ http:
   # Home Assistant runs off-box (HAOS VM on argon, 192.168.1.99:8123, HTTP only),
   # so it can't use Docker labels — it's wired in here as a file-provider router.
   # HA must trust this proxy: 192.168.1.191/32 is in HA's http.trusted_proxies.
-  # Served at ha.home.stromdahl.tech; the apex home.stromdahl.tech is the homepage.
+  # Served at the apex home.stromdahl.tech (homepage moved back to homepage.*).
+  # Both names are kept, deliberately: the public Cloudflare record is the
+  # *wildcard* `*.home.stromdahl.tech`, and a wildcard does not match the zero-label
+  # apex — so home.stromdahl.tech resolves only on-LAN via OPNsense split-horizon,
+  # while ha.home.stromdahl.tech also resolves while roaming. Drop the ha.* alias
+  # only once an apex A record exists at Cloudflare.
   routers:
     homeassistant:
-      rule: "Host(`ha.home.stromdahl.tech`)"
+      rule: "Host(`home.stromdahl.tech`) || Host(`ha.home.stromdahl.tech`)"
       entryPoints:
         - websecure
       service: homeassistant
