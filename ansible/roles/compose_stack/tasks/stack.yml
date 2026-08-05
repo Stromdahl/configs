@@ -238,6 +238,19 @@
 # Copy verbatim — traefik middleware definitions and TLS options.
 # dynamic.yml has no Jinja markers; using copy (not template) makes the
 # intent clear and avoids accidental expansion of any future { in the file.
+#
+# BIND-MOUNT GOTCHA: dynamic.yml is bind-mounted into traefik as a *single file*,
+# and a single-file bind mount pins the container to that file's inode. `copy`
+# writes a temp file and renames it into place, so the new content lands on a NEW
+# inode and the running traefik keeps reading the old one — its file-provider watch
+# (on by default) never fires, because from inside the container nothing changed.
+# `docker cp` is no help in diagnosing this: it resolves the bind back to the host
+# path and shows the new content while traefik is still serving the old config.
+# Symptom when this bites: the docker provider hot-reloads label changes but the
+# file provider stays stale, so a host that changed hands between the two 404s.
+# Hence the restart-on-change handler. (A directory mount + providers.file.directory
+# would fix it structurally, but reshaping the reverse proxy's mounts is a bigger,
+# riskier change than this deploy needs.)
 - name: Copy Traefik dynamic config
   become: true
   ansible.builtin.copy:
@@ -246,6 +259,7 @@
     owner: root
     group: root
     mode: "0644"
+  notify: Restart traefik (compose_stack)
 
 # --- issue 029: build the patched Proton Mail Bridge image (adds libfido2) ---------
 # The stock shenxn image's auto-updated bridge needs libfido2, which its dep-stripped

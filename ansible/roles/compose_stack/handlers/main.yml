@@ -5,3 +5,15 @@
   become: true
   ansible.builtin.systemd_service:
     daemon_reload: true
+
+# Traefik's dynamic.yml is a single-file bind mount, so an atomically-replaced file
+# is invisible to the running container (see the copy task for the full story) — a
+# restart re-resolves the mount. Handlers run at the end of the play, i.e. after the
+# compose up, so the container exists by the time this fires. Safe to restart: the
+# ACME cache lives in the traefik_certs named volume, and no other service shares
+# traefik's network namespace (unlike gluetun's siblings).
+- name: Restart traefik (compose_stack)
+  become: true
+  ansible.builtin.command:
+    cmd: docker restart traefik
+  changed_when: true
