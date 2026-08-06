@@ -199,10 +199,52 @@ This is the falsifiable hook for **both** item 5 and item 6, and it is `no_agent
   a runaway auxiliary path can't hide inside a plausible main-loop total.
 
 ⚠️ **`estimated_cost_usd` vs `actual_cost_usd`** — both columns exist with a `cost_status`
-/ `cost_source` pair; which one is populated for a given provider was **not** probed. The
-brief's footer should print whichever is non-zero and name it, not silently pick one.
+/ `cost_source` pair; which one is populated for a given provider was **not** probed, and
+**neither** may be. A consumer must print whichever is non-zero and name it — and must not
+substitute a hardcoded price table, which would go stale silently.
 
-### 1.7 Prompt caching is implemented, natively, with 4 breakpoints
+### 1.7 ✅ Ordering: the pre-run script runs before the session exists
+
+Probed by reading the run path in order [SRC `cron/scheduler.py`]:
+
+| line | step |
+|---|---|
+| `:2961` | `prerun_script = _run_job_script_with_claim_heartbeat(job, script_path)` |
+| `:2963` | `_parse_wake_gate(_script_output)` — a trailing `{"wakeAgent": false}` **skips the agent entirely** |
+| `:2977` | `prompt = _build_job_prompt(job, prerun_script=prerun_script)` — stdout baked into `## Script Output` |
+| `:3004` | `_cron_session_id = f"cron_{job_id}_{now:%Y%m%d_%H%M%S}"` — session id first exists here |
+| `:3476` | `AIAgent(...)` constructed |
+
+⇒ **A pre-run gathering script cannot read its own run's `session_model_usage` row** — the
+session id does not exist yet, let alone the row. Any same-run cost or served-model check
+must be a *separate, later* job. A pre-run script can only report the **previous** run.
+
+Two riders:
+
+- ✅ **Per-execution scoping, so no watermark is needed.** The session id embeds a
+  `%Y%m%d_%H%M%S` timestamp, so the accumulating counters in §1.6 are scoped to one run.
+  Contrast `07`'s UID-watermark problem — that shape does not recur here.
+- ⚠️ **Do not reconstruct the id.** After the run, `_final_cron_session_id` may resolve to a
+  **compression-tip lineage id** instead of the constructed one
+  [SRC `cron/scheduler.py:3774-3785`], so a reader that rebuilds `cron_<job>_<ts>` will
+  sometimes find no row. Resolve by recency — join to `sessions`, order by `last_seen`.
+
+### 1.8 ⚠️ `_parse_wake_gate` — a second silent-skip path
+
+```python
+# cron/scheduler.py:2406                                    [SRC]
+"""...if the last stdout line is JSON like ``{"wakeAgent": false}``, the agent is
+skipped entirely — no LLM run, no delivery. Any other output (non-JSON, missing
+flag, gate absent, or ``wakeAgent: true``) means wake the agent normally."""
+```
+
+It **fails open** — only an explicit `false` skips — so the hazard is narrow. But it parses
+the last non-empty stdout line of *every* pre-run script, and this design's gathering script
+emits structured blocks by construction (`06`'s machine-readable kineret block, `08`'s
+manifest diff). Sibling to the empty-stdout skip `06` already documented; the cheap rule is
+to never end stdout with a bare JSON object.
+
+### 1.9 Prompt caching is implemented, natively, with 4 breakpoints
 
 > *"The default layout uses 4 cache_control breakpoints: the static system…"*
 > [SRC `agent/prompt_caching.py:3`]

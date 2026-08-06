@@ -347,8 +347,17 @@ is what pins the upstream, so a router posture is salvageable *only* through `on
 unreachable rather than mitigated. ✅ **Second: provider identity and cost are recoverable
 from `state.db`** — the cron `executions` table has **no model or provider column at all**,
 but `session_model_usage` is keyed `(session_id, model, billing_provider, …, task)` with
-token counters and cost, is `no_agent`-readable, and a fallback hop writes a *second row* —
-which is what lets `06`'s footer carry a served-model line and gives `05` a fourth control.
+token counters and cost, is `no_agent`-readable, and a fallback hop writes a *second row*.
+⚠️ **But it cannot ride the footer as a same-run check** — the pre-run script executes at
+`cron/scheduler.py:2961`, before the session id exists at `:3004`, so a gathering script can
+only ever report the **previous** run. The check therefore splits: a *trailing* footer line
+for routine visibility, and a separate post-brief **`no_agent` alarm job in `05`'s existing
+MQTT→HA path** for the tripwire. Two riders: the session id embeds a per-execution timestamp
+so **no watermark is needed** (unlike `07`'s UID problem), but it must be resolved **by
+recency, not reconstructed** — a compression-tip lineage id can replace it (`:3774`).
+Found alongside: **`_parse_wake_gate` is a second silent-skip path** — a trailing
+`{"wakeAgent": false}` stdout line skips the whole agent run, sibling to the empty-stdout
+skip `06` documented.
 ✅ **Third, measured on the box: the vault already streams to Anthropic** — 90 Claude Code
 sessions with `~/vault` as cwd, 79 MB of transcripts, 2026-07-07 → today, including this
 map's own reads of `finance/notes/email-ingest-plan.md` and `health/kineret-schedule.md`.

@@ -88,7 +88,11 @@ and policy quotes in [assets/09-provider-policy.md](../assets/09-provider-policy
 fallback chain — chosen because it is the only option where the posture does not depend on
 a control the unattended path silently discards.**
 
-### 🔴 The find that decides the ticket: cron drops `data_collection`
+### 🔴 The find that rules out routers: cron drops `data_collection`
+
+*(It decides nothing about **this** deployment — under **D1** there is no `provider` object
+to populate. It is an argument against routers and a binding constraint on any future
+reversal.)*
 
 The ticket framed routing opacity as *"a posture that depends on which backend served a
 request is not a posture."* The engine turns out to make that worse in a way no reading of
@@ -161,8 +165,15 @@ guard. Pinned axes carry **no** drift snapshot by design
 (`cron/jobs.py:1198`) — which is correct, because pinning is strictly stronger than a guard
 against drift. Proposed: **`claude-sonnet-5` for the brief** (its job is summarising
 already-gathered script output, not open-ended reasoning) and the interactive default left
-to the owner. Cheap to raise later; the footer in **D6** makes the actual served model
-visible either way.
+to the owner. Cheap to raise later; **D6**'s tripwire makes the actual served model visible
+either way.
+
+⚠️ **A correction to `01`, said out loud rather than left to quietly stop applying.** `01`
+handed forward *"Keep `cron.model_drift_guard` on."* Under this pin it becomes **inert for
+this job** — pinned axes carry no creation-time snapshot, so the guard never engages. Leave
+the setting on (it costs nothing and covers any future unpinned job), but do **not** count it
+as a control here. Pinning is strictly stronger against drift; **D6**'s served-model check is
+what actually verifies the pin held.
 
 ### D2 — Posture obtained, and exactly where it is re-checked
 
@@ -260,28 +271,77 @@ dollars a month.**
 measurement exists and is `no_agent`-readable: `state.db`'s **`session_model_usage`** table
 is keyed `(session_id, model, billing_provider, billing_base_url, billing_mode, task)` and
 carries `api_call_count`, all five token counters, `estimated_cost_usd` and
-`actual_cost_usd` (asset §1.6). So the brief's footer gains one line, computed by script:
+`actual_cost_usd` (asset §1.6).
+
+#### 🔴 But it cannot ride the footer as a same-run check — the footer is written before the run
+
+The first draft of this section said the footer line *"makes an unannounced hop visibly
+contradict the pinned config."* **That is false as specced, and it is this map's own enemy
+class**, so it is corrected rather than quietly reworded. `06` established the footer is
+produced by the **pre-run gathering script**, and the source confirms the ordering is strict:
+the script runs at `cron/scheduler.py:2961`, its stdout is baked into the prompt at `:2977`,
+the session id is not even constructed until `:3004`, and `AIAgent(...)` is not called until
+`:3476`. **When the script runs, tonight's session does not exist and tonight's usage row
+cannot.** A pre-run script can only ever report the *previous* run.
+
+So the mechanism splits in two, by what each half can actually know:
+
+**(a) The footer carries the trailing figure — labelled as trailing.** One line, from the
+gathering script, about the **previous** run plus month-to-date:
 
 ```
-served <model> via <billing_provider> · <N> calls · <in>/<out> tok · $<cost> · MTD $<total>
+last run: served <model> via <billing_provider> · <N> calls · <in>/<out> tok · <cost> · MTD <total>
 ```
 
-This single line closes **three** things at once, which is why it belongs in the footer and
-not a dashboard:
+Being one run behind costs nothing for the thing this line is actually for — MTD spend is
+inherently trailing, and a hop is still surfaced within 24 h. It must say *"last run"*; a
+figure that looks current and isn't is the defect being corrected.
 
-1. **It is D5's enforcement.** A fallback hop writes a *second row* for the same session with
-   a different `model`/`billing_provider`; printing the served model makes an unannounced hop
-   visibly contradict the pinned config. Provider identity was otherwise invisible.
-2. **It is the runaway detector.** MTD spend beside a ceiling is the falsifiable form of
-   "notice if an unattended job starts running away."
-3. **The `task` column keeps it honest** — auxiliary spend is separated from the main loop,
-   so a runaway auxiliary path cannot hide inside a plausible total.
+**(b) The tripwire is a separate `no_agent` job, in `05`'s alarm architecture.** Scheduled
+shortly after the brief, it reads tonight's row and alerts over the **existing MQTT→HA path**
+on: served `model`/`billing_provider` ≠ the pinned pair, or usage over ceiling. This is where
+it belongs — `05` already owns absence-alerting and fail-closed alarms, and a tripwire that
+only ever prints into a document nobody diffs is not a tripwire. It is `--no-agent`, so it
+adds **zero** inference.
 
-**Open for the owner:** the ceiling the tripwire fires at. Proposed default **$25/month**,
-which is comfortably above the modelled figure and low enough to catch a loop. ⚠️ Also
-unprobed: whether `estimated_cost_usd` or `actual_cost_usd` is the populated column for this
-provider — the footer must print whichever is non-zero and **name which**, never silently
-pick one.
+#### Two source facts that make (b) implementable, and one that constrains it
+
+- ✅ **No watermark needed** — unlike `07`'s UID problem.
+  `_cron_session_id = f"cron_{job_id}_{now:%Y%m%d_%H%M%S}"` (`:3004`) carries a
+  **per-execution timestamp**, so the accumulating `api_call_count` / token / cost columns are
+  scoped to one run. Per-run figures are a plain read; MTD is a sum across rows.
+- ⚠️ **Do not reconstruct the session id.** After the run, `_final_cron_session_id` may be a
+  **compression-tip lineage id** rather than the id constructed at `:3004` (`:3774-3785`), so
+  a reader that rebuilds `cron_<job>_<timestamp>` will sometimes find nothing. Resolve by
+  recency instead — join `session_model_usage` to `sessions` and order by `last_seen`.
+- ⚠️ **A third cost branch, named rather than left to discovery.** Whether
+  `estimated_cost_usd` or `actual_cost_usd` is populated for a direct Anthropic provider is
+  unprobed — and **neither** may be. The script must **not** carry a price table to fill the
+  gap: a hardcoded per-MTok constant that silently goes stale is the fake-weather bug reached
+  through the cost control. So: **token counts are the enforced quantity**, because they come
+  from the API and cannot drift. The ceiling is therefore a *token* ceiling, derived once from
+  the owner's dollar figure at spec time and recorded **with the price and the date it was
+  derived from**, so staleness is a visible dated assumption. Dollars are printed only when a
+  cost column is non-zero, and the line **names which column** it used.
+- **The `task` column keeps both halves honest** — auxiliary spend (`vision`, `compression`,
+  `title_generation`) is separated from the main loop, so a runaway auxiliary path cannot hide
+  inside a plausible main-loop total.
+
+**Open for the owner:** the ceiling. Proposed default **$25/month** — comfortably above the
+modelled ~$4–14 and low enough to catch a loop — converted once into the token ceiling
+described above.
+
+#### Bonus trap found while checking the ordering, handed to `06`
+
+`06` found that *a pre-run script with empty stdout skips the agent call entirely*. There is a
+**second, adjacent mechanism** it did not cover: `_parse_wake_gate` (`:2406`) parses the
+script's **last non-empty stdout line** as JSON and, if it is an object with
+`"wakeAgent": false`, **skips the agent run entirely — no LLM call, no delivery**, returning
+`SILENT_MARKER`. It fails open (any other output wakes the agent), so the hazard is narrow —
+but the brief's gathering script emits structured blocks by design (`06`'s machine-readable
+kineret block, `08`'s manifest diff), so the rule is cheap and worth writing down: **the
+gathering script must never end its stdout with a bare JSON object**, so the gate is never
+consulted at all.
 
 ### D7 — A different provider for `health/` and Kronofogden mail: **rejected as theatre**
 
@@ -303,17 +363,23 @@ bridge), and it stays a weekly human check.
 No new mount, no new network path, no Traefik router. `provider_routing` is **not** needed in
 `config.yaml` at all under D1; if it ever appears, asset §1.3 binds it.
 
-**→ `05` (loud failure)** — the `session_model_usage` query is a fourth correctness control,
-and it is the same *shape* as **D4**'s manifest diff: read durable state from outside the
-agent, print it beside the agent's own prose. It also plugs the provider-identity hole `05`
-did not know it had. D5's no-fallback stance means a provider outage arrives as a failed cron
-job, which `05` already delivers.
+**→ `05` (loud failure)** — gains a **new `no_agent` alarm job**, not just a query: the
+post-brief tripwire in **D6(b)**, riding the existing MQTT→HA path, firing on served-model /
+provider mismatch or usage over ceiling. It is the same *shape* as `08`'s **D4** manifest
+diff — read durable state from outside the agent — and it plugs the provider-identity hole
+`05` did not know it had, since the cron `executions` ledger records no model at all. D5's
+no-fallback stance means a provider outage arrives as a failed cron job, which `05` already
+delivers.
 
-**→ `06` (brief and interrupts)** — one line added to the always-present footer (**D6**),
-alongside `corrections N` and `07`'s examined-vs-flagged ratio. It is script-generated, so it
-inherits the property that makes the footer work: unfabricatable, and its absence is itself a
-signal. **`06`'s `--no-agent` interrupt design is what makes the push path cost ~$4/month** —
-worth recording as a benefit that decision earned downstream.
+**→ `06` (brief and interrupts)** — three things, one of them a constraint:
+1. One **trailing** line in the always-present footer (**D6(a)**), alongside `corrections N`
+   and `07`'s examined-vs-flagged ratio. It must be labelled *"last run"* — the footer is
+   written before the agent runs, so a current-looking figure would be false.
+2. 🔴 **A new silent-skip path to avoid:** the gathering script must never end its stdout with
+   a bare JSON object, or `_parse_wake_gate` can skip the entire brief with no delivery.
+   Sibling to the empty-stdout path `06` already found.
+3. **`06`'s `--no-agent` interrupt design is what makes the push path cost ~$4/month** — worth
+   recording as a benefit that decision earned downstream.
 
 **→ Out of scope, recorded not buried** — reporting the cron `provider_routing` gap upstream.
 It is a real defect with a two-line fix, but filing and tracking it is not this destination's
