@@ -1,7 +1,7 @@
 # Rewrite ~/vault/AGENTS.md for helium, Hermes' real surface, and two assistants
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 08
 
 > ✅ **Unblocked 2026-08-06** — `08` resolved with the `inbox/`-only write surface
@@ -91,3 +91,94 @@ is the one to get right.
 - File size has not materially grown (it is paid per turn — see Constraints).
 - Committed in `~/vault`'s local git (249 tracked files; **never** pushed — the repo
   holds bank data and has no remote by design).
+
+## Answer
+
+**Applied. `~/vault/AGENTS.md` @ `be9314e`** — *"AGENTS.md: helium not titan, Hermes'
+inbox-only surface, no exclusivity"*. All four items landed; **one clause of `08` D10 was
+deliberately not written** (item 4, below). Committed on **krypton** (the authoritative
+copy) touching **only** `AGENTS.md` — the vault tree was dirty with a dozen unrelated
+changes, so the commit named the path rather than staging broadly, and the untracked
+`CLAUDE.md` symlink was left untracked so the 249-file count is unchanged.
+
+### What each item became
+
+1. **Sync peers** — `krypton · phone · titan` → `krypton · phone · helium`. No occurrence
+   of *titan* remains in the file (`grep -i titan` → no match).
+2. **Which agent, and its surface** — *"Hermes agent (helium — **reads the whole vault,
+   writes only `inbox/`, never reorganizes**; enforced by its mount, not by prompt)"*.
+   The trailing clause is the part that earns a session's reliance: `08` **D1**/**D2**
+   make this a mount property, and saying *why* it is trustworthy is worth its bytes.
+3. **`daily.md` / `daily/`** — rewritten to `08` **D8**'s precision: the dated archive was
+   *"never written — `daily/` is empty"*, while the **inbox drain does run** (*"drain
+   `inbox/` into `inbox/done/`, on a weekend-ish and lossy cadence"*). `daily.md` is
+   *"planned … never generated"*. The old line's operative consequence — `📅`-dated items
+   and birthdays must surface **late rather than never** — was kept; it survives the
+   correction intact and is the only actionable part.
+   ⚠️ **The `2026-07-29` date was deliberately omitted.** D8's evidence for "the drain runs"
+   is a last-run date, but a hardcoded date in an always-on file goes **stale silently** —
+   the exact class this map exists to kill. *"weekend-ish and lossy"* is true today and
+   stays true; the dated evidence lives here and in `08`, where it is timestamped.
+4. **The concurrency rule** — the exclusivity clause is gone (`grep "one device"` → no
+   match), replaced with *"prefer append-mostly edits, one file per note, a few files per
+   session, and **never assume exclusivity**: two assistants run concurrently (Claude on
+   krypton, Hermes on helium) over three read-write peers. Hermes writes only `inbox/`, so
+   a collision outside `inbox/` is a Claude session vs. the phone."*
+
+### 🔴 One deviation from D10, and it is this map's own enemy class
+
+D10's replacement wording ends *"`.sync-conflict-*` copies are expected, are never resolved
+automatically, and **are reported in the evening brief**."* **That last clause was not
+written.** It is a forward-dated claim about a *reporter*, and unlike the others it is
+**acted upon**: a Claude session that finds a `.sync-conflict-*` today, reads that a nightly
+job reports it, and therefore stays silent — while **no brief exists**. `05` designed it,
+`08` **D7** specced the detector, nothing is built. That is `Sync/Hermes-Claude-Bridge.md`
+reached through this map's own artifact: a writer believing in a reader that isn't there.
+
+Written instead: *"are **never** resolved automatically — **flag them to the owner**."*
+True today with no brief, still true once the brief exists (the brief becomes an
+*additional* reporter, not the only one), and **fewer bytes**. The detector half of D7 is
+unaffected — it is a `no_agent` scan on helium, and nothing in this file bears on it.
+
+The two *other* forward-dated statements were written present-tense as D10 mandates,
+because nobody acts on them: a **peer list** is descriptive (and leaving `titan` is
+strictly worse than naming helium early), and *"never assume exclusivity"* is safe advice
+**today regardless of Hermes** — the phone has always been a second writer, so the clause
+it replaces was arguably already false before this map existed.
+
+### Size — the Done-when that needed a number
+
+**5347 → 5763 bytes, +416 (+7.8 %).** Two framings, because the constraint is *paid per
+turn*: +7.8 % of this file, but **+0.6 % of `08` **D3**'s ≈16 300-token always-on surface**
+(≈105 tokens/turn). Items 1 and 3 were roughly a wash; **item 4 is where the growth is**,
+and it is content `08` **D10** mandates — trimming it further would cost the *why*
+(which collision is possible where), which is the part that changes behaviour. Judged
+immaterial at 0.6 % of the read surface rather than trimmed. Dropping the evening-brief
+clause saved ~55 of those bytes.
+
+### Verified, not assumed
+
+Every premise re-checked on krypton rather than inherited — commands so the next reader
+re-runs rather than re-derives:
+
+| Claim | Check | Result |
+|---|---|---|
+| `daily/` empty | `ls -la ~/vault/daily/` | only `.gitkeep` ✅ |
+| drain ran 2026-07-29 | `stat -c '%n %z' ~/vault/inbox/done/*` | **ctime** `2026-07-29 11:58` on the newest (mtimes are the *notes'* dates, 07-07→07-23 — a move preserves mtime, so ctime is the drain evidence) ✅ |
+| 3 notes undrained | `ls ~/vault/inbox/*.md` | 3, oldest `2026-07-12` ✅ |
+| 249 tracked files | `git ls-files \| wc -l` | 249 ✅ |
+| `CLAUDE.md` is a symlink | `ls -l ~/vault/CLAUDE.md` | `-> AGENTS.md` ✅ no second edit |
+| `daily.md` absent + ignored | `ls daily.md`; `grep daily .gitignore` | absent; ignored at `:18` ✅ |
+| no conflicts pending | `find . -name '.sync-conflict-*'` | none ✅ (nothing for the new rule to trip over) |
+
+### Two things left alone on purpose
+
+- **`~/vault/.gitignore:17`** carries the *same* stale claim this ticket killed —
+  `# Live "today" page — generated by /daily once the pipeline is wired up`. Real, and
+  outside this ticket's Done-when; a comment in an ignore file is read by humans editing
+  that file, **not** injected into any agent prompt, so it lacks the property that made
+  `AGENTS.md` urgent. Recorded, diff not widened. Free to fix alongside the next
+  `.gitignore` change.
+- **The vault-map row** *"`inbox/` (drained by `/daily`)"* is **still true** per D8 and was
+  left as-is. Hermes' write into that same queue is stated in the header paragraph; saying
+  it twice costs per-turn bytes for no new information.

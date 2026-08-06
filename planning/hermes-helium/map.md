@@ -426,6 +426,25 @@ makes silent failure impossible**.
   gateway status` prints `✗ Gateway is not running` and **exits 0**. Probes in
   [assets/10-telegram-authz-probe.md](assets/10-telegram-authz-probe.md).
 
+- [Rewrite ~/vault/AGENTS.md for helium, Hermes' real surface, and two assistants](issues/14-vault-agents-md-rewrite.md)
+  — applied on krypton (`be9314e`, `AGENTS.md` only): helium replaces titan, Hermes' surface
+  stated as **whole-vault read / `inbox/`-only write / never reorganizes, enforced by the
+  mount**, the `daily/`-vs-drain claims corrected to `08` **D8**'s precision, and the
+  exclusivity clause replaced. 🔴 **One clause of `08` **D10** was deliberately not written:**
+  *"reported in the evening brief"* names a reporter that **does not exist** — a session
+  finding a `.sync-conflict-*` today would read that a nightly job handles it and stay
+  silent, which is `Hermes-Claude-Bridge` reached through this map's own artifact. Written
+  as *"flag them to the owner"* — true before and after the brief exists, and cheaper. The
+  other two forward-dated claims (peer list, "never assume exclusivity") were written
+  present-tense as D10 mandates, because **nobody acts on them** — and the exclusivity
+  clause was arguably already false, since the phone has always been a second writer. Also
+  **dropped D8's `2026-07-29` date on purpose**: a hardcoded last-run date in an always-on
+  file goes stale silently, so the file says *"weekend-ish and lossy"* and the dated
+  evidence stays in `08`. Cost measured, not asserted: **+416 bytes (+7.8 % of the file,
+  **+0.6 % of D3's ≈16 300-token always-on surface**)**. One residual left recorded rather
+  than fixed: `~/vault/.gitignore:17` repeats the same stale `/daily` claim, but it reaches
+  no agent prompt.
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._
