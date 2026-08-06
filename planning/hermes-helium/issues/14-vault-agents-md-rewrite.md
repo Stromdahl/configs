@@ -5,7 +5,8 @@ Status: resolved
 Blocked by: 08
 
 > ✅ **Unblocked 2026-08-06** — `08` resolved with the `inbox/`-only write surface
-> confirmed by the owner, so item 4's replacement wording below is final as written.
+> confirmed by the owner. ⚠️ **Item 4's quoted wording was *not* final as written** — its
+> last clause was rejected on resolution as an unexecutable promise; see the **Answer**.
 
 ## Question
 
@@ -135,10 +136,19 @@ job reports it, and therefore stays silent — while **no brief exists**. `05` d
 `08` **D7** specced the detector, nothing is built. That is `Sync/Hermes-Claude-Bridge.md`
 reached through this map's own artifact: a writer believing in a reader that isn't there.
 
-Written instead: *"are **never** resolved automatically — **flag them to the owner**."*
-True today with no brief, still true once the brief exists (the brief becomes an
-*additional* reporter, not the only one), and **fewer bytes**. The detector half of D7 is
-unaffected — it is a `no_agent` scan on helium, and nothing in this file bears on it.
+Written instead: *"are expected and are **never** resolved automatically — **report them,
+never fix them**."* True today with no brief, still true once the brief exists (the brief
+becomes an *additional* reporter, not the only one), and **fewer bytes**. The detector half
+of D7 is unaffected — it is a `no_agent` scan on helium, and nothing in this file bears on it.
+
+⚠️ **The first draft said "flag them to the owner" and that was wrong — same defect, one
+layer up.** *Flag to the owner* names an **implied delivery channel**, and this file is read
+by the 20:00 brief, whose cron job has **`messaging` disabled** (`02`). An imperative the
+reader cannot execute is `02`'s worst catalogued defect — *"send the briefing to Telegram"
+in all three prompts* — reintroduced through the very ticket that rejected the same shape in
+D10. Fixed in `c6b0f20`. **The rule that generalizes: an instruction in this file must name
+an action that is executable both interactively and unattended** — *report* is
+delivery-agnostic (a session reports by saying it, the brief by printing it), *flag* is not.
 
 The two *other* forward-dated statements were written present-tense as D10 mandates,
 because nobody acts on them: a **peer list** is descriptive (and leaving `titan` is
@@ -165,7 +175,7 @@ re-runs rather than re-derives:
 |---|---|---|
 | `daily/` empty | `ls -la ~/vault/daily/` | only `.gitkeep` ✅ |
 | drain ran 2026-07-29 | `stat -c '%n %z' ~/vault/inbox/done/*` | **ctime** `2026-07-29 11:58` on the newest (mtimes are the *notes'* dates, 07-07→07-23 — a move preserves mtime, so ctime is the drain evidence) ✅ |
-| 3 notes undrained | `ls ~/vault/inbox/*.md` | 3, oldest `2026-07-12` ✅ |
+| 3 notes undrained | `ls ~/vault/inbox/*T*.md` | 3, oldest `2026-07-12` ✅ |
 | 249 tracked files | `git ls-files \| wc -l` | 249 ✅ |
 | `CLAUDE.md` is a symlink | `ls -l ~/vault/CLAUDE.md` | `-> AGENTS.md` ✅ no second edit |
 | `daily.md` absent + ignored | `ls daily.md`; `grep daily .gitignore` | absent; ignored at `:18` ✅ |

@@ -1,7 +1,7 @@
 # Give health/kineret-schedule.md a machine-readable block
 
 Type: task
-Status: open
+Status: claimed
 Blocked by: 06
 
 ## Question

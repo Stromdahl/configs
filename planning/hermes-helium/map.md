@@ -96,7 +96,8 @@ makes silent failure impossible**.
   `~/vault/AGENTS.md` ("keep the owner's personal life organized — board,
   inbox/reminders, records, planning, drafts; do not do project execution work") is
   almost exactly this ask, minus the at-a-laptop constraint. `~/vault/daily/` is
-  **empty** — the drain never became habitual. Board/inbox-drain ownership is
+  **empty** — but narrowed by `08` **D8**: the **drain does run**, weekend-ish and lossy;
+  it is the **dated archive** that never happened. Board/inbox-drain ownership is
   nonetheless a **follow-on**, not this map (see Out of scope): it is the
   write-heavy path into the live board, too much trust to extend on day one.
 - **The email half is already built.** Proton Mail Bridge runs on helium (issue
@@ -434,7 +435,12 @@ makes silent failure impossible**.
   *"reported in the evening brief"* names a reporter that **does not exist** — a session
   finding a `.sync-conflict-*` today would read that a nightly job handles it and stay
   silent, which is `Hermes-Claude-Bridge` reached through this map's own artifact. Written
-  as *"flag them to the owner"* — true before and after the brief exists, and cheaper. The
+  as *"report them, never fix them"* — true before and after the brief exists, and cheaper.
+  ⚠️ **Its own first draft said *"flag them to the owner"* and repeated the defect one layer
+  up** (`c6b0f20` fixes it): *flag* implies a delivery channel, and the brief's cron job has
+  **`messaging` disabled** — `02`'s "send the briefing to Telegram" defect, reintroduced by
+  the ticket that rejected it. **Rule for this file: every instruction must name an action
+  executable both interactively and unattended.** The
   other two forward-dated claims (peer list, "never assume exclusivity") were written
   present-tense as D10 mandates, because **nobody acts on them** — and the exclusivity
   clause was arguably already false, since the phone has always been a second writer. Also
