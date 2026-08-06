@@ -451,6 +451,28 @@ makes silent failure impossible**.
   than fixed: `~/vault/.gitignore:17` repeats the same stale `/daily` claim, but it reaches
   no agent prompt.
 
+- [Give health/kineret-schedule.md a machine-readable block](issues/13-kineret-machine-readable-block.md)
+  — applied on krypton (`8c77436`, **+13 / −0**): **YAML frontmatter** (owner's choice —
+  vault-native, Bases-readable, no fence extraction) carrying `anchor: 2026-07-29`,
+  `interval_days: 2`, `phase_1_ends: 2026-10-29` and a **fourth field, `phase_1_ends_source:
+  assumed`** — because the switch date is a *guess* the file's own ⚠️ section flags, a bare
+  date in frontmatter reads as fact, and Obsidian's property UI can drop YAML **comments** but
+  not **fields**, so the caveat is carried as data. **Owner confirmed all three values
+  verbatim** per the HITL constraint (anchor and interval *"both correct"*, the switch date
+  *"still just the guess"*). ✅ **The block cannot disagree with the table a human reads —
+  measured before asking anything:** anchor + interval reproduces **47 of 47** phase-1 table
+  rows, set difference empty both ways, and the doc's parity shortcut holds for all four
+  months — so **D6** was right that the shortcut is unsafe to *hardcode*, not that it is
+  wrong. **Phase 2's interval is deliberately absent**, and that absence *is* the interlock
+  behind **D6**'s ERROR-not-silence rule: with it present an emitter counts through the
+  boundary and the one human confirmation this design turns on never gets forced (the
+  frontmatter comment says so, so nobody "completes" the block). ⚠️ **Rider for the emitter:
+  `yaml.safe_load` returns `datetime.date`, not `str`** — a string comparison would work *by
+  luck* on ISO ordering while being wrong in kind. **One check still owed by the emitter's
+  implementation issue:** **D6**'s provenance is mtime + parsed anchor, and the mtime half
+  crosses Syncthing to helium — expected to survive, but a `stat`-both-sides round trip, not
+  something this ticket verified.
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._

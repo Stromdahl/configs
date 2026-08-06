@@ -368,8 +368,14 @@ section, which **D4**'s rule permits only because the machine-readable block mak
 *exhausted* distinguishable from *nothing tonight*. (b) plus injection-nights-only
 would have been the unsafe combination.
 
-Prerequisite: **one human edit on krypton** (the authoritative side). No new ticket —
-it rides the brief's implementation issue.
+Prerequisite: **one human edit on krypton** (the authoritative side). ~~No new ticket —
+it rides the brief's implementation issue.~~ **Struck 2026-08-06: that named no artifact
+and no implementation issue existed, so the edit was ownerless.** It got
+[ticket 13](13-kineret-machine-readable-block.md), now **resolved** — the block is live in
+`~/vault/health/kineret-schedule.md` (`8c77436`), values owner-confirmed, and verified to
+reproduce **47 of 47** rows of the file's own phase-1 table. Two riders land on whoever
+builds the emitter: `yaml.safe_load` yields `datetime.date` (not `str`), and **phase 2's
+interval is deliberately absent** so this **D6**'s `ERROR` genuinely fires at the boundary.
 
 ### D7 — The correction loop: two tiers, and a falsifiable "did it stick?"
 
