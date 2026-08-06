@@ -4,10 +4,8 @@ Type: task
 Status: open
 Blocked by: 08
 
-> ⚠️ **Contingent.** `08` is still `claimed`, not resolved — its **D10** is a *proposal*
-> pending the owner's confirmation. Items 1–3 below are corrections of plainly stale
-> facts and hold either way; **item 4's replacement wording depends on `08`'s write
-> surface landing as proposed.** Don't build this until `08` is resolved.
+> ✅ **Unblocked 2026-08-06** — `08` resolved with the `inbox/`-only write surface
+> confirmed by the owner, so item 4's replacement wording below is final as written.
 
 ## Question
 

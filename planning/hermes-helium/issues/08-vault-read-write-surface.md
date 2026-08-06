@@ -1,7 +1,7 @@
 # Decide the concrete vault read/write surface
 
 Type: grilling
-Status: claimed
+Status: resolved
 Blocked by: 03, 07
 
 ## Question
@@ -210,15 +210,17 @@ badly. The redesign (memory in `~/.hermes`, vault as data source) removes the
 
 ---
 
-## Answer (PROPOSED — pending owner confirmation)
+## Answer
 
-> ⚠️ **Not resolved.** This is a `grilling` ticket, so the decision is the owner's and
-> comes only through the live exchange. Asked to choose, the owner said *"im unsure"*
-> — which is a jam to escalate, not a mandate. The probe findings below are **verified
-> fact** and stand on their own; the **decisions (D1–D11) are a proposal** awaiting a
-> yes. The one item that is genuinely the owner's call, and that the rest turns on:
-> **does the conversational path get write access to `~/vault/inbox/` at all?**
-> Everything else was decided on defaults and is flagged as such in the synthesis.
+**Resolved 2026-08-06.** The owner's route to it is worth recording, because the first
+pass got the process wrong. Asked to choose between the four open questions, the owner
+said *"im unsure"* and restated the purpose: *"the idea is that hermes should be my
+assistant that takes admin work off my shoulders."* That was **escalated rather than
+resolved unilaterally** (the pattern `07` set — see commit `2551771`): the four
+questions were collapsed to **the one that is genuinely the owner's** — *does the
+conversational path get write access to `~/vault/inbox/` at all?* — with the other
+three called on defaults and named as such. Answer: **"agreed"** — `inbox/` write
+access is in, as specced below.
 
 **Every capability claim below was probed against the pinned
 digest — full transcripts and commands in

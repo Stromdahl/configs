@@ -304,18 +304,32 @@ makes silent failure impossible**.
   examined-vs-flagged ratio rides the **footer**, not the mail section, so the section
   may still collapse without destroying the negative space `07` needs.
 
-_**Proposed, not yet resolved** —
-[Decide the concrete vault read/write surface](issues/08-vault-read-write-surface.md)
-is still `claimed`. Its probe findings are verified fact; its decisions await the
-owner. Two of those findings already bind other tickets, so they are recorded here
-rather than waiting: 🔴 **`05`'s **D4** premise is false — the write surface is NOT
-enumerable from `$HERMES_HOME/logs`** (a successful `write_file` produced **zero** log
-mentions; the generic executor logs the tool *name*, never its arguments, and the only
-path-level record is an **in-memory** guard that dies with the process), so the write
-list must observe the filesystem instead; and **cron always loads `SOUL.md`**
-(`load_soul_identity=True`, which structurally satisfies `02`'s worry) but reaches the
-vault's `AGENTS.md` **only with `--workdir /vault`**. Probes, commands and the full
-proposal: [assets/08-write-surface-probe.md](assets/08-write-surface-probe.md)._
+- [Decide the concrete vault read/write surface](issues/08-vault-read-write-surface.md)
+  — **one writable directory, `/vault/inbox`, enforced by an overlapping `:ro`/`:rw`
+  bind mount; the whole vault mounted read-only for reading.** Owner confirmed the
+  write access after the four open questions were collapsed to the one that was
+  genuinely theirs. Probes and commands in
+  [assets/08-write-surface-probe.md](assets/08-write-surface-probe.md) — run on
+  **krypton** against the pinned digest, since helium was unreachable and `/vault`
+  does not exist there yet. 🔴 **Overturns `05`'s **D4**: the write surface is NOT
+  enumerable from `$HERMES_HOME/logs`** — a successful `write_file` produced **zero**
+  log mentions (only failures are logged; the generic executor logs the tool *name*,
+  never its arguments; the sole path-level record is an **in-memory** guard that dies
+  with the process). Replaced by a `no_agent` **filesystem manifest diff**, which is
+  strictly stronger — mechanism-agnostic, **deletion-aware**, unfabricatable, and
+  complete *because* the mount is narrow, collapsing enforcement and audit into one
+  mechanism. A `:ro` mount **holds against `uid 0`** but enforces **location, not
+  creation-only**. Read surface separates **permission from cost**: mount everything
+  `:ro` (free), always-load only ~16 300 tokens, and **never hand the brief raw
+  `tasks.md`** — `🔥 Now` is 16 663 chars of largely superseded reasoning. Also:
+  `/vault:ro` makes the founding v0.14 catastrophe **structurally impossible**;
+  `inbox/` turns out to have an intermittent reader (narrows `07`'s **D9**);
+  `claude-log/` is a second Bridge-shaped artifact, now repurposed as the staleness
+  canary for `05`'s **D2**; **Docker root-creates a missing bind source**, so the
+  service must verify its writable path, never create it; and **cron always loads
+  `SOUL.md`** (`load_soul_identity=True` — `02`'s worry structurally satisfied) but
+  reaches the vault's `AGENTS.md` **only with `--workdir /vault`**, which is what gives
+  [ticket 14](issues/14-vault-agents-md-rewrite.md) teeth.
 
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
