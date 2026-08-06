@@ -43,6 +43,15 @@ successful** scheduled tick, not merely the heartbeat: as first specced it repor
 when no scheduled run had **ever** succeeded. False alarms during an upgrade are the correct
 failure direction.
 
+⚠️ **What "healthy" means in this ticket, since the credentials arrive in `020`.** `03`
+established the state directly: without secrets you get *"gateway up, no provider, no
+Telegram"* — a Hermes that **boots and cannot talk to anything**. So this ticket's blockers are
+`018` alone, and its demo is legitimate without `016`/`017`. But `03` also names that state as
+*"exactly the sort of plausible-looking half-success this map exists to catch"* — so **health
+here is defined as the scheduler ticking successfully, never as "the container is up"**. Do not
+let this ticket close on a container that runs and does nothing; that is the shape of the
+restart loop that reports success.
+
 ## Acceptance criteria
 
 - [ ] An ansible run provisions the service from scratch; a **second run reports no changes**.

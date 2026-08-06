@@ -44,7 +44,9 @@ reuses — which is why the push chain is deliberately linear.
       from a broken job, because a failure exits non-zero and is reported.
 - [ ] Date arithmetic is done in the script; no prompt text and no model call is involved.
 - [ ] Fired-state survives a container restart.
-- [ ] No prompt text anywhere instructs the agent to send a message.
+- [ ] No prompt text anywhere instructs the agent to send a message. **Not a duplicate of
+      `018`'s identical criterion** — that one checks what was *recovered*, this one checks what
+      this ticket *wrote*. Both are needed; neither covers the other.
 
 ## Blocked by
 

@@ -45,8 +45,10 @@ creation-shaped write surface has no one-click undo — clutter, not loss.
       part of it.
 - [ ] The agent's memory lives on the state volume; nothing agent-authored appears outside the
       vault inbox.
-- [ ] The replica's versioning is confirmed live by a round trip — edit on helium, prior version
-      appears on krypton — with the retention value verified in **seconds**.
+- [ ] **Confirmed, not performed:** vault-serve `004` is closed with its own round-trip
+      versioning test passed and the retention value in **seconds**. That test belongs to `004`
+      (ticket `11` handed it there, and item 1 is a **krypton** change outside helium's play) —
+      this ticket only checks it happened, and stops if it didn't.
 
 ## Blocked by
 
