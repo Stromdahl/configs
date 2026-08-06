@@ -3,7 +3,10 @@
 Type: spec
 Status: open
 Source: [the hermes-helium map](../map.md) — all 14 wayfinder tickets resolved or closed
-Depends on: `planning/vault-serve/issues/004` (Send-Receive vault replica on helium)
+Blocked by: `planning/vault-serve/issues/004` — the Send-Receive vault replica on helium.
+Deliberately the same field name the 14 sibling tickets use, so a frontier query sees this
+dependency; the value is a cross-map path rather than a local id because the blocker lives in
+another map.
 
 <!--
 Two deviations from the /to-spec skill's defaults, recorded rather than silently taken:
@@ -17,6 +20,10 @@ Two deviations from the /to-spec skill's defaults, recorded rather than silently
 2. No `ready-for-agent` label. That string appears nowhere in this repo's 47 issues —
    the live vocabulary is `epic:*`, `needs-human`, `wayfinder:*`. `Status: open` plus
    `Type: spec` is this repo's actual "takeable" signal.
+
+Known latent ambiguity, accepted rather than renumbered: if one of the map's two fog patches
+ever graduates it becomes ticket `15`, which reads confusingly beside `015`. vault-serve has
+the identical collision (`04` vs `004`) and it has not bitten; refer to this one by name.
 -->
 
 ## Problem Statement
@@ -208,6 +215,36 @@ ticket **corrected** an earlier one, the correction is what's written here.
   its root.
 - **Rebuild is split by authorship:** human-authored config from git, agent-accumulated
   memory from restic.
+
+### Reusable prior art — recover it, don't rewrite it (`02`)
+
+**~740 lines of already-debugged config** from the previous working install were deleted from
+`main` when titan was rebuilt. Recover rather than reinvent — but not the obvious way:
+
+- 🔴 **Do not merge the old briefings branch.** Its tip is an **ancestor of `main`**, so
+  merging it is a **no-op** — the branch is a stale local pointer that was never pushed.
+  **Recover with a checkout from the commit immediately before the deletion**, which is also
+  one commit richer than the branch.
+- ⚠️ **Read `02`'s verdict table before recovering any file.** Of 21 files exactly **one is a
+  straight keep**, four adapt, and the rest are stale or **actively harmful** — recovering the
+  set wholesale imports four defects.
+- **The one straight keep is the agent's identity file**, and it matters more than its 18
+  lines suggest: it states the **two anti-fabrication rules that no engine primitive
+  enforces**, making it the only standing defence against the fake-weather class. Hence the
+  content assertion in *Verification* — existence is not enough.
+- **What survives in the briefing scripts is the shape, not the sections:** the per-source
+  `STATUS=OK/ERROR` contract, verbatim passthrough, date math in the script rather than the
+  prompt, and reading credentials from an env file (accidentally correct, given cron's
+  sanitized environment).
+- **Every emitter is discarded** — calendar and news are out of scope, and the dose emitter's
+  source no longer existed at inventory time (ticket `13` has since created it, so that
+  section is built fresh against the machine-readable block, not ported).
+- **The three-tier memory scaffolding and both old dotfiles modules are discarded** —
+  superseded by the engine's own persistent memory and by ansible-only helium.
+- **The scheduled jobs always load the identity file**, so the worry that it wouldn't be
+  picked up is structurally satisfied; the vault's own instructions are reached **only** when
+  the job's working directory is set to the vault, which is what makes that file worth having
+  rewritten.
 
 ### Secrets and identity (`03`, `09`, `10`)
 
