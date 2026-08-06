@@ -179,6 +179,21 @@ bypasses via explicit @mention — so it is the one setting that must never be t
 `0` is not a reachable Telegram chat id (users are positive, groups negative), so the
 sentinel cannot collide with a real chat.
 
+**Deployment surface:** the probe set `config.extra`, but `_telegram_allowed_chats` reads
+`config.extra["allowed_chats"]` first and falls back to `os.getenv("TELEGRAM_ALLOWED_CHATS")`.
+The volume-seeded `config.yaml` ships its whole `platforms:` block **commented out**
+(verified: lines 967/973 are comments), so `config.extra` is empty and the env var is the
+live path — which probe 4 already proved reaches `os.environ` from `.env`. Note the
+precedence: the fallback fires only when `config.extra` returns `None`, so uncommenting
+`platforms.telegram.allowed_chats` to an *empty* value would silently disable the block.
+
+**Rotation, for the D6 check:** `gateway.log` is a `RotatingFileHandler`, default 5 MB ×
+3 backups (`hermes_logging.py:312-313`), so any check keyed on "the last connect event"
+loses that line at steady state. Retry cadence bounds the alternative:
+`_RECONNECT_BACKOFF_CAP = 300` (`run.py:3342`), retried indefinitely for retryable
+failures — so a failure line is never more than 5 minutes stale while the transport is
+down.
+
 ---
 
 ## What was NOT verified

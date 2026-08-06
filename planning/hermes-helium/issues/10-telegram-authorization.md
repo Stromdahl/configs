@@ -110,10 +110,29 @@ highest-value use cases for a threat model the owner accepts.
 
 ### D2 — Groups: never, and enforced in the container (owner's call)
 
-**`allowed_chats: "0"`** in the templated Telegram platform config. Measured to block all
-five group shapes — plain, `/cmd@bot`, bare `/cmd`, `@mention`, reply-to-bot — while
-leaving DMs untouched. `0` is not a reachable Telegram chat id (users positive, groups
-negative), so the sentinel cannot collide with a real chat.
+**`TELEGRAM_ALLOWED_CHATS=0`, in the same sops-fed `.env` as everything else.** Measured to
+block all five group shapes — plain, `/cmd@bot`, bare `/cmd`, `@mention`, reply-to-bot —
+while leaving DMs untouched. `0` is not a reachable Telegram chat id (users positive,
+groups negative), so the sentinel cannot collide with a real chat.
+
+✅ **The env var, not `config.yaml` — and that is a decision, not a detail.**
+`_telegram_allowed_chats` (`adapter.py:7765`) reads `config.extra["allowed_chats"]` *first*
+and falls back to `os.getenv("TELEGRAM_ALLOWED_CHATS")`. The image seeds an 88 KB
+`config.yaml` into the volume (`03`) whose entire `platforms:` block ships **commented
+out** — verified in the seeded file — so `config.extra` is empty and the env var governs.
+Landing this control in a `config.yaml` nobody templates would recreate the exact
+hand-wired-live-host shape `03` designed out, on the one control D2 leans on; the `.env` is
+already ansible-templated and probe 4 proved it reaches `os.environ` before the gateway
+reads it. **The trap to write down:** because `config.extra` wins, uncommenting
+`platforms.telegram.allowed_chats` later — even to an empty value — silently disables this
+block. `config.extra` is checked for `None`, not for emptiness.
+
+⚠️ **`TELEGRAM_ALLOWED_CHATS` and `TELEGRAM_GROUP_ALLOWED_CHATS` are one word apart and do
+opposite things.** The first (set to `0`) is the response gate that closes groups; the
+second (never set) is the authorization footgun from probe row 3 that would open a group to
+*every* sender in it, anonymous posts included. A later session skimming "set the chats one
+to a weird sentinel, never set the group chats one" will conflate them, so both names are
+spelled out here and in the template comment.
 
 Two riders that are part of the decision, not commentary:
 
@@ -136,10 +155,12 @@ but whose form is "a chat id" invites a later session to tidy the odd value away
 silently reopen groups. The *why* therefore belongs as a comment in the ansible template,
 not only in this ticket. Suggested wording:
 
-```yaml
-# "0" is not a reachable Telegram chat id — it is a sentinel meaning
-# "answer in no group, ever" (ticket 10/D2). An empty value does NOT mean
-# "no groups"; it means "all groups". Do not remove or "fix" this.
+```bash
+# TELEGRAM_ALLOWED_CHATS=0 — "0" is not a reachable Telegram chat id; it is a
+# sentinel meaning "answer in no group, ever" (ticket 10/D2). An empty value
+# does NOT mean "no groups", it means ALL groups. Do not remove or "fix" this.
+# Not to be confused with TELEGRAM_GROUP_ALLOWED_CHATS, which does the opposite
+# (authorizes everyone in a listed chat) and must stay unset.
 ```
 
 **Accepted cost:** no shared-household Hermes, no asking it in a family group. Reopening
@@ -242,8 +263,8 @@ delivery channel** — `05`'s failed-jobs-always-deliver primitive has the same 
 The one failure class that takes out *both* modes at once was the one class neither mode
 reported.
 
-**Resolution:** extend `03`'s healthcheck with one further assertion — that the most recent
-telegram connect/disconnect event in `logs/gateway.log` is a success. It rides the existing
+**Resolution:** extend `03`'s healthcheck with one further assertion — **fail if a telegram
+connect-failure line appears in `logs/gateway.log` within the last 15 minutes**. It rides the existing
 `HEALTHCHECK` → docker2mqtt → HA path (`046`), so **no new job and no new topic**; `09`'s
 cost tripwire stays the only extra job on that path. Consistent with `03`'s own rule of
 parsing output rather than exit codes — and a **third exit-code trap** is recorded here to
@@ -254,8 +275,25 @@ Exact strings, so the check is written rather than described:
 
 | state | line |
 |---|---|
-| up | `✓ telegram connected` (`run.py:10652` area), `✓ telegram reconnected successfully` (`:11743`) |
-| down | `✗ telegram failed to connect` (`:10652`), `Reconnect telegram failed, next retry in 60s` (`:11799`) |
+| up | `✓ telegram connected` (`run.py:10650`), `✓ telegram reconnected successfully` (`:11743`) |
+| down | `✗ telegram failed to connect` (`:10652`), `Reconnect telegram failed, next retry in %ds` (`:11799`) |
+
+🔴 **Why "last event wins" was rejected, and why absence must mean *healthy*.** The obvious
+form — "the most recent connect/disconnect event is a success" — silently stops checking:
+`gateway.log` is a `RotatingFileHandler` (default **5 MB × 3 backups**,
+`hermes_logging.py:312`), so at steady state the `✓ telegram connected` line ages out and
+the check finds *no event at all*. Absent-means-healthy would then be a check that has
+quietly retired; absent-means-unhealthy would false-alarm after every rotation. This is the
+same shape as the OTLP trap already in the map's **Out of scope** ("never succeeded is an
+*absent* metric, not a zero"). The monotone form has no such hole, and the reason it is
+sound is measured: a retryable failure re-logs **indefinitely at a 300 s backoff cap**
+(`_RECONNECT_BACKOFF_CAP = 300`, `run.py:3342`), so while telegram is down a failure line
+cannot be more than 5 minutes old — comfortably inside a 15-minute window. And the one case
+that *would* go quiet is covered by the other half of the alert path: a **non-retryable**
+failure drops the platform out of the reconnect queue, which takes the `not self.adapters
+and not self._failed_platforms` branch (`:6983`) and **stops the gateway** — so the
+container dies and `05`'s `state` entity catches it. Retryable → recurring log lines;
+non-retryable → container down. No third case.
 
 **Accepted cost, stated plainly:** a Telegram-side outage — or the seconds around a normal
 restart — marks the container unhealthy while cron is fine, so "unhealthy" stops meaning

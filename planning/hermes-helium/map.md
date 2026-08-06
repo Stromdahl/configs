@@ -398,8 +398,10 @@ makes silent failure impossible**.
   (`TELEGRAM_REQUIRE_MENTION=false`, `allowed_chats` empty-means-**unrestricted**) even a
   plain unmentioned group message gets a reply. So the leak is not an attacker but the
   owner, months later, asking a question out of habit in a family group and getting
-  `finance/` in front of everyone. Blocked by **`allowed_chats: "0"`** (a sentinel that is
-  not a reachable chat id — measured to stop all five group shapes while DMs pass), with
+  `finance/` in front of everyone. Blocked by **`TELEGRAM_ALLOWED_CHATS=0`** in the same
+  sops-fed `.env` (a sentinel that is not a reachable chat id — measured to stop all five
+  group shapes while DMs pass; the env var rather than `config.yaml`, whose `platforms:`
+  block ships commented out and would *win* if anyone uncommented it), with
   `guest_mode` false as the one bypass never to enable, and BotFather `/setjoingroups
   disable` explicitly **not** load-bearing: BotFather state is invisible to ansible and to
   `03`/`05`'s rebuild drill, which is this map's enemy class reached through its own
