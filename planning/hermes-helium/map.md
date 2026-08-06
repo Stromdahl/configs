@@ -295,7 +295,11 @@ makes silent failure impossible**.
   half the period capped at 2 h and missed runs **collapse to one** catch-up fire; and
   `02`'s "💊 is sourceless" is stale — `health/kineret-schedule.md` (2026-08-02) is a
   real source, taken with a machine-readable block so the parity rule cannot silently
-  expire at phase 1's end.
+  expire at phase 1's end (that vault edit is now
+  [ticket 13](issues/13-kineret-machine-readable-block.md), since `06` left it
+  ownerless). Reconciled with `07`, which resolved concurrently: its **D3**
+  examined-vs-flagged ratio rides the **footer**, not the mail section, so the section
+  may still collapse without destroying the negative space `07` needs.
 
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,

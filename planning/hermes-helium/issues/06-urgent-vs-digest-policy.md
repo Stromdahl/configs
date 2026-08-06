@@ -287,12 +287,23 @@ evening, and late enough to have seen the day's mail.
 | 1 | BLUF — `Tomorrow's priority: …` | agent, over the sections below | no |
 | 2 | 🔥 **Due** — T-0/T-1 dated items | `tasks.md` | yes |
 | 3 | ⏰ **Overdue** — count + oldest date | `tasks.md` | yes |
-| 4 | 📬 **Mail** — filed / needs you | Proton bridge — contract is `07`'s | yes |
+| 4 | 📬 **Mail** — filed / needs you | Proton bridge — contract is `07`'s | yes — **but see the ratio rule** |
 | 5 | 💊 **Kineret** — injection nights only | `health/kineret-schedule.md` (**D6**) | yes |
 | 6 | ⚠ **Errors** — any source in `ERROR`, expanded | all sources | yes |
 | 7 | 📝 **Writes** — what it actually changed | `05` D4 write list | yes |
-| 8 | **Footer** — `✓ mail 12 · vault ok · urgent 32/32 · corrections 4` | script | **never** |
+| 8 | **Footer** — `✓ mail 12/0 · backlog 0 · vault ok · urgent 32/32 · corrections 4` | script | **never** |
 
+- **🔴 The ratio rule — reconciling with `07` D3, which resolved concurrently with
+  this ticket.** `07` requires *"the count of messages examined vs flagged"* in the
+  brief so *"a suddenly-zero-flag day reads as a ratio rather than an absence"* — its
+  only defence of exception-only triage's **negative space**. Section 4 collapsing on a
+  zero-flag day would destroy exactly that: a drifted classifier flagging nothing would
+  render as a quiet inbox. **Resolution: the ratio lives in the footer, which never
+  collapses** — `mail 12/0` is examined/flagged, and `backlog N` carries `07`'s
+  skipped-backlog count (also named as brief content there, and it had no section of its
+  own here). Section 4 may therefore still collapse, but **only because the negative
+  space is structural in the footer rather than dependent on the section rendering.** If
+  the footer ever loses the ratio, section 4 stops being collapsible.
 - **The general suppression rule:** *a section may collapse iff its source can
   distinguish **empty** from **exhausted**.* That is `05`'s provenance contract
   restated, and it resolves the tension `02` flagged between empty-section suppression
@@ -418,7 +429,10 @@ time. No further decision.
 
 ### Carried forward
 
-- **→ `07`:** mail is **not** interrupt-eligible (**D1**) — its only channel is
+- **→ `07` (resolved concurrently — reconciled, not deferred):** its topical-not-severity
+  labels and this ticket's routing ownership fit without collision, and its **D3 ratio
+  requirement is honoured in the footer** rather than the section — see the ratio rule in
+  **D4**. Mail is **not** interrupt-eligible (**D1**) — its only channel is
   **D4**'s section 4, whose contract `07` owns. Tier 2 corrections (**D7**) are the
   natural home for mail-triage exceptions too, so `07` should assume that file exists.
 - **→ `08`:** **`06` adds nothing to the vault write surface.** The corrections file
@@ -447,6 +461,8 @@ time. No further decision.
 6. Past `phase_1_ends`, the 💊 section renders `⚠`, not absence.
 7. `corrections N` in the footer increments after a correction, and the corrected
    behaviour is visible in the next brief.
+7b. **A zero-flag mail day still shows the examined/flagged ratio** (`mail 12/0`) and
+   the skipped-backlog count — verified by rendering a brief with section 4 collapsed.
 8. `hermes cron list` shows both jobs with `--deliver telegram`, the brief with its
    `--skill` attached, and the skill resolvable inside the container.
 
