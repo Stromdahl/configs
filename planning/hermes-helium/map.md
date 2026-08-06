@@ -115,7 +115,11 @@ makes silent failure impossible**.
   3.19.0 → 3.25.0** unattended, so its local cache (and any `UIDVALIDITY` derived
   from it) is not stable state.
 - **Channel:** Telegram. Proven, a hermes-agent first-class integration, and
-  outbound-only — fits helium's no-ingress posture with no port to open.
+  outbound-only — fits helium's no-ingress posture with no port to open. **Narrowed by
+  [ticket 10](issues/10-telegram-authorization.md): DMs only, never a group**, and
+  "outbound-only" cuts both ways — the transport can die (revoked token, Telegram outage)
+  while the container stays up and cron keeps running, so its own death cannot be reported
+  over itself.
 - **Engine is settled: hermes-agent v0.19.1, pinned by digest** —
   `v2026.7.30@sha256:b869e64d…`. See the decision below; don't reopen. Two things
   that note used to get wrong: `:latest` is **main HEAD**, not the newest release
@@ -386,6 +390,40 @@ makes silent failure impossible**.
   posture: a subscription and a BYO API key are governed by different documents, and the API
   one is the stricter).
 
+- [Decide the Telegram identity and authorization posture](issues/10-telegram-authorization.md)
+  — **one numeric user id in `TELEGRAM_ALLOWED_USERS`, held in sops; DM-only, enforced in
+  the container; a compromised Telegram account accepted as total compromise.** 🔴 The
+  find that shaped it: **`TELEGRAM_ALLOWED_USERS` authorizes the owner *wherever they
+  message*, groups included** — and with the shipped response-gate defaults
+  (`TELEGRAM_REQUIRE_MENTION=false`, `allowed_chats` empty-means-**unrestricted**) even a
+  plain unmentioned group message gets a reply. So the leak is not an attacker but the
+  owner, months later, asking a question out of habit in a family group and getting
+  `finance/` in front of everyone. Blocked by **`allowed_chats: "0"`** (a sentinel that is
+  not a reachable chat id — measured to stop all five group shapes while DMs pass), with
+  `guest_mode` false as the one bypass never to enable, and BotFather `/setjoingroups
+  disable` explicitly **not** load-bearing: BotFather state is invisible to ansible and to
+  `03`/`05`'s rebuild drill, which is this map's enemy class reached through its own
+  defence. **Pairing dissolves rather than being rejected** — any allowlist flips
+  unauthorized DMs to silent-ignore, so no pairing code can ever be generated; which also
+  makes unreachable a real drift path (`_approve_user` → `save_env_value` writes the
+  *ansible-templated* `.env`, so an approval would be silently reverted on the next
+  `--tags compose`). ✅ **Placement verified, not assumed:** the allowlist works when it
+  lives only in `03`'s `.env` — the presence test uses a bare `os.getenv`, and had `.env`
+  not been bridged the gateway would have DM'd **pairing codes to strangers** while
+  looking locked down (test: `03`'s "no allowlists configured" warning absent; control:
+  present). sops over `vars.yml` because `gh repo view` confirms this repo is **public**.
+  ⚠️ **`8468278488` has no provenance** — it exists nowhere but the ticket body, no
+  Telegram config was ever in git, and it may be the *bot's* id; re-acquiring it is a
+  needs-human step whose single `getUpdates` call yields **both** the allowlist id and
+  `06`'s delivery chat id, *the same number for a DM*. 🔴 **Correction to `03`:** a
+  rejected or revoked token leaves the gateway **up and running cron** by upstream design,
+  so its cron-liveness healthcheck reports **healthy while pull mode is dead** — and
+  `05`'s "silence is the alarm" cannot cover it, because the failed delivery channel
+  cannot report its own death over itself; the healthcheck therefore gains one assertion
+  on the existing MQTT→HA path (no new job). Also a **third exit-code trap**: `hermes
+  gateway status` prints `✗ Gateway is not running` and **exits 0**. Probes in
+  [assets/10-telegram-authz-probe.md](assets/10-telegram-authz-probe.md).
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._
@@ -401,10 +439,17 @@ memory-out-of-vault, beachhead scope)._
   reporting the undrained backlog and its oldest note's age (`08` **D8**). So the two
   writers now share one queue whose depth is visible daily. Whether that means retire,
   rewire, or leave alone still hangs on board ownership.
+- **Whether a *second* human is ever authorized** (Hanna). Left undecided on purpose:
+  [ticket 10](issues/10-telegram-authorization.md) ruled it a **scope** question for this
+  map rather than an authorization mechanism, and nothing in its answer forecloses it —
+  the mechanism cost is one more id in the same sops list, and `10`'s group block is
+  orthogonal (a second human would DM their own chat). What is *not* yet stated is whether
+  a personal assistant with read access to the owner's `finance/`, `health/` and
+  `journal/` should answer anyone else at all. Sharp enough to ticket the moment the owner
+  wants it decided; not manufactured into frontier work before then.
+
 _(The **Telegram identity/authorization** patch graduated to
-[ticket 10](issues/10-telegram-authorization.md) once `03` landed the deployment
-shape and a real boot surfaced `TELEGRAM_ALLOWED_USERS` plus the deny-by-default
-posture.)_
+[ticket 10](issues/10-telegram-authorization.md), now **resolved** — see Decisions above.)_
 
 _(The **human inspection surface** patch is **closed, not graduated** — `05` answered
 it rather than sharpening it into a ticket. Routine visibility is pushed into the

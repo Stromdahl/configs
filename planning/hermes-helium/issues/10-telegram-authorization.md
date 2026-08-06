@@ -1,7 +1,7 @@
 # Decide the Telegram identity and authorization posture
 
 Type: grilling
-Status: open
+Status: resolved
 Blocked by: 03
 
 ## Question
@@ -59,3 +59,222 @@ plus a verified mechanism name.
 
 Whether a *second* human (e.g. Hanna) is ever authorized — that is a scope question
 for the map, not an authorization mechanism. Note it if it comes up; don't decide it here.
+
+## Answer
+
+**Resolved 2026-08-06.** Six probes against the pinned digest ran **before** any question
+was asked, and they collapsed the ticket's four items into **two** genuine owner calls —
+the shape `08` set. Items 3 and 4 turned out to be facts, not preferences, once the
+mechanism was measured; they were presented, not asked. Transcripts, commands and source
+citations in [assets/10-telegram-authz-probe.md](../assets/10-telegram-authz-probe.md).
+
+The owner confirmed all four propositions put to them: the identity ceiling (D1), DM-only
+enforced in-container (D2), sops placement (D5), and the healthcheck rider (D6).
+
+🔴 **The find that shaped the ticket: `TELEGRAM_ALLOWED_USERS` is not "who may talk to
+Hermes" — it is "whose messages are authorized, *wherever they arrive*."** Measured: with
+the owner's id allowlisted, the owner is authorized in **group** chats too, and with the
+shipped response-gate defaults (`TELEGRAM_REQUIRE_MENTION=false`, `allowed_chats` empty)
+a **plain, unmentioned group message** already triggers a reply. So the founding leak is
+not an attacker — it is the owner, months later, typing a question out of habit in a
+family group the bot was once added to, and receiving `finance/` or `health/` content in
+front of everyone. Nothing in the deny-by-default posture `03` inherited addresses this.
+
+**One-line proposal: the allowlist is one numeric Telegram user id, held in sops and
+templated into `03`'s `.env`; groups are structurally impossible via an in-container
+response gate, not via BotFather; and pull-mode liveness rides `03`'s healthcheck because
+a dead Telegram cannot report its own death over Telegram.**
+
+### D1 — Identity: a numeric user id, and a compromised account is game over (owner's call)
+
+`from_user.id`, string-compared — an **addressing** label that Telegram authenticates on
+its side, not an authentication factor Hermes possesses. Named explicitly, because the
+ticket asked for it:
+
+- **Defends against:** strangers who find the bot; anyone who adds it to a group; forging
+  another user's id (Telegram will not emit a client-chosen `from_user.id`); channel and
+  anonymous-admin posts, which carry no identity and are denied outright.
+- **Does not defend against:** anyone holding a live session on the owner's Telegram
+  account — an unlocked handed-over phone, a stolen device before revocation, an account
+  takeover. They get `finance/`, `health/`, `journal/`, `people/` and the `inbox/` write
+  surface, in full.
+
+**Accepted as the ceiling.** No Hermes-side second factor: a passphrase-in-chat would sit
+in the very history the attacker already owns, and the real controls live where the
+account lives (Telegram 2FA / cloud password, device lock). The honest mitigation is the
+**revocation path** — BotFather `/revoke` invalidates the token instantly from any device,
+which is a faster kill switch than editing an allowlist on helium and re-running ansible.
+The offered alternative — keeping `finance/`/`health/` readable only by the push brief and
+never answerable on demand — was declined; it would have gutted the pull mode's
+highest-value use cases for a threat model the owner accepts.
+
+### D2 — Groups: never, and enforced in the container (owner's call)
+
+**`allowed_chats: "0"`** in the templated Telegram platform config. Measured to block all
+five group shapes — plain, `/cmd@bot`, bare `/cmd`, `@mention`, reply-to-bot — while
+leaving DMs untouched. `0` is not a reachable Telegram chat id (users positive, groups
+negative), so the sentinel cannot collide with a real chat.
+
+Two riders that are part of the decision, not commentary:
+
+- **`guest_mode` must stay `false`** (its default). It is the single documented bypass of
+  this gate, and it bypasses by explicit @mention — i.e. exactly the gesture a curious
+  future session would use to "test whether groups work".
+- **`TELEGRAM_GROUP_ALLOWED_CHATS` is never set.** Probe row 3: it authorizes *every*
+  sender in the listed chat, including identity-less anonymous-admin and channel posts,
+  because the chat-scoped check deliberately runs before the no-user-id guard.
+
+**BotFather `/setjoingroups disable` goes on top, and is deliberately NOT the load-bearing
+control.** BotFather state is invisible to ansible, absent from git and therefore invisible
+to `03`/`05`'s rebuild drill — a control that looks configured forever with no verification
+path, which is this map's enemy class reached through its own defence. Telegram's privacy
+mode (on by default) is likewise belt-and-braces only: it still delivers `/cmd@thisbot`,
+and it is bypassed entirely for a bot added as a group **admin**.
+
+**The sentinel is itself a silent-failure shape** — a config whose meaning is "no groups"
+but whose form is "a chat id" invites a later session to tidy the odd value away and
+silently reopen groups. The *why* therefore belongs as a comment in the ansible template,
+not only in this ticket. Suggested wording:
+
+```yaml
+# "0" is not a reachable Telegram chat id — it is a sentinel meaning
+# "answer in no group, ever" (ticket 10/D2). An empty value does NOT mean
+# "no groups"; it means "all groups". Do not remove or "fix" this.
+```
+
+**Accepted cost:** no shared-household Hermes, no asking it in a family group. Reopening
+that is a deliberate decision, not a config drift — and per this ticket's scope line,
+**whether Hanna is ever authorized at all remains undecided and belongs to the map.**
+
+### D3 — Pairing: never reached, and that is a property, not a policy
+
+Measured: any configured allowlist flips `_get_unauthorized_dm_behavior` to `ignore`, the
+pairing code is generated **only** in the `pair` branch, and `hermes pairing approve`
+needs a pending code to approve. So allowlist and pairing are **mutually exclusive in
+practice** — the ticket's "should both be on?" dissolves. Pairing is the open-gateway
+default this deployment never reaches.
+
+Worth recording because it closes a config-drift path rather than merely avoiding it:
+`PairingStore._approve_user` → `_sync_allowlist_add` → `save_env_value` writes
+**`$HERMES_HOME/.env`** — the file ansible templates from sops. Had pairing been usable, an
+approval would have edited an ansible-managed file and been silently reverted by the next
+`--tags compose` run, leaving a user who paired successfully mysteriously locked out days
+later. Under D5 the path is unreachable; it is the reason enrollment stays declarative.
+
+`GATEWAY_ALLOW_ALL_USERS=true` and `TELEGRAM_ALLOWED_USERS=*` are named here so no later
+session reaches for either: probe row 4 shows `*` authorizes **every stranger** in DMs.
+
+### D4 — Recovery: a three-way differential, from log lines that already exist
+
+The ticket's item 3 worry — "a misconfigured allowlist presents as *Hermes ignores me*,
+indistinguishable from the gateway being dead" — is answered by evidence already emitted.
+DM the bot, then read `logs/gateway.log` (or `docker logs`):
+
+| what you see | what it means | fix |
+|---|---|---|
+| `WARNING [Telegram] Blocked unauthorized user <id> in chat <id>` | allowlist is wrong — **and the line carries the exact id to add** | put `<id>` in sops, re-run `--tags compose` |
+| `✗ telegram failed to connect` / `Reconnect telegram failed, next retry in 60s` | transport is down: bad/revoked token, or Telegram unreachable | new token via BotFather `/token`, or wait out the outage |
+| nothing at all, and `✓ telegram connected` is the last transport event | the message never arrived — bot handle wrong, or you are messaging a different bot | check the handle |
+
+Out-of-band fix path is `--tags compose` (the safe scoped redeploy, per
+`project_helium_stack_deploy_and_pin_gotchas`), **not** `docker exec`. An `exec`-time edit
+of `.env` is reverted by the next playbook run — the same drift D3 found, reached
+deliberately instead of accidentally.
+
+### D5 — Placement: sops, and the id must be re-acquired (owner's call)
+
+**`ansible/host_vars/helium/secrets.sops.yml`, alongside the bot token, templated into the
+one `.env`.** Verified rather than inherited: `gh repo view` reports
+`Stromdahl/configs` is **PUBLIC**. A Telegram user id is not a credential — knowing it
+grants nobody anything — but it is a permanent personal identifier that would link this
+repo to the owner's Telegram account, and the safer option costs *nothing*: the sops-fed
+template already exists, so `vars.yml` buys no simplicity. The alternative (cleartext, on
+the argument that an authorization control should be auditable at a glance) was put and
+declined; `sops -d` is available any time.
+
+✅ **Verified this placement actually works, because it was not obvious.**
+`_get_unauthorized_dm_behavior` tests allowlist presence with a bare `os.getenv`, not the
+`secret_scope`-aware helper used elsewhere. Test and control: with the allowlist in
+`.env` only, `03`'s `No env user allowlists configured` warning is **absent** (count 0);
+without it, it fires (count 1) — both boots reading the token from that same file. Had
+this failed, the gateway would have DM'd **pairing codes to strangers** while appearing
+locked down, and this ticket could not have resolved on the current mechanism.
+
+⚠️ **`8468278488` has no provenance and must not be carried forward as fact.** It appears
+in this map only in this ticket's own body; `git grep` over `4ed7e63^` finds no Telegram
+config in version control at all (`env.example` carries only `OPENROUTER_API_KEY` and
+`OBSIDIAN_VAULT_PATH`, consistent with `02`'s finding that the live host was hand-wired).
+Given its shape it could as easily be the **bot's** id as the owner's.
+
+**Acquiring it is a needs-human step outside ansible**, in the same class as `09`'s API key
+and `029`'s Proton login — recorded here rather than spun into a blocker ticket:
+
+1. BotFather: reuse the old bot if it still exists (`/token` regenerates), else `/newbot`.
+   Then `/setjoingroups disable` (D2) and confirm `/setprivacy` is enabled.
+2. DM the new bot once, then
+   `curl -s "https://api.telegram.org/bot<TOKEN>/getUpdates" | jq '.result[-1].message | {from: .from.id, chat: .chat.id}'`.
+3. **Both numbers come out of that one call, and for a DM they are the same number** —
+   `from.id` is the allowlist value (this ticket), `chat.id` is the `--deliver telegram`
+   target (`06`'s). Stated explicitly so no later session concludes one of them is wrong.
+4. Both into `secrets.sops.yml` with the token; `--tags compose`.
+
+**Rebuild (item 4) is therefore fully declarative.** `03`'s falsifiable test is "git **plus
+the age key**", and under this decision the allowlist rebuilds under exactly that
+precondition — a rebuilt Hermes cannot silently come back deny-all. Nothing in the
+authorization posture is needs-human on a rebuild; only the *initial* acquisition is, and
+only once. The one exception is named honestly: **BotFather's group setting does not
+rebuild**, which is precisely why D2 does not lean on it.
+
+### D6 — Pull-mode liveness rides `03`'s healthcheck (owner's call)
+
+🔴 **A correction to closed work.** Measured: a rejected token leaves the gateway **up and
+running cron**, retrying every 60 s, and `gateway/run.py:6987` does this on purpose
+(*"Keep the gateway alive so cron jobs still run"*) — so a **runtime** token revocation
+lands in the same state. `03`'s healthcheck greps cron liveness, so it reports **healthy
+while pull mode is dead**. This is the second such correction to `03`'s probe after `05`'s
+`ticker_last_success` find, and the pattern is worth naming: that healthcheck was designed
+to answer "is cron alive?", and it keeps being asked "is Hermes working?"
+
+**Why `05`'s existing answer does not cover it:** `05` rests on *the brief always arrives,
+so silence is the alarm*, and the brief is delivered `--deliver telegram`. When Telegram
+is what is broken, **the failure of the delivery channel cannot be reported over the
+delivery channel** — `05`'s failed-jobs-always-deliver primitive has the same circularity.
+The one failure class that takes out *both* modes at once was the one class neither mode
+reported.
+
+**Resolution:** extend `03`'s healthcheck with one further assertion — that the most recent
+telegram connect/disconnect event in `logs/gateway.log` is a success. It rides the existing
+`HEALTHCHECK` → docker2mqtt → HA path (`046`), so **no new job and no new topic**; `09`'s
+cost tripwire stays the only extra job on that path. Consistent with `03`'s own rule of
+parsing output rather than exit codes — and a **third exit-code trap** is recorded here to
+make the rule stick: `hermes gateway status` prints `✗ Gateway is not running` and **exits
+0**, after `hermes cron status` (`03`) and `hermes doctor` (`05`).
+
+Exact strings, so the check is written rather than described:
+
+| state | line |
+|---|---|
+| up | `✓ telegram connected` (`run.py:10652` area), `✓ telegram reconnected successfully` (`:11743`) |
+| down | `✗ telegram failed to connect` (`:10652`), `Reconnect telegram failed, next retry in 60s` (`:11799`) |
+
+**Accepted cost, stated plainly:** a Telegram-side outage — or the seconds around a normal
+restart — marks the container unhealthy while cron is fine, so "unhealthy" stops meaning
+"cron is dead" and starts meaning "one of the two halves is down", with the log line
+saying which. That is `03`'s own accepted direction (false alarms over silence). The
+alternative — a separate `no_agent` job publishing its own MQTT topic — was put and
+declined: cleaner separation, but one more moving part that can itself fail silently.
+
+### What this hands to other tickets
+
+- **`03`** — the healthcheck gains a second assertion (D6), and `.env` gains
+  `TELEGRAM_ALLOWED_USERS` from sops (D5). Its "irreducibly needs-human on a rebuild" list
+  is unchanged: the id rides the same sops file as the token.
+- **`05`** — a fourth liveness fact for the alarm story: the transport can die while the
+  container stays healthy, and it cannot announce that over itself. No re-open; the rider
+  is D6 and it lands in `03`'s probe, on `05`'s existing path.
+- **`06`** — the `--deliver telegram` chat id comes out of the *same* `getUpdates` call as
+  the allowlist and is the *same number* (D5, step 3). `06` does not need its own
+  acquisition step.
+- **The map** — a second human (Hanna) is still undecided and still the map's question,
+  not this ticket's. Nothing here forecloses it: adding an id to the allowlist is a
+  one-line sops change, and D2's group block is orthogonal to it.
