@@ -331,6 +331,32 @@ makes silent failure impossible**.
   reaches the vault's `AGENTS.md` **only with `--workdir /vault`**, which is what gives
   [ticket 14](issues/14-vault-agents-md-rewrite.md) teeth.
 
+_**Proposed, not yet resolved** —
+[Choose the inference provider under full egress](issues/09-choose-inference-provider.md)
+proposes **Anthropic direct, one provider for both paths, BYO API key, no fallback
+chain**, but **D1** (which company gets `finance/`/`health/`/`journal/` streamed to it)
+and **D6**'s spend ceiling are the owner's. Three findings already bind other tickets, so
+they are recorded here rather than waiting. 🔴 **`provider_routing` has six axes and the
+cron path forwards only four** — `data_collection` and `require_parameters` are never
+passed (`cron/scheduler.py:3490` vs `gateway/run.py:4467`), and OpenRouter's documented
+default is `data_collection: "allow"`. So on any router, `deny` is honoured on every
+Telegram exchange the owner can see and **inert on the 20:00 brief** — this map's enemy
+class reached through the privacy control. **The one axis that survives is `only`**, which
+is what pins the upstream, so a router posture is salvageable *only* through `only`;
+`data_collection` may never be cited as a push-path control. Going direct makes the defect
+unreachable rather than mitigated. ✅ **Second: provider identity and cost are recoverable
+from `state.db`** — the cron `executions` table has **no model or provider column at all**,
+but `session_model_usage` is keyed `(session_id, model, billing_provider, …, task)` with
+token counters and cost, is `no_agent`-readable, and a fallback hop writes a *second row* —
+which is what lets `06`'s footer carry a served-model line and gives `05` a fourth control.
+✅ **Third, measured on the box: the vault already streams to Anthropic** — 90 Claude Code
+sessions with `~/vault` as cwd, 79 MB of transcripts, 2026-07-07 → today, including this
+map's own reads of `finance/notes/email-ingest-plan.md` and `health/kineret-schedule.md`.
+That narrows the Notes' *"streamed to an inference endpoint ≠ at-rest"* point **for
+Anthropic specifically**: it is a new workload, not a new counterparty. Quotes, source
+citations and probes:
+[assets/09-provider-policy.md](assets/09-provider-policy.md)._
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._
