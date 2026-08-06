@@ -55,8 +55,12 @@ makes silent failure impossible**.
   boundary. **The vault-serve map's "helium already holds Immich photos + Paperless
   docs, so it's not a new sensitivity class" reasoning does NOT transfer here** —
   at-rest on own hardware ≠ streamed to an inference endpoint. Provider choice
-  therefore carries the weight — now [ticket 09](issues/09-choose-inference-provider.md),
-  graduated from fog once `01` confirmed BYO key is still first-class.
+  therefore carries the weight — now **settled by
+  [ticket 09](issues/09-choose-inference-provider.md): Anthropic direct, BYO API key, no
+  router.** `09` also narrows this very note — 90 Claude Code sessions have already had
+  `~/vault` as their working directory, so for **Anthropic specifically** the endpoint is not
+  a new counterparty, only a new workload. The at-rest-≠-streamed point stands for everyone
+  else.
 - **The last catastrophe was self-inflicted by making the vault the agent's brain.**
   v0.14 Hermes autonomously reorganized its vault, deleted `.stfolder`, and
   Syncthing safety-halted with no self-heal → silent stall up to an hour, badly
@@ -331,40 +335,56 @@ makes silent failure impossible**.
   reaches the vault's `AGENTS.md` **only with `--workdir /vault`**, which is what gives
   [ticket 14](issues/14-vault-agents-md-rewrite.md) teeth.
 
-_**Proposed, not yet resolved** —
-[Choose the inference provider under full egress](issues/09-choose-inference-provider.md)
-proposes **Anthropic direct, one provider for both paths, BYO API key, no fallback
-chain**, but **D1** (which company gets `finance/`/`health/`/`journal/` streamed to it)
-and **D6**'s spend ceiling are the owner's. Three findings already bind other tickets, so
-they are recorded here rather than waiting. 🔴 **`provider_routing` has six axes and the
-cron path forwards only four** — `data_collection` and `require_parameters` are never
-passed (`cron/scheduler.py:3490` vs `gateway/run.py:4467`), and OpenRouter's documented
-default is `data_collection: "allow"`. So on any router, `deny` is honoured on every
-Telegram exchange the owner can see and **inert on the 20:00 brief** — this map's enemy
-class reached through the privacy control. **The one axis that survives is `only`**, which
-is what pins the upstream, so a router posture is salvageable *only* through `only`;
-`data_collection` may never be cited as a push-path control. Going direct makes the defect
-unreachable rather than mitigated. ✅ **Second: provider identity and cost are recoverable
-from `state.db`** — the cron `executions` table has **no model or provider column at all**,
-but `session_model_usage` is keyed `(session_id, model, billing_provider, …, task)` with
-token counters and cost, is `no_agent`-readable, and a fallback hop writes a *second row*.
-⚠️ **But it cannot ride the footer as a same-run check** — the pre-run script executes at
-`cron/scheduler.py:2961`, before the session id exists at `:3004`, so a gathering script can
-only ever report the **previous** run. The check therefore splits: a *trailing* footer line
-for routine visibility, and a separate post-brief **`no_agent` alarm job in `05`'s existing
-MQTT→HA path** for the tripwire. Two riders: the session id embeds a per-execution timestamp
-so **no watermark is needed** (unlike `07`'s UID problem), but it must be resolved **by
-recency, not reconstructed** — a compression-tip lineage id can replace it (`:3774`).
-Found alongside: **`_parse_wake_gate` is a second silent-skip path** — a trailing
-`{"wakeAgent": false}` stdout line skips the whole agent run, sibling to the empty-stdout
-skip `06` documented.
-✅ **Third, measured on the box: the vault already streams to Anthropic** — 90 Claude Code
-sessions with `~/vault` as cwd, 79 MB of transcripts, 2026-07-07 → today, including this
-map's own reads of `finance/notes/email-ingest-plan.md` and `health/kineret-schedule.md`.
-That narrows the Notes' *"streamed to an inference endpoint ≠ at-rest"* point **for
-Anthropic specifically**: it is a new workload, not a new counterparty. Quotes, source
-citations and probes:
-[assets/09-provider-policy.md](assets/09-provider-policy.md)._
+- [Choose the inference provider under full egress](issues/09-choose-inference-provider.md)
+  — **Anthropic direct, one provider for both paths, BYO API key, no fallback chain.** Owner
+  confirmed the counterparty (*"let's do anthropic"*) after being shown the administratively
+  cheaper option and the fact that makes this a real cost: **there is no API key and no
+  `~/.config/anthropic` profile on krypton**, so it is a **new metered API account**, not the
+  Claude Code subscription — and creating it is a **needs-human step outside ansible**, like
+  `029`'s Proton login. 🔴 **The find that ruled out routers: `provider_routing` has six axes
+  and the cron path forwards only four** — `data_collection` and `require_parameters` are never
+  passed (`cron/scheduler.py:3490` vs `gateway/run.py:4467`, probed with the image's own
+  preference-builder), and OpenRouter's documented default is `data_collection: "allow"`. So on
+  any router `deny` is honoured on every Telegram exchange the owner can see and **inert on the
+  20:00 brief** — this map's enemy class reached through the privacy control itself. **The one
+  axis that survives to cron is `only`**, which is what pins the upstream, so a reversal is
+  salvageable *only* through `only`; **`data_collection` may never again be cited as a
+  push-path control.** Going direct makes the defect **unreachable rather than mitigated** —
+  there is no `provider` object at all. **Nous Portal ruled out on its own documentation**
+  (`provider` preferences *"may be ignored depending on which backend serves the model"*, so
+  even `only` is documented as ignorable there). Posture obtained: **contractual** no-training
+  (Commercial Terms §B) plus published **30-day** retention, both URL-cited for re-checking in
+  [assets/09-provider-policy.md](assets/09-provider-policy.md); **ZDR deliberately not
+  specced** — it is an agreement, not a toggle. **No fallback chain**, because a hop is
+  invisible to the drift guard (which runs *pre-run*), to the executions ledger, and to the
+  owner (cron has `messaging` disabled), and would silently void the single policy the whole
+  posture rests on; an outage instead arrives as a failed job `05` already delivers. ✅
+  **Provider identity and cost are recoverable from `state.db`** — the cron `executions` table
+  has **no model or provider column at all**, but `session_model_usage` is keyed
+  `(session_id, model, billing_provider, …, task)` with token counters and cost, and a fallback
+  hop writes a *second row*. ⚠️ **But it cannot ride the footer as a same-run check** — the
+  pre-run script executes at `:2961`, before the session id exists at `:3004`, so a gathering
+  script can only ever report the **previous** run; the first draft claimed otherwise and was
+  corrected rather than reworded. The check therefore splits: a **trailing** footer line for
+  routine visibility, and a separate post-brief **`no_agent` alarm job on `05`'s existing
+  MQTT→HA path** as the tripwire — ceiling called at **$25/month**, converted once into a
+  *token* ceiling recorded with its price and date, because token counts come from the API
+  while a hardcoded price table would go stale silently. Two riders: the session id embeds a
+  per-execution timestamp so **no watermark is needed** (unlike `07`'s UID problem), but it
+  must be resolved **by recency, not reconstructed** — a compression-tip lineage id can replace
+  it (`:3774`). Two corrections to closed work: **`01`'s "keep `cron.model_drift_guard` on" is
+  now inert for this job** (pinned axes carry no snapshot — pinning is stronger, but say so
+  rather than let a closed ticket's advice quietly stop applying), and **`_parse_wake_gate` is
+  a second silent-skip path** — a trailing `{"wakeAgent": false}` stdout line skips the entire
+  agent run, sibling to the empty-stdout skip `06` found, and a real hazard because this
+  design's gathering script emits structured blocks by construction. Finally, ✅ measured
+  rather than assumed: **the vault already streams to Anthropic** — 90 Claude Code sessions
+  with `~/vault` as cwd, 79 MB of transcripts, 2026-07-07 → 08-06, including this map's own
+  reads of `finance/notes/email-ingest-plan.md` and `health/kineret-schedule.md` — so Anthropic
+  is a new **workload**, not a new **counterparty**, which narrows the Notes' *"at-rest ≠
+  streamed to an inference endpoint"* point **for Anthropic specifically** (⚠️ not for
+  posture: a subscription and a BYO API key are governed by different documents, and the API
+  one is the stricter).
 
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
@@ -447,6 +467,14 @@ fog.)_
 - **Goals / completion contracts.** Asked for, deliberately deferred: rests on a
   hermes-agent feature that shipped four weeks ago (v0.18.0). Add once the base is
   trusted.
+- **Reporting the cron `provider_routing` gap upstream** — [ticket 09](issues/09-choose-inference-provider.md)
+  found that `cron/scheduler.py` forwards four of `provider_routing`'s six axes, silently
+  dropping `data_collection` and `require_parameters` on the unattended path. It is a real
+  defect with a two-line fix, and it is recorded rather than buried because **under `09`'s
+  Anthropic-direct decision it cannot affect this deployment** — there is no `provider` object
+  to populate. Filing and tracking it upstream is not this destination's work. It becomes
+  load-bearing again only if a router is ever chosen, and `09`'s **D3** already writes down
+  what that would require.
 - **A local LLM on helium** — `hosts/helium/PRD.md` non-goal; the GPU is pulled and
   16 GB RAM won't carry it. Not revisitable without different hardware.
 - **Public internet exposure** — helium PRD forbids it; Telegram is outbound-only

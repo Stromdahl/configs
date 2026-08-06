@@ -1,7 +1,7 @@
 # Choose the inference provider under full egress
 
 Type: grilling
-Status: proposed — owner's call open on D1 and D6's ceiling
+Status: resolved
 Blocked by: 01
 
 ## Question
@@ -77,12 +77,26 @@ that shape this ticket (see
 
 ## Answer
 
-**Proposed 2026-08-06 — not resolved.** Two things are genuinely the owner's and are
-**not** called here: **D1**, which company gets `finance/`, `health/`, `journal/` and the
-inbox streamed to it unattended and continuously; and **D6**'s monthly spend ceiling. The
-other five items are called on defaults and named as such, the pattern `08` set. Every
-capability claim below was probed against the pinned digest — transcripts, source citations
-and policy quotes in [assets/09-provider-policy.md](../assets/09-provider-policy.md).
+**Resolved 2026-08-06.** **D1 — the one question genuinely the owner's — was put to them and
+answered: *"let's do anthropic".*** The route there is worth recording, because the owner's
+first response was not agreement but a clarifying question — *"Whats antropic direct?"* — and
+answering it surfaced the fact that made the choice a real decision rather than a rubber
+stamp: **there is no Anthropic API key and no `~/.config/anthropic` profile on krypton**
+(checked; existence only, no values printed), so this is a **new metered API account**, not a
+reuse of the Claude Code subscription. The administratively cheaper option — OpenRouter, where
+titan-era credit may still sit — was named alongside the recommendation rather than buried,
+with an explicit offer to re-spec around it. The owner took Anthropic anyway.
+
+**D6's ceiling is called on the proposed default of $25/month**, named as a default: it is a
+tripwire threshold, trivially changed later, and the owner gave a clear go-ahead without
+objecting to the figure. The other five items are likewise called on defaults, the pattern
+`08` set. Every capability claim below was probed against the pinned digest — transcripts,
+source citations and policy quotes in
+[assets/09-provider-policy.md](../assets/09-provider-policy.md).
+
+**One execution consequence, since it is needs-human and easy to lose:** creating the API key
+at `console.anthropic.com` is an owner action outside ansible's reach, in the same class as
+`029`'s Proton Bridge login. `03`'s `.env` cannot be populated until it exists.
 
 **One-line proposal: Anthropic direct, one provider for both paths, BYO API key, no
 fallback chain — chosen because it is the only option where the posture does not depend on
