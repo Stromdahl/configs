@@ -2,6 +2,15 @@
 
 `wayfinder:map` — child tickets live in `planning/hermes-helium/issues/`.
 
+> ✅ **Decision-complete 2026-08-06 — all 14 tickets resolved or closed, frontier empty.**
+> The buildable version is specced in
+> [issues/015 — Spec: Hermes on helium](issues/015-spec-hermes-on-helium.md); thin vertical
+> slices graduate from it as `016` onward. **Two needs-human prerequisites gate the build**
+> (Anthropic API account; one `getUpdates` call for the real Telegram id) — the spec's
+> *Further Notes* say why the build should stop rather than work around either. The two
+> remaining fog patches below are both gated on things the owner has not asked for, so
+> nothing here is frontier work.
+
 ## Destination
 
 A **decision-complete plan** for Hermes running **durably** on **helium** as a
