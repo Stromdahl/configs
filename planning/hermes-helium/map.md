@@ -84,7 +84,10 @@ makes silent failure impossible**.
   git for the vault"). The undo is now **staggered Syncthing versioning on krypton**
   — see [ticket 11](issues/11-vault-undo-riders-to-vault-serve-004.md), and note its
   `maxAge` is in **seconds** (`31536000`), a trap that looks configured when wrong. Git still
-  covers the 215 tracked files on krypton, and nothing on helium.
+  covers the **249** tracked files on krypton (re-counted by `08`; earlier notes said 215),
+  and nothing on helium. **`08` adds the one gap versioning cannot cover: it fires on
+  *replace* and *delete*, never on *create*** — so the creation-shaped write surface has
+  no one-click undo. Clutter, not loss; recorded so nobody assumes otherwise.
 - **Hermes replaces `/daily`, which is dead.** The vault's charter in
   `~/vault/AGENTS.md` ("keep the owner's personal life organized — board,
   inbox/reminders, records, planning, drafts; do not do project execution work") is
@@ -301,6 +304,42 @@ makes silent failure impossible**.
   examined-vs-flagged ratio rides the **footer**, not the mail section, so the section
   may still collapse without destroying the negative space `07` needs.
 
+- [Decide the concrete vault read/write surface](issues/08-vault-read-write-surface.md)
+  — **one writable directory, `/vault/inbox`, enforced by an overlapping `:ro`/`:rw`
+  bind mount; the whole vault mounted read-only for reading.** Probes in
+  [assets/08-write-surface-probe.md](assets/08-write-surface-probe.md) (run on
+  **krypton** against the pinned digest — helium was unreachable, and `/vault` doesn't
+  exist there yet). 🔴 **The headline result overturns `05`'s **D4**: the write surface
+  is NOT enumerable from `$HERMES_HOME/logs`** — a successful `write_file` produced
+  **zero** log mentions, because `file_tools.py` logs only failures, the generic
+  executor logs the tool *name* and never its arguments, and the one path-level record
+  (`file_state.note_write`) is an **in-memory** concurrency guard that dies with the
+  process. Replaced by a **`no_agent` filesystem manifest diff**, which is strictly
+  stronger: mechanism-agnostic (catches `terminal` writes), **deletion-aware**,
+  unfabricatable — and **complete precisely because the mount is narrow**, so
+  enforcement and audit become one mechanism. **A `:ro` bind mount holds against
+  `uid 0`** (verified), which is the boundary upstream says `HERMES_WRITE_SAFE_ROOT`
+  is not — but the mount enforces **location, not creation-only**: deletion inside
+  `inbox/` stays possible and propagates cluster-wide, so "new files only" is
+  convention. **Read surface separates permission from cost:** mount everything `:ro`
+  (free), always-load only `AGENTS.md` + `tasks.md` + `glossary.md` (**≈16 300
+  tokens**), and **never hand the brief raw `tasks.md`** — `🔥 Now` is 16 663 chars
+  across six items, one of them 7 749, nearly all *superseded* reasoning, so the
+  gathering script emits dated items instead. Also: `/vault:ro` makes the founding
+  v0.14 catastrophe **structurally impossible** (Hermes cannot delete `.stfolder`),
+  demoting the marker guard to insurance; conflicts are **report-only by mount
+  property**, not by prompt. Two vault facts found: **`inbox/` has an intermittent
+  reader after all** (`inbox/done/` drained 2026-07-29 — narrows `07`'s **D9** without
+  disturbing its conclusion), and **`claude-log/` is a second Bridge-shaped artifact,
+  live and synced**, whose own README says nothing reads it — now repurposed as the
+  vault's **staleness canary** for `05`'s **D2**. Two silent traps caught: **Docker
+  root-creates a missing bind source**, so Hermes' only writable path would be
+  unwritable on a fresh helium (the service must verify, never create), and
+  **`cron` loads `SOUL.md` always** (`load_soul_identity=True` — `02`'s worry is
+  structurally satisfied) but the vault's `AGENTS.md` only with **`--workdir /vault`**,
+  which is what gives the rewrite real teeth — now
+  [ticket 14](issues/14-vault-agents-md-rewrite.md).
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._
@@ -309,7 +348,13 @@ memory-out-of-vault, beachhead scope)._
 
 - **Whether `/daily` and the `note` skill get retired or rewired.** Hermes taking
   over ambient capture makes the inbox-file convention partly redundant; can't be
-  specified until the board-ownership follow-on is scoped.
+  specified until the board-ownership follow-on is scoped. **Sharpened by `08`, still
+  fog:** `/daily` is less dead than the Notes claim — `inbox/done/` shows a real drain
+  on **2026-07-29** — and Hermes now writes into that *same* `~/vault/inbox/` under the
+  *same* convention, tagged `hermes` in the `<source>` field, with the evening brief
+  reporting the undrained backlog and its oldest note's age (`08` **D8**). So the two
+  writers now share one queue whose depth is visible daily. Whether that means retire,
+  rewire, or leave alone still hangs on board ownership.
 _(The **Telegram identity/authorization** patch graduated to
 [ticket 10](issues/10-telegram-authorization.md) once `03` landed the deployment
 shape and a real boot surfaced `TELEGRAM_ALLOWED_USERS` plus the deny-by-default
