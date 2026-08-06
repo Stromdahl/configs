@@ -144,6 +144,15 @@ makes silent failure impossible**.
 - **Plan, don't do:** this map produces decisions. Execution graduates into
   implementation issues once the way is clear (mirroring how vault-serve graduated
   `004`/`005`).
+- **Two riders with no issue to live in yet — they belong to whoever graduates the 💊
+  emitter, and they are here because addressing a rider to a non-existent issue is how
+  `06`'s kineret edit went ownerless in the first place.** From
+  [ticket 13](issues/13-kineret-machine-readable-block.md): (1) **`06` D6's provenance is
+  mtime + parsed anchor, and the mtime half crosses Syncthing** to helium's replica —
+  expected to survive (Syncthing propagates modification times) but **unverified**; `stat`
+  both sides after an edit before the brief cites an mtime as freshness. (2) The block's
+  dates parse as **`datetime.date`, not `str`** — a string comparison works *by luck* on ISO
+  ordering while being wrong in kind.
 
 ## Decisions so far
 
@@ -468,10 +477,10 @@ makes silent failure impossible**.
   boundary and the one human confirmation this design turns on never gets forced (the
   frontmatter comment says so, so nobody "completes" the block). ⚠️ **Rider for the emitter:
   `yaml.safe_load` returns `datetime.date`, not `str`** — a string comparison would work *by
-  luck* on ISO ordering while being wrong in kind. **One check still owed by the emitter's
-  implementation issue:** **D6**'s provenance is mtime + parsed anchor, and the mtime half
-  crosses Syncthing to helium — expected to survive, but a `stat`-both-sides round trip, not
-  something this ticket verified.
+  luck* on ISO ordering while being wrong in kind. **One check left over, and it is in Notes
+  rather than addressed to an issue that doesn't exist** — this resolution's first draft said
+  *"owed by the emitter's implementation issue"*, which is the very defect ticket 13 exists to
+  correct, so it was caught and rewritten rather than shipped.
 
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,

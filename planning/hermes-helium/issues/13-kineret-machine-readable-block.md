@@ -139,11 +139,20 @@ the parity table** (August = even, and *Thu 6* is a table row).
 - **No prose touched, file not moved, `health/README.md` untouched** — its
   route-by-name and **D6**'s path both still hold.
 
-### One check the emitter's implementation issue still owes
+### One check left over — and it is recorded on the map, not addressed to a phantom
 
 **D6** sets provenance as *the file's own mtime plus the anchor it parsed*. The anchor
 half is now parseable. The mtime half crosses Syncthing to helium's replica — Syncthing
-does propagate modification times, so this should survive the hop, but it is **one
-round-trip confirmation** (`stat` on both sides after an edit) rather than something
-this ticket verified. Cheap, and worth doing before the brief cites an mtime as
-freshness.
+does propagate modification times, so it should survive the hop, but it is **one
+round-trip confirmation** (`stat` both sides after an edit) rather than something this
+ticket verified. Worth doing before the brief cites an mtime as freshness.
+
+⚠️ **This Answer's first draft said "owed by the emitter's implementation issue" — the
+exact defect this ticket exists to correct**, in the same map, one section below the
+paragraph naming it (`06` said the edit *"rides the brief's implementation issue"*; no
+such issue existed, so nobody did the edit). It is also what
+[ticket 14](14-vault-agents-md-rewrite.md) refused to write when it struck *"reported in
+the evening brief"*. **No 💊 emitter issue exists**, so the rider lives in the map's
+**Notes** — loaded every session — until one does. Riders on this map get handed to an
+issue that exists (`04`/`11` → vault-serve `004`) or recorded on the map; never
+addressed to one that doesn't.
