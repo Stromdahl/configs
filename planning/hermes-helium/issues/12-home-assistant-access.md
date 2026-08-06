@@ -1,7 +1,7 @@
 # Decide how Hermes reaches Home Assistant, and what it may read
 
 Type: grilling
-Status: open
+Status: closed — out of scope
 Blocked by: 06
 
 ## Question
@@ -61,3 +61,28 @@ anything.
   wired transport beats a second credential.
 - **`046`:** entity **`state`** is the liveness signal; the **`health`** entity does
   **not** clear when a container stops.
+
+## Closed — out of scope
+
+**Ruled out of scope by [ticket 06](06-urgent-vs-digest-policy.md) (D5), 2026-08-06.
+Not resolved — closed.** `06` decided the brief carries **no** Home Assistant data, so
+this ticket has no consumer: there is nothing in the design that needs a token, a
+network path, or an entity allowlist.
+
+The reasoning is `06` **D5** in full; the short form is that **nothing in the design
+needs HA**. Weather in a 20:00 brief is near-zero value, interrupts are date-math-only
+(`06` **D1**), and everything else household-shaped is either out of scope (calendar)
+or real-time in a way a once-daily brief cannot serve. Ruling it in would have cost a
+long-lived HA token inside Hermes' blast radius plus this whole ticket, for the least
+valuable section of the brief — and ruling it out makes the founding fake-weather bug
+**unwritable** rather than merely detectable.
+
+**This does not touch `05` D3.** That alert path is MQTT *into* HA — outbound from
+Hermes' side, already-built plumbing, unaffected by denying HA as a **read** source.
+
+The owner's words: *"HA out. we might revisit in the future."* Reopening costs exactly
+what this ticket scoped — a long-lived token, a decided network path, an entity
+allowlist — and would arrive as a fresh effort once something in the brief actually
+wants household data (*"trash out tomorrow"*, a forecast, a freezer-door alert).
+
+Status: closed — out of scope.

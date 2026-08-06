@@ -1,7 +1,7 @@
 # Decide the urgent-interrupt vs evening-digest policy
 
 Type: grilling
-Status: open
+Status: resolved
 Blocked by: 01
 
 ## Question
@@ -144,3 +144,310 @@ how failure alerts reach you when the agent is dead belongs to ticket `05`.
   covers *content* urgency only.
 - **The rebuild drill reports through you** — `05` **D5**: a failed drill surfaces
   as a `⚠` line in the brief rather than its own alert.
+
+## Answer
+
+**Two channels, deliberately different in kind. The interrupt is a deterministic
+script that cannot fabricate and is silent when all is well; the evening brief is
+the agent job, arrives unconditionally at 20:00, and is the only place judgment is
+exercised.** Rationale per decision in **D1–D8**.
+
+### Verified in the pinned image on helium (2026-08-05/06) — don't re-derive
+
+All from `nousresearch/hermes-agent@sha256:b869e64d…`, i.e. the digest `01` pinned.
+
+- **`skip_memory=True` for every cron job.** `cron/scheduler.py`, the `AIAgent`
+  construction: `skip_memory=True,  # Cron system prompts would corrupt user
+  representations`. **This ticket's own point-4 premise was false**: `~/.hermes/memories/`
+  is *never* injected into a cron job, so a correction told to Hermes in Telegram —
+  which it happily stores and acknowledges — **cannot** reach the evening brief. It
+  looks accepted and silently does not apply. That is this map's enemy class reached
+  through the correction loop, which is why **D7** exists.
+- **What *does* reach a cron job:** `load_soul_identity=True` (so `SOUL.md` always —
+  which is what makes `02`'s one straight keep load-bearing); `skip_context_files=not
+  bool(_job_workdir)`, so `AGENTS.md`/`CLAUDE.md` are injected **only** when the job
+  has a `--workdir`; and skills explicitly attached to the job.
+- **Skills are attachable per job and stored in `jobs.json`** — `hermes cron create
+  --skill <name>` (repeatable), `cron update --add-skills/--remove-skills/--clear-skills`.
+  Resolved from `~/.hermes/skills/` plus `skills.external_dirs` in `config.yaml`;
+  external entries are expanded, resolved absolute, and must exist. **A missing
+  external dir is skipped at `logger.debug` level** — silently. Assert presence, never
+  assume it.
+- **A pre-run script's stdout is injected into the agent's prompt** under a
+  `## Script Output` heading ("Use it as context for your analysis"). This is the
+  mechanism **D7** rides.
+- **🔴 A pre-run script with empty stdout skips the agent call entirely.**
+  `_build_job_prompt`: `else: # Script produced no output — nothing to report, skip AI
+  call` → `return None`. The brief is an agent job *with* a gathering script, so **the
+  brief's own architecture contains a silent-skip path**. Correction to `05` D1 below.
+- **🔴 A script *failure* is louder than a script *success with nothing*.** A non-zero
+  script injects `## Script Error … The data-collection script failed. Report this to
+  the user.` and the agent still runs. So `exit 1` is a *reported* failure while
+  `exit 0` with no output is *silence*. **A gathering script must never prefer a clean
+  empty exit to a loud failure.**
+- **🔴 The engine instructs `[SILENT]` on every cron job and it cannot be disabled.**
+  A `cron_hint` is unconditionally prepended *above* the operator's prompt: *"SILENT:
+  If there is genuinely nothing new to report, respond with exactly `[SILENT]`…
+  Never combine [SILENT] with content."* Correction to `05` D1 below.
+- **`context_from`** lets one job consume another job's latest output (8 K char cap).
+  Its miss paths are all `continue  # silent skip — no output yet`. Usable, but not
+  without an own-provenance line; not used by this ticket's design.
+- **Ticker every 60 s** (`gateway/run.py:24911`, `interval: int = 60`).
+- **Grace = half the schedule period, clamped [120 s, 7200 s]** (`_compute_grace_seconds`).
+  A daily job therefore catches up if it is at most **2 h** late; beyond that it
+  fast-forwards and that day's run is skipped. **Missed runs collapse — the job fires
+  ONCE on catch-up, never a burst** (`get_due_jobs`), so a container restart cannot
+  produce an interrupt storm.
+
+### Measured on the real board (`~/vault/tasks.md`, 2026-08-05)
+
+78 lines, **19 dated items**, 3 recurring, and **zero `[x]` items** — the board is
+pruned by *deletion*, so "done" leaves no trace to key on. **Six open dated items were
+already past due**, the oldest `📅 2026-07-14` (three weeks). One `📅` occurrence is
+line 4's *format documentation*, not a task.
+
+**This kills the obvious rule.** *"Interrupt when a dated task is due or overdue"* is
+level-triggered, so on this board it fires six times on day one and the 07-14 item
+fires **every day forever** — Hermes cannot clear the board (owning `tasks.md` is out
+of scope). The mute reflex would arrive in week one, i.e. the fifth death, delivered
+by the very feature meant to prevent it. Hence **D2**.
+
+### D1 — Interrupts are deterministic. Mail cannot interrupt (day one).
+
+- **The interrupt channel is a `--no-agent` job**: the script's stdout *is* the
+  Telegram message, empty stdout sends nothing. Deterministic date math over dated
+  vault items. It cannot fabricate, a wrong rule is a one-line diff in git, and it
+  costs **zero inference**.
+- **The evening brief is the agent job.** Prose, ranking and mail semantics live
+  there and nowhere else.
+- **Mail is not interrupt-eligible.** `07` (the triage contract) is unresolved, so a
+  mail interrupt rule would rest on undecided semantics; mail is the least trustworthy
+  input in the system (the Proton bridge's signature failure is *looking fine*); and a
+  false interrupt from a misread invoice is precisely the mute trigger. **Accepted
+  cost:** a bill arriving 09:00 and due tomorrow waits for the 20:00 brief — ~11 h
+  less warning than a mail-aware interrupt, but the same day. Escalating mail to
+  interrupt-capable is a named follow-on (Out of scope on the map), not a day-one
+  feature.
+- **Interrupt message format:** one line — `*bold* title · 📅 date · why now`. No BLUF,
+  no footer; it is a single item by construction. `02`'s verified Telegram `*bold*`
+  and one-leading-emoji conventions apply.
+
+### D2 — Edge-triggered, T-2, cold start seeded **and announced**
+
+1. **Edge-triggered, never level-triggered.** An item fires **once**, when it
+   *crosses* into the window — not because it *is* in it. State file
+   `$HERMES_HOME/state/urgent-seen.json` (state volume ⇒ restic per `03`'s
+   authorship split).
+2. **Item key = `sha1(📅date + normalized(first bold title segment))`**, normalized
+   = lowercased, markdown and punctuation stripped. The board's lines accrete prose
+   heavily, so a content hash would re-fire constantly; this key costs **one**
+   duplicate interrupt on a retitle and **never** a miss — the correct failure
+   direction.
+3. **Window T-2:** an open dated item with `date - today <= 2` fires once. Enough
+   room to make a payment or a phone call; outside the already-too-late zone.
+4. **Once is once.** An item that fired at T-2 and is still open does **not** fire
+   again — it reappears in the **evening brief on its due date** (`🔥 Due` T-0 line).
+   There is a second touch; it just is not an interrupt.
+5. **Cold start is seeded, and the seeding is announced.** On first run every
+   currently-dated item at or inside the window is written to the state file as
+   *already announced* — zero interrupts on boot — and **the first brief says so
+   explicitly** (`seeded 6 items, 0 interrupts sent`). This is deliberately the same
+   move `01` flagged as a hazard in the Email gateway adapter (marks the whole inbox
+   seen on first start); the difference is that ours is **announced**, so it cannot be
+   the silent thing.
+6. **Parse loudly.** Only `- [ ]` lines are candidates (line 4's format doc would
+   otherwise parse). An **unparseable date on a real task line is `ERROR`, never a
+   silent skip** — `05`'s rule.
+7. **The overdue backlog is brief material, not interrupt material** — rendered as a
+   level statement (`⏰ 3 overdue, oldest 2026-07-14`), where it nags without buzzing.
+
+### D3 — `*/30 7-22`, quiet hours 22:00–07:00, ceiling 3/day
+
+- **Cadence `*/30 7-22 * * *` Stockholm.** Crossings into T-2 happen at **midnight**,
+  so the only intraday change is a freshly added near-dated item arriving over
+  Syncthing; `*/30` bounds that latency at 30 min, costs one script exec and no
+  inference, and keeps the ticker demonstrably alive for `05`'s liveness probe.
+- **Quiet hours are expressed in the cron hours field, not as a rule inside the
+  script.** Nothing to misjudge. Items crossing at midnight fire at 07:00 — delayed,
+  never lost.
+- **Ceiling 3 interrupts/day**, counted in the same state file keyed on date. On the
+  3rd the message ends `+N more — see tonight's brief`, and **the suppressed items are
+  handed to the brief**. A capped interrupt must never vanish.
+- **Sizing, honestly:** with edge-triggering on a 19-item board, expected volume is
+  **0–2 per week**, not per day. The ceiling is insurance against a bad rule or a bulk
+  board edit, not a working constraint.
+
+### D4 — The evening brief: `0 20 * * *`, adaptive length, always-present footer
+
+Fires **20:00 Stockholm** — chosen over 21:00 so there is still room to act the same
+evening, and late enough to have seen the day's mail.
+
+| | Section | Source | May collapse? |
+|---|---|---|---|
+| 1 | BLUF — `Tomorrow's priority: …` | agent, over the sections below | no |
+| 2 | 🔥 **Due** — T-0/T-1 dated items | `tasks.md` | yes |
+| 3 | ⏰ **Overdue** — count + oldest date | `tasks.md` | yes |
+| 4 | 📬 **Mail** — filed / needs you | Proton bridge — contract is `07`'s | yes |
+| 5 | 💊 **Kineret** — injection nights only | `health/kineret-schedule.md` (**D6**) | yes |
+| 6 | ⚠ **Errors** — any source in `ERROR`, expanded | all sources | yes |
+| 7 | 📝 **Writes** — what it actually changed | `05` D4 write list | yes |
+| 8 | **Footer** — `✓ mail 12 · vault ok · urgent 32/32 · corrections 4` | script | **never** |
+
+- **The general suppression rule:** *a section may collapse iff its source can
+  distinguish **empty** from **exhausted**.* That is `05`'s provenance contract
+  restated, and it resolves the tension `02` flagged between empty-section suppression
+  and always-report. A quiet day renders as BLUF + footer — `05` D1's adaptive length.
+- **The footer is load-bearing, not cosmetic.** It is what makes the gathering script
+  **incapable** of empty stdout, which is the only thing standing between `05` D1 and
+  the verified `return None` silent-skip path. It is also what structurally guarantees
+  the rendered output cannot begin or end with a silence marker.
+- **Reused verbatim from `02`'s verdict table:** BLUF first line (reworded for
+  evening), Telegram `*bold*` labels with one leading emoji from a fixed set, one item
+  per line, ~150–250 words to fit one phone screen, and *"use the date/weekday from the
+  META line — do not compute dates yourself."*
+- **Delivery is job config, never prompt text** — `--deliver telegram` per `03`, which
+  retires `02`'s worst carried-forward defect.
+- **Accepted consequence:** with the 2 h grace, a container down at 20:00 that
+  recovers at 21:50 delivers the brief at 21:50 — occasionally inside quiet hours. A
+  "never deliver after 22:00" rule would trade a rare buzz for a silently dropped
+  brief, which is the wrong direction for this map. Take the buzz.
+
+### D5 — Home Assistant is **out** as a read source
+
+**The brief carries no household data.** The argument is not risk, it is that
+**nothing in the design needs it**: weather in a 20:00 brief is near-zero value,
+interrupts are date-math-only (**D1**), and everything else household-shaped is either
+out of scope (calendar) or real-time in a way a once-daily brief cannot serve. Against
+that, ruling it in costs a long-lived HA token inside Hermes' blast radius, a decided
+network path, an entity allowlist and a whole ticket — for the least valuable row in
+**D4**'s table. It also makes the founding bug **unwritable** rather than merely
+detectable: there is no weather section to fabricate.
+
+- **This does not touch `05` D3.** That path is MQTT *into* HA — outbound from
+  Hermes' side, already-built plumbing, unaffected by denying HA as a read source.
+- **Consequence:** [ticket 12](12-home-assistant-access.md) **closes as out of
+  scope**, not resolved — the owner's words: *"HA out. we might revisit in the
+  future."* Reopening costs the token + path + allowlist, no more.
+
+### D6 — 💊 is no longer sourceless, and gets a machine-readable source
+
+**Correction to `02`:** `~/vault/health/kineret-schedule.md` was created
+**2026-08-02**, two days *after* `02`'s inventory declared a 💊 section sourceless.
+It is an operating doc — anchor **Wednesday 2026-07-29**, phase 1 every-other-night
+for three months, then phase 2 every third day — and `health/README.md` deliberately
+keeps it off the board (its *"anything with a date → tasks"* rule addresses the
+vårdcentral to-dos, not a recurring injection schedule that would swamp `tasks.md`).
+
+The trap: **the parity rule is a constant that looks like a query.** Hardcode
+`August = even` and it is correct until phase 1 ends ~**2026-10-29**, then silently
+wrong. That is `02`'s `emit_labs` bug and the fake weather in a third costume.
+
+**Ruling: add a small machine-readable block to `kineret-schedule.md`** — `anchor:
+2026-07-29`, `interval_days: 2`, `phase_1_ends: 2026-10-29` — and compute the section
+deterministically from it. Provenance is **the file's own mtime plus the anchor it
+parsed**. Once today passes `phase_1_ends` without the file having been updated it
+emits **`ERROR`**, never silence.
+
+Rejected: (a) no section — it is genuinely easy to lose track of an every-other-night
+dose; (b) letting the agent read the prose — an LLM doing date arithmetic across phase
+boundaries with nothing to check it against is exactly what `05` exists to prevent.
+
+**Renders on injection nights only** — and note the interlock: that is a *suppressed*
+section, which **D4**'s rule permits only because the machine-readable block makes
+*exhausted* distinguishable from *nothing tonight*. (b) plus injection-nights-only
+would have been the unsafe combination.
+
+Prerequisite: **one human edit on krypton** (the authoritative side). No new ticket —
+it rides the brief's implementation issue.
+
+### D7 — The correction loop: two tiers, and a falsifiable "did it stick?"
+
+Forced by `skip_memory=True`: memory is not a correction channel for the push mode,
+so corrections must live in something the job provably reads.
+
+- **Tier 1 — standing policy → git.** The urgency rules, the section list, the brief's
+  format: a skill in a git-tracked directory, bind-mounted read-only, registered via
+  `skills.external_dirs`, attached with `--skill`. Changing policy is a commit and a
+  deploy, which is the right friction. **Assert the dir and skill are present** — a
+  missing external dir is skipped at debug level.
+- **Tier 2 — corrections → `$HERMES_HOME/state/corrections.md`.** *"Stop nagging me
+  about the Loopia invoice"* is an exception, not a policy change. Hermes appends;
+  **the gathering script cats the file into `## Script Output`**, so it is in the
+  brief's context with no memory involved. On the **state volume, not the vault** —
+  correcting it in conversation is the natural gesture and `08`'s vault write surface
+  stays untouched (accepted cost: no phone editing by hand). Restic covers it.
+- **Whether corrections stick is *testable*, not promised.** The footer carries
+  `corrections N` (count + file mtime). Correct something; if the count does not move,
+  **the correction did not land**. Every append also shows in `05` D4's write list.
+- **Bounded:** over a size cap the script emits `ERROR` rather than truncating
+  quietly. Graduating an accreted correction into Tier 1 policy is a human act.
+
+### D8 — Single recipient: the owner only
+
+Several urgent-eligible items are jointly owned (the wedding, shared finance), so
+this is not hypothetical. **Nothing is ever delivered to Hanna.** A second recipient
+would receive content derived from a vault that also holds `health/`, `journal/` and
+`people/`; every interrupt and every brief would then need a per-recipient filter,
+and there is no version of that filter which fails safely on day one. `10`'s
+deny-by-default allowlist already points here. Anything concerning her is the owner's
+to relay — exactly as today, so nothing regresses.
+
+### Timezone (item 5 — settled, not grilled)
+
+`02` already killed the *"Automation Blueprints replace raw cron"* premise. Set
+**`TZ=Europe/Stockholm` on the container** (`03` already does) **and**
+`timezone: Europe/Stockholm` in `config.yaml`, and write both expressions for local
+time. No further decision.
+
+### Corrections this ticket makes to already-closed work
+
+- **`05` D1's `[SILENT]` rule is unachievable as written.** *"No job prompt may ever
+  instruct `[SILENT]`"* cannot hold: the engine prepends that instruction to **every**
+  cron job, above the operator's prompt, with no way to disable it. The requirement
+  is rewritten: **the brief's prompt must explicitly countermand the engine's hint** —
+  always produce the brief, never respond `[SILENT]`, the footer is always content.
+- **`05` D1's "the brief always arrives" needs a mechanism, and now has one.** The
+  verified `return None` on empty script stdout is a silent-skip path *inside* the
+  brief's own architecture. The always-present footer (**D4**) is what makes empty
+  stdout impossible; `05`'s ~26 h brief-staleness alarm remains the backstop.
+- **`02`'s "a 💊 section is a prerequisite, not an adaptation" is stale** — the source
+  exists as of 2026-08-02 (**D6**).
+- **`05`'s brief-staleness alarm and the 2 h grace are a matched pair** — grace covers
+  a ≤2 h outage, the alarm covers everything longer. Do not "fix" one without the
+  other.
+
+### Carried forward
+
+- **→ `07`:** mail is **not** interrupt-eligible (**D1**) — its only channel is
+  **D4**'s section 4, whose contract `07` owns. Tier 2 corrections (**D7**) are the
+  natural home for mail-triage exceptions too, so `07` should assume that file exists.
+- **→ `08`:** **`06` adds nothing to the vault write surface.** The corrections file
+  is on the state volume by decision (**D7**), and the only vault-side change is one
+  *human* edit on krypton (**D6**). `08` is free to keep the write surface as narrow
+  as it likes.
+- **→ `09`:** this ticket sizes the inference bill — **one agent call per day** (the
+  brief) plus **zero** for the interrupt channel (`--no-agent`). Per-job `--model`
+  pinning is user-owned, so the brief can run on a stronger model than anything
+  conversational without the agent being able to change it.
+- **→ implementation:** the two job definitions, the two scripts, the `urgent-seen.json`
+  schema, the Tier 1 skill dir and its `skills.external_dirs` wiring, the countermand
+  in the brief's prompt, and the one `kineret-schedule.md` edit.
+
+### Done-when (falsifiable)
+
+1. The gathering script **cannot** emit empty stdout — the footer is unconditional;
+   verified by running it on a day with nothing in every section.
+2. The brief's prompt countermands the engine's `[SILENT]` hint, and a rendered brief
+   never begins or ends with a silence marker.
+3. Cold start on the real board sends **zero** interrupts and the first brief reports
+   the seeded count.
+4. An item retitled between runs fires at most one duplicate interrupt; no dated item
+   inside T-2 is ever missed.
+5. A `📅` line with an unparseable date renders `⚠`, not a skipped item.
+6. Past `phase_1_ends`, the 💊 section renders `⚠`, not absence.
+7. `corrections N` in the footer increments after a correction, and the corrected
+   behaviour is visible in the next brief.
+8. `hermes cron list` shows both jobs with `--deliver telegram`, the brief with its
+   `--skill` attached, and the skill resolvable inside the container.
+
+**Status: resolved.**

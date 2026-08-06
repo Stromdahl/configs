@@ -184,3 +184,26 @@ badly. The redesign (memory in `~/.hermes`, vault as data source) removes the
   replica is indistinguishable from a quiet vault** — precisely the v0.14 failure,
   where sync safety-halted with badly diverged sides. `08` should confirm its chosen
   read paths make that mtime meaningful.
+
+### Inherited from ticket `07` (resolved 2026-08-06 — don't re-derive)
+
+- **The email half writes nothing to the vault. Its write surface is zero.** `07`'s
+  **D9** rejected the `inbox/`-note design this ticket's siblings assumed, because
+  `~/vault/inbox/` is drained by `/daily` and `/daily` is dead (`~/vault/daily/` is
+  empty) — filing notes there is **writing to a queue with no reader**, i.e. a rebuild
+  of `Sync/Hermes-Claude-Bridge.md`, the map's founding silent-failure example. The
+  durable artifact is a Proton label instead, which is attached to the message and
+  visible on the phone.
+- **⇒ `08` therefore decides vault writes for the *conversational* path only** — where
+  the owner has explicitly asked Hermes to file something and a human is in the loop
+  for every write. That is a much narrower and easier trust question than "an
+  unattended job may create files in your vault", and it means the *unattended* push
+  mode needs **no vault write paths in `HERMES_WRITE_SAFE_ROOT` at all**.
+- **Read paths are also unaffected by the email half** — triage reads INBOX, not the
+  vault. So `08`'s provenance concern (newest mtime under the read paths) stays scoped
+  to the conversational/brief sources, not to mail.
+- **A useful precedent for "enforced rather than intended" (item 6):** `07` settled its
+  boundary by *removing verbs*, not by configuring guards — one verb (`COPY`), and
+  `\Seen`/`MOVE`/delete/label-removal prohibited even though all four were **verified
+  working** on the live bridge. The narrowest surface was chosen where the mechanism
+  was capable of more. Same shape is available at the mount layer here.

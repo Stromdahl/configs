@@ -95,10 +95,18 @@ makes silent failure impossible**.
 - **The email half is already built.** Proton Mail Bridge runs on helium (issue
   `029`, live 2026-07-10), serving IMAP for `mattias.stromdahl@pm.me` to Paperless.
   Carry these forward: **SMTP send is broken** (`454 4.7.0 unknown error`; IMAP
-  receive fine) → Hermes cannot reply or move mail by sending; the **session dies
-  silently** when Proton invalidates it; it sits on an **internal bridge network
+  receive fine) — now settled by `07` as a **documented non-capability, not a
+  blocker**, since no verb in the triage contract needs a send path; the **session
+  dies silently** when Proton invalidates it; it sits on an **internal bridge network
   with no published ports**, so a consumer must be a container on that network.
-  Details in `project_helium_protonmail_bridge_paperless`.
+  Details in `project_helium_protonmail_bridge_paperless`. **New ground truth from
+  `07`, and it binds anything that ever touches this mailbox: Paperless only fetches
+  UNSEEN INBOX mail** (`MarkReadMailAction.get_criteria()` → `{"seen": False}`), so
+  setting `\Seen` — or moving a message out of INBOX — before Paperless polls means
+  its attachments are **never ingested, silently**. Every read must be `BODY.PEEK`;
+  a bare `FETCH BODY[]` sets `\Seen` implicitly. Also: the bridge **self-updated
+  3.19.0 → 3.25.0** unattended, so its local cache (and any `UIDVALIDITY` derived
+  from it) is not stable state.
 - **Channel:** Telegram. Proven, a hermes-agent first-class integration, and
   outbound-only — fits helium's no-ingress posture with no port to open.
 - **Engine is settled: hermes-agent v0.19.1, pinned by digest** —
@@ -238,6 +246,57 @@ makes silent failure impossible**.
   `02`'s "verify it loads" must assert on *content*. Restore is **`hermes import`**,
   not `hermes restore`.
 
+- [Decide the email triage contract — what "filing" concretely means](issues/07-email-triage-contract.md)
+  — **"filing" means applying one Proton label, and nothing else.** One verb:
+  `COPY` into `Labels/hermes-*`, on the small minority of mail that means something
+  needs doing (**exception-only**, never a classification of everything — "412
+  labels applied" is uncheckable by anyone and would hide a drifted classifier for
+  months). Four topical buckets — `bill`, `escalation`, `action`, `unsure` —
+  deliberately **not** severity-based, so `06` stays the single owner of urgency.
+  No vault writes at all, so **`08` inherits a zero-width write surface for the
+  email half.** Every capability question was verified on the live bridge, in
+  [assets/07-imap-probe.md](assets/07-imap-probe.md): labels, `MOVE`, custom
+  keywords and even **label removal all work** — the prohibitions are judgements,
+  not limits. **The load-bearing find is a Paperless ordering defect:**
+  `MarkReadMailAction.get_criteria()` returns `{"seen": False}`, so Paperless only
+  ever fetches **unseen** INBOX mail — if Hermes marks read (or moves) first, that
+  invoice PDF is **never ingested, silently**. Hence `\Seen` is prohibited and every
+  read is `BODY.PEEK`. Three findings overturn the ticket's own premises: there is a
+  **third consumer** already planned (`finance.py ingest-email` — stay clear, "feed
+  it" is now out of scope); the **killer use case is reachable after all** — 66 % of
+  INBOX is alias-addressed and **gmail is a live forward** (85 msgs since
+  2026-07-06), while work mail is empirically **zero**; and `\Seen` is useless as a
+  signal here anyway (**444 messages, 2 unseen**), so a **UID watermark** replaces it,
+  with `UIDVALIDITY` change and absent-watermark both `ERROR`, never a silent
+  re-seed. Item 6 resolves as hoped: **broken SMTP is a documented non-capability**,
+  not a blocker. Item 7 resolved rather than graduated — **one shared bridge**,
+  because that makes `05`'s provenance check the monitor Paperless never had.
+
+- [Decide the urgent-interrupt vs evening-digest policy](issues/06-urgent-vs-digest-policy.md)
+  — **the two channels differ in kind: the interrupt is a `--no-agent` script that
+  cannot fabricate and is silent when all is well; the brief is the one agent job and
+  the only place judgment is exercised.** Brief at **20:00**, mail **not**
+  interrupt-eligible day one, **Home Assistant ruled out** (so
+  [ticket 12](issues/12-home-assistant-access.md) is **closed, not resolved**).
+  Measuring the real board killed the obvious rule: **six dated items are already past
+  due**, oldest `📅 2026-07-14`, and **zero `[x]`** items exist (the board is pruned by
+  deletion), so a level-triggered "due or overdue" test fires 6× on day one and forever
+  after — the mute reflex delivered by the anti-mute feature. Hence **edge-triggered**,
+  T-2, fire-once, with a **seeded-and-announced** cold start. **Three verified findings
+  overturn closed work:** cron sets **`skip_memory=True`**, so a correction told in
+  Telegram *cannot* reach the brief — it looks accepted and silently isn't, which is why
+  corrections are a file the gathering script cats into `## Script Output` and the
+  footer carries `corrections N` as a falsifiable did-it-stick test; **a pre-run script
+  with empty stdout skips the agent call entirely** (`return None`), so the brief's own
+  architecture holds a silent-skip path and the always-present footer is what closes
+  it; and **the engine prepends a `[SILENT]` instruction to every cron job**, so `05`'s
+  "no prompt may instruct `[SILENT]`" is unachievable — the prompt must *countermand*
+  it. Also: `exit 1` is *reported* while `exit 0` with no output is *silence*; grace is
+  half the period capped at 2 h and missed runs **collapse to one** catch-up fire; and
+  `02`'s "💊 is sourceless" is stale — `health/kineret-schedule.md` (2026-08-02) is a
+  real source, taken with a machine-readable block so the parity rule cannot silently
+  expire at phase 1's end.
+
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
 memory-out-of-vault, beachhead scope)._
@@ -258,17 +317,54 @@ evening brief as a script-generated write list; deep inspection stays CLI-only v
 `docker exec`, and that is now an accepted answer. No read-only web surface. See
 `05`'s **D4**.)_
 
-_(**Home Assistant access** became [ticket 12](issues/12-home-assistant-access.md),
-**blocked by `06`**, once `05` found that nothing in `03` ever provisioned an HA
-token or network path — while HA is the source the original fake-weather bug
-pretended to query. `06` decides whether the brief carries household data at all;
-`12` decides how it is reached and what may be read.)_
+_(**Home Assistant access** graduated to [ticket 12](issues/12-home-assistant-access.md)
+and is now **closed as out of scope** — `06` **D5** ruled HA out as a read source, so
+the ticket had no consumer left. See **Out of scope** below; it never re-enters the
+fog.)_
 
 ## Out of scope
 
 - **Owning `tasks.md` and the inbox drain** (i.e. fully replacing `/daily`'s write
   path) — the highest-trust, write-heavy path into the live board. A named
   follow-on once the agent is alive and trusted, not a prerequisite for it existing.
+- **Kivra — a stated coverage limit, not fog.** Official/legal mail (Kronofogden,
+  inkasso) goes to Kivra, which has **no IMAP and no bridge**; reaching it needs an
+  entirely different mechanism, and `~/vault/tasks.md` already assigns it a weekly
+  *human* check as the consolidation point for anything heading to inkasso. Ruled out
+  by [ticket 07](issues/07-email-triage-contract.md)'s **D8** and recorded rather than
+  buried, so the evening brief never implies it is watching everything official.
+  `Spam` is a second, smaller accepted gap there — left out on evidence (it holds
+  **1 message**), revisit if that climbs.
+- **Wiring `finance.py ingest-email` to consume Hermes' labels.** `07`'s **D5** found
+  a *third* consumer of the mailbox already planned in
+  `~/vault/finance/notes/email-ingest-plan.md` — and "Hermes labels receipts,
+  `finance.py` consumes the label instead of a hand-maintained `SEARCH FROM` merchant
+  allowlist that silently misses new merchants" is genuinely better than that plan's
+  own design. It is still out of scope: it makes an **unbuilt** pipeline a dependency
+  of this one, and gives Hermes' labels a second consumer with different correctness
+  requirements before the first consumer is trusted. Hermes emits no
+  `hermes-receipt`; the two stay in separate lanes. A named follow-on, cheap to add
+  later precisely because the labels will already exist.
+- **Home Assistant as a read source — and with it any household data in the brief.**
+  Ruled out by [ticket 06](issues/06-urgent-vs-digest-policy.md)'s **D5**, which also
+  **closes [ticket 12](issues/12-home-assistant-access.md) out of scope** rather than
+  resolving it. The argument is not risk but *demand*: **nothing in the design needs
+  it** — weather in a 20:00 brief is near-zero value, interrupts are date-math-only, and
+  everything else household-shaped is either calendar (already out of scope) or
+  real-time in a way a once-daily brief cannot serve. Ruling it in would cost a
+  long-lived HA token inside Hermes' blast radius, a network path and an entity
+  allowlist, for the least valuable section of the brief; ruling it out makes the
+  founding fake-weather bug **unwritable** rather than merely detectable. **This does
+  not touch `05`'s alert path** — that is MQTT *into* HA, outbound, already built.
+  Owner: *"HA out. we might revisit in the future."* Cheap to reopen once something in
+  the brief actually wants household data.
+- **Mail-triggered interrupts.** `06`'s **D1** confines mail to the evening brief:
+  `07`'s triage contract was unresolved when the routing was decided, mail is the least
+  trustworthy input (the bridge's signature failure is *looking fine*), and a false
+  interrupt from a misread invoice is exactly the mute trigger. **Accepted cost:** a
+  bill arriving 09:00 and due tomorrow waits until 20:00. A named follow-on once triage
+  has earned it — and cheap, because `07`'s labels are deliberately topical, so `06`
+  stays the single owner of urgency.
 - **Calendar.** Asked for, deliberately deferred: needs Google Workspace creds
   re-established, and colour-ID owner tagging (11=Mattias, 5=Hanna, 2=Both) was
   **never verified working** on titan because no GCal events existed. Cheap to add
