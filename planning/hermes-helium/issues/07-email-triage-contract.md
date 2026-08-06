@@ -261,6 +261,18 @@ stops adding and says so in the brief**. Overflow becomes a loud signal instead 
 silent growth, and it needs no verb beyond `COPY`. Side-effect worth keeping: the
 owner's clearing rate is a free calibration signal for `06`'s correction loop.
 
+**The jam case, made explicit** — because D4 and D6 compose into one: the label can
+only be cleared by the owner, so a fortnight of not clearing makes the
+uncertain-bill bucket permanently deaf. Announcing it once is *not* the whole
+mitigation, since "loud, and the owner doesn't act on it" is the documented habit
+this map exists to fix (444 unfiled messages, an empty `~/vault/daily/`, a Loopia
+reminder archived and ignored). So: **a standing threshold escalates.** The brief
+reports the jam every day it persists, and the wording must change with the count of
+consecutive days — a jam on day 1 is a notice, a jam on day 7 is the headline. A
+chronically-full `hermes-unsure` is **not** an accepted degradation; it means either
+the threshold is wrong or the bucket's test is miscalibrated, and both are decisions
+for the owner, surfaced as such rather than absorbed quietly.
+
 ### D5 — Stay clear of `finance.py ingest-email`; "feed" is a named follow-on
 
 There are **three** consumers of this mailbox, not the two the ticket knew about.
@@ -433,7 +445,13 @@ implementation has it:
   *unavailable* when the session is dead — so `⚠ stale` and `0 new mail` cannot
   collide, which is `07`'s inherited requirement from `05`.
 - **`STATUS=ERROR` on: login failure, `UIDVALIDITY` change, absent watermark,
-  `hermes-unsure` at threshold.** Never `count=0` for any of them.
+  `hermes-unsure` at threshold, and a `CREATE`/`COPY` failure on any bucket.** Never
+  `count=0` for any of them. The last one matters more than it looks: because folders
+  and labels share one Proton namespace (D1), the owner creating a label named
+  `hermes-…` in the Proton UI makes `CREATE Labels/hermes-<bucket>` return **409**
+  inside an unattended cron job. **A label that could not be applied must be an
+  `ERROR`, never a silently skipped write** — that is the same defect class as
+  `{"seen": False}`: a write that fails while the run reports success.
 - **Every read is `BODY.PEEK`.** Non-negotiable (D1).
 - **The brief reports examined-vs-flagged counts** (D3) and skipped-backlog size
   (D7).
