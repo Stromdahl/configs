@@ -4,6 +4,11 @@ Type: task
 Status: open
 Blocked by: 08
 
+> ⚠️ **Contingent.** `08` is still `claimed`, not resolved — its **D10** is a *proposal*
+> pending the owner's confirmation. Items 1–3 below are corrections of plainly stale
+> facts and hold either way; **item 4's replacement wording depends on `08`'s write
+> surface landing as proposed.** Don't build this until `08` is resolved.
+
 ## Question
 
 Apply [ticket 08](08-vault-read-write-surface.md)'s **D10** to the vault's own charter

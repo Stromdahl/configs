@@ -1,7 +1,7 @@
 # Decide the concrete vault read/write surface
 
 Type: grilling
-Status: resolved
+Status: claimed
 Blocked by: 03, 07
 
 ## Question
@@ -210,9 +210,17 @@ badly. The redesign (memory in `~/.hermes`, vault as data source) removes the
 
 ---
 
-## Answer
+## Answer (PROPOSED — pending owner confirmation)
 
-**Resolved 2026-08-06.** Every capability claim below was probed against the pinned
+> ⚠️ **Not resolved.** This is a `grilling` ticket, so the decision is the owner's and
+> comes only through the live exchange. Asked to choose, the owner said *"im unsure"*
+> — which is a jam to escalate, not a mandate. The probe findings below are **verified
+> fact** and stand on their own; the **decisions (D1–D11) are a proposal** awaiting a
+> yes. The one item that is genuinely the owner's call, and that the rest turns on:
+> **does the conversational path get write access to `~/vault/inbox/` at all?**
+> Everything else was decided on defaults and is flagged as such in the synthesis.
+
+**Every capability claim below was probed against the pinned
 digest — full transcripts and commands in
 [assets/08-write-surface-probe.md](../assets/08-write-surface-probe.md). ⚠️ **helium
 was unreachable during this session** (krypton roaming on `10.25.0.x`, NetBird
@@ -440,6 +448,15 @@ Four properties the log-based version could not have:
 The manifest must be **absent-manifest = ERROR, never a silent re-seed** — the same
 rule `07` applied to its UID watermark, and for the same reason: a silent re-seed
 turns a lost audit trail into a clean-looking first run.
+
+⚠️ **One blind spot, recorded rather than buried:** a file **created and deleted
+between two nightly runs** is invisible in both directions — it never enters the
+manifest, so its deletion is not a diff either. Severity is low (a note that existed
+for under a day and is gone leaves nothing to recover, and krypton's versioning
+archives the deletion if it ever reached krypton), but it is the audit story's one
+hole and this map records those. Closing it would need a filesystem watcher, which is
+one more thing that can fail silently — the trade `05` **D3** already made against an
+OTLP collector.
 
 ### D5 — Attribution: filename convention, with the manifest as ground truth
 

@@ -304,41 +304,18 @@ makes silent failure impossible**.
   examined-vs-flagged ratio rides the **footer**, not the mail section, so the section
   may still collapse without destroying the negative space `07` needs.
 
-- [Decide the concrete vault read/write surface](issues/08-vault-read-write-surface.md)
-  — **one writable directory, `/vault/inbox`, enforced by an overlapping `:ro`/`:rw`
-  bind mount; the whole vault mounted read-only for reading.** Probes in
-  [assets/08-write-surface-probe.md](assets/08-write-surface-probe.md) (run on
-  **krypton** against the pinned digest — helium was unreachable, and `/vault` doesn't
-  exist there yet). 🔴 **The headline result overturns `05`'s **D4**: the write surface
-  is NOT enumerable from `$HERMES_HOME/logs`** — a successful `write_file` produced
-  **zero** log mentions, because `file_tools.py` logs only failures, the generic
-  executor logs the tool *name* and never its arguments, and the one path-level record
-  (`file_state.note_write`) is an **in-memory** concurrency guard that dies with the
-  process. Replaced by a **`no_agent` filesystem manifest diff**, which is strictly
-  stronger: mechanism-agnostic (catches `terminal` writes), **deletion-aware**,
-  unfabricatable — and **complete precisely because the mount is narrow**, so
-  enforcement and audit become one mechanism. **A `:ro` bind mount holds against
-  `uid 0`** (verified), which is the boundary upstream says `HERMES_WRITE_SAFE_ROOT`
-  is not — but the mount enforces **location, not creation-only**: deletion inside
-  `inbox/` stays possible and propagates cluster-wide, so "new files only" is
-  convention. **Read surface separates permission from cost:** mount everything `:ro`
-  (free), always-load only `AGENTS.md` + `tasks.md` + `glossary.md` (**≈16 300
-  tokens**), and **never hand the brief raw `tasks.md`** — `🔥 Now` is 16 663 chars
-  across six items, one of them 7 749, nearly all *superseded* reasoning, so the
-  gathering script emits dated items instead. Also: `/vault:ro` makes the founding
-  v0.14 catastrophe **structurally impossible** (Hermes cannot delete `.stfolder`),
-  demoting the marker guard to insurance; conflicts are **report-only by mount
-  property**, not by prompt. Two vault facts found: **`inbox/` has an intermittent
-  reader after all** (`inbox/done/` drained 2026-07-29 — narrows `07`'s **D9** without
-  disturbing its conclusion), and **`claude-log/` is a second Bridge-shaped artifact,
-  live and synced**, whose own README says nothing reads it — now repurposed as the
-  vault's **staleness canary** for `05`'s **D2**. Two silent traps caught: **Docker
-  root-creates a missing bind source**, so Hermes' only writable path would be
-  unwritable on a fresh helium (the service must verify, never create), and
-  **`cron` loads `SOUL.md` always** (`load_soul_identity=True` — `02`'s worry is
-  structurally satisfied) but the vault's `AGENTS.md` only with **`--workdir /vault`**,
-  which is what gives the rewrite real teeth — now
-  [ticket 14](issues/14-vault-agents-md-rewrite.md).
+_**Proposed, not yet resolved** —
+[Decide the concrete vault read/write surface](issues/08-vault-read-write-surface.md)
+is still `claimed`. Its probe findings are verified fact; its decisions await the
+owner. Two of those findings already bind other tickets, so they are recorded here
+rather than waiting: 🔴 **`05`'s **D4** premise is false — the write surface is NOT
+enumerable from `$HERMES_HOME/logs`** (a successful `write_file` produced **zero** log
+mentions; the generic executor logs the tool *name*, never its arguments, and the only
+path-level record is an **in-memory** guard that dies with the process), so the write
+list must observe the filesystem instead; and **cron always loads `SOUL.md`**
+(`load_soul_identity=True`, which structurally satisfies `02`'s worry) but reaches the
+vault's `AGENTS.md` **only with `--workdir /vault`**. Probes, commands and the full
+proposal: [assets/08-write-surface-probe.md](assets/08-write-surface-probe.md)._
 
 _The destination-shaping decisions taken during charting are recorded in **Notes**
 above (egress posture, write posture, channel, replaces-`/daily`,
