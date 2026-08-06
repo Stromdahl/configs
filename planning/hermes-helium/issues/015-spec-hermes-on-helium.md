@@ -515,10 +515,28 @@ section: the provenance timestamp for that file crosses Syncthing to helium and 
 **unverified** (compare both sides after an edit), and its dates parse as date objects rather
 than strings.
 
-**Slicing.** This spec is the epic; thin vertical slices graduate from it as `016` onward in
-this folder. Suggested cut, each independently verifiable: the service and its mounts; the
-gathering-script framework and its footer; the interrupt channel; the brief; email triage;
-the alarm and healthcheck wiring; the rebuild drill.
+**Slicing — done 2026-08-06.** This spec is the epic; **twelve tracer-bullet tickets,
+`016`–`027`**, carry it, granularity and edges confirmed by the owner:
+
+| | Ticket | Blocked by |
+|---|---|---|
+| 016 | [Acquire the Anthropic API key](016-acquire-anthropic-api-key.md) — `needs-human` | — |
+| 017 | [Acquire the real Telegram numeric id](017-acquire-telegram-identity.md) — `needs-human` | — |
+| 018 | [Recover the prior-art config](018-recover-prior-art-config.md) — the prefactor | — |
+| 019 | [Hermes boots healthy on helium](019-service-boots-healthy.md) | 018 |
+| 020 | [Pull mode: DM answered, groups refused](020-pull-mode-dm-only.md) | 016, 017, 019 |
+| 021 | [The vault surface](021-vault-read-write-surface.md) | 020 + vault-serve `004` |
+| 022 | [The interrupt channel](022-interrupt-channel.md) | 021 |
+| 023 | [The brief skeleton](023-brief-skeleton.md) | 022 |
+| 024 | [The brief's remaining sources](024-brief-remaining-sources.md) | 023 |
+| 025 | [Email triage](025-email-triage.md) | 024 |
+| 026 | [Alarms and the write audit](026-alarms-and-write-audit.md) | 025 |
+| 027 | [The rebuild drill](027-rebuild-drill.md) | 026 |
+
+**The push chain 022→027 is deliberately linear** (owner's call): each ticket reuses the
+previous one's script-on-volume path and footer contract, so nothing lands against a
+half-built contract. **Three tickets are takeable immediately** — `016`, `017`, `018` — and
+the first two are the owner's hands, not an agent's.
 
 ## Acceptance criteria
 
