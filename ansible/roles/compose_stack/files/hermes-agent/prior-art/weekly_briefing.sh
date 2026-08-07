@@ -31,8 +31,14 @@
 
 set -uo pipefail
 
-# --- credentials: read from the file, never inherited -------------------------
-set -a; [ -f "$HOME/.hermes/.env" ] && . "$HOME/.hermes/.env"; set +a
+# --- refuse to run --------------------------------------------------------------
+# See prior-art/morning_briefing.sh for why: a prior-art script that sources real
+# credentials and exits 0 is the shape this map exists to keep out.
+echo "prior art, not a runnable script — read the header. Nothing below is wired." >&2
+exit 2
+
+# The v0.14 original also read $HOME/.hermes/.env here. Dropped: nothing left in this
+# file reads a credential, and the env-file rule is stated once, in morning_briefing.sh.
 
 # --- date facts, including the range: computed here, never by the agent -------
 today="$(date +%Y-%m-%d)"; weekday="$(date +%A)"

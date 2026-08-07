@@ -15,6 +15,12 @@ Nothing in this directory is wired into `tasks/stack.yml` yet — `018` deployed
 file here is inert until a task copies it, which is why the unshipped material can sit
 beside the shipped material safely.
 
+⚠️ **That safety rests on copying named files, never the directory.** This is the first
+`files/` subdir in this role to hold anything that must not ship; the existing tasks all
+name a single file (`src: protonmail-bridge/Dockerfile`), so the pattern `019` inherits is
+already the right one — but nothing enforces it. A recursive copy of this directory would
+put this README and `prior-art/` on helium.
+
 ## `SOUL.md` — do not edit casually
 
 18 lines, recovered **byte-identical** and deliberately so. It carries the **two

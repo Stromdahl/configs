@@ -150,5 +150,12 @@ which is a one-line edit to a `needs-human` ticket the owner is going to open an
 
 `bash -n` passes on both scripts (this repo has no test runner, no linter and no shellcheck
 on the box; `install.sh --dry-run` does not reach an ansible role, and the spec's test seams
-belong to `023` onward). Both `.sh` files are mode 644, not 755, deliberately: they are shapes
-with a sourceless emitter, not runnable scripts.
+belong to `023` onward).
+
+**Both scripts refuse to run** — `exit 2` with a message on stderr, above the shape they
+protect. The first draft did not, and a review caught what that produced: run by hand it
+sourced the real `~/.hermes/.env`, printed a plausible `META:` line, emitted one `STATUS=ERROR`
+for a source that was never wired, and **exited 0**. That is precisely the enemy shape this
+map is built around, sitting inside the file recovered to teach the contract. Mode 644 was
+carrying that signal on its own and it does not — `gluetun-pf-watchdog.sh` is 644 in this same
+role and is both deployed and runnable, because ansible sets the mode on copy.

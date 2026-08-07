@@ -46,5 +46,6 @@ dates/weekday/week_through from the META line — do not compute dates yourself.
 ORDER:
 1. First line — "This week: …": the single biggest thing or theme of the coming window,
    or "light week — nothing major".
-2. Then one section per source, grouped by day in date order, only days that have items.
+2. Then one section per source, grouped by day in date order, only days that have
+   items.   [same empty-suppression semantics as count=0 — see correction above]
    Summarise concisely per commitment — do NOT list every individual subtask.

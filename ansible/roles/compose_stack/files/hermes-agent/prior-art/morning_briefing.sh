@@ -47,6 +47,15 @@
 
 set -uo pipefail
 
+# --- refuse to run --------------------------------------------------------------
+# Not a guard against a hazard that exists today — nothing schedules this file. It is
+# here so that running it by hand can never produce the map's enemy shape: a briefing
+# script that sources real credentials, prints a plausible META line, emits one ERROR
+# for a source that was never wired, and exits 0. Delete this block only together with
+# the emitter skeleton it protects, when 023 turns this into a real script.
+echo "prior art, not a runnable script — read the header. Nothing below is wired." >&2
+exit 2
+
 # --- credentials: read from the file, never inherited (see #4 above) -----------
 set -a; [ -f "$HOME/.hermes/.env" ] && . "$HOME/.hermes/.env"; set +a
 
@@ -62,8 +71,9 @@ emit_example() {
   if [ -z "${EXAMPLE_SOURCE:-}" ]; then
     echo 'example: STATUS=ERROR reason="no EXAMPLE_SOURCE configured"'; return
   fi
-  # `fetch_the_source` is deliberately undefined — this file is a shape, not a
-  # runnable script. The 127 exit demonstrates the contract's own failure path.
+  # `fetch_the_source` is deliberately undefined: there is no source behind this
+  # shape. Whatever the fetch is, the `||` is the load-bearing part — every failure
+  # path must land on a printed STATUS=ERROR, never on a bare return.
   block="$(fetch_the_source 2>/dev/null)" || {
     echo 'example: STATUS=ERROR reason="source unreachable"'; return
   }
