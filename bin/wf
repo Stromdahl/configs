@@ -1,0 +1,654 @@
+#!/usr/bin/env python3
+"""wf — an information breakdown of wayfinder maps and their issue/ticket files.
+
+Read-only. Scans the planning roots below, parses every ticket, and reports
+counts by status and type, what's blocked, and what's takeable (the frontier).
+
+Two on-disk dialects are supported and auto-detected per file:
+
+  prose      `Type:` / `Status:` / `Blocked by:` lines under the `# Title`
+             (~/.dotfiles/planning, ~/notes/.scratch)
+  frontmatter  YAML `label: wayfinder:<type>` / `status:` / `blocked-by: [1, 2]`
+             (~/vault/projects/*/tickets)
+
+Usage:
+  wf                    overview: every effort, with a global breakdown
+  wf <effort>           detail for one effort (substring match)
+  wf -f | --frontier    only the takeable tickets, across all efforts
+  wf -b | --blocked     only the blocked tickets, with what blocks them
+  wf --status open      filter by canonical status
+  wf --type grilling    filter by ticket type
+  wf --json             machine-readable dump
+  wf --roots A,B        override the roots (or set WF_ROOTS)
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+# Planning roots, scanned in order. Override with --roots or WF_ROOTS.
+ROOTS = [
+    "~/.dotfiles/planning",
+    "~/vault/projects",
+    "~/notes/.scratch",
+]
+
+# Subdirectories holding tickets. Everything else under an effort
+# (assets/, research/, design/) is an asset, not a ticket -- some efforts
+# keep same-named files in both, so scanning wider would double-count.
+TICKET_DIRS = ("issues", "tickets")
+
+# A ticket in one of these states is finished: off the frontier, and no
+# longer blocking anything downstream. `closed` covers out-of-scope
+# rulings, which are deliberate terminations rather than resolutions --
+# kept distinct from `resolved` in the breakdown, but equally unblocking.
+DONE = {"resolved", "closed"}
+# `parked` is a deliberate not-now: it is not open work, but it also never
+# produced the decision downstream tickets were waiting on, so it does NOT
+# satisfy a blocker. Tickets stuck behind one are reported as blocked.
+KNOWN_STATUS = DONE | {"open", "claimed", "parked"}
+
+KNOWN_TYPES = {"research", "prototype", "grilling", "task", "execution", "spec"}
+
+MAX_HEADER_LINES = 30
+
+
+# --------------------------------------------------------------------------
+# colour
+
+
+class C:
+    def __init__(self, on: bool):
+        self.on = on
+
+    def __call__(self, code: str, text: str) -> str:
+        return f"\033[{code}m{text}\033[0m" if self.on else text
+
+    def dim(self, t):
+        return self("2", t)
+
+    def bold(self, t):
+        return self("1", t)
+
+    def green(self, t):
+        return self("32", t)
+
+    def yellow(self, t):
+        return self("33", t)
+
+    def blue(self, t):
+        return self("36", t)
+
+    def red(self, t):
+        return self("31", t)
+
+    def mag(self, t):
+        return self("35", t)
+
+
+# --------------------------------------------------------------------------
+# parsing helpers
+
+
+def strip_md(s: str) -> str:
+    """Drop the markdown emphasis/code characters that wrap real values."""
+    return re.sub(r"[*_`]", "", s or "").strip()
+
+
+def canon_status(raw: str) -> str:
+    """Reduce a free-text Status to one canonical word.
+
+    Real values run to prose: `**closed (resolved 2026-08-05)**`,
+    `parked (2026-08-04, user decision - see Answer)`. The first alphabetic
+    word carries the state; the parenthetical dates are commentary and are
+    too inconsistent to parse into structure.
+    """
+    s = strip_md(raw).lower()
+    m = re.match(r"[a-z]+", s)
+    word = m.group(0) if m else ""
+    return word if word in KNOWN_STATUS else (word or "unknown")
+
+
+def canon_type(raw: str) -> str:
+    s = strip_md(raw).lower()
+    s = s.replace("wayfinder:", "")
+    m = re.match(r"[a-z-]+", s)
+    word = m.group(0) if m else ""
+    return word if word in KNOWN_TYPES else (word or "unknown")
+
+
+PATH_REF = re.compile(r"[\w.-]+(?:/[\w.-]+)+")
+
+
+def parse_blocked_by(raw: str) -> tuple[list[str], list[str], str]:
+    """Parse a `Blocked by:` value into (local_tokens, cross_refs, kind).
+
+    kind is 'none', 'refs', 'cross' or 'unparsed'. The field has accumulated
+    several syntaxes, and the order of these rules is what keeps them apart:
+
+    1. Strip parenthesised text FIRST. That kills both the historical
+       annotations (`- (was 04, 05, 06 - all closed)`, which would otherwise
+       report a ticket as blocked by the very tickets it was freed from) and
+       the target half of a markdown link (`[018](018-recover-prior-art.md)`,
+       which would otherwise double-count.
+    2. Then test the LEADING marker, not the whole remainder. Authors write
+       the marker first and commentary after (`— · coordinate with the live
+       ... effort`, `— · **unblocked**`), so a ticket that opens with a dash
+       or `none` is unblocked no matter what trails it.
+    3. Then lift out path-shaped cross-effort refs before counting digits,
+       so a field carrying both a local and an external blocker keeps both.
+    """
+    s = strip_md(raw or "")
+    s = re.sub(r"\([^)]*\)", " ", s)  # historical notes + md link targets
+    s = re.sub(r"[\[\]]", " ", s).strip()
+
+    if not s or re.match(r"^[-—–·*\s]*$", s) or re.match(r"^([-—–]|none\b)", s, re.I):
+        return [], [], "none"
+
+    cross = PATH_REF.findall(s)
+    rest = PATH_REF.sub(" ", s)
+    # 1-3 digits only: avoids sweeping up years from any stray date text.
+    tokens = re.findall(r"\b\d{1,3}\b", rest)
+
+    if tokens:
+        return tokens, cross, "refs"
+    if cross:
+        return [], cross, "cross"
+    return [], [], "unparsed"
+
+
+def split_frontmatter(text: str) -> tuple[dict, str]:
+    if not text.startswith("---"):
+        return {}, text
+    parts = text.split("\n---", 1)
+    if len(parts) < 2:
+        return {}, text
+    fm: dict[str, str] = {}
+    for line in parts[0].splitlines()[1:]:
+        m = re.match(r"^([A-Za-z_-]+):\s*(.*)$", line)
+        if m:
+            fm[m.group(1).lower()] = m.group(2).strip().strip('"')
+    return fm, parts[1]
+
+
+def parse_header_fields(body: str) -> dict[str, str]:
+    """Collect `Key: value` lines from the top of a prose-dialect ticket."""
+    fields: dict[str, str] = {}
+    for line in body.splitlines()[:MAX_HEADER_LINES]:
+        if line.startswith("## "):
+            break
+        m = re.match(r"^([A-Z][A-Za-z ]{1,20}):\s*(.*)$", line)
+        if m:
+            fields.setdefault(m.group(1).strip().lower(), m.group(2).strip())
+    return fields
+
+
+def first_heading(body: str) -> str:
+    for line in body.splitlines():
+        if line.startswith("# "):
+            return strip_md(line[2:])
+    return ""
+
+
+def is_assigned(v: str) -> bool:
+    v = strip_md(v or "").lower()
+    return bool(v) and v not in {"~", "-", "—", "none", "null", "nobody", "unassigned"}
+
+
+# --------------------------------------------------------------------------
+# model
+
+
+class Ticket:
+    def __init__(self, path: Path, effort: "Effort"):
+        self.path = path
+        self.effort = effort
+        text = path.read_text(encoding="utf-8", errors="replace")
+        fm, body = split_frontmatter(text)
+
+        # The filename number prefix, kept as the literal string it was
+        # written as. hermes-helium holds both `01-` and `015-`, which are
+        # different tickets -- so never int-normalise or zero-pad this.
+        m = re.match(r"^(\d+)", path.name)
+        self.num = m.group(1) if m else ""
+
+        if fm:
+            self.dialect = "frontmatter"
+            self.key = fm.get("id", self.num) or self.num
+            self.title = fm.get("title") or first_heading(body)
+            self.status = canon_status(fm.get("status", ""))
+            self.type = canon_type(fm.get("label", ""))
+            self.assignee = fm.get("assignee", "")
+            raw_blocked = fm.get("blocked-by", "")
+            toks = re.findall(r"\d+", raw_blocked)
+            self.blocked_raw = raw_blocked
+            self.blocked_tokens = toks
+            self.cross_refs: list[str] = []
+            self.blocked_kind = "refs" if toks else "none"
+        else:
+            self.dialect = "prose"
+            fields = parse_header_fields(body)
+            self.key = self.num
+            self.title = first_heading(body)
+            self.status = canon_status(fields.get("status", ""))
+            self.type = canon_type(fields.get("type", ""))
+            self.assignee = fields.get("assignee", "")
+            self.blocked_raw = fields.get("blocked by", "")
+            (
+                self.blocked_tokens,
+                self.cross_refs,
+                self.blocked_kind,
+            ) = parse_blocked_by(self.blocked_raw)
+
+        # A heading often repeats its own number ("019 — Boots healthy");
+        # the number is already its own column, so drop the prefix.
+        self.title = re.sub(r"^\d{1,3}\s*[—–-]\s*", "", self.title)
+
+        self.blockers: list[Ticket] = []
+        self.unresolved_refs: list[str] = []
+        self.dangling_cross: list[str] = []
+
+    @property
+    def done(self) -> bool:
+        return self.status in DONE
+
+    @property
+    def claimed(self) -> bool:
+        return self.status == "claimed" or is_assigned(self.assignee)
+
+    @property
+    def open_blockers(self) -> list["Ticket"]:
+        return [b for b in self.blockers if not b.done]
+
+    @property
+    def blocked(self) -> bool:
+        return (
+            bool(self.open_blockers)
+            or self.blocked_kind == "unparsed"
+            or bool(self.dangling_cross)
+        )
+
+    @property
+    def frontier(self) -> bool:
+        """Takeable now: open, unblocked, unclaimed."""
+        return self.status == "open" and not self.blocked and not self.claimed
+
+    @property
+    def label(self) -> str:
+        return f"{self.key}"
+
+    def sortkey(self):
+        return (len(self.num), self.num, self.path.name)
+
+
+class Effort:
+    def __init__(self, path: Path, root_label: str):
+        self.path = path
+        self.root_label = root_label
+        self.name = path.name
+        self.map = path / "map.md"
+        self.tickets: list[Ticket] = []
+
+        for sub in TICKET_DIRS:
+            d = path / sub
+            if d.is_dir():
+                for f in sorted(d.glob("*.md")):
+                    try:
+                        self.tickets.append(Ticket(f, self))
+                    except OSError as e:
+                        print(f"wf: cannot read {f}: {e}", file=sys.stderr)
+        self.tickets.sort(key=lambda t: t.sortkey())
+        self._wire()
+
+    def _wire(self):
+        by_key: dict[str, Ticket] = {}
+        for t in self.tickets:
+            by_key.setdefault(t.key, t)
+
+        # int fallback, used only when it is unambiguous -- lets a bare `1`
+        # find `01-...` without ever letting `01` collide with `015`.
+        by_int: dict[int, list[Ticket]] = {}
+        for t in self.tickets:
+            if t.key.isdigit():
+                by_int.setdefault(int(t.key), []).append(t)
+
+        for t in self.tickets:
+            for tok in t.blocked_tokens:
+                hit = by_key.get(tok)
+                if hit is None:
+                    cands = by_int.get(int(tok), []) if tok.isdigit() else []
+                    hit = cands[0] if len(cands) == 1 else None
+                if hit is not None and hit is not t:
+                    t.blockers.append(hit)
+                elif hit is None:
+                    t.unresolved_refs.append(tok)
+
+    @property
+    def display(self) -> str:
+        return f"{self.root_label}/{self.name}"
+
+
+# --------------------------------------------------------------------------
+# discovery
+
+
+def wire_cross(efforts: list[Effort]) -> None:
+    """Resolve path-shaped blockers like `planning/vault-serve/issues/004`.
+
+    Efforts do depend on each other across roots, so a cross ref is a real
+    blocker. Resolve it against the loaded efforts where possible; where not,
+    keep it as dangling (still blocking) rather than silently dropping it.
+    """
+    by_name = {e.name: e for e in efforts}
+    for e in efforts:
+        for t in e.tickets:
+            for ref in t.cross_refs:
+                parts = [p for p in ref.split("/") if p]
+                target = next((by_name[p] for p in parts if p in by_name), None)
+                if target is None or target is e:
+                    t.dangling_cross.append(ref)
+                    continue
+                num = next((p for p in reversed(parts) if p.isdigit()), None)
+                hit = None
+                if num is not None:
+                    hit = next((x for x in target.tickets if x.key == num), None)
+                    if hit is None:
+                        cands = [x for x in target.tickets if x.key.isdigit() and int(x.key) == int(num)]
+                        hit = cands[0] if len(cands) == 1 else None
+                if hit is not None:
+                    t.blockers.append(hit)
+                else:
+                    # Points at a whole effort, not one ticket: blocked while
+                    # that effort still has open work.
+                    if num is None and any(not x.done for x in target.tickets):
+                        t.dangling_cross.append(ref)
+                    elif num is not None:
+                        t.dangling_cross.append(ref)
+
+
+def discover(roots: list[Path]) -> list[Effort]:
+    efforts: list[Effort] = []
+    for root in roots:
+        if not root.is_dir():
+            continue
+        label = root.name
+        for path in sorted(root.rglob("*")):
+            if not path.is_dir() or path.name in TICKET_DIRS:
+                continue
+            if any((path / d).is_dir() for d in TICKET_DIRS) or (path / "map.md").is_file():
+                if any((path / d).is_dir() for d in TICKET_DIRS):
+                    efforts.append(Effort(path, label))
+    wire_cross(efforts)
+    return efforts
+
+
+# --------------------------------------------------------------------------
+# reporting
+
+
+def counter(items, keyfn) -> dict:
+    out: dict = {}
+    for i in items:
+        out[keyfn(i)] = out.get(keyfn(i), 0) + 1
+    return dict(sorted(out.items(), key=lambda kv: (-kv[1], kv[0])))
+
+
+def status_color(c: C, s: str) -> str:
+    return {
+        "open": c.yellow,
+        "resolved": c.green,
+        "closed": c.dim,
+        "parked": c.mag,
+        "claimed": c.blue,
+    }.get(s, c.red)(s)
+
+
+def trunc(s: str, n: int) -> str:
+    s = " ".join(s.split())
+    return s if len(s) <= n else s[: n - 1] + "…"
+
+
+def print_overview(efforts: list[Effort], c: C):
+    all_t = [t for e in efforts for t in e.tickets]
+    if not all_t:
+        print("wf: no tickets found.")
+        return
+
+    cur_root = None
+    w = max((len(e.name) for e in efforts), default=10)
+    for e in efforts:
+        if e.root_label != cur_root:
+            cur_root = e.root_label
+            print(f"\n{c.bold(str(e.path.parent))}")
+        ts = e.tickets
+        openn = sum(1 for t in ts if t.status == "open")
+        done = sum(1 for t in ts if t.done)
+        fr = sum(1 for t in ts if t.frontier)
+        bl = sum(1 for t in ts if t.blocked and not t.done)
+        nomap = "" if e.map.is_file() else c.dim(" (no map.md)")
+        frs = c.green(f"{fr:>2} takeable") if fr else c.dim(" 0 takeable")
+        print(
+            f"  {e.name:<{w}}  {len(ts):>3} tickets  "
+            f"{c.yellow(f'{openn:>2} open')}  {c.dim(f'{done:>2} done')}  "
+            f"{c.red(f'{bl:>2} blocked') if bl else c.dim(' 0 blocked')}  "
+            f"{frs}{nomap}"
+        )
+
+    print(f"\n{c.bold('Totals')}  ({len(all_t)} tickets across {len(efforts)} efforts)")
+    sc = counter(all_t, lambda t: t.status)
+    print("  status  " + "  ".join(f"{status_color(c, k)} {v}" for k, v in sc.items()))
+    tc = counter(all_t, lambda t: t.type)
+    print("  type    " + "  ".join(f"{k} {v}" for k, v in tc.items()))
+
+    unknown = [t for t in all_t if t.status not in KNOWN_STATUS or t.type not in KNOWN_TYPES]
+    unparsed = [t for t in all_t if t.blocked_kind == "unparsed"]
+    dangling = [t for t in all_t if t.unresolved_refs]
+    if unknown:
+        print(c.red(f"  ! {len(unknown)} ticket(s) with an unrecognised status/type"))
+    if unparsed:
+        print(c.red(f"  ! {len(unparsed)} ticket(s) with an unparseable 'Blocked by' (shown as blocked)"))
+    if dangling:
+        print(c.red(f"  ! {len(dangling)} ticket(s) reference a blocker id that does not exist"))
+
+    fr = [t for t in all_t if t.frontier]
+    if fr:
+        print(f"\n{c.bold('Frontier')}  (open, unblocked, unclaimed)")
+        print_list(fr, c, show_effort=True)
+    else:
+        print(f"\n{c.dim('Frontier empty — nothing takeable.')}")
+
+
+def print_list(tickets: list[Ticket], c: C, show_effort=False, why=False):
+    if not tickets:
+        print(c.dim("  (none)"))
+        return
+    ew = max((len(t.effort.name) for t in tickets), default=0)
+    kw = max((len(t.label) for t in tickets), default=2)
+    tw = max((len(t.type) for t in tickets), default=4)
+    for t in tickets:
+        pre = f"  {t.effort.name:<{ew}}  " if show_effort else "  "
+        line = (
+            f"{pre}{c.bold(t.label.rjust(kw))}  {c.blue(t.type.ljust(tw))}  "
+            f"{trunc(t.title, 62)}"
+        )
+        print(line)
+        ind = " " * (len(pre) + 2)
+        if why:
+            if t.open_blockers:
+                bits = ", ".join(
+                    f"{b.label if b.effort is t.effort else b.effort.name + '/' + b.label}"
+                    f" ({status_color(c, b.status)})"
+                    for b in t.open_blockers
+                )
+                print(f"{ind}{c.dim('blocked by')} {bits}")
+            if t.dangling_cross:
+                print(
+                    f"{ind}{c.red('external blocker:')} "
+                    + ", ".join(t.dangling_cross)
+                )
+            if t.blocked_kind == "unparsed":
+                print(f"{ind}{c.red('unparsed blocker:')} {trunc(t.blocked_raw, 70)}")
+            if t.unresolved_refs:
+                print(
+                    f"{ind}{c.red('dangling ref:')} "
+                    + ", ".join(t.unresolved_refs)
+                )
+
+
+def print_effort(e: Effort, c: C):
+    print(f"\n{c.bold(e.display)}   {c.dim(str(e.path))}")
+    if not e.map.is_file():
+        print(c.dim("  (no map.md)"))
+    ts = e.tickets
+    sc = counter(ts, lambda t: t.status)
+    tc = counter(ts, lambda t: t.type)
+    print(f"  {len(ts)} tickets   " + "  ".join(f"{status_color(c, k)} {v}" for k, v in sc.items()))
+    print("  " + "  ".join(f"{k} {v}" for k, v in tc.items()))
+
+    fr = [t for t in ts if t.frontier]
+    print(f"\n  {c.bold('Takeable')}")
+    print_list(fr, c)
+
+    blocked = [t for t in ts if t.blocked and not t.done]
+    if blocked:
+        print(f"\n  {c.bold('Blocked')}")
+        print_list(blocked, c, why=True)
+
+    claimed = [t for t in ts if t.claimed and not t.done]
+    if claimed:
+        print(f"\n  {c.bold('Claimed / in flight')}")
+        print_list(claimed, c)
+
+    done = [t for t in ts if t.done]
+    if done:
+        print(f"\n  {c.bold('Done')} {c.dim(f'({len(done)})')}")
+        print_list(done, c)
+
+
+def to_json(efforts: list[Effort]) -> str:
+    out = []
+    for e in efforts:
+        out.append(
+            {
+                "effort": e.name,
+                "root": str(e.path.parent),
+                "path": str(e.path),
+                "has_map": e.map.is_file(),
+                "tickets": [
+                    {
+                        "id": t.key,
+                        "file": str(t.path),
+                        "dialect": t.dialect,
+                        "title": t.title,
+                        "type": t.type,
+                        "status": t.status,
+                        "assignee": t.assignee or None,
+                        "claimed": t.claimed,
+                        "done": t.done,
+                        "blocked": t.blocked,
+                        "frontier": t.frontier,
+                        "blocked_by": [f"{b.effort.name}/{b.key}" for b in t.blockers],
+                        "blocked_by_open": [
+                            f"{b.effort.name}/{b.key}" for b in t.open_blockers
+                        ],
+                        "blocked_by_raw": t.blocked_raw or None,
+                        "blocked_by_kind": t.blocked_kind,
+                        "external_blockers": t.dangling_cross,
+                        "dangling_refs": t.unresolved_refs,
+                    }
+                    for t in e.tickets
+                ],
+            }
+        )
+    return json.dumps(out, indent=2, ensure_ascii=False)
+
+
+# --------------------------------------------------------------------------
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(
+        prog="wf",
+        description="Information breakdown of wayfinder issues/tickets.",
+    )
+    p.add_argument("effort", nargs="?", help="show detail for one effort (substring match)")
+    p.add_argument("-f", "--frontier", action="store_true", help="only takeable tickets")
+    p.add_argument("-b", "--blocked", action="store_true", help="only blocked tickets")
+    p.add_argument("--status", help="filter by canonical status (open, resolved, ...)")
+    p.add_argument("--type", dest="ttype", help="filter by type (grilling, research, ...)")
+    p.add_argument("--json", action="store_true", help="machine-readable output")
+    p.add_argument("--roots", help="comma-separated roots to scan (default: %s)" % ",".join(ROOTS))
+    args = p.parse_args()
+
+    c = C(sys.stdout.isatty() and not os.environ.get("NO_COLOR"))
+
+    raw_roots = args.roots or os.environ.get("WF_ROOTS") or ",".join(ROOTS)
+    roots = [Path(r.strip()).expanduser() for r in raw_roots.split(",") if r.strip()]
+    missing = [r for r in roots if not r.is_dir()]
+    for m in missing:
+        print(c.dim(f"wf: skipping missing root {m}"), file=sys.stderr)
+
+    efforts = discover(roots)
+    if args.effort:
+        q = args.effort.lower()
+        efforts = [e for e in efforts if q in e.name.lower()]
+        if not efforts:
+            print(f"wf: no effort matching {args.effort!r}", file=sys.stderr)
+            return 1
+
+    filtering = bool(args.status or args.ttype)
+    if filtering:
+        for e in efforts:
+            e.tickets = [
+                t
+                for t in e.tickets
+                if (not args.status or t.status == args.status)
+                and (not args.ttype or t.type == args.ttype)
+            ]
+        # An effort with nothing left to show is noise, not information.
+        efforts = [e for e in efforts if e.tickets]
+        if not efforts:
+            print(c.dim("wf: no tickets match that filter."))
+            return 0
+
+    if args.json:
+        print(to_json(efforts))
+        return 0
+
+    if args.frontier or args.blocked:
+        sel = [
+            t
+            for e in efforts
+            for t in e.tickets
+            if (t.frontier if args.frontier else (t.blocked and not t.done))
+        ]
+        head = "Frontier — takeable now" if args.frontier else "Blocked"
+        print(c.bold(f"{head}  ({len(sel)})"))
+        print_list(sel, c, show_effort=True, why=args.blocked)
+        return 0
+
+    if args.effort:
+        for e in efforts:
+            print_effort(e, c)
+    elif filtering:
+        sel = [t for e in efforts for t in e.tickets]
+        bits = " ".join(x for x in (args.status, args.ttype) if x)
+        print(c.bold(f"Matching {bits}  ({len(sel)})"))
+        print_list(sel, c, show_effort=True, why=True)
+    else:
+        print_overview(efforts, c)
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except BrokenPipeError:
+        os._exit(0)
+    except KeyboardInterrupt:
+        sys.exit(130)
