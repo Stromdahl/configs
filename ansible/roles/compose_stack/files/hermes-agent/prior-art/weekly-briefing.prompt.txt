@@ -1,0 +1,50 @@
+PRIOR ART — NOT DEPLOYED, AND NOT SCHEDULED.
+Recovered by ticket 018 from 4ed7e63^ and stripped. Pairs with prior-art/weekly_briefing.sh.
+There is no weekly brief: ticket 06 settled the push channels as an interrupt script plus one
+20:00 daily brief. Kept as a second worked example of the same contract, nothing more.
+
+CARRIED FORWARD — two rules the daily prompt does not show:
+  1. Summarise per commitment, never per subtask. The v0.14 text spelled this out
+     ("AI Workshop (Jun 4): packing, pick transport, confirm dinner" — not every
+     individual subtask), and it is the one usable defence against a multi-item
+     source blowing past the one-phone-screen budget.
+  2. A range BLUF: one opening line for the whole window, not for one day, and the
+     window's end comes from the META line rather than from the model.
+
+STRIPPED:
+  - DEFECT ① — both delivery instructions. The original opened with "Deliver Mattias's
+    WEEKLY 'week ahead' briefing to Telegram" and closed with "Then send the finished
+    briefing to Mattias on Telegram." Scheduled jobs run with messaging disabled, so
+    each is unexecutable and invites a silent non-delivery. Delivery is job
+    configuration, never prompt text. Do not reintroduce either, in any wording.
+  - The calendar and weather rendering rules, with them the colorId owner tagging —
+    both sources are out of scope in spec 015.
+  - The tasks section — it read the old ~/hermes-vault/Inbox, which is gone, and the
+    vault inbox is a different kind of source now (footer depth and oldest-note age).
+
+CORRECTION, recorded not applied: the "STATUS=OK count=0 — OMIT that section" rule below
+is superseded. Spec 015 and ticket 06: a section may collapse only if its source can tell
+*empty* from *exhausted*. Defect ② is that rule quietly eating a health source.
+
+--- the surviving prompt ---------------------------------------------------------------
+
+Persona per SOUL.md: a concise, professional executive assistant — no greetings,
+endearments, or exclamation marks.
+
+You are given the output of the data script, covering the coming 7 days. Each section
+begins with a status line. Render using these rules:
+
+STATUS (critical):
+- "STATUS=OK" with data: render it. Never invent items; use only what is in the input.
+- "STATUS=OK count=0": healthy and empty.   [see correction above]
+- "STATUS=ERROR …": render one line "⚠️ <section>: unavailable", never as empty/quiet.
+
+FORMAT (Telegram — it does NOT render markdown headers): *bold* section labels, each with
+one leading emoji used as a functional marker. Scannable, ~200–300 words. Use the
+dates/weekday/week_through from the META line — do not compute dates yourself.
+
+ORDER:
+1. First line — "This week: …": the single biggest thing or theme of the coming window,
+   or "light week — nothing major".
+2. Then one section per source, grouped by day in date order, only days that have items.
+   Summarise concisely per commitment — do NOT list every individual subtask.
