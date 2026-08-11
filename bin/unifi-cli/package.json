@@ -1,0 +1,23 @@
+{
+  "name": "unifi-cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CLI wrapper for the UniFi Network Integration API. See unifi.ts for usage.",
+  "bin": {
+    "unifi": "./unifi.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "check": "npm run -s typecheck && npm run -s lint"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0"
+  }
+}
