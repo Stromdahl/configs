@@ -1,0 +1,54 @@
+#!/bin/sh
+# hermes-helium ticket 019 — assert the cron ticker has actually succeeded, never
+# that the process is merely up. Baked into the derived image (ticket 03's design);
+# the script itself is ticket 05's correction to 03's original probe.
+#
+# 03's first draft parsed `hermes cron status` text and bounded only
+# `ticker_heartbeat`. 05 found the hole: the ticker records TWO markers
+# (cron/jobs.py — record_ticker_heartbeat), a plain per-iteration heartbeat and a
+# success marker bumped only when a tick completes without raising. `cron status`
+# prints the heartbeat line ONLY on its healthy branch, and a tick that has NEVER
+# succeeded falls through to that same branch — reporting healthy heartbeat text
+# while cron has never once fired cleanly (upstream refs #32612, #32895). So this
+# reads cron/ticker_last_success directly and never trusts any command's exit code
+# or prose — verified on the box that `hermes cron status`, `hermes doctor` and
+# `hermes gateway status` all exit 0 while printing failure.
+#
+# Verified on the pinned digest 2026-08-11 (throwaway boot, zero cron jobs
+# configured): the success marker is written on the FIRST tick regardless of
+# whether any job is due — cron_tick() completing without raising is what bumps
+# it, not a job executing. So this check needs no seeded no-op job to pass.
+#
+# Deliberately NOT here: a Telegram-transport assertion (ticket 10's D6). 019 ships
+# with no bot token and no allowlist — that check belongs to 020, which is what
+# first configures Telegram.
+set -u
+
+HERMES_HOME="${HERMES_HOME:-/opt/data}"
+SUCCESS_FILE="$HERMES_HOME/cron/ticker_last_success"
+MAX_AGE_SECONDS=180
+
+if [ ! -f "$SUCCESS_FILE" ]; then
+	echo "UNHEALTHY: no cron tick has ever succeeded ($SUCCESS_FILE missing)"
+	exit 1
+fi
+
+raw=$(cat "$SUCCESS_FILE" 2>/dev/null)
+case "$raw" in
+'' | *[!0-9.]*)
+	echo "UNHEALTHY: $SUCCESS_FILE is unreadable/non-numeric: '$raw'"
+	exit 1
+	;;
+esac
+
+now=$(date +%s)
+success_epoch=${raw%.*}
+age=$((now - success_epoch))
+
+if [ "$age" -gt "$MAX_AGE_SECONDS" ]; then
+	echo "UNHEALTHY: last successful cron tick ${age}s ago (max ${MAX_AGE_SECONDS}s)"
+	exit 1
+fi
+
+echo "HEALTHY: last successful cron tick ${age}s ago"
+exit 0

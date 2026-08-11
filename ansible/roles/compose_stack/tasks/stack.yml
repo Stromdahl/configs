@@ -197,6 +197,56 @@
     mode: "0700"
   when: protonmail_bridge_data is defined
 
+# --- hermes-helium ticket 019: Hermes state dir on the SSD 'appdata' subvol -----
+# HERMES_UID/GID=1000 (ms), matching the vault owner on krypton for when ticket 021
+# adds that mount. Pre-owned before first start for the same reason as every other
+# service above: an unowned bind source gets root-created by Docker and the
+# container can't write it. (The image's own boot-time chown of $HERMES_HOME would
+# self-heal this too, per ticket 03 — but pre-owning is the house pattern and
+# avoids depending on that mechanism at all.)
+- name: Create Hermes state dir owned by the container uid/gid (hermes-helium 019)
+  become: true
+  ansible.builtin.file:
+    path: "{{ hermes_data }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0750"
+  when: hermes_data is defined
+
+# SOUL.md carries the two anti-fabrication rules no engine primitive enforces
+# (hermes-helium ticket 02); it is the ONE straight keep from the deleted prior art
+# and it is placed here, before first boot, so the container never falls back to its
+# own 513-byte default (ticket 05 verified doctor reports that default as
+# "persona configured" — existence tells you nothing). Named `src:`, never the
+# directory — `files/hermes-agent/` also holds a README and unshipped prior-art
+# reference material that must never land on the box (see that README).
+- name: Deploy Hermes' SOUL.md identity file (hermes-helium 019)
+  become: true
+  ansible.builtin.copy:
+    src: hermes-agent/SOUL.md
+    dest: "{{ hermes_data }}/SOUL.md"
+    owner: "1000"
+    group: "1000"
+    mode: "0644"
+  when: hermes_data is defined
+
+# Defensive, not decorative: assert the file ansible just placed actually carries
+# the two anti-fabrication sentences ticket 02 recovered it for, rather than trusting
+# that the committed copy and the deployed copy can never diverge. Two separate greps
+# (not one pattern spanning both) because the file hard-wraps mid-sentence — a grep
+# spanning the wrap would never match and this check would fail forever.
+- name: Assert SOUL.md carries its anti-fabrication rules (hermes-helium 019)
+  become: true
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail;
+      grep -q "Never paper over a" "{{ hermes_data }}/SOUL.md" &&
+      grep -q "Only state what you can verify from the data in front of you" "{{ hermes_data }}/SOUL.md"
+    executable: /bin/bash
+  changed_when: false
+  when: hermes_data is defined
+
 # --- issue 010: jellyseerr flips from container-root to the jellyfin uid/gid ---------
 # jellyseerr's upstream image has no privilege drop; it ran as container-root, so its
 # /app/config (sqlite settings + request db + logs) is root-owned. issue 010 sets
@@ -298,6 +348,53 @@
   # recreate) is reported by the compose-up task below, so don't flag this one as changed.
   changed_when: false
   when: protonmail_bridge_data is defined
+
+# --- hermes-helium ticket 019: build the derived Hermes image ---------------------
+# Adds the baked-in healthcheck script on top of the pinned upstream digest — see
+# the Dockerfile for why himalaya isn't pinned here yet (deferred to ticket 025).
+# Built BEFORE the compose up below, same reasoning as the Proton Bridge build above.
+- name: Create the Hermes agent build-context dir (hermes-helium 019)
+  become: true
+  ansible.builtin.file:
+    path: "{{ compose_stack_dir }}/build/hermes-agent"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: hermes_data is defined
+
+- name: Copy the Hermes agent Dockerfile (hermes-helium 019)
+  become: true
+  ansible.builtin.copy:
+    src: hermes-agent/Dockerfile
+    dest: "{{ compose_stack_dir }}/build/hermes-agent/Dockerfile"
+    owner: root
+    group: root
+    mode: "0644"
+  when: hermes_data is defined
+
+- name: Copy the Hermes healthcheck script (hermes-helium 019)
+  become: true
+  ansible.builtin.copy:
+    src: hermes-agent/hermes-healthcheck
+    dest: "{{ compose_stack_dir }}/build/hermes-agent/hermes-healthcheck"
+    owner: root
+    group: root
+    mode: "0755"
+  when: hermes_data is defined
+
+- name: Build the derived Hermes agent image (hermes-helium 019)
+  become: true
+  ansible.builtin.command:
+    cmd: >-
+      docker compose
+      -f {{ compose_stack_dir }}/docker-compose.yml
+      --env-file {{ compose_stack_dir }}/.env
+      build hermes-agent
+  # Same reasoning as the Proton Bridge build above: a cached rebuild is a no-op,
+  # and the compose-up task below is what reports a real image change.
+  changed_when: false
+  when: hermes_data is defined
 
 - name: Bring up the compose stack
   become: true

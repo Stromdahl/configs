@@ -8,7 +8,7 @@
 # jellyseerr (issue 014) + homepage (issue 018) + immich-server,
 # immich-machine-learning, immich-redis, immich-database (issue 006) +
 # paperless + paperless-redis/db/gotenberg/tika (issue 007) + cleanuparr
-# (issue 017) + docker2mqtt (issue 046).
+# (issue 017) + docker2mqtt (issue 046) + hermes-agent (hermes-helium ticket 019).
 # Excluded vs neon: homer, the alpine `test` probe, the commented `backup`.
 #
 # Divergences from neon's compose:
@@ -1127,6 +1127,53 @@ services:
       - ${PROTONMAIL_BRIDGE_DATA:?missing PROTONMAIL_BRIDGE_DATA}:/root
     networks:
       - paperless   # only the paperless webserver reaches it (protonmail-bridge:143)
+
+  # ===========================================================================
+  # hermes-helium ticket 019 — Hermes, a personal-assistant agent (pull: Telegram
+  # DM; push: email triage + an evening brief). This ticket ships boot + healthcheck
+  # ONLY — no vault mount, no Telegram, no provider key, no scheduled jobs. Later
+  # tickets extend this same service: 020 adds the Telegram/Anthropic secrets (once
+  # needs-human tickets 016/017 land), 021 adds the read-only vault + one writable
+  # inbox dir, 022+ add cron jobs. Full design: planning/hermes-helium/map.md.
+  #
+  # Image: LOCALLY BUILT from ./build/hermes-agent/Dockerfile (FROM the pinned
+  # upstream digest v2026.7.30, + a baked-in healthcheck script — see the Dockerfile
+  # for why himalaya is deliberately not added here yet).
+  #
+  # command: ["gateway", "run"] is load-bearing, not decoration — the image's
+  # DEFAULT command is the interactive CLI, which exits 0 with no TTY. s6-overlay
+  # then tears the container down, and under `restart: unless-stopped` that is a
+  # restart loop that reports success (verified on this digest, ticket 03).
+  #
+  # HERMES_UID/GID=1000 (not --user: the image rejects that outright) runs Hermes
+  # as `ms`, matching the vault owner on krypton for when 021 adds that mount.
+  #
+  # No ports, no Traefik router — the dashboard (9119) and API server (8642) are
+  # both opt-in and neither is enabled, so nothing listens to route (verified on
+  # this digest). Telegram/API egress is outbound-only, satisfying the helium PRD's
+  # no-ingress posture by construction, same as protonmail-bridge above.
+  # ===========================================================================
+
+  hermes-agent:
+    build:
+      context: ./build/hermes-agent   # -> {{ compose_stack_dir }}/build/hermes-agent (Ansible-copied)
+    image: helium/hermes-agent:v2026.7.30
+    container_name: hermes-agent
+    restart: unless-stopped
+    command: ["gateway", "run"]
+    environment:
+      - HERMES_UID=1000
+      - HERMES_GID=1000
+      - TZ=${TZ:-Europe/Stockholm}
+    cap_drop:
+      - ALL
+    cap_add: *caps-privdrop
+    security_opt:
+      - "no-new-privileges:true"
+    volumes:
+      - ${HERMES_DATA:?missing HERMES_DATA}:/opt/data
+    networks:
+      - paperless   # egress only today; ticket 07 later reaches protonmail-bridge:143 here too
 
   # ===========================================================================
   # issue 044 — local-LLM titles/tags for Paperless (Ollama + paperless-gpt).
