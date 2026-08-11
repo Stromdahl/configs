@@ -67,6 +67,51 @@ restart loop that reports success.
 - [ ] Nothing listens on a published port.
 - [ ] Helper scripts are present on the state volume and were placed there by ansible.
 
+## Progress (2026-08-11)
+
+Code written and verified against the pinned digest on krypton (Docker present locally); **not
+yet deployed to helium** — that step is ask-first (see map Notes on risky/production actions).
+Ansible role changes: `hermes_data` in `host_vars/helium/vars.yml`, the compose service block
++ build tasks in `tasks/stack.yml`/`docker-compose.yml.j2`/`stack.env.j2`, and
+`files/hermes-agent/{Dockerfile,hermes-healthcheck}`.
+
+🔴 **The healthcheck design in this ticket's own body is superseded — don't build the script as
+first drafted above.** [Ticket 05](05-loud-failure-verification.md)'s D3 item 2 replaces the
+`cron status`-parsing probe entirely: `cron/jobs.py` (read from the pinned image, not assumed)
+shows `ticker_last_success` is a **separate file**, bumped only when a tick completes without
+raising, independent of whether any job was due. Verified empirically on a throwaway boot with
+**zero cron jobs configured**: the file appears on the first tick regardless. So the shipped
+healthcheck reads that file directly (age-bounded, 180s) and never shells out to `hermes cron
+status`, `hermes doctor`, or `hermes gateway status` at all — a single file-age check subsumes
+all three of this ticket's "exit-0-with-failure" cases (dead gateway, wedged-but-ticking, and
+never-succeeded all show up as a stale-or-missing file), so there is nothing left for those
+three commands' exit codes to fool. Four fixture cases tested directly against the built image:
+healthy, missing file, stale file (200s), corrupt content — all four resolve correctly, and
+`docker inspect` on the built image's own `HEALTHCHECK` reports `healthy`.
+
+Two acceptance boxes above are **not applicable at this ticket's scope**, not overlooked:
+
+- *"Secrets decrypt into the environment file... none are in plaintext in git"* — vacuously
+  true. No secret exists yet ([016](016-acquire-anthropic-api-key.md)/
+  [017](017-acquire-telegram-identity.md) are needs-human and still open), so there is nothing
+  to decrypt. `020` is where this becomes a real check.
+- *"Helper scripts are present on the state volume and were placed there by ansible"* — no
+  gathering script exists until `022`. Per [ticket 03](03-deployment-shape-and-state.md), "the
+  derived image's job shrinks to exactly three things: the digest pin, himalaya, and the
+  healthcheck script" — the healthcheck is baked into the **image**, not placed on the
+  **volume**, which is the mechanism this bullet describes. `SOUL.md` is on the volume and IS
+  placed by ansible, if that's what this was meant to cover.
+
+Also: `networks:` deliberately **omitted** from the compose block (no `paperless` membership) —
+this ticket needs no container-to-container reachability, and joining that bridge now would
+couple hermes-agent's recreate lifecycle to every paperless-family container change for no
+current benefit. `025` adds `networks: [paperless]` when `himalaya` needs
+`protonmail-bridge:143`.
+
+**Still owed, and untestable from krypton:** the actual `ansible-playbook site.yml --limit
+helium --tags compose` run, a second run reporting no changes, survival across a host reboot,
+and confirming nothing new is listening (`ss -tlnp`) on the real box.
+
 ## Blocked by
 
 - [018 — Recover the prior-art config](018-recover-prior-art-config.md) — the identity file

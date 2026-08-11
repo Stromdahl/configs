@@ -1152,6 +1152,14 @@ services:
   # both opt-in and neither is enabled, so nothing listens to route (verified on
   # this digest). Telegram/API egress is outbound-only, satisfying the helium PRD's
   # no-ingress posture by construction, same as protonmail-bridge above.
+  #
+  # No `networks:` — this ticket needs no container-to-container reachability, so it
+  # stays on the project's implicit default network (egress-only, no coupling to any
+  # other service's recreate). Deliberately NOT `paperless`: joining that bridge now,
+  # before there is a reason, would put hermes-agent in the recreate blast radius of
+  # every paperless-family container change — the shared-lifecycle hazard this repo
+  # already has scar tissue for (project_helium_gluetun_netns_restart). Ticket 025
+  # adds `networks: [paperless]` when himalaya actually needs protonmail-bridge:143.
   # ===========================================================================
 
   hermes-agent:
@@ -1172,8 +1180,6 @@ services:
       - "no-new-privileges:true"
     volumes:
       - ${HERMES_DATA:?missing HERMES_DATA}:/opt/data
-    networks:
-      - paperless   # egress only today; ticket 07 later reaches protonmail-bridge:143 here too
 
   # ===========================================================================
   # issue 044 — local-LLM titles/tags for Paperless (Ollama + paperless-gpt).
