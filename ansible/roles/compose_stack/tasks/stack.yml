@@ -383,6 +383,16 @@
     mode: "0755"
   when: hermes_data is defined
 
+# --provenance=false --sbom=false: without these, BuildKit's attestation step
+# embeds a fresh build metadata each invocation, so a fully-cached rebuild with an
+# IDENTICAL Dockerfile and context still mints a NEW image ID every time — verified
+# on this box (two consecutive builds, same inputs, different `docker image
+# inspect .Id`). That cascades into "docker compose up" recreating the container on
+# every single ansible run, breaking this ticket's own "a second run reports no
+# changes" acceptance criterion. With these flags the image ID is stable across
+# repeated builds (also verified). NOTE: `protonmail-bridge`'s build task above has
+# the identical unflagged pattern and is very likely subject to the same bug —
+# left alone here since it predates and is out of scope for this ticket.
 - name: Build the derived Hermes agent image (hermes-helium 019)
   become: true
   ansible.builtin.command:
@@ -390,7 +400,7 @@
       docker compose
       -f {{ compose_stack_dir }}/docker-compose.yml
       --env-file {{ compose_stack_dir }}/.env
-      build hermes-agent
+      build --provenance=false --sbom=false hermes-agent
   # Same reasoning as the Proton Bridge build above: a cached rebuild is a no-op,
   # and the compose-up task below is what reports a real image change.
   changed_when: false

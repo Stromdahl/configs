@@ -6,12 +6,12 @@
 > The buildable version is specced in
 > [issues/015 — Spec: Hermes on helium](issues/015-spec-hermes-on-helium.md), sliced into
 > **twelve tracer-bullet tickets `016`–`027`** (see the spec's *Slicing* table for the
-> dependency graph). **`018` is resolved** (prior art recovered into
-> `ansible/roles/compose_stack/files/hermes-agent/`), so **takeable now: `016`, `017`,
-> `019`.** **Two needs-human prerequisites
-> gate the build**
-> (Anthropic API account; one `getUpdates` call for the real Telegram id) — the spec's
-> *Further Notes* say why the build should stop rather than work around either. The two
+> dependency graph). **`018` and `019` are resolved** — prior art recovered into
+> `ansible/roles/compose_stack/files/hermes-agent/`, and Hermes is now live on helium as a
+> compose service: pinned-digest image, healthy, reboot-survival verified, idempotent
+> (fixed a BuildKit provenance bug along the way — see `019`'s Progress). **`020` is next
+> but blocked on `016`/`017`**, both needs-human and still open — the spec's *Further
+> Notes* say why the build should stop rather than work around either. The two
 > remaining fog patches below are both gated on things the owner has not asked for, so
 > nothing here is frontier work.
 
