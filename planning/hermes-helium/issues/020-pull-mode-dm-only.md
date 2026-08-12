@@ -1,7 +1,7 @@
 # 020 — Pull mode: a DM is answered, a group is refused
 
 Type: execution
-Status: open
+Status: in-progress
 Parent: [spec 015](015-spec-hermes-on-helium.md)
 Blocked by: [016](016-acquire-anthropic-api-key.md), [017](017-acquire-telegram-identity.md), [019](019-service-boots-healthy.md)
 
@@ -54,3 +54,47 @@ A compromised Telegram account is accepted as total compromise; there is no seco
 - [017 — Acquire the real Telegram numeric id](017-acquire-telegram-identity.md) — the allowlist
   is meaningless with an unverified id.
 - [019 — Hermes boots healthy](019-service-boots-healthy.md) — the service and its secrets file.
+
+## Progress (2026-08-12)
+
+`hermes.env.j2` now renders `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS` (from `017`'s
+verified id), and `TELEGRAM_ALLOWED_CHATS='0'`, in the same file and the same change as `016`'s
+key — never landed separately, per `10`'s D5/D2. `TELEGRAM_GROUP_ALLOWED_CHATS` is left unset.
+`config.yaml`'s `platforms:` block was left untouched.
+
+Verified against the pinned image's own source before writing the template, not assumed from
+the map's prior research:
+
+- `gateway/config.py`'s `_apply_env_overrides`: a non-empty `TELEGRAM_BOT_TOKEN` alone
+  auto-enables the platform (`_enable_from_env`) — so leaving `config.yaml`'s commented-out
+  `platforms:` block alone is correct, not an oversight.
+- `plugins/platforms/telegram/adapter.py`'s message-gate (`~8618-8633`): DMs return
+  authorized **before** `_telegram_allowed_chats()` is ever consulted — the gate only runs for
+  group/supergroup chats. `TELEGRAM_ALLOWED_CHATS='0'` therefore cannot block the owner's own
+  DMs; it only ever excludes groups, since no real Telegram chat id is `0`.
+- `authz_mixin.py` confirms `TELEGRAM_GROUP_ALLOWED_CHATS` is the *opposite* knob (opts specific
+  groups back in) — setting it, even to `0`, would not carry the same meaning as leaving it
+  unset, so it was correctly left out of the template.
+- Read the **live** `config.yaml` on helium (not just the repo) in case the gateway had
+  persisted its own `platforms:` block via `persist_home_channel`'s `setdefault("enabled",
+  True)`: it hasn't — the file on disk still has `platforms:` and `guest_mode` fully commented
+  out, so nothing overrides the env vars.
+
+`ansible-playbook site.yml --limit helium --tags compose --check --diff` runs clean (only the
+`.env` render task shows `changed`, as expected for a new template block; `no_log: true`
+suppresses the secret values from the diff). Committed as `3b45a8b`, template only.
+
+**Not yet done — needs the actual deploy and live acceptance test, both of which need the
+owner:**
+- The real `ansible-playbook … --tags compose` run (no `--check`) against helium, restarting
+  `hermes-agent` so it picks up the new `.env`.
+- After restart, before calling anything verified: confirm the "no allowlists configured"
+  startup warning is **absent** from the container logs (ticket `10`'s positive control that
+  the allowlist actually bridged from `.env`, not silently empty).
+- The live acceptance test itself — a DM from the owner answered, the identical message in a
+  **group** refused. The group half needs the owner to actually add the bot to a group and send
+  from it; that can't be exercised solo.
+- A second post-deploy `--check` run to confirm the render task goes `ok` (idempotent), closing
+  acceptance criterion 5.
+- Criterion 7 (provider/model recoverable from `session_model_usage`) — query `state.db` after
+  the DM exchange.
