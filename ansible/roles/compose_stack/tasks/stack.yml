@@ -183,6 +183,32 @@
     path: "{{ paperless_data_root }}/pgdata"
     state: directory
 
+# --- issue 048: Audiobookshelf config/metadata + library dirs -----------------
+# Config/metadata on the SSD appdata tier, owned by the jellyfin uid/gid (the
+# container runs as that uid via the `user:` compose directive — the upstream
+# image has no PUID/PGID env of its own to do this for us). The library dir
+# lives on the HDD media pool, alongside movies/TV; owned the same way even
+# though the mount is read-only, so a future acquisition tool (issue 049)
+# running as the same uid can write into it without a re-chown.
+- name: Create Audiobookshelf config/metadata dirs under ssd appdata (issue 048)
+  become: true
+  ansible.builtin.file:
+    path: "{{ ssd_pool_mount }}/appdata/audiobookshelf/{{ item }}"
+    state: directory
+    owner: "{{ jellyfin_puid }}"
+    group: "{{ jellyfin_pgid }}"
+    mode: "0750"
+  loop: [config, metadata]
+
+- name: Create Audiobookshelf library dir on the hdd media pool (issue 048)
+  become: true
+  ansible.builtin.file:
+    path: "{{ audiobooks_library_dir }}"
+    state: directory
+    owner: "{{ jellyfin_puid }}"
+    group: "{{ jellyfin_pgid }}"
+    mode: "0750"
+
 # --- issue 029: Proton Mail Bridge session/keyring dir on the SSD 'appdata' subvol ---
 # The bridge container runs as root and writes its session + gpg/pass keyring here (mounted
 # at /root). Pre-created root-owned 0700 — it holds the decrypt-capable Proton session, so it

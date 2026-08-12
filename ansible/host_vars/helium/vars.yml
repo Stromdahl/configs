@@ -340,3 +340,20 @@ mqtt_metrics_hwmon:
 # serial number (case-sensitive, as smartctl prints it) and listed explicitly.
 mqtt_metrics_pool_drive_labels: "{{ dict((hdd_data_drives + hdd_parity_drives) | map(attribute='id') | map('regex_replace', '^wwn-', '') | list | zip((hdd_data_drives + hdd_parity_drives) | map(attribute='label') | list)) }}"
 mqtt_metrics_drive_labels: "{{ mqtt_metrics_pool_drive_labels | combine({'50026B767400167E': 'ssd1', '50026B776705BF4D': 'ssd2', 'S4EUNMFN806315B': 'os disk'}) }}"
+
+# issue 048 — Audiobookshelf (audiobook/podcast server). Mirrors Jellyfin's shape:
+# own compose service, own subdomain, reachable LAN + mesh, never public. Config
+# and metadata on the SSD 'appdata' precious subvol; the library is read-only from
+# a new top-level folder on the HDD media pool (parallel to movies/TV).
+#
+# Upstream image has no PUID/PGID env support (unlike the linuxserver images used
+# elsewhere in this stack) — it runs whatever uid the `user:` compose directive
+# sets, with no privilege-drop step of its own. Set to the jellyfin uid/gid, same
+# pattern as issue 010's Jellyseerr flip: cap_drop:[ALL], no cap_add.
+#
+# Starts from an empty library — there is no existing audiobook collection to
+# migrate. Acquisition automation (issue 049) is parked pending the ecosystem's
+# tooling maturing past Readarr's 2026 retirement; until then, filling the
+# library is a manual drop into audiobooks_library_dir.
+audiobookshelf_version: "2.36.0"
+audiobooks_library_dir: "{{ hdd_union_mount }}/audiobooks"   # -> /srv/media/audiobooks

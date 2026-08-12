@@ -22,6 +22,19 @@
         description: Requests
         server: my-docker
         container: jellyseerr
+    - Audiobookshelf:
+        icon: audiobookshelf.png
+        href: https://audiobooks.home.stromdahl.tech
+        description: Audiobooks
+        server: my-docker
+        container: audiobookshelf
+        # Stats widget needs an Audiobookshelf API key (Settings -> Users -> the
+        # admin user -> API Token). Wire it via sops -> stack.env.j2 -> a new
+        # HOMEPAGE_VAR_AUDIOBOOKSHELF_KEY, then uncomment:
+        # widget:
+        #   type: audiobookshelf
+        #   url: http://audiobookshelf:80
+        #   key: "{{HOMEPAGE_VAR_AUDIOBOOKSHELF_KEY}}"
 
 - Photos:
     - Immich:

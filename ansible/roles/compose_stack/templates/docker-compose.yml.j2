@@ -8,7 +8,8 @@
 # jellyseerr (issue 014) + homepage (issue 018) + immich-server,
 # immich-machine-learning, immich-redis, immich-database (issue 006) +
 # paperless + paperless-redis/db/gotenberg/tika (issue 007) + cleanuparr
-# (issue 017) + docker2mqtt (issue 046) + hermes-agent (hermes-helium ticket 019).
+# (issue 017) + docker2mqtt (issue 046) + hermes-agent (hermes-helium ticket 019) +
+# audiobookshelf (issue 048).
 # Excluded vs neon: homer, the alpine `test` probe, the commented `backup`.
 #
 # Divergences from neon's compose:
@@ -218,6 +219,46 @@ services:
       # Transcode scratch on SSD (nodatacow subvolume). After first start:
       # Jellyfin Dashboard > Playback > Transcoding temp path -> /transcode
       - ${TRANSCODE_DIR:?missing TRANSCODE_DIR}:/transcode
+    networks:
+      - media
+
+  # ===========================================================================
+  # issue 048 — Audiobookshelf: audiobook/podcast server, mesh-only, same shape
+  # as Jellyfin above. Upstream image has NO PUID/PGID env (unlike the
+  # linuxserver images elsewhere in this stack) and no privilege-drop step of
+  # its own — it just runs as whatever uid the `user:` directive sets. Flipped
+  # straight to the jellyfin uid/gid, same pattern as issue 010's Jellyseerr
+  # fix: cap_drop:[ALL], no cap_add. Library mount is read-only — filling it is
+  # a manual drop onto the host path until issue 049 lands acquisition automation.
+  # ===========================================================================
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:${AUDIOBOOKSHELF_VERSION:?missing AUDIOBOOKSHELF_VERSION}
+    container_name: audiobookshelf
+    restart: unless-stopped
+    user: "${UID:?missing UID}:${GID:?missing GID}"
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.audiobookshelf.rule=Host(`audiobooks.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.audiobookshelf.entrypoints=websecure"
+      - "traefik.http.routers.audiobookshelf.tls.certresolver=letsencrypt"
+      - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
+      - "traefik.http.routers.audiobookshelf.middlewares=security-headers@file"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/healthcheck || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    environment:
+      - TZ=${TZ:-Europe/Stockholm}
+    volumes:
+      - ${AUDIOBOOKSHELF_CONFIG_DIR:?missing AUDIOBOOKSHELF_CONFIG_DIR}:/config
+      - ${AUDIOBOOKSHELF_METADATA_DIR:?missing AUDIOBOOKSHELF_METADATA_DIR}:/metadata
+      - ${AUDIOBOOKS_LIBRARY_DIR:?missing AUDIOBOOKS_LIBRARY_DIR}:/audiobooks:ro
     networks:
       - media
 
