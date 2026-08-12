@@ -66,8 +66,13 @@ ssd_devices:
   - /dev/disk/by-id/ata-KINGSTON_SUV400S37480G_50026B776705BF4D
 # Precious subvolumes keep full CoW + checksums; scratch subvolumes are nodatacow
 # (mount opt + chattr +C) to avoid CoW fragmentation and pointless checksumming.
-ssd_subvolumes_precious: [appdata, immich, paperless]
+# 'vault' (vault-serve issue 004, hermes-helium map): this role only creates +
+# mounts it — the syncthing role owns it to ms:ms 0700 and defines the
+# Syncthing folder on top. Listed below so storage_ssd stops re-asserting
+# root:root 0755 on it every run (see storage_ssd/tasks/mounts.yml).
+ssd_subvolumes_precious: [appdata, immich, paperless, vault]
 ssd_subvolumes_scratch: [downloads, transcode]
+ssd_subvolumes_perms_managed_elsewhere: [vault]
 
 # compose_stack: Jellyfin + internal-only Traefik, deployed by roles/compose_stack.
 # Private-only — reachable over the NetBird mesh at *.{{ compose_domain }}, never the

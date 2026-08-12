@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  role_name: syncthing
+  description: >-
+    Syncthing on helium as the ms user service, holding the vault as a
+    Send-Receive replica of krypton (vault-serve issue 004).
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+dependencies: []

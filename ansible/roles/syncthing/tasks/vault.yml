@@ -1,0 +1,73 @@
+---
+# storage_ssd's subvolumes.yml/mounts.yml already created + mounted
+# {{ syncthing_vault_path }} (root:root 0755, empty) via `vault` being added to
+# ssd_subvolumes_precious. This task re-owns it per ticket 02: `ms`-owned, 700
+# — sensitive folders synced in later stay world-readable *dirs* but sit behind
+# this traversal gate and are never mounted into any container (ticket 03).
+- name: Own the vault root as ms, mode 700
+  become: true
+  ansible.builtin.file:
+    path: "{{ syncthing_vault_path }}"
+    state: directory
+    owner: "{{ syncthing_user }}"
+    group: "{{ syncthing_user }}"
+    mode: "0700"
+
+# Per-device ignore pattern (never synced — docs.syncthing.net/users/ignoring).
+# Mirrors krypton's own .stignore line; today this is not load-bearing (helium
+# has no .git to send) but stops any future one propagating upstream as sync
+# conflicts (issue 11).
+- name: Ignore .git in the vault folder (per-device, never synced)
+  become: true
+  ansible.builtin.copy:
+    dest: "{{ syncthing_vault_path }}/.stignore"
+    content: ".git\n"
+    owner: "{{ syncthing_user }}"
+    group: "{{ syncthing_user }}"
+    mode: "0644"
+
+- name: Check for an existing personal-vault folder definition
+  become: true
+  become_user: "{{ syncthing_user }}"
+  ansible.builtin.command:
+    cmd: syncthing cli config folders list
+  register: _syncthing_vault_folders
+  changed_when: false
+
+# id MUST equal krypton's folder id exactly (Syncthing pairs by id, not path/
+# label) — see defaults/main.yml. ignorePerms=true is what lets UMask=022 win
+# on inbound files instead of replicating krypton's inconsistent modes, and
+# also stops helium's 755/644 propagating upstream onto krypton (ticket 03).
+# devices is deliberately empty here — pairing with krypton happens out-of-band
+# (krypton is not ansible-managed), never pre-populated so first sync can only
+# ever pull, never push stale local content (issue 04's Send-Receive spec).
+#
+# rescanIntervalS/fsWatcherEnabled/autoNormalize/maxConflicts are spelled out
+# explicitly (matching krypton's own personal-vault settings) because add-json
+# zero-fills any field it isn't given — omitting them leaves the fs watcher off
+# AND periodic rescan at 0s, i.e. a folder that never notices new/changed files
+# after its first scan. Caught live on the first deploy; do not drop these.
+- name: Add the personal-vault folder (Send-Receive, empty, unpaired)
+  become: true
+  become_user: "{{ syncthing_user }}"
+  ansible.builtin.command:
+    argv:
+      - syncthing
+      - cli
+      - config
+      - folders
+      - add-json
+      - "{{ {
+            'id': syncthing_vault_folder_id,
+            'label': 'Vault',
+            'path': syncthing_vault_path,
+            'type': 'sendreceive',
+            'ignorePerms': true,
+            'rescanIntervalS': 3600,
+            'fsWatcherEnabled': true,
+            'fsWatcherDelayS': 10,
+            'autoNormalize': true,
+            'maxConflicts': 10,
+            'devices': [],
+          } | to_json }}"
+  when: syncthing_vault_folder_id not in _syncthing_vault_folders.stdout_lines

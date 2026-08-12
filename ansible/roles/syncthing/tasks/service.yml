@@ -1,0 +1,82 @@
+---
+# Runs Syncthing as the ms user service (systemd --user + lingering), per
+# ticket 02's Answer — deliberately separate from the stack's 1001:1003
+# service identity, since the vault is the user's data, not a stack service.
+#
+# `systemctl --user` under `become_user` needs XDG_RUNTIME_DIR pointed at that
+# user's runtime dir; without lingering that dir may not exist yet, so linger
+# is enabled first. Looked up dynamically rather than assumed (uid varies by
+# host) — see project_helium_* memories on the cost of hardcoded-id guesses.
+- name: Look up the ms user's uid (for XDG_RUNTIME_DIR)
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ syncthing_user }}"
+
+- name: Check current linger state
+  become: true
+  ansible.builtin.command:
+    cmd: "loginctl show-user {{ syncthing_user }} -p Linger"
+  register: _syncthing_linger_before
+  changed_when: false
+  check_mode: false
+
+- name: Enable linger for {{ syncthing_user }} (user services survive logout)
+  become: true
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ syncthing_user }}"
+  when: "'Linger=yes' not in _syncthing_linger_before.stdout"
+
+- name: Drop the UMask=022 systemd override (deterministic 755/644 on sync)
+  become: true
+  become_user: "{{ syncthing_user }}"
+  ansible.builtin.file:
+    path: "/home/{{ syncthing_user }}/.config/systemd/user/syncthing.service.d"
+    state: directory
+    mode: "0755"
+
+- name: Template the UMask override
+  become: true
+  become_user: "{{ syncthing_user }}"
+  ansible.builtin.template:
+    src: override.conf.j2
+    dest: "/home/{{ syncthing_user }}/.config/systemd/user/syncthing.service.d/override.conf"
+    mode: "0644"
+  register: _syncthing_override
+
+- name: Enable + start the syncthing user service
+  become: true
+  become_user: "{{ syncthing_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[syncthing_user][1] }}"
+  ansible.builtin.systemd:
+    name: syncthing.service
+    scope: user
+    daemon_reload: "{{ _syncthing_override.changed }}"
+    enabled: true
+    state: "{{ 'restarted' if _syncthing_override.changed else 'started' }}"
+
+- name: Wait for the local Syncthing API to come up
+  become: true
+  become_user: "{{ syncthing_user }}"
+  ansible.builtin.command:
+    cmd: syncthing cli show system
+  register: _syncthing_api
+  until: _syncthing_api.rc == 0
+  retries: 30
+  delay: 1
+  changed_when: false
+
+- name: Check for the auto-created 'default' folder
+  become: true
+  become_user: "{{ syncthing_user }}"
+  ansible.builtin.command:
+    cmd: syncthing cli config folders list
+  register: _syncthing_folders
+  changed_when: false
+
+- name: Remove the auto-created 'default' folder (unused, confuses fresh setups)
+  become: true
+  become_user: "{{ syncthing_user }}"
+  ansible.builtin.command:
+    cmd: syncthing cli config folders default delete
+  when: "'default' in _syncthing_folders.stdout_lines"

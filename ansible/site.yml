@@ -19,6 +19,11 @@
       tags: [storage, storage_hdd]
     - role: storage_ssd
       tags: [storage, storage_ssd]
+    # vault-serve issue 004 — helium as a Syncthing Send-Receive replica of
+    # krypton's ~/vault, at /data/ssd/vault (the storage_ssd 'vault' subvol
+    # above). After storage_ssd (needs the subvol mounted first).
+    - role: syncthing
+      tags: [syncthing, vault]
     - role: sensors
       tags: [sensors, monitoring]
     - role: compose_stack

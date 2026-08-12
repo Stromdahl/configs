@@ -1,0 +1,37 @@
+---
+# Explicit INPUT accepts for Syncthing's sync (22000/tcp) + local-discovery
+# (21027/udp) ports, persisted via netfilter-persistent (already installed by
+# compose_stack). Verified live before writing this: helium has no ufw (evicted
+# by iptables-persistent — project_ufw_breaks_iptables_persistent) and its
+# current INPUT policy is ACCEPT, so nothing is actually blocking these ports
+# today. These rules exist anyway so Syncthing reachability doesn't quietly
+# depend on that accident — if the ufw/iptables-persistent conflict is ever
+# resolved by reinstating a default-deny INPUT, these survive it.
+- name: "INPUT: allow Syncthing sync (22000/tcp)"
+  become: true
+  ansible.builtin.iptables:
+    action: insert
+    chain: INPUT
+    protocol: tcp
+    destination_port: "22000"
+    jump: ACCEPT
+    comment: "syncthing: sync"
+  register: _syncthing_fw_tcp
+
+- name: "INPUT: allow Syncthing local discovery (21027/udp)"
+  become: true
+  ansible.builtin.iptables:
+    action: insert
+    chain: INPUT
+    protocol: udp
+    destination_port: "21027"
+    jump: ACCEPT
+    comment: "syncthing: local discovery"
+  register: _syncthing_fw_udp
+
+- name: Save iptables rules (ipv4)
+  become: true
+  ansible.builtin.command:
+    cmd: netfilter-persistent save
+  when: _syncthing_fw_tcp.changed or _syncthing_fw_udp.changed
+  changed_when: true

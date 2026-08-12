@@ -1,0 +1,13 @@
+---
+# The dotfiles `syncthing` module already runs Syncthing as the logged-in user
+# on krypton; on helium (ansible-only, no interactive session) it runs as the
+# same `ms` admin user via a systemd --user unit + lingering, per
+# planning/vault-serve/issues/02-syncthing-on-helium.md's Answer.
+syncthing_user: ms
+
+# vault-serve issue 004: the vault replica folder id MUST match krypton's
+# personal-vault folder id exactly — Syncthing pairs folders by id, not path
+# or label. Devices are added to this folder out-of-band (planning/hermes-helium
+# pairing step), not by this role, since krypton is not ansible-managed.
+syncthing_vault_folder_id: personal-vault
+syncthing_vault_path: "{{ ssd_pool_mount }}/vault"

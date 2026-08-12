@@ -1,0 +1,15 @@
+---
+# Syncthing has shipped in Debian main since bookworm — no apt.syncthing.net
+# repo needed (confirmed against krypton's own install, same package).
+#
+# install_recommends: false is load-bearing on a headless box: syncthing's only
+# Recommends is xdg-utils, but xdg-utils's own dependency chain drags in ~110
+# packages (X11, mesa, fontconfig, a terminal emulator) for MIME-open tooling
+# that a syncthing daemon never uses. Verified live on helium before adding
+# this flag (`apt-get install --dry-run syncthing` vs `--no-install-recommends`).
+- name: Install syncthing
+  become: true
+  ansible.builtin.apt:
+    name: syncthing
+    state: present
+    install_recommends: false

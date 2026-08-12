@@ -1,0 +1,24 @@
+---
+# Makes helium a Syncthing peer holding the vault as a Send-Receive replica of
+# krypton (vault-serve issue 004, re-specced from Receive-Only by hermes-helium
+# ticket 04 once a writing agent — Hermes — landed on this replica). Ports the
+# already-idempotent logic in bin/setup-syncthing.sh (the same script the
+# dotfiles `syncthing` module runs on krypton) into role tasks, plus the
+# Send-Receive-specific perm/versioning pieces 004 adds on top.
+#
+# Device pairing with krypton (and the krypton-side staggered-versioning undo,
+# issue 11) is NOT part of this role — krypton is not ansible-managed, so that
+# happens out-of-band via `syncthing cli` against both machines directly. This
+# role only gets helium to the point of having its own empty, correctly-shaped
+# `personal-vault` folder ready to be paired in.
+- name: Install Syncthing
+  ansible.builtin.import_tasks: packages.yml
+
+- name: Enable linger + the syncthing user service, UMask=022 override
+  ansible.builtin.import_tasks: service.yml
+
+- name: Open 22000/tcp + 21027/udp on helium's real firewall path
+  ansible.builtin.import_tasks: firewall.yml
+
+- name: Vault folder ownership/perms + the personal-vault folder definition
+  ansible.builtin.import_tasks: vault.yml
