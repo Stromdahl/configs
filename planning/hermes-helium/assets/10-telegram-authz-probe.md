@@ -205,7 +205,10 @@ down.
   ticket `10`'s own body; `git grep` over `4ed7e63^` finds no Telegram config in version
   control at all (`configs/hermes-agent/env.example` carries only `OPENROUTER_API_KEY` and
   `OBSIDIAN_VAULT_PATH`). Used as a placeholder in every probe above; it must be
-  re-acquired, and could as easily be the bot's id as the owner's.
+  re-acquired, and could as easily be the bot's id as the owner's. **Resolved by ticket
+  017, 2026-08-12**: re-acquired via a real `getUpdates` call against a new bot/token, and
+  it came back as this same number — "probably wrong" turned out wrong about this one, but
+  the re-acquisition was still the correct call given what was known here.
 - **BotFather-side state.** `/setjoingroups` and `/setprivacy` were read from
   [core.telegram.org/bots/features](https://core.telegram.org/bots/features) (privacy mode
   is on by default; bots added as group **admins** receive everything regardless). Neither

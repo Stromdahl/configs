@@ -12,9 +12,12 @@
 > (fixed a BuildKit provenance bug along the way — see `019`'s Progress). **`016` is
 > resolved** — the Anthropic key is live in Hermes' own `.env` and proved with a real
 > completion from helium (also caught `09`'s cost table going stale: Sonnet 5 dropped to
-> $2/$10 per MTok). **`017` is half done** — the Telegram bot exists and its token is in
-> sops, but the owner's numeric id is still unacquired (`getUpdates` empty pending one DM
-> to `@harmes_helium_bot`). **`020` is next, blocked only on that DM.** The two
+> $2/$10 per MTok). **`017` is resolved** — the owner DMed the bot, `getUpdates` returned
+> the real numeric id (`8468278488` — the same digits ticket `10` once flagged as
+> unprovenanced, now verified for real), and both the token and the id are in sops. Neither
+> is wired into the running container yet — turning on the Telegram platform without the
+> allowlist landing in the same change is an open pairing surface (`10`'s D2/D5), so that's
+> `020`'s job. **`016` and `017` are both done — `020` is now fully unblocked.** The two
 > remaining fog patches below are both gated on things the owner has not asked for, so
 > nothing here is frontier work.
 
@@ -443,7 +446,10 @@ makes silent failure impossible**.
   ⚠️ **`8468278488` has no provenance** — it exists nowhere but the ticket body, no
   Telegram config was ever in git, and it may be the *bot's* id; re-acquiring it is a
   needs-human step whose single `getUpdates` call yields **both** the allowlist id and
-  `06`'s delivery chat id, *the same number for a DM*. 🔴 **Correction to `03`:** a
+  `06`'s delivery chat id, *the same number for a DM*. **Resolved by `017`, 2026-08-12: a
+  real `getUpdates` call against a fresh bot/token confirmed this exact number is the
+  owner's own id** (`is_bot: false`, distinct from the bot's own id from `getMe`) — right
+  digits, now with the provenance this note said they lacked. 🔴 **Correction to `03`:** a
   rejected or revoked token leaves the gateway **up and running cron** by upstream design,
   so its cron-liveness healthcheck reports **healthy while pull mode is dead** — and
   `05`'s "silence is the alarm" cannot cover it, because the failed delivery channel

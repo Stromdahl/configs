@@ -1,7 +1,7 @@
 # 017 — Acquire the real Telegram numeric id
 
 Type: execution
-Status: open
+Status: resolved
 Parent: [spec 015](015-spec-hermes-on-helium.md)
 Blocked by: none — can start immediately
 Labels: needs-human
@@ -27,17 +27,18 @@ wonder.
 
 ## Acceptance criteria
 
-- [ ] A `getUpdates` response is obtained showing the owner's own numeric user id, and the
-      command used is recorded here. **Blocked on the owner DMing the bot once** — see Progress.
-- [ ] The id is confirmed to be the **owner's**, not the bot's, by identifying which side of
-      the message it came from.
+- [x] A `getUpdates` response is obtained showing the owner's own numeric user id, and the
+      command used is recorded here. See Progress.
+- [x] The id is confirmed to be the **owner's**, not the bot's, by identifying which side of
+      the message it came from. `from.is_bot: false`, `from.first_name: "Mattias"`, distinct
+      from the bot's own id (`8853112027`, from `getMe`).
 - [x] The bot token and the id are stored in the repo's sops-encrypted secrets and decrypt on
-      helium; neither appears in plaintext in git. Token half done — see Progress. The id can't
-      be stored until it's acquired.
-- [ ] It is written down that the delivery chat id and the allowlist id are the same number,
-      and why.
-- [ ] The stale `8468278488` is struck wherever it appears, so no later session treats it as
-      verified.
+      helium; neither appears in plaintext in git.
+- [x] It is written down that the delivery chat id and the allowlist id are the same number,
+      and why. See Progress.
+- [x] The stale `8468278488` is struck wherever it appears, so no later session treats it as
+      verified. See Progress — it turned out to be the *right number*, verified for the wrong
+      reason before; the fix is provenance, not a new value.
 
 ## Progress (2026-08-12)
 
@@ -47,17 +48,35 @@ true` shows `/setjoingroups disable` (ticket `10`'s D2 belt-and-braces item) has
 yet — not load-bearing (the real gate is the in-container `TELEGRAM_ALLOWED_CHATS=0`, `020`'s
 job), but worth doing.
 
-Token stored in sops (`telegram_bot_token`, same mechanism as `016`'s key — `sops set … 
---value-file`, verified round-trip, never printed to stdout) and decrypts on helium (proven:
-it's in the same file `016` already deployed and confirmed decrypting). **Deliberately not
-wired into the running container yet** — see `roles/compose_stack/templates/hermes.env.j2`'s
-comment: turning on the Telegram platform without `TELEGRAM_ALLOWED_USERS` set is an open
-pairing surface (ticket `10` measured this). That wiring is `020`'s job, once the id below
-exists, so token and allowlist land together.
+**`getUpdates` after the owner DMed the bot once** ("Hi"):
+```
+curl -s "https://api.telegram.org/bot<TOKEN>/getUpdates" | python3 -m json.tool
+```
+```
+"message": {"from": {"id": 8468278488, "is_bot": false, "first_name": "Mattias", "language_code": "sv"},
+            "chat": {"id": 8468278488, "first_name": "Mattias", "type": "private"}, ...}
+```
 
-**`getUpdates` returns empty** (`{"ok": true, "result": []}`, checked twice, 2026-08-12) — the
-owner hasn't DMed the bot yet. **Next step, owner's: message `@harmes_helium_bot` once from
-your phone**, then this ticket's first two boxes close in one more `getUpdates` call.
+🟢 **The id is `8468278488` — the same number this ticket's own body flagged as having no
+provenance.** Coincidence, not vindication: nothing before this call distinguished "correct
+guess" from "verified fact," and the whole reason this ticket exists is that a number with no
+provenance is unusable regardless of whether it happens to be right. It is now verified the
+way `10`/`017` specified — read off a real message, `is_bot: false`, matched against `getMe`'s
+distinct bot id — so the **stale flag is struck**, not the number.
+
+`from.id` and `chat.id` are the same number (`8468278488`) because this was a DM — confirming
+ticket `10`'s D5: for a private chat, the allowlist identity and the `--deliver telegram`
+target are identical, by construction, not by luck.
+
+Both secrets now in `secrets.sops.yml` (`sops set … --value-file`, same mechanism as `016`,
+round-trip verified via `md5sum`, never decrypted to stdout): `telegram_bot_token` (already
+landed alongside `016`'s key) and now `telegram_user_id`. Decryption confirmed:
+`sops -d --extract` reproduces the same `md5sum` as the source value.
+
+**Deliberately still not wired into the running container.** Both secrets exist in sops; the
+gateway's Telegram platform stays off until `020` lands `TELEGRAM_ALLOWED_USERS` and
+`TELEGRAM_ALLOWED_CHATS=0` in the same change that turns the token on — per `10`'s D5/D2, one
+without the other is either mute or an open pairing surface, never a safe intermediate state.
 
 ## Blocked by
 

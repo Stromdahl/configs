@@ -227,6 +227,13 @@ config in version control at all (`env.example` carries only `OPENROUTER_API_KEY
 `OBSIDIAN_VAULT_PATH`, consistent with `02`'s finding that the live host was hand-wired).
 Given its shape it could as easily be the **bot's** id as the owner's.
 
+🟢 **Resolved by [ticket 017](017-acquire-telegram-identity.md), 2026-08-12: it was the right
+number.** A fresh `getUpdates` call (new bot, new token) returned the owner's real id as
+`8468278488` — the same digits, now with real provenance (`is_bot: false`, distinct from the
+bot's own id). Coincidence, not vindication of the old unverified value: this paragraph's
+warning was correct at the time it was written, and the fix was acquiring provenance, not
+picking a different number.
+
 **Acquiring it is a needs-human step outside ansible**, in the same class as `09`'s API key
 and `029`'s Proton login — recorded here rather than spun into a blocker ticket:
 
