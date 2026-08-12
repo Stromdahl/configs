@@ -2,18 +2,24 @@
 # Subvolumes live under the btrfs top level (subvolid=5). We mount the top level at
 # a temp mountpoint, create each @-prefixed subvolume, then unmount — the real
 # per-subvol mounts at /data/ssd/<name> happen in mounts.yml. The whole block is
-# gated on "the precious subvols aren't mounted yet", so a fully-built host skips it
-# and reports no change; `creates:` on each create keeps a partial-failure rerun safe.
-- name: Check whether the pool subvolumes are already mounted
+# gated on "at least one listed subvol isn't mounted yet", so a fully-built host
+# skips it and reports no change; `creates:` on each create keeps a partial-failure
+# rerun safe. Checked per-item (not just index 0): a host that already has its
+# original subvols mounted still needs this block to run the first time a NEW
+# entry is appended to the list later (e.g. vault-serve issue 004 adding 'vault')
+# — checking only item 0 would see the pool as already-built and skip creating it,
+# then mounts.yml's mount of the never-created @vault subvolume fails outright.
+- name: Check whether each pool subvolume is already mounted
   become: true
   ansible.builtin.command:
-    cmd: "findmnt -rno SOURCE {{ ssd_pool_mount }}/{{ ssd_subvolumes_precious[0] }}"
+    cmd: "findmnt -rno SOURCE {{ ssd_pool_mount }}/{{ item }}"
   register: ssd_subvol_check
   changed_when: false
   failed_when: false
+  loop: "{{ ssd_subvolumes_precious + ssd_subvolumes_scratch }}"
 
 - name: Create the @-prefixed subvolumes from the btrfs top level
-  when: ssd_subvol_check.rc != 0
+  when: ssd_subvol_check.results | selectattr('rc', 'ne', 0) | list | length > 0
   become: true
   block:
     - name: Ensure the temp top-level mountpoint exists

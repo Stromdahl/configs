@@ -4,7 +4,19 @@
 # one, which would defeat the single-drive-loss AC. nofail keeps a missing pool from
 # wedging boot (degraded recovery is a manual action — never `degraded` in fstab).
 # Scratch subvolumes additionally get nodatacow + chattr +C: no CoW, no checksums.
-- name: Create subvolume mountpoints under the pool root
+- name: Ensure every subvolume mountpoint exists
+  become: true
+  ansible.builtin.file:
+    path: "{{ ssd_pool_mount }}/{{ item }}"
+    state: directory
+  loop: "{{ ssd_subvolumes_precious + ssd_subvolumes_scratch }}"
+
+# Owner/mode normalized only for subvols this role owns end-to-end. Split out
+# from the task above: chmod/chown on a path with something already mounted on
+# it acts on the LIVE mounted subvolume, not a hidden underlying dir — so
+# applying this to every item on every run would permanently fight any subvol
+# whose perms a different role manages afterward (ssd_subvolumes_perms_managed_elsewhere).
+- name: Normalize ownership on generically-owned subvolume mountpoints
   become: true
   ansible.builtin.file:
     path: "{{ ssd_pool_mount }}/{{ item }}"
@@ -12,7 +24,7 @@
     owner: root
     group: root
     mode: "0755"
-  loop: "{{ ssd_subvolumes_precious + ssd_subvolumes_scratch }}"
+  loop: "{{ (ssd_subvolumes_precious + ssd_subvolumes_scratch) | difference(ssd_subvolumes_perms_managed_elsewhere) }}"
 
 - name: Mount precious subvolumes (full CoW + checksums)
   become: true

@@ -1,0 +1,8 @@
+---
+# Subvols whose ownership/mode is intentionally managed by a different role
+# after this one creates + mounts them (e.g. 'vault' by the syncthing role —
+# vault-serve issue 004). This role still creates and mounts them; it just
+# stops re-asserting root:root 0755 on every run, which would otherwise
+# permanently fight the other role's ownership (chmod on an already-mounted
+# path acts on the live mounted subvolume, not a hidden underlying dir).
+ssd_subvolumes_perms_managed_elsewhere: []
