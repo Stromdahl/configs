@@ -273,6 +273,25 @@
   changed_when: false
   when: hermes_data is defined
 
+# hermes-helium ticket 016 — Hermes' OWN .env (NOT the compose stack .env rendered
+# below). See the template for why this path/mechanism is correct and why
+# TELEGRAM_BOT_TOKEN is deliberately absent from it for now. no_log: true keeps the
+# key out of ansible's own output, same as the stack .env render task below. Unlike
+# traefik's dynamic.yml this isn't a single-file bind mount, so a rewrite is visible
+# to the container immediately — but python-dotenv only reads it at process start,
+# so a restart handler is still needed to pick up a changed value.
+- name: Render Hermes' own .env from template (hermes-helium 016)
+  become: true
+  ansible.builtin.template:
+    src: hermes.env.j2
+    dest: "{{ hermes_data }}/.env"
+    owner: "1000"
+    group: "1000"
+    mode: "0600"
+  no_log: true
+  when: hermes_data is defined
+  notify: Restart hermes-agent (compose_stack)
+
 # --- issue 010: jellyseerr flips from container-root to the jellyfin uid/gid ---------
 # jellyseerr's upstream image has no privilege drop; it ran as container-root, so its
 # /app/config (sqlite settings + request db + logs) is root-owned. issue 010 sets

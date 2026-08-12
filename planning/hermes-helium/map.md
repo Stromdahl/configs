@@ -9,9 +9,12 @@
 > dependency graph). **`018` and `019` are resolved** — prior art recovered into
 > `ansible/roles/compose_stack/files/hermes-agent/`, and Hermes is now live on helium as a
 > compose service: pinned-digest image, healthy, reboot-survival verified, idempotent
-> (fixed a BuildKit provenance bug along the way — see `019`'s Progress). **`020` is next
-> but blocked on `016`/`017`**, both needs-human and still open — the spec's *Further
-> Notes* say why the build should stop rather than work around either. The two
+> (fixed a BuildKit provenance bug along the way — see `019`'s Progress). **`016` is
+> resolved** — the Anthropic key is live in Hermes' own `.env` and proved with a real
+> completion from helium (also caught `09`'s cost table going stale: Sonnet 5 dropped to
+> $2/$10 per MTok). **`017` is half done** — the Telegram bot exists and its token is in
+> sops, but the owner's numeric id is still unacquired (`getUpdates` empty pending one DM
+> to `@harmes_helium_bot`). **`020` is next, blocked only on that DM.** The two
 > remaining fog patches below are both gated on things the owner has not asked for, so
 > nothing here is frontier work.
 

@@ -17,3 +17,13 @@
   ansible.builtin.command:
     cmd: docker restart traefik
   changed_when: true
+
+# python-dotenv (hermes_cli/env_loader.py) reads $HERMES_HOME/.env once at process
+# start, so a changed credential needs a restart to actually take effect — the file
+# itself isn't a single-file bind mount (traefik's problem above doesn't apply), but
+# an unread file is just as stale as an unseen one.
+- name: Restart hermes-agent (compose_stack)
+  become: true
+  ansible.builtin.command:
+    cmd: docker restart hermes-agent
+  changed_when: true

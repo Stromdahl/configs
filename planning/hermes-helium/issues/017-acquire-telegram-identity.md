@@ -28,15 +28,36 @@ wonder.
 ## Acceptance criteria
 
 - [ ] A `getUpdates` response is obtained showing the owner's own numeric user id, and the
-      command used is recorded here.
+      command used is recorded here. **Blocked on the owner DMing the bot once** — see Progress.
 - [ ] The id is confirmed to be the **owner's**, not the bot's, by identifying which side of
       the message it came from.
-- [ ] The bot token and the id are stored in the repo's sops-encrypted secrets and decrypt on
-      helium; neither appears in plaintext in git.
+- [x] The bot token and the id are stored in the repo's sops-encrypted secrets and decrypt on
+      helium; neither appears in plaintext in git. Token half done — see Progress. The id can't
+      be stored until it's acquired.
 - [ ] It is written down that the delivery chat id and the allowlist id are the same number,
       and why.
 - [ ] The stale `8468278488` is struck wherever it appears, so no later session treats it as
       verified.
+
+## Progress (2026-08-12)
+
+The bot exists: BotFather created `@harmes_helium_bot` (id `8853112027`), token supplied by the
+owner. `getMe` confirms it (`"username": "harmes_helium_bot"`); `getMe`'s `can_join_groups:
+true` shows `/setjoingroups disable` (ticket `10`'s D2 belt-and-braces item) hasn't been run
+yet — not load-bearing (the real gate is the in-container `TELEGRAM_ALLOWED_CHATS=0`, `020`'s
+job), but worth doing.
+
+Token stored in sops (`telegram_bot_token`, same mechanism as `016`'s key — `sops set … 
+--value-file`, verified round-trip, never printed to stdout) and decrypts on helium (proven:
+it's in the same file `016` already deployed and confirmed decrypting). **Deliberately not
+wired into the running container yet** — see `roles/compose_stack/templates/hermes.env.j2`'s
+comment: turning on the Telegram platform without `TELEGRAM_ALLOWED_USERS` set is an open
+pairing surface (ticket `10` measured this). That wiring is `020`'s job, once the id below
+exists, so token and allowlist land together.
+
+**`getUpdates` returns empty** (`{"ok": true, "result": []}`, checked twice, 2026-08-12) — the
+owner hasn't DMed the bot yet. **Next step, owner's: message `@harmes_helium_bot` once from
+your phone**, then this ticket's first two boxes close in one more `getUpdates` call.
 
 ## Blocked by
 
