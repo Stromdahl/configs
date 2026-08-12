@@ -19,10 +19,14 @@
 > required, deployed to helium, and live-tested from the owner's phone: a DM gets answered
 > (`model=claude-opus-4-6`, `provider=anthropic`, recoverable from `state.db`'s
 > `session_model_usage`), the same text in a group gets silence. **Pull mode is live — the
-> owner can message Hermes and get an answer.** `021` (the vault read/write surface) is next
-> in the spec's dependency graph, but it is *not* yet unblocked: it also depends on
-> `planning/vault-serve/issues/004`, still open. The two remaining fog patches below are both
-> gated on things the owner has not asked for, so nothing here is frontier work beyond that.
+> owner can message Hermes and get an answer.** **`planning/vault-serve/issues/004` is now
+> resolved too** — helium is a paired, verified Send-Receive Syncthing replica of krypton's
+> vault (`/data/ssd/vault`, `ms:ms 700`, `recipes`/`learning` at `755`/`644`), confirmed
+> synced at 100% completion, with krypton's staggered versioning (`maxAge` `31536000`)
+> verified end-to-end (edit-on-helium → archived copy on krypton). That was hermes-helium
+> `021`'s external blocker, so **`021` (the vault read/write surface) is now unblocked and is
+> the frontier.** The two remaining fog patches below are both gated on things the owner has
+> not asked for, so nothing here is frontier work beyond `021`.
 
 ## Destination
 

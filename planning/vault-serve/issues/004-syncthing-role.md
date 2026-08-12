@@ -1,7 +1,7 @@
 # Add a Syncthing ansible role: helium as a Send-Receive vault replica
 
 Type: execution
-Status: open
+Status: resolved
 <!-- amended 2026-07-31 by hermes-helium 04 (Send-Receive) and 11 (vault undo) -->
 
 
@@ -215,14 +215,84 @@ happens, because the replica is unsafe without it. Item 2 is inside the role.
 
 ## Done when
 
-- helium shows the vault folder **Up to Date**, **Send-Receive**, in sync with
-  krypton.
-- `/data/ssd/vault/recipes` and `/data/ssd/vault/learning` exist on helium with
-  dirs `755` / files `644` (readable-by-other); root is `700`.
-- Role is idempotent (re-run = no-op) and committed under helium's ansible tree.
-- **krypton's `personal-vault` folder shows staggered versioning with `maxAge`
-  `31536000`** (seconds — see the warning above), and a deliberate test proves it:
-  edit a file on helium, confirm the previous version appears in
-  `~/vault/.stversions/` on krypton. An unverified versioning setting is not an undo
-  — the same argument hermes-helium `03` makes about unrestored backups.
-- helium's ignore patterns contain `.git`.
+- [x] helium shows the vault folder **Up to Date**, **Send-Receive**, in sync with
+      krypton.
+- [x] `/data/ssd/vault/recipes` and `/data/ssd/vault/learning` exist on helium with
+      dirs `755` / files `644` (readable-by-other); root is `700`.
+- [x] Role is idempotent (re-run = no-op) and committed under helium's ansible tree.
+- [x] **krypton's `personal-vault` folder shows staggered versioning with `maxAge`
+      `31536000`** (seconds — see the warning above), and a deliberate test proves it:
+      edit a file on helium, confirm the previous version appears in
+      `~/vault/.stversions/` on krypton. An unverified versioning setting is not an undo
+      — the same argument hermes-helium `03` makes about unrestored backups.
+- [x] helium's ignore patterns contain `.git`.
+
+## Progress (2026-08-12)
+
+Built as specced, no re-litigation. New `ansible/roles/syncthing/` role (packages,
+service+linger+`UMask=022` override, firewall, vault ownership/ignore-pattern/folder
+definition); `vault` added to `ssd_subvolumes_precious` in
+`host_vars/helium/vars.yml`; role wired into `site.yml` after `storage_ssd`. Deployed
+with `ansible-playbook site.yml --limit helium --tags storage,storage_ssd,syncthing`
+(the scoped-tags pattern that avoids the base/ufw non-idempotency trap). Pairing with
+krypton and the krypton-side versioning change are **not** ansible tasks — krypton
+isn't ansible-managed — so those ran directly via `syncthing cli config ...` against
+both machines.
+
+**Three real bugs found and fixed along the way, not just the happy path:**
+
+1. **`syncthing`'s `Recommends: xdg-utils` explodes to ~110 packages** (X11, mesa,
+   fontconfig, a terminal emulator) on a headless box — verified live with
+   `apt-get install --dry-run` vs `--no-install-recommends`. Fixed with
+   `install_recommends: false` on the apt task.
+2. **`storage_ssd`'s idempotency guard only checked `ssd_subvolumes_precious[0]`**
+   (`appdata`) to decide whether the whole pool needed building. Fine for a
+   fresh host, but appending `vault` to an *already-built* pool meant the guard
+   saw `appdata` mounted and skipped creating `@vault` entirely — then the mount
+   task failed outright (`fsconfig() failed: No such file or directory`) because
+   the subvolume never existed. Fixed by checking every listed item, not just the
+   first (`ansible/roles/storage_ssd/tasks/subvolumes.yml`).
+3. **Same role then fought this one for ownership of `/data/ssd/vault`** on every
+   subsequent run: `storage_ssd`'s "create mountpoint" task unconditionally
+   re-asserts `root:root 0755` on every listed subvol, and chmod/chown on a path
+   that already has something mounted acts on the *live mounted subvolume* — so
+   it kept undoing this role's `ms:ms 700`. Fixed with a new
+   `ssd_subvolumes_perms_managed_elsewhere` list (set to `[vault]` in helium's
+   host_vars) that `storage_ssd` now excludes from its ownership-normalizing task,
+   while still creating + mounting it. Confirmed clean (`changed=0`) on a second
+   consecutive run.
+
+**Also (not from the spec, caught live):** `syncthing cli config folders add-json`
+zero-fills any field it isn't given rather than applying Syncthing's usual
+defaults — the first `personal-vault` folder created on helium had
+`fsWatcherEnabled: false` **and** `rescanIntervalS: 0`, i.e. a folder that would
+never notice a new or changed file after its initial scan. Fixed live via the
+`versioning`-style leaf setters and folded the explicit values (matching
+krypton's own folder settings) into the role's `add-json` payload so a future
+rebuild gets it right from scratch.
+
+**Cleanup, decided with the owner before pairing:** krypton's `personal-vault`
+folder carried two stale `titan-hermes-agent` device entries left over from the
+VM decommissioned 2026-06-21. Removed via `syncthing cli config devices <id>
+delete` before adding helium, so the peer count verification below isn't muddied
+by dead entries.
+
+**Verified for real, not just configured:**
+- helium's device (`BIAYWY6-…`) and krypton's device (`HOB72FX-…`) connected
+  within seconds over the NetBird mesh (`syncthing cli show connections`),
+  `/rest/db/completion` reported **100%**, 1212 items / 43.3 MB, immediately
+  after pairing — the existing vault, not an empty stub.
+- `stat` on helium: `/data/ssd/vault` is `ms:ms 700`; `recipes/` and `learning/`
+  are `755` with files `644`.
+- Versioning: appended a line to `learning/README.md` on helium, watched it
+  arrive on krypton within ~10s, and found the pre-edit copy archived at
+  `~/vault/.stversions/learning/README~20260812-150542.md`. Reverted the test
+  edit afterward from that same archived copy; confirmed the revert synced back
+  to helium too.
+
+Unblocks hermes-helium `021` (see the map).
+
+**Not done here, by design (see the ticket's own scope note above):** the
+`.stfolder` marker-guard port and the phone's three-way mesh pairing (needs a
+manual accept in the Syncthing app) are both left for later — neither is in the
+acceptance criteria above.
