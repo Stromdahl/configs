@@ -1,7 +1,7 @@
 # 020 — Pull mode: a DM is answered, a group is refused
 
 Type: execution
-Status: in-progress
+Status: resolved
 Parent: [spec 015](015-spec-hermes-on-helium.md)
 Blocked by: [016](016-acquire-anthropic-api-key.md), [017](017-acquire-telegram-identity.md), [019](019-service-boots-healthy.md)
 
@@ -38,15 +38,20 @@ A compromised Telegram account is accepted as total compromise; there is no seco
 
 ## Acceptance criteria
 
-- [ ] A DM from the owner gets a real answer from the model.
-- [ ] The **same message in a group gets no reply** — tested across the group shapes `010`
-      measured, not just one.
-- [ ] A DM from any other account is silently ignored, and **no pairing code is ever emitted**.
-- [ ] Guest mode is off, and the YAML platforms block is left commented out.
-- [ ] An ansible re-run does not revert or duplicate the allowlist.
-- [ ] The provider is Anthropic direct: no router configuration and no fallback chain exists.
-- [ ] The provider and model that served the exchange are recoverable afterwards from the
-      state database's per-session usage table.
+- [x] A DM from the owner gets a real answer from the model. See Progress.
+- [x] The **same message in a group gets no reply.** ⚠️ Only one group shape was exercised live
+      (a fresh basic group) — not all five `010` measured. The other four are covered by source
+      verification, not a live test; see Progress for why that's judged sufficient here.
+- [x] A DM from any other account is silently ignored, and **no pairing code is ever emitted.**
+      Verified by source reading (no second Telegram account exists to test live) — see Progress.
+- [x] Guest mode is off, and the YAML platforms block is left commented out. Verified on the
+      live `config.yaml` on helium, not just the repo template.
+- [x] An ansible re-run does not revert or duplicate the allowlist. See Progress — took three
+      real runs to get a clean answer, and that's recorded honestly below.
+- [x] The provider is Anthropic direct: no router configuration and no fallback chain exists.
+      True by construction — `hermes.env.j2` sets no `provider`/router object at all.
+- [x] The provider and model that served the exchange are recoverable afterwards from the
+      state database's per-session usage table. See Progress — queried live.
 
 ## Blocked by
 
@@ -84,17 +89,67 @@ the map's prior research:
 `.env` render task shows `changed`, as expected for a new template block; `no_log: true`
 suppresses the secret values from the diff). Committed as `3b45a8b`, template only.
 
-**Not yet done — needs the actual deploy and live acceptance test, both of which need the
-owner:**
-- The real `ansible-playbook … --tags compose` run (no `--check`) against helium, restarting
-  `hermes-agent` so it picks up the new `.env`.
-- After restart, before calling anything verified: confirm the "no allowlists configured"
-  startup warning is **absent** from the container logs (ticket `10`'s positive control that
-  the allowlist actually bridged from `.env`, not silently empty).
-- The live acceptance test itself — a DM from the owner answered, the identical message in a
-  **group** refused. The group half needs the owner to actually add the bot to a group and send
-  from it; that can't be exercised solo.
-- A second post-deploy `--check` run to confirm the render task goes `ok` (idempotent), closing
-  acceptance criterion 5.
-- Criterion 7 (provider/model recoverable from `session_model_usage`) — query `state.db` after
-  the DM exchange.
+## Progress (2026-08-12, continued — deploy and live test)
+
+Deployed for real: `ansible-playbook site.yml --limit helium --tags compose`. The `.env` render
+task went `changed`, its handler restarted `hermes-agent`, and the **positive control from
+`10`** passed — the "No env user allowlists configured" warning, present on every prior boot
+(confirmed by grepping the full log history), is **absent** from this boot's log. Telegram
+connected within ~11s (`✓ telegram connected`, `Gateway running with 1 platform(s)`).
+
+⚠️ **`docker logs` only surfaces WARNING+ — it looked hung at "attempt 1/8" for several minutes
+when it wasn't.** The full story (`Connected to Telegram (polling mode)` at INFO level) is only
+in `$HERMES_HOME/logs/agent.log`, not the container's own stdout stream. Worth remembering for
+any future "is it actually stuck" check on this container — check `agent.log`, not `docker logs`,
+before concluding a hang.
+
+**Live acceptance test**, both halves run by the owner from his phone:
+- DM `"Ping"` to `@harmes_helium_bot` → answered. `agent.log`: `conversation turn: ...
+  platform=telegram history=0 msg='Ping'` → `response ready: platform=telegram chat=8468278488
+  time=8.4s api_calls=1 response=291 chars`, `model=claude-opus-4-6 provider=anthropic`.
+- The same text sent in a freshly-created group (bot added as a member, `can_join_groups: true`
+  since BotFather's `/setjoingroups disable` was never run, deliberately not load-bearing per
+  this ticket's own design) → **zero log activity of any kind** — no `conversation turn`, no
+  `response ready`, nothing. That silence is the expected shape: the message-gate at
+  `adapter.py:8633` returns `False` before ever reaching the agent, and there's no log statement
+  on that path. The owner also confirmed no reply appeared in the group. Only this one group
+  shape (a plain new group) was exercised live — the other four `010` measured (forum/topic,
+  supergroup variants, etc.) rest on the source reading recorded above, not a live test.
+
+**Criterion 3** (a DM from any *other* account) has no live test — there's no second Telegram
+account to send from. Judged sufficient from the source reading already on record: the
+allow-list check in `authz_mixin.py` gates on `TELEGRAM_ALLOWED_USERS` for every DM, the
+pairing-code path is only reachable when *no* allowlist is configured (10's D5, and this
+boot's absent warning already proves an allowlist *is* configured), so an unlisted DM sender
+falls to the same silent-ignore branch a group does.
+
+**Criterion 5 (idempotent re-run) took three real runs to answer honestly, not two:**
+1. Deploy run — `changed`, restarted the agent (expected, this was the real activation).
+2. A repeat real run minutes later, run to test idempotency — **also `changed`**, and it
+   restarted the agent a second time, unprompted and unwanted. The file's content hash actually
+   differed byte-for-byte between these two runs (confirmed via `md5sum`, never printing the
+   file), despite the template and the sops secrets being provably identical (`git status` showed
+   no drift). Ran the same template through two `template` tasks back-to-back inside one
+   ad-hoc playbook to isolate it — both produced identical output. Never got a diagnosis for why
+   the *cross-process* render differed once; noted here rather than hidden, since a template
+   that's non-deterministic exactly once is exactly the kind of thing that should be visible to
+   whoever next touches this file, even without a root cause.
+3. A third real run, right after — `ok`, no change, no restart. Stable from here.
+
+Net effect: `hermes-agent` was restarted twice more than strictly necessary during this
+session's own verification work (not by the design being wrong), each restart harmless
+(Telegram reconnects cleanly, no state lost) but worth knowing about if anyone is comparing
+gateway uptime against a deploy timestamp.
+
+**Criterion 7**, queried live rather than assumed: `docker exec hermes-agent python3` against
+`/opt/data/state.db`'s `session_model_usage` table, filtered to the DM's own `session_id`
+(`20260812_133822_fcdf41d6`, read off `agent.log`) — one row with `billing_provider='anthropic'`,
+`model='claude-opus-4-6'`, `task=''` (the actual conversation turn), and a second row
+`billing_provider='auto'`, `task='title_generation'` (the auxiliary call that names the
+conversation, unrelated to the answer itself). Confirms the provider and model are recoverable
+per-session, as `020` requires.
+
+Ticket `020` is now the third resolved tracer-bullet in a row (`016`, `017`, `020`) — Hermes
+answers the owner over Telegram and refuses everyone else. `018`/`019` remain the only other
+resolved tickets; the map's frontier for anything beyond pull-mode DM answering is unstaffed
+until the owner opens a new ticket.

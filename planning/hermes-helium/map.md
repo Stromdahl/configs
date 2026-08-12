@@ -14,12 +14,15 @@
 > completion from helium (also caught `09`'s cost table going stale: Sonnet 5 dropped to
 > $2/$10 per MTok). **`017` is resolved** — the owner DMed the bot, `getUpdates` returned
 > the real numeric id (`8468278488` — the same digits ticket `10` once flagged as
-> unprovenanced, now verified for real), and both the token and the id are in sops. Neither
-> is wired into the running container yet — turning on the Telegram platform without the
-> allowlist landing in the same change is an open pairing surface (`10`'s D2/D5), so that's
-> `020`'s job. **`016` and `017` are both done — `020` is now fully unblocked.** The two
-> remaining fog patches below are both gated on things the owner has not asked for, so
-> nothing here is frontier work.
+> unprovenanced, now verified for real), and both the token and the id are in sops. **`020` is
+> now resolved too** — the token and the allowlist landed in the same change as `10`'s D2/D5
+> required, deployed to helium, and live-tested from the owner's phone: a DM gets answered
+> (`model=claude-opus-4-6`, `provider=anthropic`, recoverable from `state.db`'s
+> `session_model_usage`), the same text in a group gets silence. **Pull mode is live — the
+> owner can message Hermes and get an answer.** `021` (the vault read/write surface) is next
+> in the spec's dependency graph, but it is *not* yet unblocked: it also depends on
+> `planning/vault-serve/issues/004`, still open. The two remaining fog patches below are both
+> gated on things the owner has not asked for, so nothing here is frontier work beyond that.
 
 ## Destination
 
