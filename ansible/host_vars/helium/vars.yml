@@ -195,6 +195,14 @@ protonmail_bridge_data: "{{ ssd_pool_mount }}/appdata/protonmail-bridge"
 # service boot + healthcheck only; 021 adds the read-only vault + inbox write
 # mount, 020 adds the Telegram/Anthropic secrets once tickets 016/017 land.
 hermes_data: "{{ ssd_pool_mount }}/appdata/hermes"
+# hermes-helium ticket 021 — same host path the syncthing role owns as the
+# Send-Receive vault replica (vault-serve 004). Aliased here rather than
+# referencing syncthing_vault_path directly in compose_stack, matching this
+# file's arr_puid/jellyfin_puid precedent. compose_stack must never create
+# this path — the syncthing role owns creation, and a Docker-root-created
+# stand-in would silently break the write boundary (021's own acceptance
+# criterion).
+hermes_vault_path: "{{ syncthing_vault_path }}"
 
 # issue 044 — paperless-gpt: local-LLM title/tag/correspondent suggestions for Paperless,
 # via an on-box Ollama (CPU-only, no cloud — documents never leave helium). paperless-gpt

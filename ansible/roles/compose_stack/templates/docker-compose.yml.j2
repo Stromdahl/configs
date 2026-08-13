@@ -1171,11 +1171,9 @@ services:
 
   # ===========================================================================
   # hermes-helium ticket 019 — Hermes, a personal-assistant agent (pull: Telegram
-  # DM; push: email triage + an evening brief). This ticket ships boot + healthcheck
-  # ONLY — no vault mount, no Telegram, no provider key, no scheduled jobs. Later
-  # tickets extend this same service: 020 adds the Telegram/Anthropic secrets (once
-  # needs-human tickets 016/017 land), 021 adds the read-only vault + one writable
-  # inbox dir, 022+ add cron jobs. Full design: planning/hermes-helium/map.md.
+  # DM; push: email triage + an evening brief). 020 added the Telegram/Anthropic
+  # secrets; 021 (below) adds the read-only vault + one writable inbox dir; 022+
+  # add cron jobs. Full design: planning/hermes-helium/map.md.
   #
   # Image: LOCALLY BUILT from ./build/hermes-agent/Dockerfile (FROM the pinned
   # upstream digest v2026.7.30, + a baked-in healthcheck script — see the Dockerfile
@@ -1214,6 +1212,26 @@ services:
       - HERMES_UID=1000
       - HERMES_GID=1000
       - TZ=${TZ:-Europe/Stockholm}
+      # hermes-helium ticket 021 — agent/runtime_cwd.py is the single source of
+      # truth for the system prompt's context-file discovery (AGENTS.md), the
+      # terminal tool's cwd, AND cron jobs with no per-job workdir: all three read
+      # TERMINAL_CWD (verified in the pinned image's own source). Left unset, a
+      # Telegram DM never reaches /vault/AGENTS.md at all — measured on this box
+      # with `hermes prompt-size --platform telegram` before this change: the
+      # "context (AGENTS.md/cwd files)" tier read 0 B. The bind-mount below (not
+      # this var) is what makes the terminal tool's write attempts outside
+      # /vault/inbox fail — this var only grants *discovery*, matching the vault
+      # surface's permission/cost split (08).
+      - TERMINAL_CWD=/vault
+      # HERMES_WRITE_SAFE_ROOT restricts the write_file/patch tools to these
+      # prefixes (os.pathsep-joined; agent/file_safety.py). The image's own
+      # Dockerfile ships ENV HERMES_WRITE_SAFE_ROOT=/opt/data — setting it here
+      # REPLACES that default rather than extending it, so /opt/data must be
+      # repeated or Hermes' own memory writes (criterion 6) would break. Ticket
+      # 01 already found this var does not bind the terminal tool at all — the
+      # read-only bind mount is the actual enforcement for shell-based writes;
+      # this only scopes the two dedicated file-write tools.
+      - HERMES_WRITE_SAFE_ROOT=/opt/data:/vault/inbox
     cap_drop:
       - ALL
     cap_add: *caps-privdrop
@@ -1221,6 +1239,17 @@ services:
       - "no-new-privileges:true"
     volumes:
       - ${HERMES_DATA:?missing HERMES_DATA}:/opt/data
+      # hermes-helium ticket 021 — whole vault read-only, then a narrower rw bind
+      # at the one writable subpath. Docker resolves the more specific /vault/inbox
+      # mount inside the /vault:ro tree, so the parent stays read-only (holds even
+      # against uid 0) while inbox/ alone is writable — the founding
+      # reorganize-the-vault catastrophe becomes structurally impossible rather
+      # than instructed against. Source path is never created by this role — see
+      # the "Assert the vault inbox exists" task above; Docker itself would
+      # otherwise root-create a missing source and hand Hermes a directory it
+      # can't use.
+      - ${HERMES_VAULT_PATH:?missing HERMES_VAULT_PATH}:/vault:ro
+      - ${HERMES_VAULT_PATH:?missing HERMES_VAULT_PATH}/inbox:/vault/inbox:rw
 
   # ===========================================================================
   # issue 044 — local-LLM titles/tags for Paperless (Ollama + paperless-gpt).

@@ -24,6 +24,23 @@
 # first configures Telegram.
 set -u
 
+# hermes-helium ticket 021 — the vault write surface must be present and correctly
+# shaped every time this fires, not just at the deploy that created it: a hand-run
+# `docker compose up` bypassing ansible's pre-flight assert, or the bind source
+# vanishing later, would otherwise sail through on cron liveness alone. This is a
+# defense-in-depth check — ansible's own assert (compose_stack/tasks/stack.yml) is
+# what stops the deploy from ever creating a root-owned stand-in in the first
+# place.
+if [ ! -d /vault ] || [ ! -f /vault/AGENTS.md ]; then
+	echo "UNHEALTHY: /vault is not mounted (no AGENTS.md found)"
+	exit 1
+fi
+
+if [ ! -d /vault/inbox ] || [ ! -w /vault/inbox ]; then
+	echo "UNHEALTHY: /vault/inbox missing or not writable"
+	exit 1
+fi
+
 HERMES_HOME="${HERMES_HOME:-/opt/data}"
 SUCCESS_FILE="$HERMES_HOME/cron/ticker_last_success"
 MAX_AGE_SECONDS=180

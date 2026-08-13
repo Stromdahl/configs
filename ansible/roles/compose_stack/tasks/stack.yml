@@ -223,6 +223,31 @@
     mode: "0700"
   when: protonmail_bridge_data is defined
 
+# --- hermes-helium ticket 021: the vault write surface must already exist ------
+# Docker root-creates a missing bind source, which would silently hand Hermes a
+# root-owned /vault/inbox it cannot write to while looking configured (021's own
+# enemy class). The syncthing role owns creating this path (vault-serve 004); this
+# task only verifies, never creates — a missing/wrong-owned inbox fails the whole
+# deploy rather than let compose paper over it.
+- name: Assert the vault inbox exists and is owned by the container uid/gid (hermes-helium 021)
+  ansible.builtin.stat:
+    path: "{{ hermes_vault_path }}/inbox"
+  register: _hermes_vault_inbox
+  when: hermes_vault_path is defined
+
+- name: Fail if the vault inbox is missing or wrong-owned (hermes-helium 021)
+  ansible.builtin.assert:
+    that:
+      - _hermes_vault_inbox.stat.exists
+      - _hermes_vault_inbox.stat.isdir
+      - _hermes_vault_inbox.stat.pw_name == 'ms'
+    fail_msg: >-
+      {{ hermes_vault_path }}/inbox must already exist, be a directory, and be
+      owned by ms (uid 1000) before hermes-agent can mount it — the syncthing
+      role (vault-serve 004) owns creating it. Refusing to let compose_stack
+      silently create a root-owned stand-in.
+  when: hermes_vault_path is defined
+
 # --- hermes-helium ticket 019: Hermes state dir on the SSD 'appdata' subvol -----
 # HERMES_UID/GID=1000 (ms), matching the vault owner on krypton for when ticket 021
 # adds that mount. Pre-owned before first start for the same reason as every other

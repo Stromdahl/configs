@@ -24,9 +24,17 @@
 > vault (`/data/ssd/vault`, `ms:ms 700`, `recipes`/`learning` at `755`/`644`), confirmed
 > synced at 100% completion, with krypton's staggered versioning (`maxAge` `31536000`)
 > verified end-to-end (edit-on-helium → archived copy on krypton). That was hermes-helium
-> `021`'s external blocker, so **`021` (the vault read/write surface) is now unblocked and is
-> the frontier.** The two remaining fog patches below are both gated on things the owner has
-> not asked for, so nothing here is frontier work beyond `021`.
+> `021`'s external blocker, so **`021` (the vault read/write surface) is now resolved too** —
+> whole vault mounted read-only, `/vault/inbox` the one writable directory (verified: writes
+> anywhere else fail `Read-only file system`, even as uid 0), and a load-bearing gap closed
+> along the way: a Telegram DM session had **zero** vault context (`TERMINAL_CWD` unset), so
+> `021` set it to `/vault`, which is what makes both `AGENTS.md` and the file/terminal tools
+> resolve into the vault at all. Live-tested from the owner's phone: a board question got a
+> real answer sourced from `tasks.md`, and "capture this" produced a correctly-named,
+> Hermes-tagged note that reached krypton. **The frontier is now
+> [022 — the interrupt channel](issues/022-interrupt-channel.md).** The two remaining fog
+> patches below are both gated on things the owner has not asked for, so nothing here is
+> frontier work beyond `022`.
 
 ## Destination
 
