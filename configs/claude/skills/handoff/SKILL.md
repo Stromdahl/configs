@@ -5,7 +5,7 @@ argument-hint: "What will the next session be used for?"
 disable-model-invocation: true
 ---
 
-Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to the temporary directory of the user's OS - not the current workspace - named `handoff-<YYYY-MM-DD-HHMMSS>-<slug>.md`, where `<slug>` is a short kebab-case hint at the topic. This naming convention is load-bearing: `/pickup` globs for it.
+Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to `${TMPDIR:-/tmp}` - not the current workspace, and not a per-session scratchpad directory, since a different session must be able to find this file. Name it `handoff-<YYYY-MM-DD-HHMMSS>-<slug>.md`, where `<slug>` is a short kebab-case hint at the topic. This location and naming convention are load-bearing: `/pickup` globs for them.
 
 Include a "suggested skills" section in the document, which suggests skills that the agent should invoke.
 

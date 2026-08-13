@@ -1,7 +1,7 @@
 ---
 name: pickup
 description: Pick up a /handoff document in a fresh session and route straight into whichever skill actually fits the task. Type /pickup [path] [steering text] to resume from a handoff file — the other half of the /handoff bridge.
-argument-hint: "Which handoff file (if not the only one in temp), and any steering for how to proceed?"
+argument-hint: "[path to handoff file] [optional steering text]"
 disable-model-invocation: true
 ---
 
@@ -15,7 +15,9 @@ whichever skill the task actually calls for.
 
 1. **Locate the handoff file.**
    - If the arguments contain something that looks like a file path, use it.
-   - Otherwise, glob the OS temp directory for `handoff-*.md`.
+   - Otherwise, glob `${TMPDIR:-/tmp}/handoff-*.md` - the same fixed
+     location `/handoff` writes to, not any per-session scratchpad
+     directory.
      - Exactly one match: use it.
      - Multiple matches: list them with their modification times and ask the
        user which one.
@@ -49,4 +51,7 @@ whichever skill the task actually calls for.
 
 - The flow map lives in `ask-matt`, not here, so the two cannot drift.
 - Pairs with `/handoff`, which writes the file this skill reads, named
-  `handoff-<YYYY-MM-DD-HHMMSS>-<slug>.md` in the OS temp directory.
+  `handoff-<YYYY-MM-DD-HHMMSS>-<slug>.md` in `${TMPDIR:-/tmp}`.
+- Handoffs written before this convention existed use ad-hoc names and
+  won't match the glob; if the glob comes up empty, mention that older
+  files may still be sitting in `${TMPDIR:-/tmp}` under other names.
