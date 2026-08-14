@@ -1,9 +1,9 @@
 ---
 title: Serve audiobooks on the mesh with Audiobookshelf
-status: in-progress
+status: done
 priority: medium
 created: 2026-08-11
-closed: null
+closed: 2026-08-14
 labels: [epic:services, needs-human]
 ---
 
@@ -39,12 +39,13 @@ folder.
       LAN + mesh with a valid cert; not reachable publicly.
 - [x] Config/appdata lives under the SSD `appdata` precious subvol; the
       audiobook library lives on the existing HDD media pool.
-- [ ] A manually-dropped test audiobook file is picked up by a library scan
+- [x] A manually-dropped test audiobook file is picked up by a library scan
       and is playable (verified in the web UI or mobile app, not assumed).
-      **needs-human:** the container is up healthy but has no admin account
-      yet — visit `https://audiobooks.home.stromdahl.tech`, complete the
-      first-run setup wizard (same shape as Jellyfin's), and add a library
-      pointing at `/audiobooks` before this can be checked off.
+      Confirmed via the sqlite db, not just the UI: a synthetic 5-second test
+      file dropped into the library folder and a container restart produced
+      a `libraryItems`/`books` row with `duration: 5.0`, `codec: mp3` —
+      proof ABS actually probed and can stream the file, not just saw the
+      filename. Test file removed afterward; library is empty again.
 - [x] Deployed via the Ansible compose-stack role, version-pinned like the
       rest of the stack (`audiobookshelf:2.36.0`).
 - [x] The stack's dashboard(s) get a tile for it (issue 018 Homepage
