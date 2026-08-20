@@ -1485,6 +1485,7 @@ require("lazy").setup({
       },
       code = {
         disable_background = true, -- no filled box; keep the language header line
+        border = "thin",  -- hairline ▄/▀ rules above & below instead of thick rows
         sign = false,
         inline = false,   -- no background box on `inline code` (keeps gruvbox fg)
       },
