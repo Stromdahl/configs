@@ -20,6 +20,10 @@ require("gruvbox").setup({
     -- terminal renders invisibly over blank cells (empty lines / indentation).
     -- Give it a solid high-contrast fill so the block cursor is always visible.
     Cursor = { fg = "#1d2021", bg = "#fe8019" },
+    -- render-markdown thin code-block borders: default links to ColorColumn
+    -- (bg-only), which paints the ▄/▀ glyphs light-on-gray. Muted gruvbox
+    -- gray (bg2) as fg on no bg = a subtle hairline against the black bg.
+    RenderMarkdownCodeBorder = { fg = "#504945", bg = "NONE" },
     -- etc
   },
 })
