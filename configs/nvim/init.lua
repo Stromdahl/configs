@@ -1484,10 +1484,8 @@ require("lazy").setup({
         width = "block",  -- hug the text rather than the whole window
       },
       code = {
-        width = "block",  -- code background hugs the code, not the full window
+        disable_background = true, -- no filled box; keep the language header line
         sign = false,
-        left_pad = 1,
-        right_pad = 1,
         inline = false,   -- no background box on `inline code` (keeps gruvbox fg)
       },
       checkbox = {
