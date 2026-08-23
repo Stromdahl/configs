@@ -2,7 +2,7 @@
 
 Type: grilling
 Status: open
-Blocked by: 01, 12
+Blocked by: 01
 
 ## Question
 
@@ -69,12 +69,15 @@ recommended in question 2. See
 
 ## Amendment (2026-08-23, from ticket 03)
 
-**Now blocked by [12](12-forge-namespace.md).** Question 3 ("where it lives", name,
-config-or-forge-derived) cannot be answered while the owner string is unfixed: the
-whole command is "derive owner/repo from the remote, or from config" and the answer
-differs for a user namespace vs an organization.
+**The owner string is fixed, so question 3 is unblocked.** Ticket
+[06](06-repo-curation.md) settled a **single organisation named `projects`** holding
+all 20 repos — so `forge sync` derives `owner` from one constant, not from parsing,
+and every clone URL carries the same path segment. Ticket 03 §3 independently
+*corroborates* that choice: the web dashboard's label picker is only populated in an
+**org** context (`GetLabelsByOrgID`), so a user namespace would have shipped a
+cross-project issue view with no working label filter.
 
-**Also: this wrapper may have a second job.** Ticket 03 §7 found Forgejo has **no
+**This wrapper may have a second job.** Ticket 03 §7 found Forgejo has **no
 CLI** — no `gh`/`glab` analogue — so `issue-tracker-forgejo.md` is either a raw-HTTP
 cookbook or a cookbook for exactly this wrapper. Decide here whether `forge` is
 sync-only or becomes the single Forgejo transport (`forge issue list`, `forge issue

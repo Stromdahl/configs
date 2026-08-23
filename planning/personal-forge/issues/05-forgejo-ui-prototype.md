@@ -52,3 +52,26 @@ cannot be automated** (no `/projects` API at all). Build a board by hand anyway 
 put the issues on it — because the board is very likely the "UI I actually open"
 that justified the whole tracker decision, and the owner needs to see it knowing
 that no agent will ever be able to touch it.
+
+## Amendment (2026-08-23, from ticket 03) — two additions to the shape above
+
+**1. Build it under an organisation, not a user.** Ticket 03 §3 found the web
+dashboard's label picker is **only populated in an org context**
+(`GetLabelsByOrgID`, `routers/web/user/home.go:593`) — on a personal dashboard you
+can pass label IDs by URL but there is **no selector**, and there is no milestone
+filter either. Standing the throwaway up under a bare user account and concluding
+"the cross-project view is weak" would be a **false negative caused by an unmade
+config choice**. Ticket [06](06-repo-curation.md) has since settled a single org
+named `projects`, so mirror that: create the org, put the repos and the labels under
+it, and show the owner the **org** dashboard. Cheap bonus if it costs nothing: show
+the user dashboard beside it, which is the evidence that 06's org call was right.
+
+**2. Free win — tag-verify on v15 while you are in there.** 03's dependency findings
+were verified against codeberg's **`16.0-dev`**; ticket 01 pinned **`:15`**. This
+throwaway will be a v15 instance, so it is the cheap place to close the one
+inferred-not-verified gap in 03. Confirm and record: that
+`POST /repos/{o}/{r}/issues/{n}/dependencies` accepts `{owner,repo,index}`; that
+`internal_tracker.enable_issue_dependencies` is readable *and* settable on
+`PATCH /repos/{o}/{r}`; that closing a blocked issue really returns **412
+`DependenciesLeft`**; and that `type=issues` filters PRs out of
+`/repos/issues/search`.

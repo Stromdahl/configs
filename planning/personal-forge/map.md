@@ -151,6 +151,11 @@ and must not be re-litigated:_
   Reframes [07](issues/07-tracker-cutover.md) from a capability question to a
   convention question, and surfaces a **hybrid** option (maps stay markdown,
   execution tickets go to Forgejo) that 07 must decide rather than assume away.
+  Also **resolves [06](issues/06-repo-curation.md)'s org-vs-flat hedge in favour of
+  the org** — boards turn out to exist at *both* user and org level, so that was
+  never the argument; the real one is that the dashboard's **label picker is only
+  populated in an org context** (and it has no milestone filter at all), so a flat
+  user namespace would have shipped a cross-project view with no working filter.
 
 ## Not yet specified
 
