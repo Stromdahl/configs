@@ -341,23 +341,27 @@ and must not be re-litigated:_
 - [lumin's definition of done, once the deep tier is remote](issues/09-lumin-definition-of-done.md) —
   **The cross-host anchoring hazard does not exist.** krypton (Zen 5) and helium
   (Coffee Lake), in the same pinned image at the same commit, measure
-  **byte-identical `Ir` on all twelve benches** — so resolution 1 wins, but refined:
-  **the anchoring authority is the pinned job image, not a host.** Any host running it
+  **byte-identical `Ir` on all twelve benches** — so resolution 1 is the owner's call,
+  with a **recommended (not yet confirmed) refinement: the anchoring authority is the
+  pinned job image, not a host.** Any host running it
   may bless (krypton is *not* demoted — `docker run <image> just perf`); only a
   *host-native* run is advisory, on a measured 26 `Ir` residual from workspace path.
   helium clears the Anchoring rule at **1.70 ms / 16.67 ms (~9.6×)**. Spec §1 is
   **restated, not broken**: *one gate definition, two execution sites* — the CI workflow
-  must call `just` recipes and may never define a gate inline, which **overturns ticket
-  04's preference** and puts `--in-place` in the justfile as `mutants *ARGS`. Done =
+  must call `just` recipes and may never define a gate inline, which would **overturn ticket
+  04's preference** and put `--in-place` in the justfile as `mutants *ARGS`. Done =
   fast tier green + pushed + CI verdict green; `just qa` survives as debug/offline/
-  pre-push only. **`nice` is dropped entirely** (cgroups are real, `ionice` isn't);
+  pre-push only; `coverage` is **untested, not cleared**. **`nice` is dropped** (cgroups are real, `ionice` isn't);
   systemd values stay deferred behind ticket 12's open unit type. **Blocking discovery:
   default seccomp forbids the perf gate** — `personality(ADDR_NO_RANDOMIZE)` is denied
   by Docker's *and* Podman's default profiles, so the job needs a custom profile
   (default + that one arg, not `unconfined`). Also found: **lumin's committed Ceilings
   are already stale on krypton** (`particles` 4,716,499 vs a blessed 5,377,605), so the
   feared silent false green is happening from plain code drift. Evidence:
-  [`assets/09-anchoring-measurements.md`](assets/09-anchoring-measurements.md).
+  [`assets/09-anchoring-measurements.md`](assets/09-anchoring-measurements.md) — all of
+  it under Docker, not the recommended rootless Podman. **§3, §6 and §7 of the answer
+  are PROPOSED pending the owner's confirmation**; the measurement-driven sections are
+  not.
 
 ## Not yet specified
 

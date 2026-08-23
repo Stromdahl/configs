@@ -162,7 +162,22 @@ Two spec edits are now **owned by this ticket**, not 12:
 
 ## Answer (2026-08-23)
 
-Decided with the owner. All evidence:
+**Read the status line on each section before building on it.** The owner replied
+to this session's two grilling rounds with one word each ("agree", "agreed").
+That is enough to carry the option-1 lean it followed, and nothing more — so
+**§0–§2, §4 and §5 are measurement-driven and stand on their own, while §3's
+refinement, §6's overturn of ticket 04, and §7's rule-1 text are PROPOSED and
+await the owner's explicit confirmation.** The `coverage` call in §2 was never
+asked and is flagged there. Downstream tickets should treat the proposed items as
+recommendations, not as locked decisions.
+
+**Runtime caveat carried up from the asset, because this is what downstream
+reads:** every measurement below ran under **Docker**, not the rootless Podman
+ticket 04 recommends. The substitution is sound for what was measured (glibc and
+valgrind belong to the image), and the Podman half of the seccomp claim in §4 is
+read from `containers/common`'s `seccomp.json` **source, not from a run**.
+
+All evidence:
 [`../assets/09-anchoring-measurements.md`](../assets/09-anchoring-measurements.md),
 with both runnable scripts beside it.
 
@@ -198,15 +213,24 @@ and a red CI is not downgraded to advisory because the laptop was green.
 
 ### 2. Which gates move: all of them
 
-All six deep recipes — `deny`, `proptest-deep`, `smoke`, `perf`, `mutants`,
-`coverage`. Nothing stays local for capability reasons: ticket 02 cleared the
+Five of the six deep recipes — `deny`, `proptest-deep`, `smoke`, `perf`,
+`mutants`. **`coverage` is UNTESTED, not decided:** `cargo llvm-cov` with
+`llvm-tools` under a rootless container is the one gate nobody has run anywhere,
+it was never in this ticket's question, and today's seccomp discovery is a
+standing warning against assuming a gate containerises just because it looks
+like it should. Run it before the workflow is written. For the other five,
+nothing stays local for capability reasons: ticket 02 cleared the
 smoke gate (genuinely headless, no `/dev/dri`) and argued the perf gate ports;
 today's run **proves** the perf gate ports. The fast tier stays local and
 unchanged.
 
-### 3. Anchoring: the job image is the authority, not a host
+### 3. Anchoring: the job image is the authority, not a host — PROPOSED
 
-Resolution **1 of the three, refined by the measurement**. Ceilings mean *"as
+Resolution **1 of the three** (the owner's call), **refined by the measurement —
+and the refinement itself is proposed, not confirmed**: the owner agreed to
+"helium is the authority, krypton advisory", and the measurement says the
+narrower "the *image* is the authority" is available instead. If they decline the
+refinement, fall back to their literal choice. Ceilings mean *"as
 measured in the pinned job image"*. Consequences, precisely:
 
 - **Any host running that image may bless.** helium is merely where CI runs it;
@@ -214,7 +238,9 @@ measured in the pinned job image"*. Consequences, precisely:
   `docker run <image> just perf`.
 - **A host-native run is advisory** — laptop included. `particles` differs by
   **26 `Ir`** (5.5 × 10⁻⁶) between krypton-native and krypton-in-image: same
-  host, same commit, so it is the workspace path, not the CPU. Negligible in
+  host, same commit, so it is the environment rather than the CPU — **cause
+  inferred as the workspace path; path and env both varied, and M5's controlled
+  experiment was not run**. Negligible in
   magnitude, but it means "byte-identical" is only true with the environment
   held constant, so the authoritative claim is pinned to the image.
 - **The Anchoring rule is satisfied on helium** (M8): the v0.1 bar runs at
@@ -254,9 +280,11 @@ different dependency set than the laptop, and a dependency bump moving `BLIT_IR`
 would read as a regression in lumin's own code. Accepted cost: every dependency
 update needs a deliberate `cargo update` first.
 
-### 6. `--in-place` and the contention lever
+### 6. `--in-place` and the contention lever — PROPOSED
 
-**Ticket 04's preference (a) is overturned**, by §1's rule. A workflow-side
+**Ticket 04's preference (a) would be overturned** by §1's rule, and this
+reversal of a prior ticket's recommendation is exactly the kind of call that
+needs the owner's word rather than a one-word reply. A workflow-side
 wrapper that bypasses the justfile would be exactly the inline gate definition
 §1 forbids. Instead:
 
@@ -274,7 +302,7 @@ wrapper that bypasses the justfile would be exactly the inline gate definition
   unnamed unit would be invention. They belong to whoever closes the unit type,
   in the runner build issue.
 
-### 7. How an agent knows (AGENTS.md rule 1)
+### 7. How an agent knows (AGENTS.md rule 1) — PROPOSED TEXT
 
 Deep tier is 25–40 min warm, so blocking an agent session on it is not the
 design. Rule 1 becomes:
