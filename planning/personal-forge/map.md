@@ -169,8 +169,11 @@ and must not be re-litigated:_
   60–90 min cold. **The real risk is a spec gap, not hardware:** §4.5 assumes
   exactly one machine measures `Ir` and has no rule for which host owns the
   Ceilings — now ticket [09](issues/09-lumin-definition-of-done.md)'s actual
-  content. **Eight cheap helium measurements** are named in the asset's §4; M1 and
-  M4 must run before 09. Full research:
+  content. **Eight cheap measurements** are named in the asset's §4; M1 and M4 must
+  run before 09 — and they must run **inside the runner's job image, not a host
+  shell on helium**, or they verify the wrong glibc/valgrind and can return a false
+  pass. Job image must be Debian 13 / glibc 2.41; **alpine/musl is disqualifying**.
+  Full research:
   [`assets/02-lumin-deep-tier-feasibility.md`](assets/02-lumin-deep-tier-feasibility.md).
 
 - [Throwaway Forgejo loaded with real repos and real issues](issues/05-forgejo-ui-prototype.md) —
