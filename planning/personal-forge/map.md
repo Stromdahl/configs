@@ -189,6 +189,24 @@ and must not be re-litigated:_
   load-bearing rather than merely tidy. Notes:
   [`assets/05-prototype-notes.md`](assets/05-prototype-notes.md).
 
+- [Runner topology for lumin's deep tier](issues/04-runner-topology.md) —
+  **Recommended: `forgejo-runner` as an unprivileged systemd unit → rootless Podman
+  → `docker://` labels → a purpose-built trixie image**, registered at **repository
+  scope**. The key unblocking finding: **privileged docker-in-docker is Forgejo's
+  *default*, not a requirement** — rootless Podman is first-party documented on
+  trixie and needs "no particular permissions". Ticket 02 had already emptied the
+  capability bucket, so all four backends work and this was purely a
+  confinement-and-provenance choice; **containers win on reproducibility**, since a
+  `host` runner would invalidate ticket 02 §4's provenance model wholesale. **Every
+  default job image is bookworm/glibc 2.36 — disqualifying**, not merely suboptimal.
+  Cache `target/` via a persistent bind mount on a new `ci` btrfs subvolume, **not**
+  `actions/cache`. Honest bottom line: the "only my own code" argument is real for
+  the workflow threat class but **does not cover `cargo build` executing third-party
+  `build.rs` on 1109 mutant builds**. Full research:
+  [`assets/04-runner-topology-research.md`](assets/04-runner-topology-research.md).
+  Adopting it (plus the supply-chain and badge calls) is ticket
+  [12](issues/12-adopt-runner-shape.md).
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -208,8 +226,11 @@ In-scope fog — real, but not yet sharp enough to ticket:
   deleted. Its two unbuilt pieces (`show` output, install story) are blocked on
   design decisions that may simply evaporate. Note its hard-won insight is worth
   keeping either way: *a project is a registered entity, never a directory.*
-- **CI failure notification.** A verdict nobody sees is not a verdict. Options
-  already in the fleet: HA (MQTT), homepage, ntfy, plain email.
+- ~~**CI failure notification.**~~ **Closed 2026-08-23 by ticket 04** — the
+  mechanisms exist and are better than this item assumed: per-job commit statuses on
+  push (but **none** for scheduled / `workflow_dispatch` runs), a first-party opt-in
+  failure email, a badge endpoint, and an `if: failure()` step to ntfy or HA-MQTT.
+  Picking one is now a decision in ticket [12](issues/12-adopt-runner-shape.md).
 - _(Graduated 2026-08-23 into ticket [04](issues/04-runner-topology.md): **where the
   CI runner lives and how it is confined.** Ticket 01 found Forgejo's documented
   default runner shape is a **privileged docker-in-docker daemon**, with Forgejo's own
