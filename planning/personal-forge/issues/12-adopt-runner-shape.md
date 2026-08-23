@@ -133,7 +133,9 @@ the whole run without: pinned **`rustc 1.94.1`** via rustup, `cargo-machete`,
 `cargo-mutants`, `cargo-deny`, `cargo-llvm-cov`, **`gungraun-runner` exactly 0.19.4**,
 plus `cage`, `grim`, `valgrind ≥ 3.20` — on top of 04's `zstd`, `nodejs`,
 `git ≥ 2.24.3`. Several are `cargo install`, i.e. compiled from source at image-build
-time on a 6-core i5. **Owner accepted a slow, rarely-rebuilt image.**
+time on a 6-core i5. The owner accepted the shape; **the image-build cost was raised but never
+explicitly answered** — treat "a slow, rarely-rebuilt image is fine" as this
+ticket's assumption, not the owner's word.
 
 **Open premise (needs helium):** rootless Podman requires `/etc/subuid`,
 `/etc/subgid` ranges and `newuidmap`. **Unverified — nobody in 04 or 12 checked.** If
@@ -190,7 +192,11 @@ Commands were run as `ms` over ssh; helium was reached at **`192.168.1.191`**
 `NeedsLogin`, so the mesh IP `100.65.22.72` timed out**. Re-run with
 `ssh 192.168.1.191 '<cmd>'`.
 
-**M9 — cgroup delegation: PRESENT, but partial.** cgroup v2 (`cgroup2fs`), systemd 257.
+**M9 — PARTIALLY run.** Asset 04's M9 has four parts; only the `cgroup.controllers`
+one could run, because **podman is not installed** — `podman --version`,
+`systemctl --user status podman.socket` and the `debian:trixie` glibc probe remain
+**unmeasured**, including whether podman on trixie is **≥ 5.3** (04's IPv6 caveat).
+**Cgroup delegation: PRESENT, but partial.** cgroup v2 (`cgroup2fs`), systemd 257.
 ```
 cat /sys/fs/cgroup/user.slice/user-1000.slice/cgroup.controllers   -> cpu memory pids
 cat /sys/fs/cgroup/cgroup.controllers                              -> cpuset cpu io memory hugetlb pids rdma misc
@@ -263,9 +269,11 @@ Script kept at `assets/12-measure-mutants-io.sh`.
 
 ### Q3 — resource limits: **cache moves to the NVMe; endurance concern withdrawn.**
 
-**The endurance worry was wrong and is withdrawn.** At ~70 GB per full `just qa`
-(mutants dominating) against ~180 TB remaining per Kingston, that is ~2,500 runs — a
-decade at any plausible push rate. The NVMe's ~150 TBW is the same order. Correlated
+**The endurance worry was wrong and is withdrawn.** **Measured: 52.56 GiB for the
+mutants gate; the other eight gates are unmeasured** (`cargo llvm-cov` does a full
+instrumented rebuild, so it is not negligible). Even taking mutants alone against ~180
+TB remaining per Kingston that is ~3,400 runs, and the conclusion has roughly 40×
+headroom — a decade at any plausible push rate, whatever the other gates add. The NVMe's ~150 TBW is the same order. Correlated
 raid1 wear-out is **not** a real constraint and should not be re-raised.
 
 **What the measurement actually exposes is I/O contention.** 52.56 GiB in 11 min is
@@ -302,7 +310,9 @@ price of the NVMe trade.
 
 - **Adopted:** a first workflow step that refuses to run when free space on `/` is
   below a floor (~40 GB), plus a cleanup step removing the scratch tree **on exit,
-  including on failure**. Fails the job rather than the box; no privileged config.
+  including on failure**, plus a **pre-job sweep of stale scratch dirs** — cleanup-on-exit
+  does not run for a SIGKILLed job, and orphaned scratch trees are the actual
+  slow-accumulation path. Fails the job rather than the box; no privileged config.
 - **Adopted as safety net:** a disk-free sensor on `/` published over the existing
   MQTT → Home Assistant path (issue 046). Advisory only.
 - **Rejected: ext4 project quota.** It is the only option making overrun *impossible*
@@ -369,11 +379,16 @@ recommendation below therefore rests on operational simplicity, not on `io`.
 
 ### The spec
 
-1. **Runner process** — `forgejo-runner` as a **systemd system unit** with
-   `User=forgejo-runner` (unprivileged, no shell needed for the runner itself).
-   Chosen over `systemd --user` for operational simplicity: ansible-native via the
-   `systemd` module, starts at boot with no session, no linger dependency **for the
-   runner**.
+1. **Runner process** — `forgejo-runner` running **unprivileged as a dedicated
+   `forgejo-runner` user**, per ticket 04. **OPEN implementation detail: system unit
+   with `User=` vs. `systemd --user` unit.** Ticket 04 does not disambiguate it (it says
+   only "unprivileged systemd unit"), the owner was not asked, and the argument I
+   originally used for a system unit — access to the `io` controller — **I withdrew as
+   inapplicable to jobs**. So this is deliberately left open rather than invented here.
+   Whoever closes it must handle one hazard: a **system** unit has no ordering dependency
+   on `user@<uid>.service`, so `/run/user/<uid>/podman/podman.sock` may not exist when it
+   starts — it needs `After=`/retry. A `systemd --user` unit sidesteps that and matches
+   the linger pattern the docs already require for the socket.
 2. **Container backend** — **rootless Podman**, `docker://` labels. The podman socket
    comes from the documented pattern: `podman.socket` as a **`systemd --user` unit for
    `forgejo-runner` with `loginctl enable-linger`**, and the runner unit points at it:
@@ -406,8 +421,9 @@ recommendation below therefore rests on operational simplicity, not on `io`.
    cargo-mutants' default scratch location applies — fatal on a 16 GB box if that is
    tmpfs, given a 9.8 GB `target/`.
 7. **Space guard** — a first workflow step failing the run when free space on `/` is
-   below ~40 GB, plus a cleanup step removing the scratch tree **on exit, including on
-   failure**. Plus an advisory disk-free sensor on `/` over the existing MQTT → HA path.
+   below ~40 GB, a cleanup step removing the scratch tree **on exit, including on
+   failure**, and a **pre-job sweep of stale scratch dirs** (cleanup-on-exit misses a
+   SIGKILLed job). Plus an advisory disk-free sensor on `/` over the existing MQTT → HA path.
    **No ext4 project quota** (would need `prjquota` + `tune2fs` + a reboot).
 8. **Resource limits** — `CPUWeight=`/`CPUQuota=`/`MemoryMax=` are **real** (M9: `cpu
    memory pids` delegated). **`ionice` and cgroup `io` are unavailable** — every device

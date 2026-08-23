@@ -283,12 +283,15 @@ and must not be re-litigated:_
   a non-issue and is withdrawn** (~2,500 runs of budget); the real problem is **~80 MB/s
   sustained for 25–40 min**, so the cache moves to the **NVMe root disk**, *not* the SSD
   mirror — guarded by a **fail-early free-space check + mandatory cleanup**, no quota.
-  **M9 resolved: `cpu memory pids` ARE delegated** (limits are real) but **`io` never is,
-  and every device is `mq-deadline`** — so `ionice` and cgroup `io` are **unavailable to
-  jobs by construction**, not declined. **Rootless Podman's prerequisites are absent on
+  **M9 partially run** — its cgroup half resolved (**`cpu memory pids` ARE delegated**,
+  so limits are real) but **`io` never is, and every device is `mq-deadline`**, so
+  `ionice` and cgroup `io` are **unavailable to jobs by construction**, not declined; the
+  podman-version/socket/glibc probes stayed **unmeasured because podman is not installed**. **Rootless Podman's prerequisites are absent on
   helium** (no podman/uidmap/slirp4netns/fuse-overlayfs; only `ms` has a subuid range) =
   real unscoped ansible work. **No badges** — mesh-only forge, one viewer, and
-  shields.io cuts against the motive. Full spec in the ticket.
+  shields.io cuts against the motive. Full spec in the ticket — **with the runner's
+  unit type (system-with-`User=` vs `systemd --user`) deliberately left OPEN**, since 04
+  does not disambiguate it and the `io` argument for a system unit was withdrawn.
 
 ## Not yet specified
 
