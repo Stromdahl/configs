@@ -32,3 +32,23 @@ awkwardly, and any screenshots worth keeping.
 
 **This ticket resolves once the instance exists and is linked.** The owner's
 reaction to it is not this ticket's job — that happens in ticket 07.
+
+## Amendment (2026-08-23, from ticket 03) — build this shape
+
+Ticket 03 settled what to build for the wayfinder specimen: **Forgejo has no
+sub-issues at all**, so build the substitute and let the owner react to *that*:
+
+- map issue labelled **`wayfinder:map`**
+- children labelled **`wayfinder:effort:vault-serve`** + **`wayfinder:<type>`**
+- **`Part of #<map>`** as the first line of each child body
+- a **markdown task list in the map body** for order and legibility (note it is
+  inert — closing a child does not tick its box; do not fake this)
+- at least one **real blocking edge** via
+  `POST /repos/{o}/{r}/issues/{child}/dependencies` — this part *is* native, and it
+  is the thing worth seeing rendered in the UI
+
+Also, and this is the sharpest thing to put in front of the owner: **kanban boards
+cannot be automated** (no `/projects` API at all). Build a board by hand anyway and
+put the issues on it — because the board is very likely the "UI I actually open"
+that justified the whole tracker decision, and the owner needs to see it knowing
+that no agent will ever be able to touch it.

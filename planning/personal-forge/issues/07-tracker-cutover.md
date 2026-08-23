@@ -43,3 +43,35 @@ Decide:
 
 Also decide taskmaster's fate if the conversation naturally reaches it; otherwise
 leave it in the fog.
+
+## Amendment (2026-08-23, from ticket 03)
+
+Ticket 03 returned **GO-WITH-WORKAROUND**, which reframes this ticket: the question
+is no longer *"can Forgejo do it?"* but **"is the convention acceptable?"** Facts to
+put on the table:
+
+- **Blocking dependencies are native, cross-repo, and API-driven** — better than
+  GitLab-free (no paid tier) and better than the GitHub adapter's own instruction.
+  Not a concern.
+- **There are no sub-issues, and there is no prospect of them** (tracking issue
+  open, all three implementations closed unmerged, absent from the dev build). Maps
+  would use `wayfinder:map` + `Part of #<map>` + labels — GitLab's primary shape and
+  GitHub's documented fallback.
+- **Kanban boards are unautomatable, permanently.** No `/projects` API. If any part
+  of the intended workflow is board-driven, that part is human-only forever. This
+  deserves explicit airtime, because the board is plausibly the whole reason the
+  tracker decision went the way it did.
+- **Forgejo refuses to close an issue with open blockers** (412 `DependenciesLeft`).
+
+**A live option this ticket should weigh rather than assume away — the hybrid:**
+keep the `local` markdown adapter for **wayfinder maps** (they stay in `planning/`,
+git-diffable, cross-linked, amended in place, assets greppable in-repo) and use a
+Forgejo adapter for **ordinary execution tickets**. That combination is already how
+this repo works today, dodges the hierarchy gap entirely, and matches this map's own
+"Plan, don't do" premise — maps produce decisions, and decisions belong in git.
+Ticket 03 deliberately did not decide it. Decide it here, deliberately, rather than
+letting "everything moves to the forge" win by default.
+
+One practical note for the adapter question: a Forgejo adapter would be an **HTTP
+cookbook**, not a CLI cookbook like the existing `github`/`gitlab`/`local` three —
+unless a `bin/` wrapper is written first (`feedback_extend_wrapper_first`).

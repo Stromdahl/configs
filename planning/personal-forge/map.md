@@ -138,6 +138,20 @@ and must not be re-litigated:_
   One org rather than flat **hedges [03](issues/03-forgejo-issue-model.md)**: if
   boards are org-scoped, it is the only namespace spanning all 20 repos.
 
+- [Forgejo's issue model — tracker *and* wayfinder maps?](issues/03-forgejo-issue-model.md) —
+  **GO-WITH-WORKAROUND** (on the v15 LTS line). **Blocking dependencies are native,
+  cross-repo and API-driven** — better than GitLab-free and better than the GitHub
+  adapter's own instruction. **Sub-issues do not exist and are not coming** (tracking
+  issue open, all three implementations closed unmerged, absent from the dev build),
+  so maps use `wayfinder:map` + `Part of #<map>` + labels — GitLab's primary shape.
+  **Kanban boards are unautomatable, permanently** (no `/projects` API) — a fine
+  human view, but no agent can ever read or write one. Forgejo sits **strictly
+  between GitHub and GitLab-free**. Full research:
+  [`assets/03-forgejo-issue-model-research.md`](assets/03-forgejo-issue-model-research.md).
+  Reframes [07](issues/07-tracker-cutover.md) from a capability question to a
+  convention question, and surfaces a **hybrid** option (maps stay markdown,
+  execution tickets go to Forgejo) that 07 must decide rather than assume away.
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -174,7 +188,11 @@ In-scope fog — real, but not yet sharp enough to ticket:
 - **How far the agent toolchain moves.** A `issue-tracker-forgejo.md` adapter is
   implied by the tracker decision, but whether *every* matt-pocock skill
   (`/to-tickets`, `/triage`, `/implement`, `/pickup`, `/wayfinder`) moves over, or
-  only some, depends on ticket 03's findings.
+  only some, remains open. _Sharpened 2026-08-23 by ticket 03: the live option is a
+  **hybrid** — `local` adapter for maps, Forgejo for execution tickets — now named
+  explicitly in ticket [07](issues/07-tracker-cutover.md) for decision. Also note an
+  adapter here is an **HTTP** cookbook, not a CLI one like the existing three,
+  unless a `bin/` wrapper is written first._
 
 ## Out of scope
 
