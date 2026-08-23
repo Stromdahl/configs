@@ -110,3 +110,25 @@ env (lumin untouched; the gate then behaves differently in CI than locally), or 
 justfile changes and goes through the spec's rule-6 flagging ritual. Note
 `--in-place` is a **CI-only** truth: it mutates the checkout, which is fine in a
 throwaway workspace and wrong on a developer's tree.
+
+### Rider 2 (from asset 04) — the contention lever is now on this ticket's critical path
+
+What was filed above as "a fourth thing to decide" has hardened into a **required**
+decision, because ticket 04 established that the runner cannot solve it:
+
+- **`container.options` has no niceness knob**, so a containerised job **cannot be
+  niced from the runner side**. There is no configuration escape.
+- **If rootless cgroup delegation is absent** (check **M9**: `cgroup.controllers`
+  must list `cpu memory`), then `--cpus`/`--memory` are **silently inert** — and
+  `nice`/`ionice` becomes **the only mechanism** making "coexists with a Jellyfin
+  transcode" true, not a complement to cgroup limits.
+- So the lever lives in exactly one of two places, and this ticket must pick:
+  **(a)** a workflow step wrapping the justfile entry point — a CI-only divergence
+  from spec §2's "the justfile is *the* entry point"; or **(b)** the justfile itself
+  — a contract change requiring the spec's §8 rule-6 flagging ritual.
+  **Preference from 04: (a)**, since `--in-place` is a CI-only truth (correct on a
+  throwaway workspace, wrong on a developer's tree).
+- **Caveat that affects whether the lever works at all:** `nice -n19` / `ionice -c3`
+  need no privilege, but **`ionice` classes only bite under BFQ/CFQ** — on a `none`
+  or `mq-deadline` queue it is a **no-op**. Verify helium's scheduler alongside M11;
+  do not assume the I/O half of the lever exists.

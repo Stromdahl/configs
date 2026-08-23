@@ -53,3 +53,24 @@ been broken for a week looks identical to a green one).
 
 Output: the runner spec, precise enough that building it is one ansible role, plus a
 recorded risk acceptance for the supply-chain exposure.
+
+### Riders (from asset 04's extension)
+
+**On question 1** — two premises to confirm as part of adopting the shape:
+- The **trixie image is a hard requirement**, not a preference: every default job
+  image candidate is bookworm/glibc 2.36, so there is no correct off-the-shelf base.
+- **Where the image is built is itself a decision, and 04 recommends helium:** a
+  `Containerfile` in this repo, built on helium by an ansible task, date/content-hash
+  tagged and **digest-pinned in the label**. Building locally rather than pulling
+  from Forgejo's own registry avoids CI depending on the registry which depends on
+  the forge being up — and **sidesteps ticket 08's registry-exposure collision
+  entirely**, which is worth noting in 08 as well. Adds `zstd`, `nodejs`, and
+  `git` ≥ 2.24.3 to the image's contents.
+
+**On question 3 (resource limits) — sharper than written above.** Run **M9** first:
+`cgroup.controllers` must list `cpu memory`. If rootless cgroup delegation is
+**absent**, then `--cpus`/`--memory` are **silently inert** — the quota question
+answers itself in the negative and `nice`/`ionice` becomes the only lever (owned by
+ticket 09). Also verify helium's **I/O scheduler**: `ionice` classes only bite under
+BFQ/CFQ, so on `none`/`mq-deadline` the I/O half of that lever does not exist. That
+matters more than usual here, given the recurring disk2 IO fault.

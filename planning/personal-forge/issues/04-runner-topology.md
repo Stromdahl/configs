@@ -143,3 +143,40 @@ So: not "accept the risk because it's my own code", and not "build a VM" — **d
 give the runner root, and keep the jobs in containers**, for the price of one ansible
 role. Adopting that (plus the badge and supply-chain calls) is a decision, now
 ticket **12**.
+
+### Riders (appended after the asset was extended to 1393 lines)
+
+**1. Two of the recommendation's premises are harder than stated above.**
+
+- **The trixie image is a hard requirement of the perf gate, not a convenience.**
+  *Every* default job image candidate is bookworm/glibc 2.36 — `node:22-bookworm`
+  (code default), `data.forgejo.org/oci/node:lts` (registration default),
+  `node:20-bookworm` (docs). There is no correct off-the-shelf option.
+- **What builds the image, and where: a `Containerfile` in this repo, built *on
+  helium* by an ansible task**, tagged with a date/content hash and **digest-pinned
+  in the label** (the docs call pinning *"a prerequisite for reproducible jobs"*).
+  Building locally rather than pulling from the forge's own registry avoids a
+  chicken-and-egg — CI depending on the registry which depends on the forge being
+  up — and **sidesteps ticket 08's registry-exposure collision entirely**. Three
+  additions to ticket 02's dependency list: **`zstd`** (or cache restores silently
+  no-op), **`nodejs`** (or `actions/checkout` breaks), and **`git` ≥ 2.24.3**.
+
+**2. The `nice`/`ionice` question is promoted from "inherited by 09" to on the
+critical path — this ticket explicitly cannot decide it and does not pretend to.**
+Two findings close off the easy exits:
+
+- **If rootless cgroup delegation is absent, `--cpus`/`--memory` are silently
+  inert**, and `nice`/`ionice` stops being a complement and becomes **the entire
+  mechanism** that makes "coexist with a Jellyfin transcode" true. New check **M9**:
+  `cgroup.controllers` must list `cpu memory`.
+- **`container.options` has no niceness knob at all**, so a containerised job
+  **cannot** be niced from the runner side. It lives either in a workflow step
+  wrapping the justfile entry point (a CI-only divergence from spec §2's "the
+  justfile is *the* entry point") or in the justfile itself (a contract change,
+  requiring the §8 rule-6 ritual). Stated preference: the **workflow-step route**,
+  because `--in-place` is a CI-only truth — right on a throwaway workspace, wrong on
+  a developer's tree.
+- **Honest caveat on the lever itself:** `nice -n19` / `ionice -c3` need no
+  privilege, but **`ionice` classes only bite under BFQ/CFQ** — on a `none` or
+  `mq-deadline` queue it is a **no-op**. Check it alongside M11 rather than silently
+  relying on it.
