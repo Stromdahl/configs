@@ -157,6 +157,35 @@ and must not be re-litigated:_
   populated in an org context** (and it has no milestone filter at all), so a flat
   user namespace would have shipped a cross-project view with no working filter.
 
+- [Does lumin's deep tier actually run on an i5-9400?](issues/02-lumin-deep-tier-on-helium.md) —
+  **Yes, all three questions clear.** The perf gate's `Ir` **does** port: Valgrind
+  masks `CPUID` to a synthetic **Haswell**, so the glibc AVX-512-vs-AVX2 `memcpy`
+  dispatch that would have moved `BLIT_IR` cannot fire under callgrind (verified in
+  Valgrind 3.24.0 source; krypton reports `dl_platform="haswell"` despite being an
+  AVX-512 machine). The smoke gate runs **genuinely headless** —
+  `WLR_BACKENDS=headless` + `WLR_RENDERER=pixman` creates no session and touches no
+  DRM device, so the runner does **not** need `/dev/dri` (which is Jellyfin's).
+  Deep tier **~25–40 min warm** (mutants dominating, serial and build-bound),
+  60–90 min cold. **The real risk is a spec gap, not hardware:** §4.5 assumes
+  exactly one machine measures `Ir` and has no rule for which host owns the
+  Ceilings — now ticket [09](issues/09-lumin-definition-of-done.md)'s actual
+  content. **Eight cheap helium measurements** are named in the asset's §4; M1 and
+  M4 must run before 09. Full research:
+  [`assets/02-lumin-deep-tier-feasibility.md`](assets/02-lumin-deep-tier-feasibility.md).
+
+- [Throwaway Forgejo loaded with real repos and real issues](issues/05-forgejo-ui-prototype.md) —
+  **Built and running at <http://localhost:3210/>** (Forgejo 15.0.7, the ticket-01
+  pin; scratchpad path, good for this week not forever). 4 real repos in an org
+  `projects`, 14 real `.dotfiles` issues, the vault-serve map as issue `#16` with a
+  **real blocking edge**, and a hand-built **org-level** board. Corrected the API
+  research in four places — most sharply: **`exclusive: true` is a silent no-op on
+  `:`-separated labels** (`/` is the scope separator; the API stores the flag and
+  never enforces it), so exclusivity would require renaming to
+  `wayfinder/type/research`. Also: **boards are org-scoped and a user-level board
+  is not offered for org-owned repos**, which makes ticket 06's "one org" hedge
+  load-bearing rather than merely tidy. Notes:
+  [`assets/05-prototype-notes.md`](assets/05-prototype-notes.md).
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
