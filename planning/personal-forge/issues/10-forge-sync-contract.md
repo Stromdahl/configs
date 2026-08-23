@@ -1,7 +1,7 @@
 # The `forge sync` contract
 
 Type: grilling
-Status: open
+Status: closed
 Blocked by: 01
 
 ## Question
@@ -113,3 +113,90 @@ that runs** on a fresh machine (it presupposes `bootstrap.sh` + the mesh), and i
 per-repo record needs a notion of **which host is canonical** rather than assuming the
 forge. Also note `Stromdahl.github.io` has **no local clone at all** — if `forge sync`
 is meant to be "restore everything I own", that repo is currently outside its reach.
+
+## Answer — SHELVED (out of scope), 2026-08-23
+
+**Not resolved: ruled out of scope.** The owner, asked to settle the direction set:
+*"we can shelf this until we need it."* So `forge sync` is not designed here and is
+not built as part of this effort. This is a **scoping act, not a step on the route** —
+it is recorded in the map's *Out of scope*, never in *Decisions so far*.
+
+It narrows the destination. The map's destination line named `forge sync` explicitly
+(*"plus the decisions needed to ... restore every repo onto a fresh machine (`forge
+sync`)"*), and the charting premise *"organize = hosting/backup + curation + a
+`forge sync` restore command"* named it too. Both are amended: this effort now
+delivers hosting, curation, the tracker and CI — **not** a reconcile/restore command.
+
+### Three consequences, so nobody re-derives them
+
+1. **The migration is not stranded.** Standing the forge up still needs something that
+   creates 20 repos and pushes them for the first time — but that is the one-shot
+   migration script [ticket 07](07-tracker-cutover.md) already assumes, not `sync`.
+   Different tool, different lifetime: one runs once, the other would run forever.
+2. **`bin/forge` still gets built.** Ticket 07 settled that the whole toolchain moves
+   and that `issue-tracker-forgejo.md` is a cookbook *against `bin/forge`*. Shelving
+   `sync` shelves a **subcommand**, not the wrapper. The `forge` vs `forge sync`
+   distinction matters: 03's amendment asked *this* ticket to decide sync-only vs
+   single-transport, and 07 had already answered transport.
+3. **The accepted cost.** "helium has my code" stays a belief rather than a checked
+   fact, and nothing will notice a repo created later and never pushed — the exact
+   state 29 repos in `~/projects` are in today. Knowingly accepted; recoverable at any
+   time, and cheap to pick up because the facts below are banked.
+
+### Facts measured before the shelving — banked, do not re-derive
+
+All five were premises this ticket flagged as unverified. Measured against the ticket-05
+prototype (Forgejo 15.0.7). Re-runnable:
+[`../assets/10-forge-api-probes.sh`](../assets/10-forge-api-probes.sh).
+
+- **Clone-URL rendering (this ticket's flagged unknown, now closed).** With SSH off
+  port 22 — helium's case, since it keeps sshd on 22 — the API renders the **URL form**
+  `ssh://git@host:2222/projects/repo.git`, **not** scp-style `git@host:owner/repo.git`.
+  A port-22 deployment would render scp-style, so any future parser should accept both.
+  The `SSH_PORT`-must-match coupling from 01's amendment survives and now belongs to
+  whoever writes the deployment, not to a shelved tool.
+- **Read-only token scoping is enforced server-side, not advisory.** A token scoped
+  `read:repository,read:organization`: list `200`, create `403`, delete `403`. So
+  read-only can be a property of the **credential** rather than of a `--dry-run` flag.
+- **An API token works as an HTTP git credential.** Private repos clone with it;
+  anonymous clones are refused. **Archived repos clone fine** (`oppen`, 22 commits) —
+  Forgejo's archive flag is a **push-only** restriction, which pre-answers this
+  ticket's question 7 whenever it returns.
+- **The credential-leak trap.** git **persists an embedded HTTP credential verbatim
+  into `.git/config`** as `remote.origin.url` (verified by grep). So "clone over HTTPS
+  with the token in the URL" would write the forge token in plaintext into ~20
+  `.git/config` files on a fresh machine. HTTPS-vs-SSH is therefore a **real trade**,
+  not "HTTPS is obviously simpler": HTTPS needs no published SSH port and no host-key
+  trust, but forces a credential-storage decision (`credential.helper`, `~/.netrc`, or
+  `url.<base>.insteadOf` with clean remotes), whereas SSH keeps the credential in the
+  one agent-backed place this repo already has a documented policy for.
+- **Pagination**: `X-Total-Count` + RFC-5988 `Link` (`rel=next`/`last`); confirmed
+  against 03's "cap 50, no rate limits".
+
+### Two findings that shrank the ticket, from ground truth
+
+- **The ignore list is 4 entries, not 26.** Surveyed `~/projects` (24 top-level git
+  repos + 4 non-git dirs): **`playground` and `vendor` are not git repos at depth 1** —
+  their 17 repos are nested one level down. So a **depth-1 scan** (`~/projects/*/.git`)
+  never sees them, and `rssfeed`/`hermes` are skipped for free. The whole exclusion set
+  collapses to **`keyerr`, `marlin-ender3`, `marlin-configs`,
+  `homelab-stack.archived`** — and the other 20 top-level git dirs *are* exactly ticket
+  06's twenty. This ticket's question 6 (*"do not build the ignore list from this
+  line"*) was answering a harder problem than the filesystem poses.
+- **`~/.dotfiles` is not under `~/projects`**, so the two-source restore in 08's rider
+  is structurally clean: `bootstrap.sh` fetches `configs` from GitHub and nothing that
+  walks `~/projects` can see it. `telltaled` *does* have a GitHub remote (it is one of
+  the 6 local checkouts), which 06 recorded separately from its "already on GitHub (5)".
+
+### One question this ticket was carrying that is now unowned
+
+**Is the token read-only or writeable?** Ticket 07 made `forge` the tracker transport,
+so `forge issue close` needs **write** scope — and the P2 measurement proves scope is
+enforced, so a single read-only token cannot serve both legs. The choice (two tokens
+vs one write token with read-only-ness as policy) now belongs to whoever builds
+`bin/forge`, and there is a **house pattern to follow**: `bin/ha` and `bin/unifi` both
+read a plain JSON token file from `$HOME` (`~/.ha-token.json`, `~/.unifi-token.json`;
+`~/.ha-token.json` is mode 0644 today, which is worth tightening for a forge token).
+Note **`pass` is not installed** on krypton and there is no `~/.password-store`, so the
+ticket's `pass` option was never available; sops+age *is* present. Not a decision for
+this map — recorded so the build issue does not rediscover it.

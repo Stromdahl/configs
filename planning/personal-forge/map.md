@@ -14,8 +14,13 @@ becomes three things at once:
 3. the **CI host** that runs lumin's **deep QA tier** asynchronously, so a
    1109-mutant run stops pinning the laptop.
 
-Plus the decisions needed to migrate off GitHub and to restore every repo onto a
-fresh machine (`forge sync`).
+Plus the decisions needed to migrate off GitHub. ~~and to restore every repo onto a
+fresh machine (`forge sync`)~~ — **the restore command was shelved 2026-08-23 by
+[ticket 10](issues/10-forge-sync-contract.md)** (*"we can shelf this until we need
+it"*), so it is **out of scope**: this effort delivers hosting, curation, the tracker
+and CI, but no reconcile/restore tool. Note the one-shot **migration** script that
+first creates and pushes the 20 repos is unaffected — that belongs to
+[ticket 07](issues/07-tracker-cutover.md), not to `forge sync`.
 
 > ✅ **Resolved 2026-08-23 by [ticket 08](issues/08-github-exit.md) — and resolved
 > *weaker* than this map was written.** The owner's decision: **GitHub is not
@@ -147,8 +152,10 @@ and must not be re-litigated:_
   is the owner's own: taskmaster is "complete and in use" per its README but was
   *never actually adopted*. A build-from-source CLI loses to nothing at all; a UI
   already open in a tab is the only shape that survives contact with use.
-- **"Organize" = hosting/backup + curation (alive/parked/dead) + a `forge sync`
-  restore command.** Filesystem restructuring is out of scope.
+- **"Organize" = hosting/backup + curation (alive/parked/dead)** ~~+ a `forge sync`
+  restore command~~. Filesystem restructuring is out of scope.
+  _Narrowed 2026-08-23 by [ticket 10](issues/10-forge-sync-contract.md): the restore
+  command is shelved until wanted, so "organize" is hosting + curation only._
 - ~~**Full migration off GitHub** (GitHub goes dark).~~ **Superseded 2026-08-23 by
   [ticket 08](issues/08-github-exit.md):** GitHub is **not touched, left as is**, and
   four repos are GitHub-native carve-outs. Read this premise as *"Forgejo becomes
@@ -437,3 +444,20 @@ In-scope fog — real, but not yet sharp enough to ticket:
   a resumption. See [ticket 08](issues/08-github-exit.md).
 - **The 71 GitHub repos with no local checkout** — ruled out by ticket 08's "GitHub
   untouched". They are not fog: no decision is pending on them, they simply stay.
+- **A `forge sync` reconcile/restore command** — shelved by
+  [ticket 10](issues/10-forge-sync-contract.md) on the owner's *"we can shelf this
+  until we need it"*, before its direction set was settled. It would have reported
+  drift in both directions and cloned the 20 repos onto a fresh machine. **Knowingly
+  accepted cost:** *"helium has my code"* stays a belief rather than a checked fact,
+  and nothing will notice a repo created later and never pushed — the state 29 repos in
+  `~/projects` are in today. Cheap to resume: the five premises it turned on were
+  **measured before it was shelved** and are banked in the ticket plus
+  [`assets/10-forge-api-probes.sh`](assets/10-forge-api-probes.sh) — clone-URL form,
+  server-side read-only token scoping, token-as-HTTP-git-credential, archived repos
+  being push-only, and the trap that git **persists an embedded HTTP credential
+  verbatim into `.git/config`** (which makes HTTPS-vs-SSH a real trade). Two things it
+  leaves behind: **`bin/forge` is still built** (ticket 07 needs it for the tracker leg
+  — this shelves a *subcommand*, not the wrapper), and the **read-only-vs-write token
+  choice** now belongs to whoever builds it, following the house pattern of a plain
+  JSON token file in `$HOME` (`bin/ha`, `bin/unifi`; **`pass` is not installed**, so
+  the ticket's `pass` option never existed).
