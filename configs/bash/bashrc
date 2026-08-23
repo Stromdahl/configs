@@ -189,3 +189,6 @@ if [ -d "$HOME/.bashrc.d" ]; then
     [ -r "$f" ] && . "$f"
   done
 fi
+
+# opencode
+export PATH=/home/ms/.opencode/bin:$PATH
