@@ -40,3 +40,33 @@ mistake three months in? (Cheap insurance: leave the GitHub repos in place,
 read-only and unmaintained, rather than deleting.)
 
 Output: a per-repo exit plan plus a decision on radon's image path.
+
+## Amendment (2026-08-23, from ticket 01) — thread 1 is a contradiction, not an open question
+
+Ticket 01 established that **anonymous OCI pull works fine** — that was never the
+blocker. The blocker is *where the registry lives*: Forgejo's registry is
+**same-origin with the web UI**, and Forgejo offers **no way to expose only `/v2/`**.
+So "helium is never public" and "radon anonymously pulls from helium's registry"
+cannot both be true. This ticket must **pick an exit**, not explore the question:
+
+1. **radon joins the mesh** — cleanest technically; breaks radon's standalone
+   premise and its ADR-0002 edge-host posture.
+2. **Images stay on GHCR** — a deliberate carve-out from "GitHub goes dark". Worth
+   noting GHCR is a *registry*, not a repo host, so this may cost less against the
+   motive than it first sounds.
+3. **Push images to radon from krypton** (`docker save` / `skopeo copy` into radon's
+   daemon) — no registry pull at all; radon stops needing to reach anything.
+4. **A reverse proxy publicly scoping `/v2/` only** — your own work, not a Forgejo
+   feature, and it still puts a Forgejo surface on the public internet.
+
+**Two sub-facts that constrain any answer:**
+- **Read access follows the *owner's* visibility, not the linked repo's.** A publicly
+  pullable image forces a **public owner**, and everything under that owner becomes
+  publicly readable. There is no per-repository OCI privacy
+  (<https://codeberg.org/forgejo/forgejo/issues/2699>).
+- **Prefer user-owned packages over org-owned** — org-owned public packages have had
+  access-control bugs (<https://codeberg.org/forgejo/forgejo/issues/972>).
+
+Also: `REQUIRE_SIGNIN_VIEW = true` kills anonymous pulls outright — relevant because
+a privacy-motivated instance is exactly the kind that would want it on. Full detail
+in [`../assets/01-forgejo-deployment-research.md`](../assets/01-forgejo-deployment-research.md) §6.

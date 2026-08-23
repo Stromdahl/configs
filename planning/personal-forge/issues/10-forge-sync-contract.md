@@ -38,3 +38,20 @@ the Forgejo API and auth model:
    clone it onto a fresh machine, or skip it?
 
 Output: a precise enough contract that building it is execution, not design.
+
+## Amendment (2026-08-23, from ticket 01)
+
+**A hard coupling to put in this ticket's acceptance criteria:** if Forgejo's SSH is
+published on a non-standard host port (helium keeps sshd on 22, so it will be), then
+**`SSH_PORT` must be set to match** — otherwise Forgejo's API hands `forge sync` a
+clone URL that does not work. `forge sync` is precisely the consumer that would trip
+over this, since it reads clone URLs from the API rather than being told them.
+
+Related, and **unverified**: the exact rendered form of that URL (scp-style
+`git@host:owner/repo.git` vs `ssh://git@host:222/owner/repo.git`). It changes how
+`forge sync` parses, so confirm it empirically on first deploy rather than assuming.
+
+Also confirmed by 01: the API is **fully sufficient** for this command, and
+**read-only token scoping exists** — which supports the read-only-by-default posture
+recommended in question 2. See
+[`../assets/01-forgejo-deployment-research.md`](../assets/01-forgejo-deployment-research.md) §5, §8.

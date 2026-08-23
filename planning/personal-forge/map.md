@@ -58,8 +58,12 @@ fresh machine (`forge sync`).
   - `project_ufw_breaks_iptables_persistent` — helium's full nas play is
     non-idempotent; **use scoped tags** (`--tags compose`), never a full play.
   - `project_helium_disk2_io_fault` — recurring SAS-cable IO fault on disk2.
-  - `project_helium_traefik_acme_restart` — first-cert DNS-01 needs a
-    `docker restart traefik`; single-file bind mounts pin the inode.
+  - ~~`project_helium_traefik_acme_restart` — first-cert DNS-01 needs a
+    `docker restart traefik`; single-file bind mounts pin the inode.~~
+    **Struck 2026-08-23 for this service (ticket 01):** the inode trap needs a
+    config bind mount and Forgejo has none (label-based docker router), and the
+    DNS-01 stall was already fixed in the compose template by issue 044's
+    public-resolver flags. Still live for *other* services.
   - `project_helium_container_dns_netbird` — container DNS is fixed via a
     daemon-DNS pin; do not cite the old breakage.
 - **Skills:** `/grilling` + `/domain-modeling` for grilling tickets; `/research`
@@ -97,6 +101,19 @@ and must not be re-litigated:_
   fast/deep tier boundary ("seconds and offline" vs "minutes and heavy") *is* the
   local/remote boundary. Generalizing to every project is fog.
 
+- [Forgejo's deployment shape on helium](issues/01-forgejo-deployment-shape.md) —
+  **Forgejo confirmed over Gitea**; pin **`:15-rootless`** (LTS, ~11 months support
+  vs ~9 weeks for `:16`). Config is **entirely env-var driven** (`FORGEJO__SECTION__KEY`
+  + a `__FILE` variant), so **no config bind mount at all** — it drops into
+  `stack.env.j2` like any other service. helium **keeps sshd on 22**. The registry
+  does anonymous OCI pull **but is same-origin with the web UI and cannot be scoped
+  to `/v2/`** — which turns ticket 08 into a forced choice between four exits.
+  Forgejo **publishes no resource requirements at all**. Full research:
+  [`assets/01-forgejo-deployment-research.md`](assets/01-forgejo-deployment-research.md).
+  Spawned ticket [11](issues/11-persistence-backup-and-pins.md) (persistence/backup
+  decisions) and amendments to [04](issues/04-runner-topology.md),
+  [08](issues/08-github-exit.md), [10](issues/10-forge-sync-contract.md).
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -113,10 +130,18 @@ In-scope fog — real, but not yet sharp enough to ticket:
   keeping either way: *a project is a registered entity, never a directory.*
 - **CI failure notification.** A verdict nobody sees is not a verdict. Options
   already in the fleet: HA (MQTT), homepage, ntfy, plain email.
+- _(Graduated 2026-08-23 into ticket [04](issues/04-runner-topology.md): **where the
+  CI runner lives and how it is confined.** Ticket 01 found Forgejo's documented
+  default runner shape is a **privileged docker-in-docker daemon**, with Forgejo's own
+  docs warning it "performs remote code execution… significant security threats for
+  the host" — on the box holding the Immich photo archive and every Paperless
+  document.)_
 - **Secrets in CI.** How Forgejo Actions secrets interact with the existing
   sops+age story, and whether any lumin gate needs one (probably not today).
-- **Forgejo maintenance** — upgrade cadence, DB migrations, what breaks when it's
-  down (can the owner still work? yes, git is distributed — but CI and tickets stop).
+- **Forgejo maintenance** — DB migrations and what breaks while it's down (the
+  owner can still *work*, since git is distributed, but CI and tickets stop).
+  _Partly graduated 2026-08-23: the upgrade-cadence half is now a decision in
+  ticket [11](issues/11-persistence-backup-and-pins.md) (LTS pin vs tracking stable)._
 - **How far the agent toolchain moves.** A `issue-tracker-forgejo.md` adapter is
   implied by the tracker decision, but whether *every* matt-pocock skill
   (`/to-tickets`, `/triage`, `/implement`, `/pickup`, `/wayfinder`) moves over, or

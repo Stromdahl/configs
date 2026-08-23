@@ -33,3 +33,26 @@ Reconcile with ticket 02's findings — if the smoke gate cannot run headless at
 all, say what the runner should do with that gate rather than pretending it can.
 
 Capture findings as `../assets/04-runner-topology-research.md`.
+
+## Amendment (2026-08-23, from ticket 01)
+
+**Add a fifth question, and treat it as the most important one:** where does the
+runner live, and how is it confined?
+
+Ticket 01's research found that **Forgejo's documented default runner shape is a
+privileged docker-in-docker daemon**, and that Forgejo's own docs warn the runner
+"performs remote code execution. That poses significant security threats for the
+host and network that it operates upon." `capacity: 1` is the only documented bound
+they offer.
+
+That lands on **helium** — the box holding the Immich family photo archive and every
+scanned Paperless document — and it cuts directly against this map's stated motive
+(privacy and independence) and against helium's own `issues/010-non-root-containers`
+posture. So this is not a deployment detail; it is a design question with real
+options to weigh: privileged DinD as documented, a rootless/host runner, a dedicated
+VM or LXC, a separate physical box, or accepting the risk on the grounds that the
+only code it runs is the owner's own.
+
+Note this may interact with question 2: if lumin's `cage`+`grim` smoke gate needs
+`/dev/dri` or extra capabilities (ticket 02), the confinement options narrow. Report
+both together rather than as separate findings.
