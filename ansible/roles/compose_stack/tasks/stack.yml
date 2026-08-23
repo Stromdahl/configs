@@ -298,6 +298,33 @@
   changed_when: false
   when: hermes_data is defined
 
+# hermes-helium ticket 022 — the interrupt channel's script. Cron scripts must
+# resolve inside $HERMES_HOME/scripts/ (verified in the pinned image's own
+# source, ticket 01/03) and cannot be baked into the image (the bind mount
+# masks anything the Dockerfile would COPY there) — so, same as SOUL.md above,
+# ansible copies it onto the state volume. The directory is pre-owned before
+# copying for the same reason `hermes_data` itself is: an unowned bind source
+# would otherwise get root-created.
+- name: Create Hermes scripts dir owned by the container uid/gid (hermes-helium 022)
+  become: true
+  ansible.builtin.file:
+    path: "{{ hermes_data }}/scripts"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0750"
+  when: hermes_data is defined
+
+- name: Deploy the urgent-interrupt cron script (hermes-helium 022)
+  become: true
+  ansible.builtin.copy:
+    src: hermes-agent/scripts/urgent-interrupt.py
+    dest: "{{ hermes_data }}/scripts/urgent-interrupt.py"
+    owner: "1000"
+    group: "1000"
+    mode: "0644"
+  when: hermes_data is defined
+
 # hermes-helium ticket 016 — Hermes' OWN .env (NOT the compose stack .env rendered
 # below). See the template for why this path/mechanism is correct and why
 # TELEGRAM_BOT_TOKEN is deliberately absent from it for now. no_log: true keeps the
@@ -542,3 +569,34 @@
   delay: 6
   changed_when: "'model present' not in _ollama_pull.stdout"
   when: paperless_gpt_llm_model is defined
+
+# --- hermes-helium ticket 022: seed the interrupt-channel cron job -------------
+# Ticket 03's design: cron jobs are seeded declaratively via `docker exec …
+# hermes cron create`, guarded by `hermes cron list`, and never by patching the
+# gateway-owned jobs.json (ticket 02's rule, upstream-documented). Idempotency
+# follows the same check-then-act shape as the ollama pull above: a job is
+# identified by its --name (job ids are random hex, not stable across runs),
+# so a re-run that finds "Name: urgent-interrupt" already listed is a no-op.
+# `*/30 7-22 * * *` and the ceiling/dedup logic are ticket 06's D2/D3; the
+# delivery target is the owner's own numeric id (06's D8: single recipient),
+# reused from the same sops var `016`/`020` already template `.env` from —
+# never a bare `telegram`, which needs a TELEGRAM_HOME_CHANNEL this deployment
+# does not set.
+- name: Ensure the urgent-interrupt cron job exists (hermes-helium 022)
+  become: true
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail;
+      if docker exec hermes-agent hermes cron list | grep -q 'Name:\s*urgent-interrupt$'; then
+        echo 'job present';
+      else
+        docker exec hermes-agent hermes cron create '*/30 7-22 * * *'
+        --name urgent-interrupt
+        --no-agent
+        --script urgent-interrupt.py
+        --deliver 'telegram:{{ telegram_user_id }}';
+      fi
+    executable: /bin/bash
+  register: _urgent_interrupt_cron
+  changed_when: "'job present' not in _urgent_interrupt_cron.stdout"
+  when: hermes_data is defined and telegram_user_id is defined

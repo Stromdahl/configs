@@ -9,7 +9,8 @@ what first copies any of it onto helium.
 | Path | Ships? | What it is |
 |---|---|---|
 | `SOUL.md` | **yes**, → `~/.hermes/SOUL.md` on the state volume | The agent identity file. |
-| `prior-art/` | **no** | Recovered v0.14 shapes, stripped. Reference for `022`–`024`. |
+| `scripts/urgent-interrupt.py` | **yes**, → `~/.hermes/scripts/urgent-interrupt.py` | Ticket `022`'s `--no-agent` cron job: date arithmetic over `tasks.md`, zero inference. |
+| `prior-art/` | **no** | Recovered v0.14 shapes, stripped. Reference for `023`–`024`. |
 
 Nothing in this directory is wired into `tasks/stack.yml` yet — `018` deployed nothing. A
 file here is inert until a task copies it, which is why the unshipped material can sit
