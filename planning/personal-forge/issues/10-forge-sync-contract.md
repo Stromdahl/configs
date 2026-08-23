@@ -91,3 +91,25 @@ every skill. The map's `feedback_extend_wrapper_first` note points the same way.
 Useful, and free: 03 confirms **no rate limits** in any primary source, and
 pagination caps at **50** items with `x-total-count` + RFC-5988 `link` headers — so
 `forge sync` must paginate, but need not throttle.
+
+## Rider (2026-08-23, from ticket 08) — restore has two sources, not one
+
+Ticket 08 resolved as **GitHub untouched, with four GitHub-native carve-outs**. One of
+them is **`configs` (= `~/.dotfiles`) itself**, because `bootstrap.sh` and the
+`github.com/stromdahl.keys` fetch must work *before* a fresh machine has mesh
+membership.
+
+So `forge sync` is **not** "clone everything from the forge":
+
+- **`~/.dotfiles` comes from GitHub** (`https://github.com/Stromdahl/configs.git`, per
+  `bootstrap.sh:21`) — and it is the source that must work **first**, since it is what
+  installs the mesh that makes the forge reachable at all.
+- **The 20 curated repos come from Forgejo**, over the mesh, after provisioning.
+- `settleup` and `lunchlund` are also GitHub-canonical carve-outs, so if `forge sync`
+  restores them it must know to use their GitHub remotes.
+
+Two consequences for this ticket's contract: `forge sync` **cannot be the first thing
+that runs** on a fresh machine (it presupposes `bootstrap.sh` + the mesh), and its
+per-repo record needs a notion of **which host is canonical** rather than assuming the
+forge. Also note `Stromdahl.github.io` has **no local clone at all** — if `forge sync`
+is meant to be "restore everything I own", that repo is currently outside its reach.

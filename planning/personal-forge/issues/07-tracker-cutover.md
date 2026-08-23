@@ -111,3 +111,28 @@ Also confirmed useful: dependencies were **enabled by default on every repo** (n
 pre-flight needed), and same-named org+repo labels **both attach silently**, which
 duplicates pills and double-counts label queries — an adapter rule, but also a
 reason to keep label definitions at exactly one level.
+
+## Rider (2026-08-23, from ticket 08) — the visibility argument for migrating
+
+Ticket 08 established a fact this ticket did not have: **`~/.dotfiles` is
+`Stromdahl/configs`, a PUBLIC GitHub repo.** So the 56 files in
+`~/.dotfiles/issues/` — the live homelab tracker — and the three wayfinder maps in
+`planning/` are **publicly readable today**.
+
+That cuts both ways on question 1, and both directions are new:
+
+- **For migrating:** moving issues into a mesh-only Forgejo is a **visibility
+  reduction**, which is a direct win under the map's stated motive (*"I want it to be
+  private"*). This is the first *affirmative* reason to migrate rather than merely
+  draw a line in the sand — the previous arguments were all about convenience.
+- **Against staying markdown:** `configs` is one of ticket 08's four **carve-outs**,
+  so it stays GitHub-native permanently. Anything left as markdown in this repo stays
+  public **indefinitely** — this is not a transitional state that later cleanup
+  fixes.
+
+This bears hardest on question 2 (**do wayfinder maps move?**). The "maps stay
+markdown because git diffs them beautifully" argument is still sound on its merits,
+but it now carries a price: the maps stay public. Worth checking whether any map body
+contains something that shouldn't be — `planning/hermes-helium/issues/10` already
+reasons explicitly from "`Stromdahl/configs` is **PUBLIC**", so at least one author
+has been consciously working around it.

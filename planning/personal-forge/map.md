@@ -140,8 +140,11 @@ and must not be re-litigated:_
   already open in a tab is the only shape that survives contact with use.
 - **"Organize" = hosting/backup + curation (alive/parked/dead) + a `forge sync`
   restore command.** Filesystem restructuring is out of scope.
-- **Full migration off GitHub** (GitHub goes dark). Push-mirroring the public few
-  back to GitHub was offered and deferred to a *possible follow-up*, not this route.
+- ~~**Full migration off GitHub** (GitHub goes dark).~~ **Superseded 2026-08-23 by
+  [ticket 08](issues/08-github-exit.md):** GitHub is **not touched, left as is**, and
+  four repos are GitHub-native carve-outs. Read this premise as *"Forgejo becomes
+  canonical for the 20 curated repos, tickets, and lumin's deep CI"* — see the ✅
+  block under Destination.
 - **Two copies is enough** — the forge plus git's inherently distributed working
   clones on krypton. No offsite; see Out of scope.
 - **CI runs the deep tier only, on push; lumin only.** The existing
@@ -316,9 +319,11 @@ In-scope fog — real, but not yet sharp enough to ticket:
   slice (`issues/016`, `issues/026`), not here. Decided: two copies (forge +
   working clones) is enough for code.
 - **GitHub push-mirroring** (the "Forgejo canonical, GitHub as a read-only shop
-  window" option) — offered, deferred as a *possible follow-up effort*. If the
-  loss of public visibility for `issue-tracker`/`specs` turns out to sting, it
-  returns as a fresh effort, not a resumption.
+  window" option) — offered, deferred as a *possible follow-up effort*. Its stated
+  trigger is **gone**: ticket 08 leaves GitHub untouched, so `issue-tracker` and
+  `specs` never lose public visibility and there is nothing to sting. Mirroring would
+  now only be about keeping the abandoned GitHub copies *fresh* — a different, weaker
+  motive. Still out of scope.
 - **Acquiring dedicated build hardware / paid CI minutes** — ruled out when the
   goal was settled as laptop load rather than wall-clock.
 - **Work / Sensative projects** (`~/yggio`, the 29 worktrees, the yggio GitHub
