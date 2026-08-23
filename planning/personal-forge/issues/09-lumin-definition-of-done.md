@@ -91,3 +91,22 @@ are single cheap commands; the full list of eight is in the asset's §4.
 **Sizing context for the "is the wait tolerable" half of question 1:** deep tier is
 **~25–40 min warm** (mutants dominating at ~18 min idle / 20–30 min next to a
 transcode), and **60–90 min on a cold checkout**.
+
+### Rider (from asset 02's later revision)
+
+**M1 and M4 must be run inside the runner's job image, not in a host shell on
+helium.** Under a containerised runner the glibc, valgrind build, and `LD_PRELOAD`
+prefix the perf gate sees belong to the job image — so a host-shell measurement
+verifies the wrong environment and can return a **false pass** that locks this
+decision on bad evidence. Pin the job image to Debian 13 / glibc 2.41 / valgrind
+3.24.0; **alpine/musl is disqualifying**. Record the **image digest** in
+`docs/perf-calibration.md` alongside rustc and valgrind — which is itself part of
+the spec amendment this ticket produces.
+
+**A fourth thing to decide here:** where `nice`/`ionice` and `--in-place` live.
+`mutants: cargo mutants` is in lumin's justfile, and spec §2 makes the justfile
+*the* entry point — so either the runner wraps the invocation and passes flags by
+env (lumin untouched; the gate then behaves differently in CI than locally), or the
+justfile changes and goes through the spec's rule-6 flagging ritual. Note
+`--in-place` is a **CI-only** truth: it mutates the checkout, which is fine in a
+throwaway workspace and wrong on a developer's tree.

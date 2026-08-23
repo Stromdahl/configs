@@ -113,3 +113,38 @@ an identical digest on helium closes the entire glibc-CPU-dispatch channel. **M4
 (the twelve `Ir` values vs `docs/perf-calibration.md`, byte-identical is the pass
 condition) is the one that decides ticket 09. None were run — this ticket did not
 ssh to helium.
+
+### Correction (appended after the asset was extended)
+
+The asset gained a constraint after this Answer was first written, and it changes
+how the eight measurements must be run:
+
+**Run them inside the runner's job image, not in a host shell on helium.** If jobs
+run in a container, then the glibc, the valgrind build, and the `LD_PRELOAD` install
+prefix the perf gate sees all belong to the **job image**, not to helium. M1/M2/M4/
+M5/M6 executed in a host shell would verify the wrong environment, **come back
+green, and lock the CI design on a false pass.** Consequences:
+
+- Pin the job image to a **Debian 13 base with glibc 2.41** (matching krypton's
+  `2.41-12+deb13u3`) and Debian's `valgrind 1:3.24.0-3`.
+- **A musl/alpine image is disqualifying outright** — a different libc means
+  different code inside the measured region, so a different `Ir`, not a few percent
+  of drift.
+- Treat the **job image digest as part of the perf gate's provenance**, recorded in
+  `docs/perf-calibration.md` alongside rustc and valgrind.
+- **M1 is the cheap early proxy, M4 is the actual settler** — M1 predicts M4 for the
+  price of one command, so run M1 first.
+
+Also: provisioning is five `cargo install`-from-source tools beyond the apt packages,
+and **`gungraun-runner` must be exactly `0.19.4`** — `just preflight` string-matches
+the version because it must match the pinned `gungraun = "=0.19.4"` dev-dependency,
+so a bare `cargo install gungraun-runner` that resolves newer **fails preflight**.
+That argues for a baked image over per-run installs (ticket 04's question 3).
+
+And a scope note for ticket 09: **where `nice`/`ionice` and `--in-place` live is a
+decision, not a given** — `mutants: cargo mutants` sits in lumin's justfile, which
+spec §2 makes *the* entry point. Either the runner wraps the whole invocation and
+passes flags by env (lumin untouched, but the gate behaves differently in CI than
+locally), or the justfile changes and goes through the spec's flagging ritual. The
+env route is cleaner, because `--in-place` is a **CI-only** truth: it mutates the
+checkout, which is fine for a throwaway workspace and wrong on a developer's tree.
