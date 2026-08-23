@@ -70,8 +70,9 @@ recommended in question 2. See
 ## Amendment (2026-08-23, from ticket 03)
 
 **The owner string is fixed, so question 3 is unblocked.** Ticket
-[06](06-repo-curation.md) settled a **single organisation named `projects`** holding
-all 20 repos — so `forge sync` derives `owner` from one constant, not from parsing,
+[06](06-repo-curation.md) settled a **single organisation** holding all 20 repos
+(name `projects` *recommended*, fixed at creation) — so `owner` is one knowable
+constant for `forge sync` to hold, not something to parse per repo,
 and every clone URL carries the same path segment. Ticket 03 §3 independently
 *corroborates* that choice: the web dashboard's label picker is only populated in an
 **org** context (`GetLabelsByOrgID`), so a user namespace would have shipped a
