@@ -91,12 +91,12 @@ which is why they needed no per-repo debate:
 
 | excluded | count | reason |
 |---|---|---|
-| `playground/*` | 12 repos | **Disposable by design** — the directory name was doing its job. Includes `pine3d` (48c, 3.1G): experiment history, not a project to mourn. |
+| `playground/*` | 12 repos | *(4 of these are also zero-commit — the rows overlap; the union is 24 repos + 2 dirs, not the column sum.)* **Disposable by design** — the directory name was doing its job. Includes `pine3d` (48c, 3.1G): experiment history, not a project to mourn. |
 | Zero-commit `git init`s | 5 | `keyerr`, and `playground/{bluetoothfun,iac-explore,ms-keyboard,opsmith-explore}`. No history to preserve; hosting them backs up nothing. |
 | Upstream clones | 7 | `marlin-ender3`, `marlin-configs`, and `vendor/{btleplug,yazi,wlgreet,ransible,quicksync_calc}` — not the owner's work, re-cloneable from upstream. |
 | `rssfeed` | 1 | Real code (`src/`, `package.json`) but **never `git init`'d**. Untracked after this long = not versioned. Trivially reversible if wanted. |
 | `homelab-stack.archived` | 1 | **Dropped, not archived.** Remote points at the decommissioned `jellyfin.stromdahl.tech`; content superseded by `~/.dotfiles/servers/` (`project_monorepo_merge`). The history dies with the host it named. |
-| `hermes` | — | Nothing to exclude: the directory is an **empty husk** (4.0K, zero entries). |
+| `hermes` | — | Nothing to exclude: `~/projects/hermes` holds **zero entries** (verified with `find -mindepth 1`; no `.stfolder`, mtime Jul 12), so it is not a Syncthing share either — cf. `project_hermes_vault_sync`, which is about `~/vault`. The live agent is on `titan-hermes-agent`. |
 
 ### Naming: forge name may differ from directory name
 

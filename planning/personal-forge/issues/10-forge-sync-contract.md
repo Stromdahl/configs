@@ -2,7 +2,7 @@
 
 Type: grilling
 Status: open
-Blocked by: 01
+Blocked by: 01, 12
 
 ## Question
 
@@ -38,8 +38,12 @@ the Forgejo API and auth model:
    ignore list, or it will report both as drift forever *and* clone them into
    new directories on a fresh machine.
 
-6. **What it does about the exclusions.** Ticket 06 rules some directories out
-   (upstream Marlin clones, non-git dirs). Does `sync` know about them, or does it
+6. **What it does about the exclusions.** Ticket 06 rules out **far more than the
+   Marlin clones** — see its *Excluded, and why* table for the authoritative list:
+   all 12 repos under `playground/`, 5 zero-commit `git init`s (incl. `keyerr`),
+   7 upstream clones (Marlin pair + `vendor/*`), `rssfeed`, and
+   `homelab-stack.archived`. Do **not** build the ignore list from this line.
+   Does `sync` know about them, or does it
    report them as drift forever? An ignore list of some kind is probably needed.
 7. **Archived repos.** A repo archived on the forge (ticket 06) — does `sync`
    clone it onto a fresh machine, or skip it?
@@ -62,3 +66,24 @@ Also confirmed by 01: the API is **fully sufficient** for this command, and
 **read-only token scoping exists** — which supports the read-only-by-default posture
 recommended in question 2. See
 [`../assets/01-forgejo-deployment-research.md`](../assets/01-forgejo-deployment-research.md) §5, §8.
+
+## Amendment (2026-08-23, from ticket 03)
+
+**Now blocked by [12](12-forge-namespace.md).** Question 3 ("where it lives", name,
+config-or-forge-derived) cannot be answered while the owner string is unfixed: the
+whole command is "derive owner/repo from the remote, or from config" and the answer
+differs for a user namespace vs an organization.
+
+**Also: this wrapper may have a second job.** Ticket 03 §7 found Forgejo has **no
+CLI** — no `gh`/`glab` analogue — so `issue-tracker-forgejo.md` is either a raw-HTTP
+cookbook or a cookbook for exactly this wrapper. Decide here whether `forge` is
+sync-only or becomes the single Forgejo transport (`forge issue list`, `forge issue
+close`), because that changes its language, its auth handling, and its output
+contract. If it grows issue verbs, the six API footguns in 03 §4 (`type=issues` on
+every list; `PATCH {"state":"closed"}`; labels-by-ID on create; no `labels` on PATCH;
+assignees replace; no `@me`) belong inside the wrapper, not repeated in prose in
+every skill. The map's `feedback_extend_wrapper_first` note points the same way.
+
+Useful, and free: 03 confirms **no rate limits** in any primary source, and
+pagination caps at **50** items with `x-total-count` + RFC-5988 `link` headers — so
+`forge sync` must paginate, but need not throttle.
