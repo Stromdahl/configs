@@ -8,3 +8,4 @@
 set -euo pipefail
 
 link "configs/claude/skills" "$HOME/.claude/skills"
+link "configs/claude/claude.sh" "$HOME/.bashrc.d/claude.sh"
