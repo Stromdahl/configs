@@ -1,7 +1,7 @@
 # Forgejo's deployment shape on helium
 
 Type: research
-Status: open
+Status: claimed
 
 ## Question
 

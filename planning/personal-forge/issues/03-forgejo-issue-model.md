@@ -1,7 +1,7 @@
 # Forgejo's issue model — can it carry the tracker *and* wayfinder maps?
 
 Type: research
-Status: open
+Status: claimed
 
 ## Question
 

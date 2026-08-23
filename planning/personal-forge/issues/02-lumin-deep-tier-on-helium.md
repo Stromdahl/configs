@@ -1,7 +1,7 @@
 # Does lumin's deep QA tier actually run on an i5-9400?
 
 Type: research
-Status: open
+Status: claimed
 
 ## Question
 
