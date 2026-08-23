@@ -308,9 +308,18 @@ labels anyway. Two riders:
    the other three adapters (~45 lines, one tool apiece). An HTTP cookbook would
    put raw `curl` with inline headers into every skill invocation — precisely what
    `feedback_extend_wrapper_first` exists to prevent.
-3. **`bin/wf` gains a third dialect rather than dying.** Forgejo for personal maps,
-   filesystem for the work (`~/notes/.scratch`, `~/yggio/…`) and vault ones, which
-   stay markdown and are out of scope for this effort.
+3. **`bin/wf` gains a third dialect rather than dying.** Forgejo for the
+   `.dotfiles` maps, filesystem for the **work** ones (`~/notes/.scratch`,
+   `~/yggio/…`), which are explicitly out of scope and stay markdown.
+
+   > ⚠️ **Gap in this resolution, flagged rather than papered over.** The session
+   > first wrote "and vault ones" into the out-of-scope half. That was an
+   > **assumption, not a decision.** `bin/wf` reports **5 further maps and 50
+   > tickets under `~/vault/projects/`** — `diy-speakers`, `finance-rebuild`,
+   > `not-so-smart-smartwatch`, `strength-and-weight`, `vardepapperskredit` — and
+   > those are **personal**, not work. `diy-speakers` is literally one of ticket
+   > 06's twenty repos. Under "everything goes on Forgejo" they have at least as
+   > strong a claim as `planning/` does. **Undecided; see the map's fog.**
 4. **Skills that move:** `triage` and `code-review` (both pin the tracker today),
    plus **wayfinder's tracker doc gains a Forgejo "Wayfinding operations"
    section** — now mandatory, not optional: maps are issues, and without it no

@@ -384,6 +384,18 @@ In-scope fog — real, but not yet sharp enough to ticket:
   the `forgejo-runner` user, and `loginctl enable-linger` it for `podman.socket`.
   Graduates with the build issues.
 
+- **The five personal maps under `~/vault/projects/`** — `diy-speakers`,
+  `finance-rebuild`, `not-so-smart-smartwatch`, `strength-and-weight`,
+  `vardepapperskredit`: **50 tickets** that [ticket 07](issues/07-tracker-cutover.md)
+  did not consider. 07 decided "everything moves" on the evidence of
+  `~/.dotfiles/planning/` and the eight repo `issues/` dirs; `bin/wf` surfaced these
+  only afterwards. They are **personal, so not covered by the work carve-out**, and
+  `diy-speakers` is one of ticket 06's twenty repos — so the same argument applies
+  to them. Two things make it a real question rather than a formality: they live in
+  the **Syncthing-replicated vault**, not in a git repo, and one of them
+  (`finance-rebuild`) is financial. Sharpen into a ticket once the migration's shape
+  is concrete.
+
 ## Out of scope
 
 - **Restructuring `~/projects`' filesystem layout** — grouping, cleaning out the
