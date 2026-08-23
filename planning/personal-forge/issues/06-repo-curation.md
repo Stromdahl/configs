@@ -1,7 +1,7 @@
 # Which repos come to the forge, and in what state?
 
 Type: grilling
-Status: open
+Status: claimed
 
 ## Question
 
