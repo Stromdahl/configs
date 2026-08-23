@@ -1,7 +1,7 @@
 # Runner topology for lumin's deep tier
 
 Type: research
-Status: open
+Status: claimed
 Blocked by: 01, 02
 
 ## Question
