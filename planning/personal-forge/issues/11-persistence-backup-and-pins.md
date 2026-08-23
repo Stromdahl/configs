@@ -2,6 +2,7 @@
 
 Type: grilling
 Status: open
+Assignee: claude (session 2026-08-23c)
 
 ## Question
 
