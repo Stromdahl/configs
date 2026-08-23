@@ -170,3 +170,29 @@ cd ~/projects && for d in */; do d=${d%/}; [ -d "$d/.git" ] && \
 
 `taskmaster`'s fate stays in the fog — the conversation did not naturally reach it.
 It is `active` on the forge, which prejudges nothing.
+
+## Amendment (2026-08-23, from ticket 08) — the survey was blind, the outcome survives
+
+This curation was built by walking `~/projects`, so it was **structurally blind to
+every GitHub repo without a local checkout**. Ticket 08's premise check measured the
+gap: the account holds **78 non-fork repos** and only **6** have a local checkout, so
+**71 were invisible to this ticket**.
+
+**No re-decision is needed.** Ticket 08 resolved as *"GitHub is not touched, left as
+is"*, which puts all 71 out of scope — they stay on GitHub, unmaintained. The 20-repo
+set stands unchanged.
+
+Two clarifications the blindness had hidden, now recorded so nobody re-derives them:
+
+- **`~/.dotfiles` is `Stromdahl/configs`, a PUBLIC GitHub repo.** It is not under
+  `~/projects`, so it was never a candidate here. It is correctly absent from the 20
+  — but as one of ticket 08's four **carve-outs** (GitHub runs the `bootstrap.sh` +
+  `stromdahl.keys` fetch path), not as an oversight.
+- **`settleup`, `lunchlund` and `Stromdahl.github.io` are also carve-outs**, for the
+  same reason: GitHub *runs* something for each. `Stromdahl.github.io` was outside
+  this ticket's 20 and stays outside; the other two are in `~/projects` and were
+  curated here, so read them as **`active`, but GitHub-canonical** rather than
+  forge-canonical.
+
+Net effect on this ticket's output: **20 repos, one org `projects`, two states** — as
+decided. Only the *reason* three of them sit where they do has changed.

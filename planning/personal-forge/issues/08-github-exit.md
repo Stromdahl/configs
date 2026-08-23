@@ -1,7 +1,7 @@
 # The GitHub exit: settleup's image, and public visibility
 
 Type: grilling
-Status: claimed
+Status: resolved
 Blocked by: 01
 
 ## Question
@@ -158,3 +158,99 @@ So a mesh-only forge cannot serve the bootstrap path: a fresh machine has no mes
 membership until it is provisioned, and it cannot be provisioned without reaching
 the dotfiles repo and the keys. **That is a second chicken-and-egg beyond the keys,
 and it is why "delete the account" is not currently a reachable option.**
+
+## Answer
+
+**GitHub is not touched. Left as is.** Decided by the owner 2026-08-23, directly and
+without qualification. Everything below follows from that.
+
+### 1. The account's fate: abandoned in place
+
+Not deleted, not emptied, not swept read-only. No action is taken on GitHub at all.
+Consequences, all of them favourable:
+
+- The **71 repos with no local checkout** need no decision. ~55 of them were last
+  pushed 2023 or earlier — the `IOT20_*` / `Applio*` coursework archive and a decade
+  of graphics toys. They stay where they are, unmaintained, costing nothing.
+- **Public visibility (this ticket's thread 2) evaporates.** `issue-tracker` and
+  `specs` remain exactly as readable as today, so `specs/README.md` naming
+  `github.com/Stromdahl/issue-tracker` as the canonical home stays true. There is no
+  visibility loss to accept, and the map's out-of-scope note about push-mirroring
+  "if the loss stings" is moot — nothing is lost.
+- **Rollback (thread 3) is free.** If Forgejo proves wrong in three months, every
+  GitHub copy is still sitting there. This was listed in the ticket as "cheap
+  insurance"; it is now simply the state.
+
+### 2. The carve-out set, and the principle behind it
+
+Four repos stay **GitHub-native**, because GitHub does not merely *host* them — it
+**runs** something for them that a mesh-only Forgejo cannot replace:
+
+| Repo | What GitHub runs | Why Forgejo cannot take it |
+|---|---|---|
+| `configs` (= `~/.dotfiles`) | `bootstrap.sh` + `stromdahl.keys` fetch path | must work **before** the mesh exists — see the chicken-and-egg in Comments |
+| `settleup` | Actions CI → `ghcr.io/stromdahl/settleup`, pulled by radon | radon is standalone by ADR-0002, cannot reach a mesh-only registry |
+| `lunchlund` | scheduled Actions cron → Pages | needs a public scheduler + public publish target |
+| `Stromdahl.github.io` | the live Pages site | needs public hosting |
+
+**The migration boundary is "does GitHub execute something for me", not "is it
+public".** That is the decision to carry forward.
+
+This kills the four options this ticket listed for settleup: option 4 ("stays on
+GitHub as a deliberate carve-out") wins, and it wins for free — no work, no ADR
+violation, no public hosting stood up on radon. `lunchlund`'s hardcoded
+`stromdahl.github.io` in 5 source files (including `scrape.ts`'s last-known-good
+fallback) is likewise a non-problem: nothing moves, so nothing needs rewriting.
+
+**Everything else that is live moves to Forgejo, and its GitHub copy is abandoned in
+place** — stale, harmless, and the rollback.
+
+### 3. Revisiting is explicitly out of scope
+
+The owner: *"might revisit this in the future, but it's out of scope here."* Pulling
+any of the four off GitHub — putting radon on the mesh, standing up public hosting,
+rebuilding the bootstrap path without GitHub — is a **separate future effort**, not a
+later phase of this map. Recorded in the map's Out of scope.
+
+### 4. The destination is narrower than it was written
+
+Stated plainly rather than buried: the map's *"GitHub goes dark — full migration, not
+a mirror"* is **false as written**, and the ⚠️ block that qualified it is now
+resolved in the *weaker* direction than even that block allowed. What this map
+actually delivers is:
+
+> **personal source hosting, ticket tracking, and lumin's deep CI tier move to
+> Forgejo. GitHub retains four running services and an untouched archive.**
+
+The honest cost against the stated motive (*"less dependent on bigtech"*): a
+permanent, load-bearing GitHub dependency remains at the most critical moment in a
+machine's life — first boot — plus a public image registry in the serving path of
+the one public-facing host. The owner has seen this and accepted it.
+
+### 5. Residual: `Stromdahl.github.io` is a single-copy artifact
+
+It has **no local clone anywhere under `~/`** (verified). Staying GitHub-native means
+GitHub is its *only* copy, which is a standing exception to the map's "two copies is
+enough" premise — that premise assumed forge + working clone. Not a decision, and not
+worth a ticket: the fix is one command (`gh repo clone Stromdahl/Stromdahl.github.io
+~/projects/`) and it graduates as an execution item, not a question. Same applies to
+`lunchlund` only in that its clone already exists.
+
+### 6. Riders for other tickets
+
+- **Ticket 06 needs no reopening.** Its 20-repo curation was built blind to 71
+  GitHub-only repos, but "GitHub untouched" puts every one of them out of scope, so
+  the *outcome* is unaffected. Recorded as an amendment on 06 rather than a
+  re-decision. `configs`/`~/.dotfiles` is likewise correctly absent from the 20 — as
+  a carve-out, not an oversight.
+- **Ticket 07 gains an argument it did not have.** The 56-file homelab tracker in
+  `~/.dotfiles/issues/` currently lives inside a **PUBLIC** GitHub repo
+  (`Stromdahl/configs`). Moving those issues into a mesh-only Forgejo is a
+  visibility *reduction* — a benefit under the stated motive, and the first
+  affirmative reason for the migrate side of 07's question 1. Note the mirror-image
+  hazard: if maps and issues **stay** markdown in this repo, they stay public, and
+  `configs` is a carve-out so that will not change.
+- **Ticket 10 (`forge sync`) inherits a hole.** `configs` is GitHub-canonical, so a
+  fresh machine's restore is *not* "clone everything from the forge" — the dotfiles
+  repo comes from GitHub and the other 20 come from Forgejo. Two sources, and the
+  GitHub one is the one that must work first.
