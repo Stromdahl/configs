@@ -17,6 +17,17 @@ becomes three things at once:
 Plus the decisions needed to migrate off GitHub and to restore every repo onto a
 fresh machine (`forge sync`).
 
+> ⚠️ **"GitHub goes dark" needs qualifying, and this is a destination-level tension,
+> not a ticket detail** (surfaced 2026-08-23 by ticket 08's premise check).
+> **`github.com/stromdahl.keys` is fetched by `modules/ssh/install.sh` and
+> `modules/deploy-user/install.sh`** — so the account cannot be deleted without
+> breaking SSH key distribution **fleet-wide** (cf. `user_ssh_keys`: the policy is
+> that every host fetches those keys). Combined with a Pages site that has no local
+> copy and `lunchlund` running as a scheduled Actions service, the honest destination
+> is **"GitHub stops being depended on for source hosting, CI, and tickets"** — not
+> "the account is deleted". Whoever resolves 08 should say which it is; until then,
+> read the migration decision as the former.
+
 ## Notes
 
 - **Domain:** `~/.dotfiles` homelab. **helium** = bare-metal Debian NAS+services
@@ -34,8 +45,24 @@ fresh machine (`forge sync`).
     `freecad-prints`, `custom-keyboard`, `pinecad`, `rust-template`, `oppen`,
     `dockerstats`, `pass-tui`, `timelog`, `keyerr` (no commits at all), + stragglers.
     **This is the actual gap** — not organization, homelessness.
-  - **6 on GitHub:** `settleup`, `telltaled`, `lunchlund`, `specs`,
-    `issue-tracker`, `finance-track`.
+  - ~~**6 on GitHub:**~~ **wrong, and wrong in the direction that matters
+    (corrected 2026-08-23 from ticket 08's premise check via `gh`).** Those 6 are
+    merely the ones with a *local checkout*; the account holds **49 non-fork repos**.
+    This survey was built by walking `~/projects`, so it was **structurally blind to
+    everything on GitHub that isn't checked out locally** — and ticket 06's curation
+    inherited that blindness. Three further corrections:
+    - `issue-tracker`, `specs` and `finance-track` are **PRIVATE**, not "deliberately
+      public" as this map previously asserted. Only `settleup`, `lunchlund` and
+      `telltaled` are public. Any reasoning built on the public-visibility loss is
+      void as written.
+    - **`Stromdahl.github.io`** is a live Pages site (`status: built`, pushed
+      2026-08-21) with **no local clone anywhere under `~/`** — a genuinely
+      single-copy artifact that exists only on GitHub, and outside 06's 20.
+    - **`lunchlund` is a service, not just a repo** — a scheduled Actions cron
+      publishing to Pages, with `stromdahl.github.io` hardcoded in 5 source files
+      including its own last-known-good fallback in `scrape.ts`.
+    Ticket 08 owns the 06 amendment and a new ticket for the public-serving gap; do
+    not duplicate them here.
   - **2 upstream vendor clones** (`marlin-ender3`, `marlin-configs`) — MarlinFirmware's
     repos, **not the owner's to host**; exclude them.
   - **4 not git at all:** `playground`, `rssfeed`, `vendor`, `hermes` — **wrong.**
