@@ -293,6 +293,27 @@ and must not be re-litigated:_
   unit type (system-with-`User=` vs `systemd --user`) deliberately left OPEN**, since 04
   does not disambiguate it and the `io` argument for a system unit was withdrawn.
 
+- [Tracker cutover: what moves into Forgejo Issues, and what stays markdown?](issues/07-tracker-cutover.md) —
+  **Everything moves, maps included.** The hybrid was recommended and declined. The
+  prototype passes, but **the list is the tracker and the board is decoration** — no
+  workflow, skill or adapter may ever depend on it, because it is hand-fed and
+  permanently unautomatable, which is taskmaster's exact failure mode. **All 56
+  `.dotfiles` issues migrate**, closed ones included, and the markdown is deleted;
+  **assets go to a private `projects/planning` git repo, not attachments** (the one
+  regression with no workaround). Vocabulary becomes **open / claimed / done /
+  dropped** — `closed` was a misspelling of `done`; `claimed` is an **assignee**, one
+  atomic call, which fixes the concurrent-sandbox collision the old
+  "flip `status` and commit" rule had. Labels take the **slash form** with
+  exclusivity, **org-level only**; epics stay labels (milestones are repo-scoped and
+  the dashboard has no milestone filter). The `issue-tracker` spec **survives but
+  loses default status** — `rust-template` flips forge-first; seven other repos
+  (~59 issues) migrate lazily. Toolchain: **`bin/forge` + a CLI cookbook**, `bin/wf`
+  gains a Forgejo dialect. Two corrections worth carrying: maps are **append-only**
+  (387 added / 34 deleted), so the "git diffs it beautifully" argument was weaker
+  than written; and **the privacy win is future-only** — 87 public commits already
+  hold every map. Riders onto [11](issues/11-persistence-backup-and-pins.md) (now
+  the *only* copy of the tracker) and [10](issues/10-forge-sync-contract.md).
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -300,9 +321,10 @@ In-scope fog — real, but not yet sharp enough to ticket:
 - **Generalizing CI beyond lumin.** `rust-template` is the natural home for a
   reusable workflow, but its shape is unknowable until lumin's actual workflow
   exists. Graduates after tickets 04 + 09.
-- **New-project convention.** Where a fresh repo gets created (forge-first? local-first?),
-  what it ships with (`AGENTS.md`, tracker, CI workflow), and how it gets registered.
-  Blocked on knowing what the forge's creation flow looks like.
+- **New-project convention.** _Direction settled 2026-08-23 by ticket 07:
+  **forge-first**, and `rust-template` stops shipping an `issues/` dir._ What remains
+  fog is the rest of the payload — `AGENTS.md`, the CI workflow, how the repo gets
+  registered, and whether creation is scripted at all.
 - **Repo topics as the grouping.** [Ticket 06](issues/06-repo-curation.md) chose
   one flat org and deferred categorization to Forgejo **topics** (many-to-many,
   non-breaking) rather than org partitions. Which topics, and whether any are worth
@@ -332,25 +354,27 @@ In-scope fog — real, but not yet sharp enough to ticket:
   owner can still *work*, since git is distributed, but CI and tickets stop).
   _Partly graduated 2026-08-23: the upgrade-cadence half is now a decision in
   ticket [11](issues/11-persistence-backup-and-pins.md) (LTS pin vs tracking stable)._
-- **How far the agent toolchain moves.** A `issue-tracker-forgejo.md` adapter is
-  implied by the tracker decision, but whether *every* matt-pocock skill
-  (`/to-tickets`, `/triage`, `/implement`, `/pickup`, `/wayfinder`) moves over, or
-  only some, remains open. _Sharpened 2026-08-23 by ticket 03: the live option is a
-  **hybrid** — `local` adapter for maps, Forgejo for execution tickets — now named
-  explicitly in ticket [07](issues/07-tracker-cutover.md) for decision. Also note an
-  adapter here is an **HTTP** cookbook, not a CLI one like the existing three,
-  unless a `bin/` wrapper is written first._
+- ~~**How far the agent toolchain moves.**~~ **Closed 2026-08-23 by
+  [ticket 07](issues/07-tracker-cutover.md).** The hybrid was declined: everything
+  moves. `bin/forge` gets written and `issue-tracker-forgejo.md` is a **CLI**
+  cookbook against it (not HTTP); `triage` and `code-review` move; wayfinder's
+  tracker doc gains a mandatory Forgejo "Wayfinding operations" section; `bin/wf`
+  gains a third dialect. Knowingly a local fork of the verbatim-upstream
+  `setup-matt-pocock-skills/`. Execution, not decision, from here.
 
 - **Two execution items surfaced by [ticket 08](issues/08-github-exit.md)**, parked
   here so they are not lost — neither is a decision:
   - `Stromdahl.github.io` has **no local clone anywhere under `~/`**, so GitHub is its
     only copy. Fix is one command: `gh repo clone Stromdahl/Stromdahl.github.io
     ~/projects/`. Graduates with the migration execution issues.
-  - **Audit the public map bodies.** `~/.dotfiles` is a PUBLIC GitHub repo and a
-    permanent carve-out, so `planning/` and `issues/` are publicly readable
-    indefinitely. Nobody has checked whether any map body contains something that
-    should not be. Sharpen into a ticket only if [07](issues/07-tracker-cutover.md)
-    decides maps stay markdown.
+  - **Audit the public map bodies.** _Trigger changed 2026-08-23 by ticket 07._ Maps
+    are moving to Forgejo, but that does **not** retire this: `~/.dotfiles` is a
+    PUBLIC GitHub repo and a permanent carve-out, so all 87 commits touching
+    `planning/` and `issues/` stay readable **whether or not the files are deleted**.
+    Deletion cannot unpublish. So the audit is no longer conditional on 07 — it is
+    now a **security chore over the existing public history**, and the only action it
+    can produce is *rotate anything that turns out to be a live secret*. Not a
+    decision; never becomes a wayfinder ticket.
 
 - **Rootless-Podman prerequisites are not provisioned on helium** — surfaced by
   [ticket 12](issues/12-adopt-runner-shape.md), parked here because it is execution, not

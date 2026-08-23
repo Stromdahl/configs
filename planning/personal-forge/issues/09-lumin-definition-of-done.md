@@ -1,7 +1,7 @@
 # lumin's definition of done, once the deep tier is remote
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: 02, 04
 
 ## Question
