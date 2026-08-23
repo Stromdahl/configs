@@ -178,7 +178,8 @@ and must not be re-litigated:_
   [`assets/01-forgejo-deployment-research.md`](assets/01-forgejo-deployment-research.md).
   Spawned ticket [11](issues/11-persistence-backup-and-pins.md) (persistence/backup
   decisions) and amendments to [04](issues/04-runner-topology.md),
-  [08](issues/08-github-exit.md), [10](issues/10-forge-sync-contract.md).
+  [08](issues/08-github-exit.md), [10](issues/10-forge-sync-contract.md)
+  (**10 since shelved** — its amendment survives only as banked facts).
 
 - [Which repos come to the forge, and in what state?](issues/06-repo-curation.md) —
   **20 repos, one org named `projects`, two states.** `taskmaster`'s three-state
@@ -287,7 +288,8 @@ and must not be re-litigated:_
   narrower than written** — see the ✅ block above. Riders: **06** amended (outcome
   survives), **07** gains a real argument (the 56-file tracker currently sits in a
   PUBLIC repo, so migrating is a visibility *reduction*), **10** inherits a
-  two-source restore (`configs` from GitHub, the 20 from Forgejo).
+  two-source restore (`configs` from GitHub, the 20 from Forgejo) — **moot: 10 is
+  shelved**, so no tool consumes that split.
 
 - [Adopt the runner shape, confinement, and supply-chain posture](issues/12-adopt-runner-shape.md) —
   **Shape adopted as recommended**; Q5 (notifications) **deferred whole to `issues/013`**
@@ -333,7 +335,8 @@ and must not be re-litigated:_
   (387 added / 34 deleted), so the "git diffs it beautifully" argument was weaker
   than written; and **the privacy win is future-only** — 87 public commits already
   hold every map. Riders onto [11](issues/11-persistence-backup-and-pins.md) (now
-  the *only* copy of the tracker) and [10](issues/10-forge-sync-contract.md).
+  the *only* copy of the tracker) and [10](issues/10-forge-sync-contract.md)
+  (**10 since shelved**).
 
 - [lumin's definition of done, once the deep tier is remote](issues/09-lumin-definition-of-done.md) —
   **The cross-host anchoring hazard does not exist.** krypton (Zen 5) and helium
@@ -488,7 +491,8 @@ In-scope fog — real, but not yet sharp enough to ticket:
   drift in both directions and cloned the 20 repos onto a fresh machine. **Knowingly
   accepted cost:** *"helium has my code"* stays a belief rather than a checked fact,
   and nothing will notice a repo created later and never pushed — the state 29 repos in
-  `~/projects` are in today. Cheap to resume: the five premises it turned on were
+  `~/projects` are in today. It returns only as a **fresh effort**, never a resumption — but a cheap one, because
+  the five premises it turned on were
   **measured before it was shelved** and are banked in the ticket plus
   [`assets/10-forge-api-probes.sh`](assets/10-forge-api-probes.sh) — clone-URL form,
   server-side read-only token scoping, token-as-HTTP-git-credential, archived repos
