@@ -309,6 +309,17 @@ In-scope fog — real, but not yet sharp enough to ticket:
   adapter here is an **HTTP** cookbook, not a CLI one like the existing three,
   unless a `bin/` wrapper is written first._
 
+- **Two execution items surfaced by [ticket 08](issues/08-github-exit.md)**, parked
+  here so they are not lost — neither is a decision:
+  - `Stromdahl.github.io` has **no local clone anywhere under `~/`**, so GitHub is its
+    only copy. Fix is one command: `gh repo clone Stromdahl/Stromdahl.github.io
+    ~/projects/`. Graduates with the migration execution issues.
+  - **Audit the public map bodies.** `~/.dotfiles` is a PUBLIC GitHub repo and a
+    permanent carve-out, so `planning/` and `issues/` are publicly readable
+    indefinitely. Nobody has checked whether any map body contains something that
+    should not be. Sharpen into a ticket only if [07](issues/07-tracker-cutover.md)
+    decides maps stay markdown.
+
 ## Out of scope
 
 - **Restructuring `~/projects`' filesystem layout** — grouping, cleaning out the
