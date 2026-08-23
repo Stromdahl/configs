@@ -7,8 +7,8 @@
 A **locked spec** for a private, self-hosted **Forgejo instance on helium** that
 becomes three things at once:
 
-1. the **canonical home** for every personal repo in `~/projects` (GitHub goes
-   dark — full migration, not a mirror),
+1. the **canonical home** for the 20 curated personal repos (GitHub is left
+   untouched — see the resolution note below; four repos are carve-outs),
 2. the **ticket tracker with a web UI the owner actually opens** — replacing the
    never-adopted `taskmaster` CLI as the cross-project view,
 3. the **CI host** that runs lumin's **deep QA tier** asynchronously, so a
@@ -17,16 +17,24 @@ becomes three things at once:
 Plus the decisions needed to migrate off GitHub and to restore every repo onto a
 fresh machine (`forge sync`).
 
-> ⚠️ **"GitHub goes dark" needs qualifying, and this is a destination-level tension,
-> not a ticket detail** (surfaced 2026-08-23 by ticket 08's premise check).
-> **`github.com/stromdahl.keys` is fetched by `modules/ssh/install.sh` and
-> `modules/deploy-user/install.sh`** — so the account cannot be deleted without
-> breaking SSH key distribution **fleet-wide** (cf. `user_ssh_keys`: the policy is
-> that every host fetches those keys). Combined with a Pages site that has no local
-> copy and `lunchlund` running as a scheduled Actions service, the honest destination
-> is **"GitHub stops being depended on for source hosting, CI, and tickets"** — not
-> "the account is deleted". Whoever resolves 08 should say which it is; until then,
-> read the migration decision as the former.
+> ✅ **Resolved 2026-08-23 by [ticket 08](issues/08-github-exit.md) — and resolved
+> *weaker* than this map was written.** The owner's decision: **GitHub is not
+> touched. Left as is.** So "GitHub goes dark" is **false as written**. What this map
+> actually delivers is:
+>
+> > **personal source hosting, ticket tracking, and lumin's deep CI tier move to
+> > Forgejo. GitHub retains four running services and an untouched archive.**
+>
+> The migration boundary is **"does GitHub *execute* something for me"**, not "is it
+> public". Four carve-outs stay GitHub-native: **`configs` (= `~/.dotfiles`)** —
+> `bootstrap.sh` + `github.com/stromdahl.keys`, which must work before the mesh
+> exists; **`settleup`** — Actions → GHCR, pulled by off-mesh radon; **`lunchlund`**
+> — scheduled Actions cron → Pages; **`Stromdahl.github.io`** — the Pages site.
+> Everything else live moves to Forgejo and its GitHub copy is abandoned in place,
+> which is also the rollback. Public visibility is **not** lost — `issue-tracker` and
+> `specs` stay as readable as today. Accepted cost against the motive: a permanent
+> load-bearing GitHub dependency at first boot, plus a public registry in radon's
+> serving path.
 
 ## Notes
 
@@ -61,8 +69,11 @@ fresh machine (`forge sync`).
     - **`lunchlund` is a service, not just a repo** — a scheduled Actions cron
       publishing to Pages, with `stromdahl.github.io` hardcoded in 5 source files
       including its own last-known-good fallback in `scrape.ts`.
-    Ticket 08 owns the 06 amendment and a new ticket for the public-serving gap; do
-    not duplicate them here.
+    **All three are closed by [ticket 08](issues/08-github-exit.md)** (GitHub
+    untouched): the account in fact holds **78** non-fork repos with only **6**
+    locally checked out, and all 71 local-less repos are now out of scope. The 06
+    amendment is written; the public-serving gap needed no ticket — `lunchlund` and
+    `Stromdahl.github.io` are carve-outs that simply keep running.
   - **2 upstream vendor clones** (`marlin-ender3`, `marlin-configs`) — MarlinFirmware's
     repos, **not the owner's to host**; exclude them.
   - **4 not git at all:** `playground`, `rssfeed`, `vendor`, `hermes` — **wrong.**
@@ -234,6 +245,22 @@ and must not be re-litigated:_
   Adopting it (plus the supply-chain and badge calls) is ticket
   [12](issues/12-adopt-runner-shape.md).
 
+- [The GitHub exit: settleup's image, and public visibility](issues/08-github-exit.md) —
+  **GitHub is not touched. Left as is** (owner's decision, unqualified). Not deleted,
+  not emptied, not swept read-only. The premise check found **78 non-fork repos, only
+  6 with a local checkout** — so 71 were invisible to the `~/projects` survey, ~55 of
+  them 2023-or-older coursework and graphics toys; all now out of scope. **Public
+  visibility loss evaporates** (`issue-tracker`/`specs` stay readable), and
+  **rollback is free** (every GitHub copy remains). The one real decision: the
+  migration boundary is **"does GitHub *execute* something for me"**, giving four
+  GitHub-native carve-outs — **`configs` (= `~/.dotfiles`, a PUBLIC GitHub repo the
+  survey never scoped)**, `settleup`, `lunchlund`, `Stromdahl.github.io`. settleup's
+  four options collapse to "deliberate carve-out", for free. **The destination is
+  narrower than written** — see the ✅ block above. Riders: **06** amended (outcome
+  survives), **07** gains a real argument (the 56-file tracker currently sits in a
+  PUBLIC repo, so migrating is a visibility *reduction*), **10** inherits a
+  two-source restore (`configs` from GitHub, the 20 from Forgejo).
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -297,3 +324,10 @@ In-scope fog — real, but not yet sharp enough to ticket:
 - **Work / Sensative projects** (`~/yggio`, the 29 worktrees, the yggio GitHub
   tracker). This effort is personal projects only; see the separate
   `~/projects/specs/.scratch/work-tracking/` map.
+- **Pulling any of ticket 08's four carve-outs off GitHub** — putting radon on the
+  mesh, standing up public hosting or a public registry, or rebuilding the
+  `bootstrap.sh` + `stromdahl.keys` path without GitHub. The owner: *"might revisit
+  this in the future, but it's out of scope here."* Returns as a **fresh effort**, not
+  a resumption. See [ticket 08](issues/08-github-exit.md).
+- **The 71 GitHub repos with no local checkout** — ruled out by ticket 08's "GitHub
+  untouched". They are not fog: no decision is pending on them, they simply stay.
