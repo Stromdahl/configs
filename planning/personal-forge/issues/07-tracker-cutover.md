@@ -297,6 +297,24 @@ labels anyway. Two riders:
    taskmaster survives, which is still fog. **`lumin/.scratch/` stays** — its 65
    files are design docs and specs, a different artifact class, not issues.
 
+   **`finance-track` comes over with the rest** — verified against ticket 06 rather
+   than assumed: it is in the twenty, `active`, in the *"already on GitHub (5)"*
+   group. It is neither one of ticket 08's four executing carve-outs nor one of the
+   71 local-less repos, so nothing holds it back.
+
+4. **Archived repos reject issue creation — so import first, archive second.**
+   Measured on the live prototype against `oppen`, which ticket 06 archives and
+   which holds **15 issues, the second-largest tracker in the set**:
+   ```
+   curl -s -H "Authorization: token $(cat /var/tmp/forgejo-prototype/.token)" \
+     -X POST -H 'Content-Type: application/json' -d '{"title":"archived write probe"}' \
+     http://localhost:3210/api/v1/repos/projects/oppen/issues
+   → HTTP 423  {"message":"<Repository 4:projects/oppen> is archived"}
+   ```
+   A hard ordering constraint on the lazy per-repo migration, not a preference:
+   **create the repo → import its issues → *then* set `archived`.** If a repo is
+   already archived on the forge, un-archive, import, re-archive.
+
 ### 7. `bin/forge` plus a CLI cookbook
 
 1. **Write `bin/forge`**, in the shape of `bin/ha` / `bin/unifi` / `bin/kb`. Not

@@ -117,6 +117,15 @@ fresh machine (`forge sync`).
   subagents for research tickets; `/prototype` where code is involved.
 - **Plan, don't do:** this map produces **decisions**. Execution graduates into
   real `issues/NNN` once the way is clear.
+- **Migration ordering — read before graduating any execution issue.**
+  [Ticket 07](issues/07-tracker-cutover.md) decided the tracker moves to Forgejo and
+  the 56 markdown files are **deleted**, which removes this map's own graduation
+  target and would strand the migration's execution issues with nowhere to live.
+  This map is also still live (09/10/11 open), so it has to move mid-flight. The
+  order is therefore fixed: **(1)** Forgejo stands up on helium; **(2)** this map's
+  remaining tickets resolve *in markdown, where they are*; **(3)** the migration
+  script runs; **(4)** the markdown deletion and this map's own move happen **last**,
+  from the forge. Do not delete `issues/` before step 4.
 
 ## Decisions so far
 
@@ -178,6 +187,11 @@ and must not be re-litigated:_
   *a project is a registered entity, never a directory*; local dirs untouched.
   One org rather than flat **hedges [03](issues/03-forgejo-issue-model.md)**: if
   boards are org-scoped, it is the only namespace spanning all 20 repos.
+  _Amended 2026-08-23 by [ticket 07](issues/07-tracker-cutover.md): the board is now
+  **decoration** and nothing may depend on it, so the board-scoping argument for the
+  org is **dead** — do not cite it. The org still stands, on ticket 03's reason: the
+  dashboard's **label picker is only populated in an org context**, and a flat user
+  namespace would ship a cross-project view with no working filter._
 
 - [Forgejo's issue model — tracker *and* wayfinder maps?](issues/03-forgejo-issue-model.md) —
   **GO-WITH-WORKAROUND** (on the v15 LTS line). **Blocking dependencies are native,
