@@ -335,13 +335,37 @@ and must not be re-litigated:_
   hold every map. Riders onto [11](issues/11-persistence-backup-and-pins.md) (now
   the *only* copy of the tracker) and [10](issues/10-forge-sync-contract.md).
 
+- [lumin's definition of done, once the deep tier is remote](issues/09-lumin-definition-of-done.md) —
+  **The cross-host anchoring hazard does not exist.** krypton (Zen 5) and helium
+  (Coffee Lake), in the same pinned image at the same commit, measure
+  **byte-identical `Ir` on all twelve benches** — so resolution 1 wins, but refined:
+  **the anchoring authority is the pinned job image, not a host.** Any host running it
+  may bless (krypton is *not* demoted — `docker run <image> just perf`); only a
+  *host-native* run is advisory, on a measured 26 `Ir` residual from workspace path.
+  helium clears the Anchoring rule at **1.70 ms / 16.67 ms (~9.6×)**. Spec §1 is
+  **restated, not broken**: *one gate definition, two execution sites* — the CI workflow
+  must call `just` recipes and may never define a gate inline, which **overturns ticket
+  04's preference** and puts `--in-place` in the justfile as `mutants *ARGS`. Done =
+  fast tier green + pushed + CI verdict green; `just qa` survives as debug/offline/
+  pre-push only. **`nice` is dropped entirely** (cgroups are real, `ionice` isn't);
+  systemd values stay deferred behind ticket 12's open unit type. **Blocking discovery:
+  default seccomp forbids the perf gate** — `personality(ADDR_NO_RANDOMIZE)` is denied
+  by Docker's *and* Podman's default profiles, so the job needs a custom profile
+  (default + that one arg, not `unconfined`). Also found: **lumin's committed Ceilings
+  are already stale on krypton** (`particles` 4,716,499 vs a blessed 5,377,605), so the
+  feared silent false green is happening from plain code drift. Evidence:
+  [`assets/09-anchoring-measurements.md`](assets/09-anchoring-measurements.md).
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
 
 - **Generalizing CI beyond lumin.** `rust-template` is the natural home for a
   reusable workflow, but its shape is unknowable until lumin's actual workflow
-  exists. Graduates after tickets 04 + 09.
+  exists. ~~Graduates after tickets 04 + 09.~~ **Both are now closed and it did not
+  graduate** (corrected 2026-08-23): ticket 09 fixed the *contract* a workflow must
+  honour — call `just` recipes only, never inline a gate — but the reusable shape still
+  waits on lumin's real workflow existing. The trigger is that workflow, not a ticket.
 - **New-project convention.** _Direction settled 2026-08-23 by ticket 07:
   **forge-first**, and `rust-template` stops shipping an `issues/` dir._ What remains
   fog is the rest of the payload — `AGENTS.md`, the CI workflow, how the repo gets
@@ -416,6 +440,20 @@ In-scope fog — real, but not yet sharp enough to ticket:
   the **Syncthing-replicated vault**, not in a git repo, and one of them
   (`finance-rebuild`) is financial. Sharpen into a ticket once the migration's shape
   is concrete.
+
+- **Four execution items from [ticket 09](issues/09-lumin-definition-of-done.md)**,
+  parked here — none is a decision:
+  - **lumin's committed perf Ceilings are stale** and need a human re-anchor bless
+    (`particles` measures 4,716,499 against a blessed 5,377,605 — **on krypton**, so
+    this is code drift since 2026-08-20, not the CI split). Belongs to lumin's own
+    tracker, not this map.
+  - The **spec amendment + `AGENTS.md` rule-1 swap + two justfile changes**
+    (`--locked`, `mutants *ARGS`), both rule-6 flagged.
+  - The **custom seccomp profile** (default + `personality(0x40000)`) and its
+    `container.options` wiring — graduates with the runner build issues, alongside the
+    rootless-Podman prerequisites above.
+  - A **`bin/` wrapper over Forgejo's commit-status API**, so an agent reads the CI
+    verdict through a verb rather than raw curl.
 
 ## Out of scope
 
