@@ -272,3 +272,66 @@ The point of this instance is a gut reaction, so look in this order:
 4. **<http://localhost:3210/projects>** — the org listing with `oppen` archived
    and `diy-speakers` renamed. This is what 20 repos will look like, and it is the
    view that will decide whether topics (the map's open fog) are needed at all.
+
+---
+
+## 6. Rebuilt 2026-08-23 (evening) — the instance died, and where it lives now
+
+The original instance **was lost the same day it was built.** Its bind mounts
+pointed at a session scratchpad (`/tmp/claude-1000/…/3e0b65cb-…/scratchpad/`),
+tmp cleanup emptied `data/` and `config/`, and the container has been
+`Exited (1)` ever since (`/var/lib/gitea/git is not writable`). Verified it was
+genuinely unrecoverable rather than merely stopped, before rebuilding:
+
+```bash
+docker inspect --format '{{json .Mounts}}' forgejo-prototype   # Type: bind, both
+docker volume ls                                               # no forgejo volume
+```
+
+Both mounts were **binds**, so nothing survived in `/var/lib/docker/volumes`.
+
+**Rebuilt from this document** — it turned out to be a complete recovery spec;
+nothing had to be re-derived. Three things changed:
+
+- **Durable path:** `/var/tmp/forgejo-prototype/` (not a session scratchpad).
+- **Container:** `forgejo-proto2`, same `:15-rootless` pin, same port 3210,
+  same login `ms` / `protoforge123`.
+- **`build.sh` rebuilds the whole thing end to end** — compose, admin, token, org,
+  four real repo pushes, `oppen` archived, 14 issues, the wayfinder specimen with
+  both blocking edges, and the board. `import.py`, `wayfinder.py`, `board.py`
+  alongside it. Re-runnable; it destroys and recreates.
+
+**Issue numbers shifted** (`dotfiles` was created with `auto_init`, so numbering
+starts at `#1` rather than `#2`):
+
+| | original | rebuild |
+|---|---|---|
+| imported `.dotfiles` issues | `#2`–`#15` | **`#1`–`#14`** |
+| wayfinder map | `#16` | **`#15`** |
+| map children | `#17`–`#21` | **`#16`–`#20`** |
+| org board | project `3` | **project `1`** |
+
+Two deliberate differences from the original build:
+
+1. **Both label renderings now sit on the specimen itself**, not on separate demo
+   issues: every child carries `wayfinder:effort:vault-serve` + `wayfinder:<type>`
+   (colon, flat pill) **and** `wayfinder/type/<type>` (slash, split pill,
+   `exclusive: true`). §3.1's finding is therefore visible on a single issue.
+2. **The board was built by DB surgery, not form scraping** (`board.py` writes
+   `project_board` / `project_issue` directly). The htmx column form carries no
+   stable action or `_csrf` field, so the original session's scraping approach did
+   not replay. This changes nothing about §3.3's conclusion and if anything
+   sharpens it: **boards are human-only, forever** — this instance needed raw SQL
+   to place a card. `board_type=2` on the create form also does **not** apply the
+   kanban template; the board comes up with zero columns.
+
+Card distribution now mirrors the real data rather than the original counts:
+Backlog 6 (the open `.dotfiles` issues) · To Do 2 (the map + its one open child) ·
+In Progress 3 (the assigned ones) · Done 9.
+
+**Review URLs (rebuilt):**
+
+1. Board — <http://localhost:3210/projects/-/projects/1>
+2. Map as an issue — <http://localhost:3210/projects/dotfiles/issues/15>
+3. Tracker at density — <http://localhost:3210/projects/dotfiles/issues>
+4. Org listing — <http://localhost:3210/projects>

@@ -218,8 +218,12 @@ and must not be re-litigated:_
   [`assets/02-lumin-deep-tier-feasibility.md`](assets/02-lumin-deep-tier-feasibility.md).
 
 - [Throwaway Forgejo loaded with real repos and real issues](issues/05-forgejo-ui-prototype.md) —
-  **Built and running at <http://localhost:3210/>** (Forgejo 15.0.7, the ticket-01
-  pin; scratchpad path, good for this week not forever). 4 real repos in an org
+  **Built, lost, and rebuilt** — now at <http://localhost:3210/> from
+  `/var/tmp/forgejo-prototype/build.sh` (Forgejo 15.0.7, the ticket-01 pin). The
+  original instance died within hours: its bind mounts sat in a session scratchpad
+  that tmp cleanup emptied. **Do not trust a bare "it is running" claim — `curl`
+  it, and re-run `build.sh` if it is down.** Issue numbers shifted in the rebuild
+  (map is now `#15`, board is project `1`); see the notes' §6. 4 real repos in an org
   `projects`, 14 real `.dotfiles` issues, the vault-serve map as issue `#16` with a
   **real blocking edge**, and a hand-built **org-level** board. Corrected the API
   research in four places — most sharply: **`exclusive: true` is a silent no-op on
