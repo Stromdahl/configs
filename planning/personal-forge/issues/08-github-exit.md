@@ -100,3 +100,61 @@ dissolved.
 > **Note for whoever owns this ticket:** this section was appended by a different
 > session than the one that claimed 08, because the fact arrived from ticket 04's
 > research after 08 was claimed. Nothing else in the ticket was touched.
+
+## Comments
+
+### Claim transferred 2026-08-23 (session `dotfiles-ff` → this session)
+
+The previous claim was stale — the holding session no longer exists. Re-claimed
+here; `Status: claimed` is unchanged in value but now means *this* session.
+
+### Premise check 2026-08-23 — the account is far larger than the map says
+
+Re-ran the inventory the dead session lost. Commands, so they can be re-run rather
+than re-derived:
+
+```bash
+gh repo list Stromdahl --limit 300 --json name,visibility,isFork,pushedAt,isArchived \
+  --jq '.[]|select(.isFork==false)|[.name,.visibility,(.pushedAt|split("T")[0])]|@tsv' | sort -k3 -r
+# intersect against local checkouts:
+for d in $(find ~/projects -maxdepth 3 -name .git -prune); do
+  git -C "${d%/.git}" remote get-url origin 2>/dev/null; done \
+  | sed 's/.*\///;s/\.git$//' | sort -u
+```
+
+Results:
+
+- **78 non-fork repos** (92 including forks) — **not 49**. The map's corrected
+  figure was itself low.
+- **Only 6 have a local checkout** under `~/projects`: `settleup`, `lunchlund`,
+  `telltaled`, `issue-tracker`, `specs`, `finance-track`. **71 exist only on
+  GitHub** (72 minus `configs`, see below).
+- Visibility: `Stromdahl.github.io`, `configs`, `settleup`, `telltaled`,
+  `lunchlund` public; `finance-track`, `issue-tracker`, `specs`, `coinkeep`,
+  `lumen` private — confirming the map's correction.
+- **The tail is coursework and toy sketches.** ~55 of the 78 were last pushed
+  **2023 or earlier** (`IOT20_*`, `Applio*`, `SnakeGame`, `Tetris`, `Fireworks`,
+  `Boids`, …) — a KYH/IOT20 study archive plus teenage graphics demos. Nothing
+  here is a live dependency; the question they raise is *keep or let go*, not
+  *migrate*.
+- Genuinely recent and local-less: `Stromdahl.github.io` (2026-08-21),
+  `configs` (2026-07-12), `coinkeep` (2026-02-09), `lumen` (2026-02-01).
+
+**`~/.dotfiles` IS a GitHub repo — `Stromdahl/configs`, PUBLIC.** Verified with
+`git remote -v` and `gh repo view`. It is not under `~/projects`, so **ticket 06's
+survey never scoped it and its 20-repo curation excludes it**. This is the single
+most load-bearing repo on the account:
+
+- `bootstrap.sh:21` clones `https://github.com/Stromdahl/configs.git`, and
+  `README.md:8` / `install.sh:32` document the fresh-machine entry point as
+  `wget -qO- https://raw.githubusercontent.com/Stromdahl/configs/main/bootstrap.sh | bash`.
+- `modules/ssh/install.sh:5` and `modules/deploy-user/install.sh:9` fetch
+  `https://github.com/stromdahl.keys`.
+- Its public visibility is *already load-bearing on another decision* —
+  `planning/hermes-helium/issues/10-telegram-authorization.md:209` reasons from
+  "`Stromdahl/configs` is **PUBLIC**".
+
+So a mesh-only forge cannot serve the bootstrap path: a fresh machine has no mesh
+membership until it is provisioned, and it cannot be provisioned without reaching
+the dotfiles repo and the keys. **That is a second chicken-and-egg beyond the keys,
+and it is why "delete the account" is not currently a reachable option.**
