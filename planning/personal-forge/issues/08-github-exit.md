@@ -70,3 +70,33 @@ cannot both be true. This ticket must **pick an exit**, not explore the question
 Also: `REQUIRE_SIGNIN_VIEW = true` kills anonymous pulls outright — relevant because
 a privacy-motivated instance is exactly the kind that would want it on. Full detail
 in [`../assets/01-forgejo-deployment-research.md`](../assets/01-forgejo-deployment-research.md) §6.
+
+### A fifth exit (2026-08-23, from asset 04) — added by another session; see note below
+
+Ticket 04's image-build finding surfaces a shape the four exits above do not cover,
+because all four are framed around radon **pulling** from a registry.
+
+**5. radon builds the image where it is consumed.** Ticket 04 recommends the *CI job
+image* be built by an ansible task on the host that runs it — a `Containerfile` in
+this repo, date/content-hash tagged, digest-pinned — specifically to avoid CI
+depending on a registry which depends on the forge being up. The same reasoning
+applies to settleup: if radon builds settleup's image from a git checkout during its
+own ansible deploy, then **there is no registry pull, no registry to expose, and the
+same-origin collision never arises.**
+
+This is **not** exit 3 (`docker save` / `skopeo copy` from krypton — krypton must be
+awake and is the only builder) and **not** exit 1 (which buys reachability by putting
+radon on the mesh). It is exit 1's *mechanism* — radon fetching source — without the
+mesh membership, and it needs only public read access to one repo's source, not to a
+registry.
+
+Costs to weigh against the others: radon needs a Rust toolchain and build capacity
+it does not currently need (it is a small VPS, and settleup is a Rust build); build
+failures move from CI to deploy time, losing the "CI gates the image" property that
+`issues/023` deliberately established; and radon still needs *some* read path to the
+source, so the public-visibility question in thread 2 stays live rather than being
+dissolved.
+
+> **Note for whoever owns this ticket:** this section was appended by a different
+> session than the one that claimed 08, because the fact arrived from ticket 04's
+> research after 08 was claimed. Nothing else in the ticket was touched.
