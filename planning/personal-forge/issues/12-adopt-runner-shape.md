@@ -1,8 +1,7 @@
 # Adopt the runner shape, confinement, and supply-chain posture
 
 Type: grilling
-Status: open
-Assignee: claude (session 2026-08-23)
+Status: resolved
 
 ## Question
 
@@ -316,3 +315,126 @@ price of the NVMe trade.
 real. Picking values is the `nice`-equivalent question that ticket 04 assigned to
 ticket [09](09-lumin-definition-of-done.md); this ticket only records that the
 mechanism exists and that **`ionice` and cgroup `io` do not**.
+
+### Q4 — badges: **skip entirely.**
+
+`[badges] GENERATOR_URL_TEMPLATE` defaults to **img.shields.io**, so a badge
+round-trips a third-party CDN on every render, leaking the repo name and the owner's
+reading pattern — a small but permanent contradiction of the map's stated motive
+(*"less dependent on bigtech"*). Against that it buys nothing: the forge is
+**mesh-only**, so the only viewer is the owner, who has the run list one click away in
+the same UI. Badges earn their place where strangers need an at-a-glance signal; there
+are no strangers on this instance. Self-hosting a generator is a whole extra service
+to deploy, patch and back up for a coloured rectangle.
+
+**Decided: do not set `GENERATOR_URL_TEMPLATE`, do not self-host a generator, no badge
+in any README.** If an at-a-glance signal is wanted later, it belongs on the Home
+Assistant dashboard the owner already opens (Q5's territory) as a real status tile.
+
+### Q5 — notification wiring: **deferred, not decided here.** (owner: *"we don't need this now"*)
+
+Handed in full to **`issues/013`**, which already owns "there is no notification
+mechanism on the fleet". Nothing in the runner spec depends on it: per-job **commit
+statuses on push** come for free in the Forgejo UI, and the notification is purely
+additive — one `if: failure()` step publishing to whatever channel `013` eventually
+picks.
+
+Two facts recorded so `013` (or a future revisit) does not have to re-derive them:
+- **Ticket 04's rider was half wrong.** There is **no ntfy and no mail** on the fleet.
+  What exists is **HA-MQTT** — Mosquitto on argon at `192.168.1.99:1883`, shipped in
+  issue 046, already carrying helium's container and SMART metrics into Home Assistant.
+  That is the zero-new-service option if/when this is wanted.
+- **Commit statuses only fire on push.** For scheduled and `workflow_dispatch` runs the
+  code path is `default: return nil`. So *if a nightly run is ever added*, the in-UI
+  signal is silently absent and an explicit `if: failure()` step becomes necessary
+  rather than optional. Today's push-only trigger does not have this gap.
+- The **success-heartbeat** question (a pipeline broken for a week looks identical to a
+  green one) is **unasked and unanswered** — it goes with the channel.
+
+---
+
+## Resolution — the runner spec
+
+**Status: resolved 2026-08-23. Q1–Q4 decided; Q5 deferred to `issues/013`.**
+
+### One correction to my own reasoning above, recorded because it changes a premise
+
+Earlier in this resolution I argued a **system** unit would give access to the `io`
+controller (system.slice has it; user slices do not). That is true of the *runner
+process* but **irrelevant to the jobs**: with rootless Podman the job containers are
+launched by the user's podman and land in **`user-<uid>.slice`**, which has only
+`cpu memory pids` delegated. So **no I/O lever was ever available for the jobs** — the
+"no I/O quota" outcome in Q3 was not a choice but a constraint. The system-unit
+recommendation below therefore rests on operational simplicity, not on `io`.
+
+### The spec
+
+1. **Runner process** — `forgejo-runner` as a **systemd system unit** with
+   `User=forgejo-runner` (unprivileged, no shell needed for the runner itself).
+   Chosen over `systemd --user` for operational simplicity: ansible-native via the
+   `systemd` module, starts at boot with no session, no linger dependency **for the
+   runner**.
+2. **Container backend** — **rootless Podman**, `docker://` labels. The podman socket
+   comes from the documented pattern: `podman.socket` as a **`systemd --user` unit for
+   `forgejo-runner` with `loginctl enable-linger`**, and the runner unit points at it:
+   `Environment=DOCKER_HOST=unix:///run/user/<uid>/podman/podman.sock`.
+   **Both ticket-04 acceptance lines are mandatory:** `docker_host: "-"` in the runner
+   config **and** the `Environment=DOCKER_HOST=…` line — either alone leaves the socket
+   mounted into every job.
+3. **Prerequisites ansible must provision (none present today — verified):**
+   `apt: podman uidmap slirp4netns fuse-overlayfs`; a **subuid/subgid range for
+   `forgejo-runner`** that does not collide with `ms:100000:65536` (e.g. `200000:65536`);
+   `loginctl enable-linger forgejo-runner`. `runc` and `docker` are already installed;
+   docker is **not** used by the runner.
+4. **Registration** — **repository scope on `projects/lumin`**, not instance-wide.
+5. **Job image** — purpose-built **Debian 13 (trixie), glibc 2.41**, from a
+   `Containerfile` in this repo, **built on helium** by an ansible task, tagged by
+   date/content-hash and **digest-pinned in the label**. Building locally (not pulling
+   from Forgejo's own registry) avoids CI depending on the registry that depends on the
+   forge, and sidesteps ticket 08's registry-exposure question entirely. Every default
+   job image is bookworm/glibc 2.36 — **disqualifying** against the perf gate's 10%
+   headroom; alpine/musl likewise.
+   **Contents** (union of ticket 02, ticket 04, and lumin's `preflight` recipe):
+   `rustup` + pinned **rustc 1.94.1**; `cargo-machete`, `cargo-mutants`, `cargo-deny`,
+   `cargo-llvm-cov`, **`gungraun-runner` exactly 0.19.4**; `cage`, `grim`,
+   `valgrind ≥ 3.20`; `zstd` (or cache restores silently no-op), `nodejs` (or
+   `actions/checkout` breaks), `git ≥ 2.24.3`. Several are `cargo install`, i.e.
+   compiled from source at image-build time on a 6-core i5 — **a slow, rarely-rebuilt
+   image is accepted**.
+6. **Cache** — a persistent bind mount on the **NVMe root disk** (not `actions/cache`,
+   not a new SSD-mirror subvolume). **`TMPDIR` must be pointed explicitly at it**, or
+   cargo-mutants' default scratch location applies — fatal on a 16 GB box if that is
+   tmpfs, given a 9.8 GB `target/`.
+7. **Space guard** — a first workflow step failing the run when free space on `/` is
+   below ~40 GB, plus a cleanup step removing the scratch tree **on exit, including on
+   failure**. Plus an advisory disk-free sensor on `/` over the existing MQTT → HA path.
+   **No ext4 project quota** (would need `prjquota` + `tune2fs` + a reboot).
+8. **Resource limits** — `CPUWeight=`/`CPUQuota=`/`MemoryMax=` are **real** (M9: `cpu
+   memory pids` delegated). **`ionice` and cgroup `io` are unavailable** — every device
+   is `mq-deadline`, and `io` is never delegated to a user slice. Choosing the actual
+   values is ticket [09](09-lumin-definition-of-done.md)'s `nice` question.
+9. **`--locked`** on the cargo invocations, for **reproducibility** (the perf gate must
+   not compare `Ir` across differing dependency sets), explicitly **not** security.
+   CLI-only, so it is a justfile edit = lumin spec §2 change → **owned by ticket 09**.
+10. **No badges.** No gate reorder. No offline builds. No vendoring/`cargo-vet`.
+
+### Recorded risk acceptance
+
+**Third-party build-script execution is knowingly accepted.** 27 third-party build
+scripts + 9 proc macros execute on this platform, nearly all top-of-ecosystem audited
+crates; the squattable tail is five (`zmij`, `bincode-next`, `drm-fourcc`, `tiny-xlib`,
+`gungraun`). The "1109 builds" framing is analytically empty — same lockfile, 1109
+times. Moving CI to helium changes **blast radius, not likelihood**, and rootless
+Podman already confines that to an unprivileged user with two cache dirs rather than
+root beside the Immich archive.
+
+### Riders out of this ticket
+
+- **Ticket [09](09-lumin-definition-of-done.md)** inherits two spec edits: adding
+  `--locked` to the justfile recipes (spec §2), and choosing `CPUWeight`/`MemoryMax`
+  values (the `nice` question, now with cgroup delegation confirmed present and
+  `ionice`/`io` confirmed unavailable).
+- **`issues/013`** inherits Q5 whole, plus the two facts above.
+- **New execution scope, not a decision:** the ansible task for
+  podman/uidmap/slirp4netns/fuse-overlayfs + a runner-user subuid range + linger.
+  Graduates with the build issues.

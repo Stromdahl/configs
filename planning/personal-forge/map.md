@@ -268,6 +268,28 @@ and must not be re-litigated:_
   PUBLIC repo, so migrating is a visibility *reduction*), **10** inherits a
   two-source restore (`configs` from GitHub, the 20 from Forgejo).
 
+- [Adopt the runner shape, confinement, and supply-chain posture](issues/12-adopt-runner-shape.md) —
+  **Shape adopted as recommended**; Q5 (notifications) **deferred whole to `issues/013`**
+  as not needed now. Premise checks moved four things: **`--locked` is CLI-only**
+  (proved — no config key, no env var), so it is a lumin **spec §2 justfile edit owned
+  by ticket 09**, taken for **reproducibility** (the perf gate must not compare `Ir`
+  across differing dependency sets), *not* security. **The supply-chain worry shrank
+  under measurement** — 27 third-party build scripts + 9 proc macros on this platform,
+  squattable tail of five; the "1109 builds" figure is analytically empty (same
+  lockfile, 1109 times); helium changes **blast radius, not likelihood**, already
+  confined by rootless Podman. So **no gate reorder, no offline builds, no vendoring** —
+  risk knowingly accepted. **`cargo mutants` writes 52.56 GiB/run** (measured,
+  [`assets/12-measure-mutants-io.sh`](assets/12-measure-mutants-io.sh)) ⇒ **endurance is
+  a non-issue and is withdrawn** (~2,500 runs of budget); the real problem is **~80 MB/s
+  sustained for 25–40 min**, so the cache moves to the **NVMe root disk**, *not* the SSD
+  mirror — guarded by a **fail-early free-space check + mandatory cleanup**, no quota.
+  **M9 resolved: `cpu memory pids` ARE delegated** (limits are real) but **`io` never is,
+  and every device is `mq-deadline`** — so `ionice` and cgroup `io` are **unavailable to
+  jobs by construction**, not declined. **Rootless Podman's prerequisites are absent on
+  helium** (no podman/uidmap/slirp4netns/fuse-overlayfs; only `ms` has a subuid range) =
+  real unscoped ansible work. **No badges** — mesh-only forge, one viewer, and
+  shields.io cuts against the motive. Full spec in the ticket.
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -287,11 +309,14 @@ In-scope fog — real, but not yet sharp enough to ticket:
   deleted. Its two unbuilt pieces (`show` output, install story) are blocked on
   design decisions that may simply evaporate. Note its hard-won insight is worth
   keeping either way: *a project is a registered entity, never a directory.*
-- ~~**CI failure notification.**~~ **Closed 2026-08-23 by ticket 04** — the
-  mechanisms exist and are better than this item assumed: per-job commit statuses on
-  push (but **none** for scheduled / `workflow_dispatch` runs), a first-party opt-in
-  failure email, a badge endpoint, and an `if: failure()` step to ntfy or HA-MQTT.
-  Picking one is now a decision in ticket [12](issues/12-adopt-runner-shape.md).
+- ~~**CI failure notification.**~~ **Closed 2026-08-23 — twice over.** Ticket 04 found
+  the mechanisms (per-job commit statuses on push, but **none** for scheduled /
+  `workflow_dispatch` runs; a first-party opt-in failure email; a badge endpoint; an
+  `if: failure()` step). Ticket [12](issues/12-adopt-runner-shape.md) then **deferred the
+  choice whole to `issues/013`** (*"we don't need this now"*) and corrected 04's rider:
+  there is **no ntfy and no mail on the fleet** — only **HA-MQTT** (Mosquitto on argon,
+  `192.168.1.99:1883`, issue 046). Nothing in the runner spec depends on it. The
+  **success-heartbeat** question rides along to `013`, unasked.
 - _(Graduated 2026-08-23 into ticket [04](issues/04-runner-topology.md): **where the
   CI runner lives and how it is confined.** Ticket 01 found Forgejo's documented
   default runner shape is a **privileged docker-in-docker daemon**, with Forgejo's own
@@ -323,6 +348,14 @@ In-scope fog — real, but not yet sharp enough to ticket:
     indefinitely. Nobody has checked whether any map body contains something that
     should not be. Sharpen into a ticket only if [07](issues/07-tracker-cutover.md)
     decides maps stay markdown.
+
+- **Rootless-Podman prerequisites are not provisioned on helium** — surfaced by
+  [ticket 12](issues/12-adopt-runner-shape.md), parked here because it is execution, not
+  a decision. `podman`, `newuidmap`/`newgidmap`, `slirp4netns` and `fuse-overlayfs` are
+  **all absent**, and only `ms` has a subuid/subgid range. So the runner needs an ansible
+  task nobody has written: install those four, provision a non-colliding subuid range for
+  the `forgejo-runner` user, and `loginctl enable-linger` it for `podman.socket`.
+  Graduates with the build issues.
 
 ## Out of scope
 

@@ -132,3 +132,30 @@ decision, because ticket 04 established that the runner cannot solve it:
   need no privilege, but **`ionice` classes only bite under BFQ/CFQ** — on a `none`
   or `mq-deadline` queue it is a **no-op**. Verify helium's scheduler alongside M11;
   do not assume the I/O half of the lever exists.
+
+### Riders from [ticket 12](12-adopt-runner-shape.md) (2026-08-23)
+
+Two spec edits are now **owned by this ticket**, not 12:
+
+1. **Add `--locked` to the justfile's cargo invocations** — a lumin **spec §2** change
+   (the justfile is *the* entry point), so it needs the §8 rule-6 ritual. **It cannot be
+   done from the CI side:** `--locked` is CLI-only — proved on cargo 1.94.1 with
+   `Cargo.lock` deleted before each run, `--locked` fails while
+   `--config net.locked=true` and `CARGO_NET_LOCKED=true` both succeed. (`net.offline`
+   *is* a real key, but offline builds were declined.) **Rationale is reproducibility,
+   not security:** without it CI can resolve a different dependency set than the laptop,
+   and a dependency bump moving `BLIT_IR` would read as a regression in lumin's own code
+   against the committed Ceilings. Accepted cost: every dependency update needs a
+   deliberate `cargo update` before CI goes green.
+2. **Choose the `CPUWeight=`/`CPUQuota=`/`MemoryMax=` values** — the `nice` question 04
+   handed here. Two measurements now close off the guesswork:
+   - **cgroup delegation IS present** on helium (`user-1000.slice` →
+     `cpu memory pids`), so CPU and memory limits are **real, not silently inert**.
+   - **`ionice` and cgroup `io` are unavailable to jobs, by construction** — every
+     device is `mq-deadline` (nothing on BFQ/CFQ) *and* `io` is never delegated to a
+     user slice, where rootless-Podman job containers land. So the I/O half of the lever
+     **does not exist**; CPU/memory limits are the whole mechanism for "coexist with a
+     Jellyfin transcode".
+   - Useful magnitude: one `cargo mutants` run is **52.56 GiB written / 653 s** on
+     krypton's 16 threads (`../assets/12-measure-mutants-io.sh`) — ~80 MB/s sustained,
+     stretching to 25–40 min on helium's 6.
