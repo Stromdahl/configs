@@ -1,7 +1,7 @@
 # Throwaway Forgejo loaded with real repos and real issues
 
 Type: prototype
-Status: open
+Status: claimed
 Blocked by: 03
 
 ## Question
