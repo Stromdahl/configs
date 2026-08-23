@@ -1,7 +1,7 @@
 # The GitHub exit: settleup's image, and public visibility
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: 01
 
 ## Question

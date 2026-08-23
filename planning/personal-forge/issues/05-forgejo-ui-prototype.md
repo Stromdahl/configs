@@ -1,7 +1,7 @@
 # Throwaway Forgejo loaded with real repos and real issues
 
 Type: prototype
-Status: claimed
+Status: resolved
 Blocked by: 03
 
 ## Question
@@ -75,3 +75,55 @@ inferred-not-verified gap in 03. Confirm and record: that
 `PATCH /repos/{o}/{r}`; that closing a blocked issue really returns **412
 `DependenciesLeft`**; and that `type=issues` filters PRs out of
 `/repos/issues/search`.
+
+## Answer
+
+Resolved 2026-08-23. **The instance exists and is running.** Notes, imports, and
+the API corrections: [`../assets/05-prototype-notes.md`](../assets/05-prototype-notes.md).
+
+- **URL:** <http://localhost:3210/> · org listing <http://localhost:3210/projects>
+  · login `ms` / `protoforge123`
+- **Version:** Forgejo **15.0.7**, image `codeberg.org/forgejo/forgejo:15-rootless`
+  — the exact pin ticket 01 chose.
+- **Lives in** the session scratchpad at `…/scratchpad/forgejo-prototype/`
+  (`docker compose start` / `stop` to resume/pause, keeping data;
+  `down -v && rm -rf data config` to destroy). Scratchpad path — **good for this
+  week, not forever.**
+- **Loaded with:** 4 real repos in an org named `projects` (per ticket 06,
+  including `oppen` archived and `diy-speekers`→`diy-speakers` renamed), **14 real
+  issues** from `~/.dotfiles/issues/`, the **vault-serve map reproduced as `#16`**
+  with children `#17`–`#21` in the substitute shape and a **real blocking edge**
+  (`#21` blocks the map), and a **hand-built org-level kanban board** with 20 cards.
+
+**Four things it found that the API research got wrong or didn't know:**
+
+1. **`exclusive: true` is a silent no-op on `:`-separated labels.** `/` is the
+   scope separator; `:` is not — and the API accepts and *stores* `exclusive: true`
+   on a colon label it will never enforce, with no warning. This contradicts the
+   research's claim that exclusive labels are an improvement over the other
+   adapters. The `wayfinder:map` / `wayfinder:effort:<slug>` convention works as
+   specified but **cannot have exclusivity**; getting it means renaming to
+   `wayfinder/type/research`. **Ticket 07 should make that naming choice
+   knowingly, not discover it at migration time.** Both renderings are on the
+   instance side by side (`#2`, `#4`, `#10`) to be looked at.
+2. **Same-named org and repo labels both attach, silently** — one `POST` resolved
+   `epic:services` to two labels and attached both, duplicating the pill and
+   double-counting every `labels=` query. Adapter rule: pick one level and never
+   define a name at both, or resolve name→ID yourself.
+3. **Boards are org-scoped** — nobody had checked. An org board is a first-class
+   tab; a *user*-level board is **not offered** for issues in an org-owned repo.
+   So **ticket 06's "one org hedges ticket 03" reasoning was correct and
+   load-bearing** — flat-under-user would have made a cross-project board
+   impossible.
+4. `internal_tracker.enable_issue_dependencies` was **`true` by default on every
+   repo**, so no pre-flight `PATCH` was needed in practice.
+
+**What mapped awkwardly (all input to ticket 07):** `~/.dotfiles/issues/` has
+**five** statuses in the wild (`open`/`in-progress`/`done` per its README, plus
+`closed` and `dropped`), and Forgejo has two — so `dropped` became *closed + a
+`status:dropped` label*, surviving by convention with nothing enforcing it.
+**`in-progress` has no home at all**: Forgejo's only in-flight signal is an
+assignee, and "assigned to `ms`" meaning "in progress" works on a single-user
+forge by coincidence, not by model. And **`Part of #16` renders as an ordinary
+issue link** — the map's children are legible only because of the label query, so
+the body line buys nothing machine-readable, exactly as ticket 03 predicted.

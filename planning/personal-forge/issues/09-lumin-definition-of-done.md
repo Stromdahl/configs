@@ -42,3 +42,52 @@ headless at all):
 
 Output: the amended definition of done, precise enough to edit into lumin's spec
 and `AGENTS.md` as a follow-on execution issue.
+
+## Amendment (2026-08-23, from ticket 02) — this ticket's real content
+
+Ticket 02 came back **feasible on all three questions**, which narrows this ticket
+rather than widening it. The hardware fears are dead:
+
+- **The perf gate's `Ir` does port.** Valgrind masks `CPUID` to a synthetic
+  *Haswell*, so the glibc AVX-512-vs-AVX2 `memcpy` dispatch that would have moved
+  `BLIT_IR` cannot fire under callgrind. Verified in Valgrind 3.24.0 source.
+- **The smoke gate runs headless** — `WLR_BACKENDS=headless` + `WLR_RENDERER=pixman`
+  creates no session and touches no DRM device. So it does **not** have to stay
+  local, and question 2 of this ticket largely answers itself.
+
+**What is left is the actual finding, and it is a spec gap: §4.5 assumes exactly
+one machine measures `Ir`.** Ceilings are committed to source, Blessing is
+human-only, the Anchoring rule gates a bless on the wall-clock bars passing — but
+there is **no rule for which host owns the Ceilings**, and `just bless-perf` has no
+notion of "which machine's". With uniform 10% headroom, any residual shift is a
+false green (helium lower — the dangerous, silent one) or a false red, and a
+re-anchor on either host rewrites what the other is measured against.
+
+**Choose between three resolutions** (asset §1.6, in the researcher's order of
+preference):
+
+1. **The CI host is the anchoring authority.** Ceilings mean "as measured on helium
+   under valgrind 3.24 / glibc 2.41 / rustc 1.94.1"; krypton becomes advisory.
+   Looks available — krypton measured the particles frame at 1.07 ms of a 16.67 ms
+   budget (~15× headroom), so at ~1.6× slower single-thread helium still has ~10×,
+   satisfying the Anchoring rule. **Confirm with measurement M8 before committing.**
+2. **Require agreement and gate on it** — keep krypton's Ceilings, add a documented
+   cross-host agreement rule; a divergence is an incident, not a bless.
+3. **Per-host Ceilings** — honest, and the worst: doubles the bless ritual and
+   admits the number isn't portable.
+
+**Run M1 and M4 before this grilling.** M1 is a `sha256sum` of Valgrind's synthetic
+CPU diagnostics (krypton:
+`df7966c3f7caa6ae1dfffce3bf4ebba360e78f9679667f760625983f5ae3fc79`, 129 lines) —
+an identical digest on helium closes the CPU-dispatch channel entirely. M4 is the
+twelve `Ir` values vs `docs/perf-calibration.md`, where **byte-identical is the
+pass condition** — that is the measurement this decision actually turns on. Both
+are single cheap commands; the full list of eight is in the asset's §4.
+
+**Also fold into the spec amendment, whichever resolution wins:** no
+`RUSTFLAGS`/`target-cpu` in CI, no `CARGO_INCREMENTAL`, `GLIBC_TUNABLES` unset, and
+**valgrind + glibc versions recorded in the calibration row** alongside rustc.
+
+**Sizing context for the "is the wait tolerable" half of question 1:** deep tier is
+**~25–40 min warm** (mutants dominating at ~18 min idle / 20–30 min next to a
+transcode), and **60–90 min on a cold checkout**.

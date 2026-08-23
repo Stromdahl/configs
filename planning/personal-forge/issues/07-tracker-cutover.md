@@ -75,3 +75,39 @@ letting "everything moves to the forge" win by default.
 One practical note for the adapter question: a Forgejo adapter would be an **HTTP
 cookbook**, not a CLI cookbook like the existing `github`/`gitlab`/`local` three —
 unless a `bin/` wrapper is written first (`feedback_extend_wrapper_first`).
+
+## Amendment (2026-08-23, from the ticket 05 prototype)
+
+The prototype is live — **<http://localhost:3210/>** — so this grilling happens
+with the real UI in front of the owner, not a description of it. Start at the
+board (<http://localhost:3210/projects/-/projects/3>) and the vault-serve map as an
+issue (<http://localhost:3210/projects/dotfiles/issues/16>). Four new facts:
+
+1. **A label-naming decision, to be made knowingly rather than discovered.**
+   `exclusive: true` is a **silent no-op on `:`-separated labels** — `/` is the
+   scope separator, `:` is not, and the API stores the flag on colon labels without
+   ever enforcing it. The `wayfinder:map` / `wayfinder:effort:<slug>` convention
+   works but cannot be exclusive; exclusivity requires renaming to
+   `wayfinder/type/research`. Both renderings are on the instance (`#2`, `#4`,
+   `#10`) — colon labels render as one flat pill, slash labels as a split
+   scope/value pill. Pick one here.
+2. **`~/.dotfiles/issues/` has five statuses in the wild, not the three its README
+   documents** — `open`/`in-progress`/`done`, plus `closed` and `dropped`. Forgejo
+   has two. In the prototype `dropped` became *closed + a `status:dropped` label*:
+   the information survives, but only by convention with nothing enforcing it.
+   Decide the mapping here rather than inventing it at migration time.
+3. **`in-progress` has no home.** Forgejo's only in-flight signal is an assignee
+   (or a board column, which no agent can read). "Assigned to `ms`" meaning "in
+   progress" works on a single-user forge by coincidence, not by model. Worth
+   naming, because the current tracker's whole coordination mechanism is *"grab
+   work by flipping `status`"*.
+4. **`Part of #16` renders as an ordinary issue link** — no "parent of" semantic
+   anywhere in the UI. The map's children are legible **only** because of the
+   `wayfinder:effort:<slug>` label query. That makes ticket 03's hybrid option
+   concrete: judge issue `#16` against `planning/vault-serve/map.md` side by side
+   and decide whether a map genuinely reads better as an issue.
+
+Also confirmed useful: dependencies were **enabled by default on every repo** (no
+pre-flight needed), and same-named org+repo labels **both attach silently**, which
+duplicates pills and double-counts label queries — an adapter rule, but also a
+reason to keep label definitions at exactly one level.
