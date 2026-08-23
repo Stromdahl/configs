@@ -31,10 +31,17 @@ the Forgejo API and auth model:
 4. **Auth.** A Forgejo API token on krypton — where does it live? (sops-encrypted
    in the repo, `pass`, or a plain file in `~/.config`?) Note the house rule:
    `feedback_sops_no_stdout`.
-5. **What it does about the exclusions.** Ticket 06 rules some directories out
+5. **Name aliases (from [ticket 06](06-repo-curation.md)).** `sync` **cannot
+   assume `dir name == repo name`**: 06 renamed two repos on the forge only —
+   `dockerstats`→`docker-tools` and `diy-speekers`→`diy-speakers` — leaving the
+   local directories untouched. So it needs a two-entry alias map alongside the
+   ignore list, or it will report both as drift forever *and* clone them into
+   new directories on a fresh machine.
+
+6. **What it does about the exclusions.** Ticket 06 rules some directories out
    (upstream Marlin clones, non-git dirs). Does `sync` know about them, or does it
    report them as drift forever? An ignore list of some kind is probably needed.
-6. **Archived repos.** A repo archived on the forge (ticket 06) — does `sync`
+7. **Archived repos.** A repo archived on the forge (ticket 06) — does `sync`
    clone it onto a fresh machine, or skip it?
 
 Output: a precise enough contract that building it is execution, not design.

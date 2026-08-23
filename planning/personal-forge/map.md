@@ -26,7 +26,9 @@ fresh machine (`forge sync`).
 - **Why this effort exists (the motive, in the owner's words):** *"I want it to be
   private. I want to be less dependent on bigtech — that's the whole purpose of
   this repo."* Weigh every option against that first.
-- **The surveyed ground truth** (`~/projects`, 28 dirs, 2026-08-23):
+- **The surveyed ground truth** (`~/projects`, 28 dirs, 2026-08-23) — **partly
+  corrected by [ticket 06](issues/06-repo-curation.md); read its *Survey
+  corrections* before relying on these counts:**
   - **17 of the owner's own repos have no remote at all** — `lumin`, `ghtop`,
     `taskmaster`, `msbrain`, `diy-speekers`, `not-so-smart-smartwatch`,
     `freecad-prints`, `custom-keyboard`, `pinecad`, `rust-template`, `oppen`,
@@ -36,9 +38,16 @@ fresh machine (`forge sync`).
     `issue-tracker`, `finance-track`.
   - **2 upstream vendor clones** (`marlin-ender3`, `marlin-configs`) — MarlinFirmware's
     repos, **not the owner's to host**; exclude them.
-  - **4 not git at all:** `playground`, `rssfeed`, `vendor`, `hermes`.
+  - **4 not git at all:** `playground`, `rssfeed`, `vendor`, `hermes` — **wrong.**
+    `playground` is a *container of 12 more remote-less repos* (incl. `pine3d`,
+    48 commits), so the homeless set was **29, not 17**; `vendor` holds 5
+    upstream clones; `~/projects/hermes` is an **empty husk** (4.0K, 0 entries).
+    All resolved as excluded in ticket 06.
   - **1 pointing at a dead host:** `homelab-stack.archived` → `jellyfin.stromdahl.tech`.
   - **12 stale** (untouched since June or earlier).
+  - **Storage is a non-issue — do not re-open it.** Every `.git` in `~/projects`
+    together is **~85 MB** (largest survivor: `lumin`, 6.7 MB). The ~40 GB of
+    working trees is `target/` + `node_modules/` and never pushes.
 - **Hardware reality — there is no faster CI available:**
 
   | Box | CPU | RAM | Notes |
@@ -114,6 +123,21 @@ and must not be re-litigated:_
   decisions) and amendments to [04](issues/04-runner-topology.md),
   [08](issues/08-github-exit.md), [10](issues/10-forge-sync-contract.md).
 
+- [Which repos come to the forge, and in what state?](issues/06-repo-curation.md) —
+  **20 repos, one org named `projects`, two states.** `taskmaster`'s three-state
+  vocabulary **collapses to `active` | `archived`**: `paused` encodes only intent,
+  decays into a lie, and re-encodes by hand what git already computes. Only
+  **`oppen`** and **`telltaled`** are archived, both for *supersession* (msbrain's
+  ADR 0006 omits oppen; helium's MQTT metrics shipped without telltaled) — stale
+  alone is not a reason. Excluded on **facts, not value judgments**: all of
+  `playground/*` (disposable by design), 5 zero-commit `git init`s, 7 upstream
+  clones, `rssfeed` (never `git init`'d), and `homelab-stack.archived`
+  (**dropped**, not archived). Forge names **may differ from directory names** —
+  `dockerstats`→`docker-tools`, `diy-speekers`→`diy-speakers` — on the map's own
+  *a project is a registered entity, never a directory*; local dirs untouched.
+  One org rather than flat **hedges [03](issues/03-forgejo-issue-model.md)**: if
+  boards are org-scoped, it is the only namespace spanning all 20 repos.
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -124,6 +148,11 @@ In-scope fog — real, but not yet sharp enough to ticket:
 - **New-project convention.** Where a fresh repo gets created (forge-first? local-first?),
   what it ships with (`AGENTS.md`, tracker, CI workflow), and how it gets registered.
   Blocked on knowing what the forge's creation flow looks like.
+- **Repo topics as the grouping.** [Ticket 06](issues/06-repo-curation.md) chose
+  one flat org and deferred categorization to Forgejo **topics** (many-to-many,
+  non-breaking) rather than org partitions. Which topics, and whether any are worth
+  having at all, waits until the 20 repos are actually sitting in a listing.
+
 - **taskmaster's fate** — retired, repurposed as a forge-reading client, or
   deleted. Its two unbuilt pieces (`show` output, install story) are blocked on
   design decisions that may simply evaporate. Note its hard-won insight is worth
