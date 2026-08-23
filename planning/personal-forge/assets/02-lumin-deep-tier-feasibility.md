@@ -526,6 +526,16 @@ Hence the recommendation, in order:
    wrap it in the runner. This is the cheap, correct answer to "coexist with a
    Jellyfin transcode": Jellyfin's own transcode should win the CPU, and CI is
    explicitly asynchronous.
+
+   **Where these live is a ticket-09 decision, not a given.** `mutants: cargo
+   mutants` sits in lumin's justfile, which spec §2 makes *the* entry point —
+   so either the runner wraps the whole `just qa` invocation in
+   `nice`/`ionice` and passes flags via `CARGO_MUTANTS_JOBS`-style env (keeping
+   lumin untouched, at the cost of the gate behaving differently in CI than
+   locally), or the justfile changes and that goes through the usual §8 rule-6
+   flagging ritual. The env route is cleaner: `--in-place` is a *CI-only* truth
+   (it mutates the checkout, which is fine for a throwaway workspace and wrong
+   on a developer's tree).
 3. **If you do want parallelism later**, the documented mechanism for a shared
    machine is the **jobserver**, not `--jobs` alone
    (<https://mutants.rs/jobserver.html>): *"By default, cargo-mutants starts a
@@ -550,7 +560,25 @@ Hence the recommendation, in order:
 None of these were run (no ssh to helium in this ticket). Each is a single
 command, cheap, and safe.
 
-**M1 — the decisive one. Is Valgrind's synthetic CPU identical on both hosts?**
+**Run them where CI will actually run — inside the runner's job image, not in a
+host shell on helium.** §2.5 establishes that a containerised Forgejo runner is
+workable, but it has a consequence for §1 that is easy to miss: if jobs run in a
+container, then the glibc, the valgrind build and the `LD_PRELOAD` install
+prefix that the perf gate sees all belong to the **job image**, not to helium.
+M1/M2/M4/M5/M6 executed in a host shell would verify the wrong environment,
+come back green, and lock the CI design on a false pass. Therefore:
+
+- pin the job image to a **Debian 13 base with glibc 2.41** (matching krypton's
+  `2.41-12+deb13u3`) and Debian's `valgrind 1:3.24.0-3`;
+- a **musl image (alpine) is disqualifying outright** — a different libc means
+  different code inside the measured region, so different `Ir`, not a few
+  percent of drift;
+- treat the image digest as part of the perf gate's provenance, alongside rustc
+  and valgrind, in `docs/perf-calibration.md`'s row.
+
+**M1 — the cheap early proxy: is Valgrind's synthetic CPU identical on both
+hosts?** (M4 is the actual settler; M1 predicts it for the price of one
+command, so run M1 first.)
 
 ```bash
 valgrind -q --tool=callgrind --cache-sim=no --callgrind-out-file=/dev/null \
@@ -573,6 +601,16 @@ libwlroots-0.18 valgrind libc6`. krypton: glibc **2.41-12+deb13u3**, valgrind
 **3.24.0** (Debian `1:3.24.0-3`), cage **0.2.0-2**, grim **1.4.0+ds-2+b1**,
 libseat1 0.9.1, Debian 13.6, kernel 6.12.101. Also confirm
 `echo "${GLIBC_TUNABLES:-unset}"` reports `unset`.
+
+Then run **`just preflight`** — it is the authoritative list, and it hard-fails
+on anything missing. Beyond the apt packages, a fresh host (or job image) must
+`cargo install` five tools: `cargo-machete`, `cargo-mutants`, `cargo-deny`,
+`cargo-llvm-cov`, and **`gungraun-runner` at exactly `0.19.4`** — preflight
+string-matches `"gungraun-runner 0.19.4"` because it must match the pinned
+`gungraun = "=0.19.4"` dev-dependency, so a bare `cargo install
+gungraun-runner` that resolves newer will fail preflight. That is five
+compile-from-source installs plus the rustup toolchain on first provision; bake
+them into the job image rather than paying for them per run.
 
 **M3 — `TMPDIR` reality.** `findmnt -no FSTYPE,SIZE /tmp; df -h /tmp` on
 helium, plus the filesystem type of the CI checkout path (reflink copying works
