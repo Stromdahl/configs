@@ -1,9 +1,9 @@
 ---
 title: Audit the public git history of planning and issues for live secrets
-status: in-progress
+status: done
 priority: medium
 created: 2026-08-24
-closed: null
+closed: 2026-08-24
 labels: [epic:forge, needs-human]
 ---
 
@@ -34,9 +34,22 @@ Do not decrypt any encrypted file to standard output while doing this.
 
 ## Acceptance criteria
 
-- [ ] Every commit touching the planning and issues directories has been swept for
+- [x] Every commit touching the planning and issues directories has been swept for
       credential-shaped content, with the method recorded so it can be re-run.
-- [ ] Each hit is classified as live or dead, with a one-line justification.
-- [ ] Every live secret found has been rotated (or the owner has explicitly accepted it
+- [x] Each hit is classified as live or dead, with a one-line justification.
+- [x] Every live secret found has been rotated (or the owner has explicitly accepted it
       as not worth rotating).
-- [ ] No secret material was written to a transcript in the course of the audit.
+- [x] No secret material was written to a transcript in the course of the audit.
+
+## Resolution
+
+Swept 2026-08-24 at `7d3643f`. **232 commits, 495 blob revisions, 6 hits, 0 live.**
+No rotation needed, so criterion 3 is satisfied vacuously. The only 40-character
+token in the corpus is upstream Forgejo documentation's own example value, verified
+byte-for-byte against the live docs page. Method, hit table and redacted findings
+are recorded and re-runnable in the audit asset.
+
+One non-blocking note for the owner: one issue quotes krypton's residential public
+IP from a Traefik access log. Dead as a credential and not rotatable; the mitigation
+is simply to stop quoting client IPs in future access-log excerpts, not a history
+rewrite (which is off the table and would not unpublish it anyway).
