@@ -124,3 +124,49 @@ appdata walk still covers this new `forgejo/` dir, so it will file-walk a live W
 SQLite DB — the exact tearing ticket 11 named and that 057 exists to fix. Blast radius is
 near zero today because `063`/`064` have not migrated anything in yet, so this is
 sequencing information, not a defect in 056.
+
+## Deploy 2026-08-24 — deployed; 4 of 6 ACs verified on the box
+
+Deployed with `ansible-playbook site.yml --limit helium --tags compose` (scoped tags
+only, no full play). The play ended `failed=1`, but the failure is **unrelated to this
+issue** — see the note at the end. Forgejo's own two tasks both reported `changed`, and
+the compose up completed before the failing task ran.
+
+**Verified on helium:**
+
+- **AC1 (LAN half) — PASS.** `https://git.home.stromdahl.tech/` returns 200 with a real
+  Let's Encrypt certificate (`CN=git.home.stromdahl.tech`, issued 2026-08-24). The
+  first-cert DNS-01 stall from `project_helium_traefik_acme_restart` **did not fire** —
+  no Traefik restart was needed.
+- **AC1 (mesh half) — NOT PROVEN, for a pre-existing reason.** helium's mesh IP
+  `100.65.22.72` is not reachable from krypton (already recorded before this work). The
+  same request forced to the LAN IP returns 200, so the router is correct and only the
+  network path differs. Needs one check from an actual mesh peer (phone/roaming laptop).
+- **AC3 — PASS, and this was the single-use from-scratch case.** The pre-create task
+  reported `changed` (the dir did not exist), the dir is `1001:1003` mode `0750`, and the
+  container is `Up (healthy)` with **`RestartCount=0`** — it never crash-looped, so the
+  chown genuinely preceded first start.
+- **AC4 — PASS.** Exactly one mount: `bind /data/ssd/appdata/forgejo -> /var/lib/gitea`.
+  `/etc/gitea` is empty inside the container. `CapEff` is all zeros.
+- **AC5 — HALF PROVEN.** helium's own sshd still answers `SSH-2.0-OpenSSH_10.0p2` on 22
+  and Forgejo's builtin server answers `SSH-2.0-Go` on 222, both over the LAN. The clone
+  itself is still pending: it needs the first admin, a test repo, and a registered key.
+- **AC6 — PASS.** Scoped compose tags only.
+- **Env-driven config confirmed end to end.** Every setting landed in
+  `custom/conf/app.ini`: `SSH_PORT = 222`, `SSH_LISTEN_PORT = 2222`,
+  `DB_TYPE = sqlite3`, `PATH = /var/lib/gitea/forgejo.db`, `INSTALL_LOCK = true`,
+  `DISABLE_REGISTRATION = true`. The signup page returns 200 but renders "Registration
+  is disabled", so the posture is real.
+
+**Already relevant to `issues/057`:** after minutes of life the DB is 1.25 MB with a
+**4.1 MB WAL sidecar** — more of its state in the WAL than in the main file. That is
+precisely the condition under which `016`'s naked file walk produces a torn,
+unrestorable copy, and `016` still covers this dir until 057 excludes it.
+
+**The play's `failed=1` is not this issue's.** `Ensure the urgent-interrupt cron job
+exists (hermes-helium 022)` failed `rc=127` with `--name: command not found`. Cause: its
+`cmd: >-` folded block indents the `docker exec ... cron create` continuation lines
+*more* than the surrounding lines, and YAML preserves newlines for more-indented lines in
+a folded scalar — so the flags become separate shell commands. Pre-existing latent bug,
+unrelated to Forgejo, triggered whenever the `else` branch runs. Filed separately rather
+than fixed here.
