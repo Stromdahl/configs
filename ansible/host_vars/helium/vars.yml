@@ -370,3 +370,32 @@ mqtt_metrics_drive_labels: "{{ mqtt_metrics_pool_drive_labels | combine({'50026B
 # library is a manual drop into audiobooks_library_dir.
 audiobookshelf_version: "2.36.0"
 audiobooks_library_dir: "{{ hdd_union_mount }}/audiobooks"   # -> /srv/media/audiobooks
+
+# issue 056 — Forgejo (private self-hosted forge: canonical home for the personal
+# repos, the ticket tracker, and lumin's deep CI tier). Reachable LAN + mesh at
+# git.{{ compose_domain }} behind the internal Traefik, never public — same
+# boundary as 005/048. Persistence spec is personal-forge ticket 11; every value
+# below is one of its decisions, so change them there, not here.
+#
+# FLOATING TAG — a DELIBERATE divergence from this file's exact-pin convention
+# (cf. audiobookshelf_version: "2.36.0"). `15-rootless` floats across minors and
+# patches inside the v15 LTS line. Patch releases on an LTS line are the security
+# fixes you want arriving without a ticket, and the thing that genuinely needs
+# human verification is the MAJOR upgrade — which the `15` tag can never cross
+# (Forgejo ships no `latest` tag for exactly that reason). Stable `:16` would buy
+# ~9 weeks before a forced major, then one per quarter, on a box explicitly not
+# meant to be babysat; v15 is supported to 15 Jul 2027. This knowingly runs one
+# major behind, and nothing here depends on a v16 feature.
+#   -> REVISIT ~May 2027, two months before EOL, when 19.0 is the next LTS.
+forgejo_version: "15-rootless"
+forgejo_data_dir: "{{ ssd_pool_mount }}/appdata/forgejo"   # -> /data/ssd/appdata/forgejo
+# Git-over-SSH host port. helium KEEPS sshd on 22 — the container publishes an
+# alternate host port instead, and `SSH_PORT` below is set to MATCH it, or the UI
+# and API advertise clone URLs that do not work (asset 01 §5/§8). The host-sshd
+# AuthorizedKeysCommand shim is rejected: it is official for bare metal only.
+forgejo_ssh_host_port: 222
+# No forgejo_puid/_pgid: ticket 11 reuses the stack's existing service uid/gid
+# (jellyfin_puid/_pgid = 1001:1003) rather than inventing a second convention for
+# one service. The image's baked-in USER 1000:1000 — which would collide with `ms`
+# on Debian — is overridden by the plain compose `user:` directive; measured, with
+# no USER_UID/USER_GID env needed.

@@ -209,6 +209,30 @@
     group: "{{ jellyfin_pgid }}"
     mode: "0750"
 
+# --- issue 056: Forgejo's data dir on the SSD 'appdata' precious subvol ----------
+# ORDERING IS LOAD-BEARING, not boilerplate. The rootless Forgejo image runs as the
+# uid the compose `user:` directive sets (1001:1003 here, reusing the stack's service
+# uid/gid per personal-forge ticket 11), and it does NOT chown its own data dir — it
+# has no PUID/PGID env and no privilege-drop step. If the dir does not already exist
+# owned by that uid when the container first starts, the container dies immediately
+# rather than degrading:
+#     mkdir: can't create directory '/var/lib/gitea/git': Permission denied
+#     /var/lib/gitea/git is not writable
+#     docker setup failed                       # -> Exited (1)
+# (Measured, ticket 11 §3, with the dir left owned by uid 1000.) So this task must run
+# BEFORE the "Bring up the compose stack" task below — which it does by file position.
+# Mode 0750: the dir holds app.ini with the SECRET_KEY that encrypts stored
+# credentials and 2FA secrets, so it must not be world-readable.
+- name: Create Forgejo's data dir under ssd appdata, owned by the container uid (issue 056)
+  become: true
+  ansible.builtin.file:
+    path: "{{ forgejo_data_dir }}"
+    state: directory
+    owner: "{{ jellyfin_puid }}"
+    group: "{{ jellyfin_pgid }}"
+    mode: "0750"
+  when: forgejo_data_dir is defined
+
 # --- issue 029: Proton Mail Bridge session/keyring dir on the SSD 'appdata' subvol ---
 # The bridge container runs as root and writes its session + gpg/pass keyring here (mounted
 # at /root). Pre-created root-owned 0700 — it holds the decrypt-capable Proton session, so it

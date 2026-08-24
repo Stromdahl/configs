@@ -1449,3 +1449,118 @@ services:
       - CONTAINER_BLACKLIST=^[0-9a-f]{12}_
     networks:
       - socket_proxy
+
+  # ===========================================================================
+  # issue 056 — Forgejo: the private forge (source hosting + ticket tracker + the
+  # host for lumin's deep CI tier). On the `media` bridge, reached through Traefik
+  # at git.${DOMAIN}; LAN + mesh, never public (the public boundary is OPNsense
+  # having no port-forward — the same model as every other service here).
+  #
+  # Every non-obvious value below is a personal-forge ticket 11 decision, and three
+  # of them FAIL SILENTLY if changed carelessly:
+  #
+  #   1. The bind mount targets /var/lib/gitea — the ROOTLESS image's data dir —
+  #      and NOT /data (which is the non-rootless image's). Get this wrong and the
+  #      restic coverage in issue 057 silently backs up an empty directory.
+  #   2. There is deliberately NO config bind mount. Configuration is entirely
+  #      env-var driven (Forgejo maps FORGEJO__section__KEY onto app.ini at
+  #      startup), app.ini lives INSIDE the data dir at custom/conf/app.ini, and
+  #      /etc/gitea stays empty in the running container. The ticket-05 prototype
+  #      mounts ./config:/etc/gitea; that mount is vestigial and must not be
+  #      copied here.
+  #   3. `user:` overrides the image's baked-in USER 1000:1000, which would
+  #      otherwise collide with `ms` on Debian. The host data dir MUST already be
+  #      chowned to this uid/gid before the container first starts — stack.yml does
+  #      that, and it is load-bearing, not boilerplate: with the dir owned by 1000
+  #      the container dies instantly ("/var/lib/gitea/git is not writable" ->
+  #      "docker setup failed" -> Exited (1)).
+  #
+  # SSH coupling, the other silent failure: the builtin Go SSH server listens on
+  # 2222 in the container and is published on host port ${FORGEJO_SSH_HOST_PORT}
+  # (helium keeps its own sshd on 22). SSH_DOMAIN/SSH_PORT/SSH_USER are
+  # DISPLAY-ONLY — they are what the UI and the API's `ssh_url` advertise, and are
+  # decoupled from SSH_LISTEN_PORT. Publishing on 222 while leaving SSH_PORT at its
+  # default 22 makes every clone URL the API hands out point at helium's own sshd
+  # and fail. So SSH_PORT must MATCH the published host port.
+  #
+  # Post-deploy human step (once, and deliberately not automated — same posture as
+  # Jellyfin's and Audiobookshelf's first-visit admin, and it keeps a single-use
+  # credential out of sops). INSTALL_LOCK skips the web installer because the
+  # config is env-driven, so the first admin is made on the box:
+  #   docker exec -u 1001 forgejo forgejo admin user create \
+  #     --admin --username <name> --email <addr> --random-password
+  # Then verify the SSH path with EXACTLY the URL the API advertises:
+  #   curl -s https://git.${DOMAIN}/api/v1/repos/<owner>/<repo> | jq -r .ssh_url
+  #   git clone ssh://git@git.<domain>:222/<owner>/<repo>.git
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:${FORGEJO_VERSION:?missing FORGEJO_VERSION}
+    container_name: forgejo
+    restart: unless-stopped
+    # ticket 11: reuse the stack's service uid/gid rather than a dedicated one.
+    user: "${UID:?missing UID}:${GID:?missing GID}"
+    # issue 010: the rootless image starts directly as this uid and performs no
+    # privilege drop, so the empty capability set is correct (no cap_add) — the
+    # same shape as audiobookshelf/jellyseerr. The builtin SSH server binds 2222,
+    # above 1024, so it needs no NET_BIND_SERVICE.
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    ports:
+      # host -> container. The container side is 2222 (rootless image), never 22.
+      - "${FORGEJO_SSH_HOST_PORT:?missing FORGEJO_SSH_HOST_PORT}:2222"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.forgejo.rule=Host(`git.${DOMAIN:?missing DOMAIN}`)"
+      - "traefik.http.routers.forgejo.entrypoints=websecure"
+      - "traefik.http.routers.forgejo.tls.certresolver=letsencrypt"
+      - "traefik.http.services.forgejo.loadbalancer.server.port=3000"
+      - "traefik.http.routers.forgejo.middlewares=security-headers@file"
+    healthcheck:
+      # Verified against the running ticket-05 prototype on this exact image:
+      # /api/healthz returns 200 with a status:pass body (it pings cache + DB,
+      # so it is a real readiness probe, not a bare liveness ping), and
+      # /usr/bin/wget exists. This exact command was run in-container: exit 0.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    environment:
+      - TZ=${TZ:-Europe/Stockholm}
+      # --- server / URLs -----------------------------------------------------
+      - FORGEJO__server__ROOT_URL=https://git.${DOMAIN}/
+      - FORGEJO__server__DOMAIN=git.${DOMAIN}
+      # Traefik terminates TLS and reaches the container over plain HTTP on the
+      # media bridge, so Forgejo itself must NOT try to serve HTTPS.
+      - FORGEJO__server__PROTOCOL=http
+      - FORGEJO__server__HTTP_PORT=3000
+      # --- git over SSH ------------------------------------------------------
+      - FORGEJO__server__START_SSH_SERVER=true
+      - FORGEJO__server__SSH_DOMAIN=git.${DOMAIN}
+      # Display-only, and MUST match the published host port (see the note above).
+      - FORGEJO__server__SSH_PORT=${FORGEJO_SSH_HOST_PORT}
+      # What the builtin server actually binds inside the container.
+      - FORGEJO__server__SSH_LISTEN_PORT=2222
+      # --- database (ticket 11: SQLite, not Postgres) ------------------------
+      # Forgejo's own docs recommend sqlite3 at this size (one user, ~20 repos).
+      # The path is set EXPLICITLY rather than left to default, because issue 057's
+      # backup arm runs `sqlite3 .backup` against this exact host path
+      # (${FORGEJO_DATA_DIR}/forgejo.db) — a naked file copy of a live WAL-mode
+      # SQLite DB is torn and unrestorable, which is the whole reason that arm
+      # exists. Changing this path without changing 057 breaks the backup silently.
+      - FORGEJO__database__DB_TYPE=sqlite3
+      - FORGEJO__database__PATH=/var/lib/gitea/forgejo.db
+      # --- posture -----------------------------------------------------------
+      # Single-owner private forge: nobody may self-register, and the installer is
+      # locked because the config above is authoritative.
+      - FORGEJO__security__INSTALL_LOCK=true
+      - FORGEJO__service__DISABLE_REGISTRATION=true
+      - FORGEJO__repository__DEFAULT_BRANCH=main
+      - FORGEJO__log__LEVEL=warn
+    volumes:
+      # ROOTLESS data dir. Not /data. See note 1 above.
+      - ${FORGEJO_DATA_DIR:?missing FORGEJO_DATA_DIR}:/var/lib/gitea
+      # NO /etc/gitea mount — see note 2 above. Do not add one.
+    networks:
+      - media
