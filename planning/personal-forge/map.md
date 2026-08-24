@@ -391,6 +391,27 @@ and must not be re-litigated:_
   [`assets/11-persistence-measurements.md`](assets/11-persistence-measurements.md).
   Also found: the prototype's `./config:/etc/gitea` mount is **vestigial** — don't copy it.
 
+- [Do the personal wayfinder maps in `~/vault` move to Forgejo?](issues/13-vault-personal-maps.md) —
+  **No — they stay markdown in the vault, all five**, and the Forgejo-remote option is
+  **skipped for now**. Decided on a fact the ticket did not have: the vault's tickets are
+  **woven into live vault content that is not moving** — **16 `[[tasks]]`** wikilinks into
+  the daily task board, **12 into `health/`**, **~25** relative links into sibling
+  `research/`, `design/`, `food-log.md`. Forgejo resolves none of them, so moving
+  `tickets/` alone would split all five efforts across two systems. **Ticket 07's
+  "everything moves" is hereby scoped to `~/.dotfiles`** — the two decisions do not
+  contradict; the discriminator is *whether the tickets' outbound links have anywhere to
+  land*. **All three premises moved:** the Syncthing/git hazard is **VOID** (`.stignore`
+  excludes `.git` outright — history is krypton-only; and **titan is gone, helium is the
+  third peer**); the sensitivity question was **mis-aimed** — `finance-rebuild` is not the
+  sharp one, **`vardepapperskredit`** (62% LTV, real debt-collection figures) and
+  **`strength-and-weight`** (health/treatment history) are, both already tracked, and
+  `vault-serve` already put the whole vault on helium so *"a service at all"* is spent;
+  and **`bin/wf` is owed nothing** — it already spans both layouts and both dialects, so
+  07's Forgejo dialect is a **third**, and the frontmatter dialect must be **kept**.
+  Named cost: the vault's **313 commits stay single-copy on krypton**, now a recorded
+  acceptance rather than an oversight. Evidence:
+  [`assets/13-vault-premise-checks.md`](assets/13-vault-premise-checks.md).
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -519,6 +540,18 @@ In-scope fog — real, but not yet sharp enough to ticket:
   helium's backup posture is next opened.
 
 ## Out of scope
+
+- **Giving `~/vault` a Forgejo remote** (option C of
+  [ticket 13](issues/13-vault-personal-maps.md)) — *"skip C for now."* It answers a real
+  gap (the vault's **313 commits of git history are single-copy on krypton**; helium's
+  restic covers `/data/ssd/appdata`, a different subvolume, and no `restic-vault` unit
+  exists), but it is the **vault's backup posture**, not this map's hosting/tracker/CI
+  destination, and it overturns a *recorded* decision — `projects/vault-tools/decisions.md`
+  **D7**, *"the sensitive-data boundary is git/remotes … never pushed to any remote."*
+  Returns as a **fresh effort**, and a cheap one: ticket 13 measured the audit that
+  `.gitignore` demands down to **12 credential-mentioning files across all 313 commits,
+  with no `.env`/key/DB/CSV ever committed**, and named the plainer competitor to weigh
+  against it (**a bare mirror over the mesh**).
 
 - **Restructuring `~/projects`' filesystem layout** — grouping, cleaning out the
   non-git dirs, reshuffling directories. Fixes nothing the forge doesn't fix, and
