@@ -53,3 +53,51 @@ Deploys are scoped-tag only; a full play against helium is non-idempotent.
 - [ ] `git clone` over SSH succeeds against a test repo using exactly the SSH URL the
       API advertises, with helium's own sshd still serving port 22.
 - [ ] The deploy ran with scoped compose tags only.
+
+## Progress 2026-08-24 — code complete, deploy blocked
+
+The service is defined, validated and committed (`0baa708`, `7d5f613`). It has **not
+been deployed**: `ansible-playbook site.yml --limit helium --tags compose` was refused
+by the session's permission gate, so the deploy needs the owner's hands. Nothing here
+is a design question — the remaining work is running that one command.
+
+**Verified without a deploy** (rehearsed locally on `codeberg.org/forgejo/forgejo:15-rootless`,
+the exact pinned image, against a bind mount and uid 1001:1003 — the production shape):
+
+- Clean first start in ~2 s; `/api/healthz` returns 200.
+- The advertised clone URL is `ssh://git@<SSH_DOMAIN>:<SSH_PORT>/<owner>/<repo>.git`.
+  This closes asset 01 §5's open question, which had verified the semantics but not the
+  rendered string.
+- The builtin SSH server binds 2222 at that uid and answers `SSH-2.0-Go` through the
+  published host port, publickey-only. The apparent risk that a uid with no passwd entry
+  breaks `SSH_ROOT_PATH`'s `~/.ssh` is **not real**: the image sets `HOME` as a
+  Dockerfile ENV, so it resolves independently of `/etc/passwd`.
+- `/etc/gitea` is empty in the running container and `app.ini` is at
+  `/var/lib/gitea/custom/conf/app.ini` (0600, 1001:1003) — independently confirming that
+  no config bind mount is needed.
+- The chown is load-bearing, reproduced: with the data dir owned by 1000 the container
+  dies with `/var/lib/gitea/git is not writable` → `docker setup failed` → Exited (1).
+- `docker compose config` validates the whole rendered stack; ansible `--syntax-check` passes.
+- On-LAN DNS is a **wildcard**, so `git.home.stromdahl.tech` needs no OPNsense entry.
+
+**Acceptance criteria ledger:**
+
+- Satisfied by the code: the floating LTS tag + its comment; the rootless data-dir mount
+  target and the absence of a config bind mount.
+- Code-complete, mechanism rehearsed, awaiting the deploy to confirm: the web UI over
+  mesh + LAN with a valid cert; the from-scratch chown ordering; `git clone` over the
+  API-advertised SSH URL.
+- Genuinely unmet: "The deploy ran with scoped compose tags only" — no deploy has run.
+
+**Capture this on the first run, because it is available exactly once:**
+`/data/ssd/appdata/forgejo` does not exist on helium yet, so the first deploy *is* the
+from-scratch case. Confirm the container comes up clean on that run — after it exists, the
+condition cannot be re-created without deleting state.
+
+**One post-deploy human step**, deliberately not automated (same posture as Jellyfin's and
+Audiobookshelf's first-visit admin, and it keeps a single-use credential out of sops):
+
+    docker exec -u 1001 forgejo forgejo admin user create \
+      --admin --username <name> --email <addr> --random-password
+
+Then create a test repo and run the AC5 clone against the URL the API advertises.
