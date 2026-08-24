@@ -359,9 +359,17 @@ and must not be re-litigated:_
   are already stale on krypton** (`particles` 4,716,499 vs a blessed 5,377,605), so the
   feared silent false green is happening from plain code drift. Evidence:
   [`assets/09-anchoring-measurements.md`](assets/09-anchoring-measurements.md) — all of
-  it under Docker, not the recommended rootless Podman. **§3, §6 and §7 of the answer
-  are PROPOSED pending the owner's confirmation**; the measurement-driven sections are
-  not.
+  it under Docker, not the recommended rootless Podman. ~~**§3, §6 and §7 of the answer
+  are PROPOSED pending the owner's confirmation**~~ — **shelved 2026-08-24** (*"we have
+  shelved the 09 for now"*), so those three stay proposed **permanently until reopened**;
+  that is a deliberate record now, not a pending action. The measurement-driven sections
+  (§0–§2, §4, §5) stand regardless. Named cost: the anchoring authority stays at the
+  owner's confirmed *"helium authority, krypton advisory"* and the measured
+  **image-is-the-authority** refinement is available but unclaimed; **ticket 04's
+  preference (a) is NOT overturned**, so whoever writes lumin's workflow inherits a live
+  conflict with §1's call-`just`-recipes rule and must raise it rather than assume §6;
+  and `AGENTS.md` rule 1 keeps its current text. Blocks only lumin's own spec amendment
+  — not the forge, the runner or the tracker.
 
 - [Forgejo's persistence, backup, and image pins](issues/11-persistence-backup-and-pins.md) —
   **SQLite + a host-side `sqlite3 .backup` arm, `:15-rootless` floating, `user: "1001:1003"`,

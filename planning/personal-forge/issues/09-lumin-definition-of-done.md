@@ -171,6 +171,29 @@ await the owner's explicit confirmation.** The `coverage` call in §2 was never
 asked and is flagged there. Downstream tickets should treat the proposed items as
 recommendations, not as locked decisions.
 
+> **Shelved 2026-08-24 — the confirmation is not coming for now.** The owner:
+> *"we have shelved the 09 for now."* So **§3, §6 and §7 stay PROPOSED
+> permanently until someone reopens them**, and that is now a deliberate
+> record rather than a pending action. Nothing else in this ticket changes:
+> §0–§2, §4 and §5 are measurement-driven and stand. What the shelving costs,
+> named so nobody rediscovers it:
+>
+> - **§3** — the anchoring authority is left at the owner's confirmed
+>   "helium is the authority, krypton advisory". The measured refinement (the
+>   *pinned job image* is the authority, so any host running it may bless, and
+>   krypton is not demoted) is **available but unclaimed**. The measurement
+>   behind it stands either way: krypton and helium in the same image at the
+>   same commit produce **byte-identical `Ir` on all twelve benches**.
+> - **§6** — ticket 04's preference (a) is **not** overturned. Whoever writes
+>   lumin's workflow inherits an unresolved conflict between §1's
+>   "call `just` recipes, never inline a gate" and 04's preference, and must
+>   raise it rather than assume §6.
+> - **§7** — `AGENTS.md` rule 1 keeps its current text; the proposed
+>   replacement is unadopted.
+>
+> None of this blocks the forge, the runner or the tracker. It blocks only
+> lumin's own spec amendment, which is a lumin-tracker item.
+
 **Runtime caveat carried up from the asset, because this is what downstream
 reads:** every measurement below ran under **Docker**, not the rootless Podman
 ticket 04 recommends. The substitution is sound for what was measured (glibc and
