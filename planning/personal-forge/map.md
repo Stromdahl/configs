@@ -363,6 +363,26 @@ and must not be re-litigated:_
   are PROPOSED pending the owner's confirmation**; the measurement-driven sections are
   not.
 
+- [Forgejo's persistence, backup, and image pins](issues/11-persistence-backup-and-pins.md) —
+  **SQLite + a host-side `sqlite3 .backup` arm, `:15-rootless` floating, `user: "1001:1003"`,
+  and Forgejo's whole dir moves out of the 016 walk.** The ticket's two-option framing was
+  wrong: **a third option dominates** — `forgejo dump` is disqualified (Forgejo's own docs)
+  and there is **no `sqlite3` in the image**, so the literal `docker exec` shape is
+  unavailable, but *host-side* is, and it is the exact `pg_dump` analogue. **Measured on the
+  live prototype at a 4.17 MB WAL against a 2.48 MB main file: 6 ms, `integrity_check: ok`,
+  row counts match, live DB unmutated.** Two premises moved: **ticket 01 was too pessimistic
+  about the btrfs-snapshot cost** — no top-level mount is required (proved on a loopback
+  reproducing helium's subvol-only mounts), so snapshotting needs **no `storage_ssd` change**;
+  and **Q3's UID 1000 collision does not exist** — the image runs fine as `1001:1003` via the
+  plain compose `user:` directive (Audiobookshelf's precedent), though the pre-start chown is
+  load-bearing (`/var/lib/gitea/git is not writable` → `Exited (1)`). The honest risk framing:
+  the torn-SQLite class is **not new** (26 live DBs, 13 with hot WAL, already walked naked) —
+  **the blast radius is**, since ticket 07 makes this the only copy of the tracker. Restore
+  runbook is **written *and* exercised**, on the house standard both 016 and 026 already set;
+  what has never been tried is restoring a live-walked *SQLite* DB. Evidence:
+  [`assets/11-persistence-measurements.md`](assets/11-persistence-measurements.md).
+  Also found: the prototype's `./config:/etc/gitea` mount is **vestigial** — don't copy it.
+
 ## Not yet specified
 
 In-scope fog — real, but not yet sharp enough to ticket:
@@ -404,8 +424,11 @@ In-scope fog — real, but not yet sharp enough to ticket:
   sops+age story, and whether any lumin gate needs one (probably not today).
 - **Forgejo maintenance** — DB migrations and what breaks while it's down (the
   owner can still *work*, since git is distributed, but CI and tickets stop).
-  _Partly graduated 2026-08-23: the upgrade-cadence half is now a decision in
-  ticket [11](issues/11-persistence-backup-and-pins.md) (LTS pin vs tracking stable)._
+  _The upgrade-cadence half is **closed 2026-08-24** by
+  [ticket 11](issues/11-persistence-backup-and-pins.md): `:15-rootless` floating on the
+  LTS line, so patch/minor upgrades arrive without a ticket and the next **major** is a
+  dated, human-verified event around **May 2027**. What stays fog is the downtime half —
+  what a major upgrade's DB migration actually costs in practice._
 - ~~**How far the agent toolchain moves.**~~ **Closed 2026-08-23 by
   [ticket 07](issues/07-tracker-cutover.md).** The hybrid was declined: everything
   moves. `bin/forge` gets written and `issue-tracker-forgejo.md` is a **CLI**
@@ -436,6 +459,19 @@ In-scope fog — real, but not yet sharp enough to ticket:
   the `forgejo-runner` user, and `loginctl enable-linger` it for `podman.socket`.
   Graduates with the build issues.
 
+- **Seven execution items from [ticket 11](issues/11-persistence-backup-and-pins.md)**,
+  parked here — none is a decision, all belong to the build issues: `sqlite3` into
+  `restic_backup/tasks/packages.yml`; a `forgejo)` arm in `restic-app-backup.sh` (the
+  **first arm that needs no `docker exec`**, so the script's `db_container`/`db_user`/
+  `db_name` case variables and its Postgres-throughout comments both need reshaping);
+  `restic-forgejo.service` + `.timer`, staggered, with the `OnFailure=restic-backup-alert@`
+  hook; `--exclude=/data/ssd/appdata/forgejo` on `restic-backup.service` **and its header
+  comment**, which currently claims to cover the whole subvol; a pre-create + chown of
+  `/data/ssd/appdata/forgejo` to `1001:1003` **ordered before the compose service ever
+  starts**; the restore runbook in 026's shape **with an AC that it was exercised**; and
+  `forgejo_version: "15-rootless"` in `host_vars` (floating, contrary to that file's
+  exact-pin convention — wants a comment saying why).
+
 - **The five personal maps under `~/vault/projects/`** — `diy-speakers`,
   `finance-rebuild`, `not-so-smart-smartwatch`, `strength-and-weight`,
   `vardepapperskredit`: **50 tickets** that [ticket 07](issues/07-tracker-cutover.md)
@@ -461,6 +497,20 @@ In-scope fog — real, but not yet sharp enough to ticket:
     rootless-Podman prerequisites above.
   - A **`bin/` wrapper over Forgejo's commit-status API**, so an agent reads the CI
     verdict through a verb rather than raw curl.
+
+- **A btrfs snapshot before the appdata restic walk** — parked by
+  [ticket 11](issues/11-persistence-backup-and-pins.md), which took the per-app
+  `sqlite3 .backup` route for Forgejo instead. This is the **fleet-wide** version of the
+  same fix: `/data/ssd/appdata` holds **26 live SQLite DBs, 13 with hot `-wal` sidecars**
+  (`sonarr.db` 25.6 MB, `jellyfin.db` 20.7 MB), all walked naked nightly by
+  `restic-backup.service`. Ticket 11 **measured the cost down**: it needs **no
+  `storage_ssd` change and no persistent top-level mount** — `btrfs subvolume snapshot -r`
+  and `delete` both work from helium's subvol-only mounts (verified on a loopback btrfs),
+  so it is a create → restic → delete pipeline plus a changed restic source path. It is
+  deferred on **scope, not cost**: it is a decision about helium's whole backup posture,
+  and Forgejo is already independently safe under ticket 11's Shape 2, so the two need no
+  sequencing. Belongs to helium's own tracker (016's lineage), not this map. Sharpen when
+  helium's backup posture is next opened.
 
 ## Out of scope
 

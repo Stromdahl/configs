@@ -90,9 +90,18 @@ Largest: `sonarr/sonarr.db` 25.6 MB, `jellyfin/data/data/jellyfin.db` 20.7 MB,
 
 **So the torn-SQLite failure class is not new — it is already accepted 26 times
 over, silently.** But it has never been exercised: the repo holds 12 appdata
-snapshots (8.6 → 9.2 GiB, nightly 02:00, ~10 s wall / 5.3 s CPU per run) and there
-is **no evidence anywhere in the repo or the journal of a restore ever being
-tested**. "Accepted" is really "never checked".
+snapshots (8.6 → 9.2 GiB, nightly 02:00, ~10 s wall / 5.3 s CPU per run) and no
+restore of a torn SQLite DB has ever been attempted (see the correction below).
+
+**Correction to an earlier draft of this asset, which overclaimed.** A restore
+*has* been verified on both paths — but not the part that matters here. Issue 016's
+AC reads "A test restore of one application's config from a snapshot succeeds
+(verified, not assumed)" [x], and issue 026 went further, verifying that "the
+database backups restore to a consistent, working state" plus a real file restore of
+an 8.2 MB Immich original. So the mechanism is proven and the *Postgres* DB path is
+proven. What has **never** been verified is that a **live-walked SQLite database**,
+restored from the naked appdata walk, opens cleanly — which is precisely the untested
+claim, and the house standard in both those ACs is "verified, not assumed".
 
 The blast radii are not equal, and that is the argument that matters: a torn Sonarr
 DB costs an afternoon with the media library still on disk as ground truth. Ticket 07
