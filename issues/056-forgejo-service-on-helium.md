@@ -75,6 +75,11 @@ the exact pinned image, against a bind mount and uid 1001:1003 — the productio
 - `/etc/gitea` is empty in the running container and `app.ini` is at
   `/var/lib/gitea/custom/conf/app.ini` (0600, 1001:1003) — independently confirming that
   no config bind mount is needed.
+- Runs clean with `cap_drop: [ALL]`, no `cap_add`, and `no-new-privileges` — verified
+  with a genuinely empty capability set (`CapEff`/`CapPrm` all zeros): healthz 200 and
+  the SSH server still answering. This matters because the compose header warns that a
+  blanket cap drop *breaks* images that start as root and drop privileges; the rootless
+  image starts directly as the target uid, so it is in the no-cap_add class.
 - The chown is load-bearing, reproduced: with the data dir owned by 1000 the container
   dies with `/var/lib/gitea/git is not writable` → `docker setup failed` → Exited (1).
 - `docker compose config` validates the whole rendered stack; ansible `--syntax-check` passes.
