@@ -378,15 +378,23 @@ audiobooks_library_dir: "{{ hdd_union_mount }}/audiobooks"   # -> /srv/media/aud
 # below is one of its decisions, so change them there, not here.
 #
 # FLOATING TAG — a DELIBERATE divergence from this file's exact-pin convention
-# (cf. audiobookshelf_version: "2.36.0"). `15-rootless` floats across minors and
-# patches inside the v15 LTS line. Patch releases on an LTS line are the security
-# fixes you want arriving without a ticket, and the thing that genuinely needs
-# human verification is the MAJOR upgrade — which the `15` tag can never cross
+# (cf. audiobookshelf_version: "2.36.0" — and note EVERY other service here is
+# exact-pinned, so this is the single exception, not a second style). `15-rootless`
+# floats across minors and patches inside the v15 LTS line. Be honest about the
+# scope of that: it is not only patches, so a MINOR also lands unverified. Accepted
+# anyway, because on a maintained LTS line a minor is still backward-compatible by
+# policy, and the thing that genuinely needs human verification is the MAJOR
+# upgrade — which the `15` tag can never cross
 # (Forgejo ships no `latest` tag for exactly that reason). Stable `:16` would buy
 # ~9 weeks before a forced major, then one per quarter, on a box explicitly not
 # meant to be babysat; v15 is supported to 15 Jul 2027. This knowingly runs one
 # major behind, and nothing here depends on a v16 feature.
 #   -> REVISIT ~May 2027, two months before EOL, when 19.0 is the next LTS.
+# Deliberately the OPPOSITE instinct to issues/059 (lumin's CI job image), which
+# wants a digest reference rather than a floating tag. Not an inconsistency: 059
+# optimises for a reproducible CI input, where a silently-changed image invalidates
+# a measurement; this optimises for unattended security patching on a long-lived
+# service nobody is watching. Different risk, different answer.
 forgejo_version: "15-rootless"
 forgejo_data_dir: "{{ ssd_pool_mount }}/appdata/forgejo"   # -> /data/ssd/appdata/forgejo
 # Git-over-SSH host port. helium KEEPS sshd on 22 — the container publishes an

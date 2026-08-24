@@ -1470,10 +1470,11 @@ services:
   #      copied here.
   #   3. `user:` overrides the image's baked-in USER 1000:1000, which would
   #      otherwise collide with `ms` on Debian. The host data dir MUST already be
-  #      chowned to this uid/gid before the container first starts — stack.yml does
-  #      that, and it is load-bearing, not boilerplate: with the dir owned by 1000
-  #      the container dies instantly ("/var/lib/gitea/git is not writable" ->
-  #      "docker setup failed" -> Exited (1)).
+  #      chowned to this uid/gid before the container first starts. That ordering is
+  #      load-bearing, not boilerplate — the exact failure it prevents is recorded
+  #      once, at its canonical site: the pre-create task in
+  #      roles/compose_stack/tasks/stack.yml. Deliberately not restated here; two
+  #      copies of a measured trace drift apart.
   #
   # SSH coupling, the other silent failure: the builtin Go SSH server listens on
   # 2222 in the container and is published on host port ${FORGEJO_SSH_HOST_PORT}
@@ -1519,6 +1520,20 @@ services:
       - "no-new-privileges:true"
     ports:
       # host -> container. The container side is 2222 (rootless image), never 22.
+      #
+      # This is only the SECOND service in this file to publish a host port (Traefik
+      # is the other), so state it against the exposure model rather than leaving it
+      # implicit: git-over-SSH cannot go through Traefik, which terminates HTTP(S)
+      # only, so a published port is the only route. It is NOT public — the boundary
+      # is OPNsense having no port-forward, the same boundary that makes every other
+      # service here LAN + mesh only.
+      #
+      # LATENT TRAP, and the reason this is spelled out: helium runs
+      # compose_restrict_to_mesh: false. If that toggle is ever flipped TRUE, the
+      # DOCKER-USER "drop NEW conns from LAN NIC" rule in tasks/firewall.yml starts
+      # dropping this port too, and LAN git-over-SSH dies SILENTLY while the web UI
+      # keeps working over the mesh — so it presents as a git problem, not a firewall
+      # one. Whoever flips that toggle must add a RETURN for this port.
       - "${FORGEJO_SSH_HOST_PORT:?missing FORGEJO_SSH_HOST_PORT}:2222"
     labels:
       - "traefik.enable=true"
