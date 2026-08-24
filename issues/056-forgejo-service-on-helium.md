@@ -1,6 +1,6 @@
 ---
 title: Stand up Forgejo on helium behind the internal Traefik
-status: open
+status: in-progress
 priority: high
 created: 2026-08-24
 closed: null

@@ -1,6 +1,6 @@
 ---
 title: Audit the public git history of planning and issues for live secrets
-status: open
+status: in-progress
 priority: medium
 created: 2026-08-24
 closed: null
