@@ -89,7 +89,7 @@ read the two decisions as contradicting each other.
 
 - **A — move to Forgejo: rejected.** Not on taste, on measurement. The vault's
   tickets are woven into live vault content that is not moving: **16 `[[tasks]]`
-  wikilinks** into `~/vault/tasks.md` (the daily task board), **12 into `health/`**
+  wikilinks** into `~/vault/tasks.md` (the daily task board), **14 into `health/`**
   (training log, program, npf), and **~25 relative links** into sibling
   `../research/`, `../design/`, `../food-log.md`. Forgejo resolves none of these.
   Moving `tickets/` alone would split all five efforts across two systems while

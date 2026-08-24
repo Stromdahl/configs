@@ -117,3 +117,35 @@ Layout caveat from the ticket stands: 11 project dirs, only 5 with `tickets/` +
 `map.md`; the other six (`3d-printing`, `homelab`, `msbrain`, `next-daily-car`,
 `vault-split`, `vault-tools`) have neither, and `projects/` also holds loose
 single-file notes (`retirement.md`, `laptop-search.md`, …).
+
+## P4 — the fact none of the three premises asked for: the tickets are link-woven into the vault
+
+This is what actually decided the ticket. Vault tickets link *out* of `tickets/`
+into live vault content that is not moving:
+
+```
+$ cd ~/vault/projects
+$ grep -rhoE '\[\[[^]]+\]\]' */tickets/*.md | sort | uniq -c | sort -rn | head
+     16 [[tasks]]
+      6 [[health/training/log]]
+      4 [[health/npf]]
+      2 [[health/training/program]]
+      1 [[health/training/README]]
+      1 [[health/training/restart]]
+$ grep -rhoE '\[\[health/[^]]+\]\]' */tickets/*.md | wc -l
+14
+$ grep -rhoE '\]\(\.\.?/[a-zA-Z0-9._/-]+\)' */tickets/*.md | sort | uniq -c | sort -rn | head -6
+      4 ](../research/02-training-after-long-term-steroids.md)
+      4 ](../research/02-design-shortlist.md)
+      3 ](../design/05-the-program.md)
+      1 ](../food-log.md)
+      1 ](../map.md)
+      1 ](../../not-so-smart-smartwatch/research/02-mcu-candidates.md)
+```
+
+**16 `[[tasks]]`** (the vault's daily task board), **14 into `health/`**, and ~25
+relative links into sibling `../research/`, `../design/`, `../food-log.md` — one of
+them **across two efforts**. Forgejo resolves none of these forms. The sibling dirs
+are real: every one of the five efforts keeps `research/` and/or `design/` next to
+`tickets/`, and `strength-and-weight` also keeps `food-log.md` and `photos/`
+(gitignored).

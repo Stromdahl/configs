@@ -454,3 +454,15 @@ root beside the Immich archive.
 - **New execution scope, not a decision:** the ansible task for
   podman/uidmap/slirp4netns/fuse-overlayfs + a runner-user subuid range + linger.
   Graduates with the build issues.
+
+---
+
+## Rider (2026-08-24): the OPEN unit type is now [ticket 14](14-runner-unit-type.md)
+
+§The spec item 1's *"OPEN implementation detail: system unit with `User=` vs.
+`systemd --user` unit"* was a **decision that fell between tickets 04 and 12**, not one
+that was shelved — and [ticket 09](09-lumin-definition-of-done.md) parked its systemd
+resource values behind it. It is now [ticket 14](14-runner-unit-type.md), which carries
+the established facts (the dead `io` argument, the `user@<uid>.service` ordering hazard,
+the already-fixed `systemd --user` socket) so nothing is re-researched. Item 1 stops
+saying OPEN when 14 resolves.

@@ -315,6 +315,10 @@ and must not be re-litigated:_
   shields.io cuts against the motive. Full spec in the ticket — **with the runner's
   unit type (system-with-`User=` vs `systemd --user`) deliberately left OPEN**, since 04
   does not disambiguate it and the `io` argument for a system unit was withdrawn.
+  _Graduated 2026-08-24 into ticket [14](issues/14-runner-unit-type.md) — the open unit
+  type was a decision that fell between 04 and 12, not a shelved one, and ticket 09's
+  systemd resource values were parked behind it. **An empty frontier here never meant the
+  runner spec was finished.**
 
 - [Tracker cutover: what moves into Forgejo Issues, and what stays markdown?](issues/07-tracker-cutover.md) —
   **Everything moves, maps included.** The hybrid was recommended and declined. The
@@ -337,6 +341,11 @@ and must not be re-litigated:_
   hold every map. Riders onto [11](issues/11-persistence-backup-and-pins.md) (now
   the *only* copy of the tracker) and [10](issues/10-forge-sync-contract.md)
   (**10 since shelved**).
+  _Scoped 2026-08-24 by [ticket 13](issues/13-vault-personal-maps.md): **"everything
+  moves" covers `~/.dotfiles` only.** `~/vault`'s five maps (50 tickets) **stay
+  markdown**, so there are two personal ticket homes by design — and `bin/wf`'s Forgejo
+  dialect is therefore a **third** dialect: the **frontmatter dialect must be kept, not
+  retired**, because the vault is still its user._
 
 - [lumin's definition of done, once the deep tier is remote](issues/09-lumin-definition-of-done.md) —
   **The cross-host anchoring hazard does not exist.** krypton (Zen 5) and helium
@@ -352,7 +361,8 @@ and must not be re-litigated:_
   04's preference** and put `--in-place` in the justfile as `mutants *ARGS`. Done =
   fast tier green + pushed + CI verdict green; `just qa` survives as debug/offline/
   pre-push only; `coverage` is **untested, not cleared**. **`nice` is dropped** (cgroups are real, `ionice` isn't);
-  systemd values stay deferred behind ticket 12's open unit type. **Blocking discovery:
+  systemd values stay deferred behind ticket 12's open unit type. _Those values are now ticket
+  [14](issues/14-runner-unit-type.md)'s question 2._ **Blocking discovery:
   default seccomp forbids the perf gate** — `personality(ADDR_NO_RANDOMIZE)` is denied
   by Docker's *and* Podman's default profiles, so the job needs a custom profile
   (default + that one arg, not `unconfined`). Also found: **lumin's committed Ceilings
@@ -395,7 +405,7 @@ and must not be re-litigated:_
   **No — they stay markdown in the vault, all five**, and the Forgejo-remote option is
   **skipped for now**. Decided on a fact the ticket did not have: the vault's tickets are
   **woven into live vault content that is not moving** — **16 `[[tasks]]`** wikilinks into
-  the daily task board, **12 into `health/`**, **~25** relative links into sibling
+  the daily task board, **14 into `health/`**, **~25** relative links into sibling
   `research/`, `design/`, `food-log.md`. Forgejo resolves none of them, so moving
   `tickets/` alone would split all five efforts across two systems. **Ticket 07's
   "everything moves" is hereby scoped to `~/.dotfiles`** — the two decisions do not

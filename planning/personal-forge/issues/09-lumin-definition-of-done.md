@@ -360,3 +360,14 @@ the text, not the edit.
    `mutants *ARGS`).
 3. The custom seccomp profile file and its `container.options` wiring.
 4. The `bin/` wrapper over the commit-status API.
+
+---
+
+## Rider (2026-08-24): the deferred systemd values now have a home
+
+The systemd resource values this ticket declined to invent — *"they belong to whoever
+closes the unit type"* — are question 2 of [ticket 14](14-runner-unit-type.md), which
+graduated ticket 12's open unit type. Nothing else here reopens: §3, §6 and §7 stay
+**proposed permanently until this ticket is reopened**, and ticket 04's preference (a)
+remains **not overturned**, so whoever writes lumin's workflow still inherits the live
+conflict with §1's call-`just`-recipes rule and must raise it rather than assume §6.

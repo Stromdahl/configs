@@ -359,3 +359,33 @@ labels anyway. Two riders:
   the **`projects/planning` assets repo** — and note that a fresh-machine restore
   now recovers *code* but not *tickets*, since those live in the DB rather than in
   any repo.
+
+---
+
+## Scoping amendment (2026-08-24, by [ticket 13](13-vault-personal-maps.md))
+
+**"Everything moves, maps included" is scoped to `~/.dotfiles`** — the repo this
+ticket surveyed. It does **not** reach `~/vault`.
+
+[Ticket 13](13-vault-personal-maps.md) decided the **five personal wayfinder maps in
+`~/vault/projects/` (50 tickets) stay markdown in the vault**, because their tickets
+are link-woven into live vault content that is not moving: **16 `[[tasks]]`**
+wikilinks into the daily task board, **14 into `health/`**, and ~25 relative links
+into sibling `../research/`, `../design/`, `../food-log.md`. Forgejo resolves none of
+those forms, and the targets cannot follow.
+
+Two consequences for anyone implementing this ticket:
+
+1. **A migration script must not walk `~/vault`.** Its scope is `~/.dotfiles/issues/`
+   (56 files), `~/.dotfiles/planning/` (the three maps), and the eight repo `issues/`
+   dirs — nothing under `~/vault/projects/`.
+2. **`bin/wf` gains a THIRD dialect, it does not swap its second.** This ticket's
+   "`bin/wf` gains a Forgejo dialect" is an **addition**. The **YAML frontmatter
+   dialect must be kept** — the vault's `tickets/` are still its only user, and
+   `~/vault/projects` stays a first-class `wf` root alongside `~/notes/.scratch`
+   (work, out of scope, prose dialect).
+
+After the migration there are **two** personal ticket homes by design, and `bin/wf`
+is the thing that spans them. That is not a contradiction of this ticket — the
+discriminator 13 established is *whether the tickets' outbound links have anywhere to
+land*, not public-vs-private and not markdown-vs-service.
