@@ -102,7 +102,25 @@ condition cannot be re-created without deleting state.
 **One post-deploy human step**, deliberately not automated (same posture as Jellyfin's and
 Audiobookshelf's first-visit admin, and it keeps a single-use credential out of sops):
 
-    docker exec -u 1001 forgejo forgejo admin user create \
+    docker exec forgejo forgejo admin user create \
       --admin --username <name> --email <addr> --random-password
 
+No `-u` flag: the container already runs as 1001:1003, and `-u 1001` resolves the bare
+uid against the container's `/etc/passwd`, which has no entry for it — measured, the gid
+falls back to **0**, so files would land `1001:0` in a `0750 1001:1003` dir.
+
 Then create a test repo and run the AC5 clone against the URL the API advertises.
+
+**Expect a possible first-cert stall on AC1, and don't read it as a failure.**
+`git.home.stromdahl.tech` is a brand-new router, which is exactly the case in
+`project_helium_traefik_acme_restart`: a subdomain can come up serving
+`TRAEFIK DEFAULT CERT` because the DNS-01 order is transient and Traefik does not retry
+by itself. The fix is a Traefik restart. Worth confirming the existing restart handler
+covers a *new router* and not only a `dynamic.yml` edit — if it does not, restart Traefik
+by hand once and AC1's "valid certificate" should then hold.
+
+**Sequencing note for whoever picks up `issues/057`:** until 057 deploys, `issues/016`'s
+appdata walk still covers this new `forgejo/` dir, so it will file-walk a live WAL-mode
+SQLite DB — the exact tearing ticket 11 named and that 057 exists to fix. Blast radius is
+near zero today because `063`/`064` have not migrated anything in yet, so this is
+sequencing information, not a defect in 056.

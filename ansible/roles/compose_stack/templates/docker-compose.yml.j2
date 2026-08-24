@@ -1488,8 +1488,14 @@ services:
   # Jellyfin's and Audiobookshelf's first-visit admin, and it keeps a single-use
   # credential out of sops). INSTALL_LOCK skips the web installer because the
   # config is env-driven, so the first admin is made on the box:
-  #   docker exec -u 1001 forgejo forgejo admin user create \
+  #   docker exec forgejo forgejo admin user create \
   #     --admin --username <name> --email <addr> --random-password
+  # NO `-u` flag, deliberately. The container already runs as 1001:1003 via `user:`
+  # above, so a bare exec inherits the right identity. `-u 1001` is NOT equivalent:
+  # Docker resolves a bare uid against the container's /etc/passwd, which has no
+  # entry for 1001, so the gid falls back to 0 — measured: `docker exec -u 1001`
+  # gives uid=1001 gid=0(root). Anything it wrote would land 1001:0 in a 0750
+  # 1001:1003 dir, in the directory issue 057's backup arm is meant to own end to end.
   # Then verify the SSH path with EXACTLY the URL the API advertises:
   #   curl -s https://git.${DOMAIN}/api/v1/repos/<owner>/<repo> | jq -r .ssh_url
   #   git clone "$(that ssh_url)"
