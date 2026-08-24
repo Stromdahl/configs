@@ -1491,12 +1491,23 @@ services:
   #     --admin --username <name> --email <addr> --random-password
   # Then verify the SSH path with EXACTLY the URL the API advertises:
   #   curl -s https://git.${DOMAIN}/api/v1/repos/<owner>/<repo> | jq -r .ssh_url
-  #   git clone ssh://git@git.<domain>:222/<owner>/<repo>.git
+  #   git clone "$(that ssh_url)"
+  # Asset 01 §5 left the exact rendered string form open ("the semantics were
+  # verified; the template output was not"). It is now measured, on this image at
+  # this uid: the API renders ssh://git@<SSH_DOMAIN>:<SSH_PORT>/<owner>/<repo>.git
+  # — the ssh:// form with an explicit port, not the scp-style git@host:owner/repo.
   forgejo:
     image: codeberg.org/forgejo/forgejo:${FORGEJO_VERSION:?missing FORGEJO_VERSION}
     container_name: forgejo
     restart: unless-stopped
     # ticket 11: reuse the stack's service uid/gid rather than a dedicated one.
+    # Neither 1001 nor 1003 has a passwd/group entry, which looks like it should
+    # break the builtin SSH server (SSH_ROOT_PATH defaults to ~/.ssh, and a uid
+    # with no passwd entry has no home). It does not: this image sets HOME as a
+    # Dockerfile ENV (/var/lib/gitea/git), so it resolves independently of
+    # /etc/passwd and lands inside the bind mount. Measured on this image at this
+    # uid — the SSH server binds 2222 and answers SSH-2.0-Go. Don't "fix" it by
+    # adding a passwd entry.
     user: "${UID:?missing UID}:${GID:?missing GID}"
     # issue 010: the rootless image starts directly as this uid and performs no
     # privilege drop, so the empty capability set is correct (no cap_add) — the
@@ -1556,6 +1567,11 @@ services:
       # locked because the config above is authoritative.
       - FORGEJO__security__INSTALL_LOCK=true
       - FORGEJO__service__DISABLE_REGISTRATION=true
+      # These last two are not spec requirements — they carry over from the
+      # ticket-05 prototype's compose, kept deliberately. DEFAULT_BRANCH=main
+      # matches this repo's own default and is what issue 063's repo migration
+      # will expect; LOG_LEVEL=warn keeps a single-user forge from writing info
+      # noise to the SSD tier. Drop either freely; nothing depends on them.
       - FORGEJO__repository__DEFAULT_BRANCH=main
       - FORGEJO__log__LEVEL=warn
     volumes:
