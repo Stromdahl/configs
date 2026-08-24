@@ -464,6 +464,30 @@ and must not be re-litigated:_
 > *proposed*, so whoever writes lumin's workflow inherits a live conflict with ticket
 > 04's preference (a) and must raise it rather than assume.
 
+> **Graduated 2026-08-24 into `issues/056`–`068`.** Every *execution* item below is
+> now a real issue in this repo's tracker, under the label `epic:forge`. The fog
+> entries stay as written — they are still fog, with their triggers unfired. The
+> mapping, so nobody converts anything twice:
+>
+> | execution cluster (source ticket) | issue |
+> |---|---|
+> | Forgejo's compose service, pins, uid, mount paths (01, 11) | `056` |
+> | The seven backup items + the exercised restore runbook (11) | `057` |
+> | Rootless-Podman prerequisites, runner user, linger, socket (12) | `058` |
+> | The job image (02, 04, 12) | `059` |
+> | The runner unit, slice drop-in, `container.options`, cache, space guard (12, 14, 09's seccomp) | `060` |
+> | The eight anchoring measurements, run inside the job image (02) | `061` |
+> | `bin/forge` (07, 10) | `062` |
+> | The org, the 20 repos, the assets repo, the Pages clone (06, 07, 08) | `063` |
+> | Labels, the 56 issues, the three maps, the markdown deletion (03, 07) | `064` |
+> | The CLI cookbook, `triage`/`code-review`, wayfinder ops, `bin/wf`'s third dialect (07) | `065` |
+> | The commit-status verb (09) | `066` |
+> | The public-history secret audit (08) | `067` |
+> | lumin's three inherited items — filed on lumin's tracker, not here (09) | `068` |
+>
+> The migration ordering still governs: `064` is **last**, and nothing before it may
+> delete `issues/` or `planning/`.
+
 In-scope fog — real, but not yet sharp enough to ticket:
 
 - **Generalizing CI beyond lumin.** `rust-template` is the natural home for a
