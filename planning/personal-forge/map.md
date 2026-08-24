@@ -472,17 +472,15 @@ In-scope fog — real, but not yet sharp enough to ticket:
   `forgejo_version: "15-rootless"` in `host_vars` (floating, contrary to that file's
   exact-pin convention — wants a comment saying why).
 
-- **The five personal maps under `~/vault/projects/`** — `diy-speakers`,
-  `finance-rebuild`, `not-so-smart-smartwatch`, `strength-and-weight`,
-  `vardepapperskredit`: **50 tickets** that [ticket 07](issues/07-tracker-cutover.md)
-  did not consider. 07 decided "everything moves" on the evidence of
-  `~/.dotfiles/planning/` and the eight repo `issues/` dirs; `bin/wf` surfaced these
-  only afterwards. They are **personal, so not covered by the work carve-out**, and
-  `diy-speakers` is one of ticket 06's twenty repos — so the same argument applies
-  to them. Two things make it a real question rather than a formality: they live in
-  the **Syncthing-replicated vault**, not in a git repo, and one of them
-  (`finance-rebuild`) is financial. Sharpen into a ticket once the migration's shape
-  is concrete.
+- _(Graduated 2026-08-24 into ticket [13](issues/13-vault-personal-maps.md): **do the
+  personal wayfinder maps in `~/vault` move to Forgejo?** — 50 tickets across 5 maps that
+  [ticket 07](issues/07-tracker-cutover.md) never saw, graduated on this entry's own
+  stated trigger now the migration's shape is concrete. **Two of this entry's premises
+  measured wrong on graduation:** `~/vault` **is** a git repo — just with **no remote at
+  all** — not the non-git store this entry claimed, which opens a third option (the vault
+  gains a Forgejo remote while its maps stay markdown); and the layout is `tickets/`, with
+  only **5 of 11** project dirs having any, so no migration script may assume it. The
+  count of 50 was right.)_
 
 - **Four execution items from [ticket 09](issues/09-lumin-definition-of-done.md)**,
   parked here — none is a decision:
