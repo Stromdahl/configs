@@ -318,7 +318,9 @@ and must not be re-litigated:_
   _Graduated 2026-08-24 into ticket [14](issues/14-runner-unit-type.md) — the open unit
   type was a decision that fell between 04 and 12, not a shelved one, and ticket 09's
   systemd resource values were parked behind it. **An empty frontier here never meant the
-  runner spec was finished.**
+  runner spec was finished.** **Closed 2026-08-24 by 14:** item 1 now reads
+  `systemd --user` and stops saying OPEN, and 14 **reframed the resource values** — they
+  are `container.options` flags and a slice drop-in, never unit directives._
 
 - [Tracker cutover: what moves into Forgejo Issues, and what stays markdown?](issues/07-tracker-cutover.md) —
   **Everything moves, maps included.** The hybrid was recommended and declined. The
@@ -422,7 +424,45 @@ and must not be re-litigated:_
   acceptance rather than an oversight. Evidence:
   [`assets/13-vault-premise-checks.md`](assets/13-vault-premise-checks.md).
 
+- [The runner's systemd unit type — system-with-`User=` or `systemd --user`?](issues/14-runner-unit-type.md) —
+  **`systemd --user`, and nothing on the unit.** The ordering correctness won over
+  operator friction (a user unit is invisible to a root shell's `systemctl status`).
+  **Both of the ticket's framings moved.** The house-consistency counter-argument is
+  **mostly spent** — `ansible/roles/syncthing/tasks/service.yml` already does the whole
+  `systemd --user` dance (uid lookup → linger **first** → `scope: user` with
+  `XDG_RUNTIME_DIR`), and `ms` lingers on helium today; and **`cpuset` is undelegated
+  exactly as `io` is** (`Delegate=pids memory cpu`, measured), so the system unit's last
+  capability argument dies the same death — resurrecting it would have been a regression
+  in this map's reasoning. **The bigger correction: ticket 09's parked "systemd resource
+  values" were parked on the wrong object.** Job containers are created by the *podman
+  user service* and land in `user-<uid>.slice`, **not** in the runner unit's cgroup, so
+  unit limits would cap a tens-of-MB daemon and do nothing to a 25–40 min mutants job.
+  Limits therefore go on **`container.options`** (already ticket 09's seccomp channel):
+  **`--memory=6g --memory-swap=6g`** — 6g is ~1.7× a **measured** 3.48 GB cold-build
+  peak, and denying swap matters because helium already has **4.1 GB in swap on the same
+  NVMe root** as ticket 12's ~80 MB/s cache; and **`CPUWeight=20` on a
+  `user-<uid>.slice` drop-in** rather than `--cpus=4`, because container weight would
+  rank the job only against other `user.slice` things and never make it yield to
+  Jellyfin. `--pids-limit` stays at podman's default 2048 (checked, and `pids` **is**
+  delegated). Ordering is one line — `Wants=`/`After=podman.socket` — not a retry loop.
+  **Three costs named:** an OOM-kill reads as a test failure, not as "out of room";
+  weight-based yielding widens "25–40 min" into a band with no stable baseline; and the
+  slice drop-in is a **system-scoped** artifact inside an otherwise user-scoped role.
+  Amends [12](issues/12-adopt-runner-shape.md) §The spec item 1 (it stops saying OPEN);
+  ticket 09's answer is recorded **in 14**, not by editing 09, whose §3/§6/§7 stay
+  proposed-until-reopened.
+
 ## Not yet specified
+
+> **Frontier status 2026-08-24: empty, and this time it means it.** All 14 tickets are
+> closed (10 shelved, 09 shelved mid-answer). Every entry below is either **execution**
+> — work with nothing left to decide, waiting on the build issues — or fog with a
+> **named trigger** that has not fired. Nothing here is a decision someone is sitting
+> on. The next move is the migration ordering in the Notes above: **Forgejo stands up on
+> helium first**; the markdown deletion and this map's own move happen **last**. Before
+> reading this as "done", check that against the shelved records: 09's §3/§6/§7 stay
+> *proposed*, so whoever writes lumin's workflow inherits a live conflict with ticket
+> 04's preference (a) and must raise it rather than assume.
 
 In-scope fog — real, but not yet sharp enough to ticket:
 
@@ -496,7 +536,14 @@ In-scope fog — real, but not yet sharp enough to ticket:
   **all absent**, and only `ms` has a subuid/subgid range. So the runner needs an ansible
   task nobody has written: install those four, provision a non-colliding subuid range for
   the `forgejo-runner` user, and `loginctl enable-linger` it for `podman.socket`.
-  Graduates with the build issues.
+  Graduates with the build issues. _Grown 2026-08-24 by
+  [ticket 14](issues/14-runner-unit-type.md): the same task now also writes the **runner's
+  own `systemd --user` unit** (copying `roles/syncthing/tasks/service.yml`'s uid-lookup /
+  linger-first / `scope: user` pattern), a **root-owned
+  `/etc/systemd/system/user-<uid>.slice.d/50-forgejo-runner.conf`** carrying
+  `CPUWeight=20`, and a **`container.options` line carrying three things at once** —
+  `--memory=6g --memory-swap=6g`, ticket 09's custom seccomp profile, and nothing else.
+  The uid is looked up, never hardcoded._
 
 - **Seven execution items from [ticket 11](issues/11-persistence-backup-and-pins.md)**,
   parked here — none is a decision, all belong to the build issues: `sqlite3` into

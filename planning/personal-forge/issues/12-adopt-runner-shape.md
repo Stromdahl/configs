@@ -380,15 +380,21 @@ recommendation below therefore rests on operational simplicity, not on `io`.
 ### The spec
 
 1. **Runner process** — `forgejo-runner` running **unprivileged as a dedicated
-   `forgejo-runner` user**, per ticket 04. **OPEN implementation detail: system unit
-   with `User=` vs. `systemd --user` unit.** Ticket 04 does not disambiguate it (it says
-   only "unprivileged systemd unit"), the owner was not asked, and the argument I
-   originally used for a system unit — access to the `io` controller — **I withdrew as
-   inapplicable to jobs**. So this is deliberately left open rather than invented here.
-   Whoever closes it must handle one hazard: a **system** unit has no ordering dependency
-   on `user@<uid>.service`, so `/run/user/<uid>/podman/podman.sock` may not exist when it
-   starts — it needs `After=`/retry. A `systemd --user` unit sidesteps that and matches
-   the linger pattern the docs already require for the socket.
+   `forgejo-runner` user**, per ticket 04, as a **`systemd --user` unit under
+   `loginctl enable-linger`**, with `Wants=`/`After=podman.socket`.
+   _Closed 2026-08-24 by [ticket 14](14-runner-unit-type.md) — this item **no longer
+   says OPEN**._ The ordering hazard named below is **gone by construction**: runner and
+   socket share one manager and one lingering user, so there is no `After=`/retry to
+   write. Two premises moved on the way: the house-consistency argument for a system
+   unit is mostly spent (`ansible/roles/syncthing/tasks/service.yml` already does the
+   entire `systemd --user` pattern — uid lookup, linger-first, `scope: user` with
+   `XDG_RUNTIME_DIR`), and **`cpuset` turns out to be undelegated exactly as `io` is**
+   (`Delegate=pids memory cpu` on helium's `user@.service`), so no capability argument
+   for a system unit survives. Ticket 14 also **reframed the resource values**: job
+   containers are created by the *podman user service* and land in `user-<uid>.slice`,
+   **not** in this unit's cgroup, so this unit carries **no `MemoryMax`, `CPUWeight` or
+   `TasksMax`** — every real limit is a `container.options` flag or a
+   `user-<uid>.slice` drop-in. See 14 §2–§5.
 2. **Container backend** — **rootless Podman**, `docker://` labels. The podman socket
    comes from the documented pattern: `podman.socket` as a **`systemd --user` unit for
    `forgejo-runner` with `loginctl enable-linger`**, and the runner unit points at it:
@@ -465,4 +471,6 @@ that was shelved — and [ticket 09](09-lumin-definition-of-done.md) parked its 
 resource values behind it. It is now [ticket 14](14-runner-unit-type.md), which carries
 the established facts (the dead `io` argument, the `user@<uid>.service` ordering hazard,
 the already-fixed `systemd --user` socket) so nothing is re-researched. Item 1 stops
-saying OPEN when 14 resolves.
+saying OPEN when 14 resolves. **Resolved 2026-08-24** — item 1 is rewritten above:
+`systemd --user`, nothing on the unit, and the resource values live on the container
+and the slice.
