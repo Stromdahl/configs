@@ -29,8 +29,11 @@ $ git log --pretty=format: --name-only -- planning issues | sort -u | grep -vE '
 omits merge diffs, a rename can carry content in with an empty diff, and a binary
 would defeat a `grep` sweep. None of those apply here.
 
-The ticket said "eighty-seven commits". That count was stale by the time the
-sweep ran; 232 is the number as of `7d3643f`.
+The ticket said "eighty-seven commits". Nothing reproduces that figure — `planning
++ issues` is 232, `issues` alone 129, `planning/personal-forge + issues` 176,
+`planning/personal-forge` alone 49 — so it counted some narrower path set that is
+not recoverable from the ticket text. The sweep below is a strict superset either
+way, which is the safe direction to be wrong in.
 
 ### 2. Two sweeps, deliberately redundant
 
@@ -57,6 +60,20 @@ $ wc -l < $S/allblobs.txt
 ```
 
 495 distinct blobs — every historical revision of all 136 paths.
+
+**Sweep C — the commit messages of those same commits.** They are just as public
+and just as permanent as the file content, and neither sweep above touches them:
+
+```
+$ git log --all --format='%B' -- planning issues > $S/msgs.txt
+$ wc -l < $S/msgs.txt
+468
+```
+
+All three pattern sets below were run against `$S/msgs.txt` as well. **Zero hits
+across P1–P12 and R1–R9.** Two Q-set hits, both benign: one message names
+`settleup.stromdahl.io` (a hostname, already-public DNS) and one names the
+*variable* `TELEGRAM_ALLOWED_CHATS in .env` with no value.
 
 ### 3. The pattern set
 
@@ -111,6 +128,18 @@ ssh-(rsa|ed25519) AAAA[A-Za-z0-9+/]{20,}
 (?i)\.env\b
 ```
 
+**Bare unlabelled 32-hex values** deserve their own pass: the `*arr` / Jellyfin API
+keys that dominate this homelab are exactly that shape, and they slip past both
+P11/P12 (which need a label) and Q6 (which needs 40+ characters).
+
+```
+$ grep -oPa '\b[0-9a-f]{32}\b' $S/allblobs.txt | sort -u | wc -l
+0
+```
+
+**Zero** — not one 32-hex string in 82k lines, so there is not even md5sum noise to
+triage despite `| md5sum` being the house verification idiom.
+
 No scanner was installed. `command -v gitleaks trufflehog` found neither, and
 installing a tool to scan 82k lines of markdown was not worth the ask — the
 pipeline above is the method of record and re-runs with no dependencies.
@@ -136,6 +165,7 @@ $ grep -Pa -- "<P12>" $S/allblobs.txt | perl -pe 's/((?i:password|passwd|secret|
 | Q3 | `passphrase` | 2 | — |
 | Q6 | 40+ char base64-ish run | 275 | — |
 | Q7–Q10 | mesh IPs, RFC1918, all IPv4, `*.stromdahl.*` | 16 / 30 / 53 / 105 | — |
+| — | bare `\b[0-9a-f]{32}\b` (unlabelled arr/Jellyfin key shape) | — | **0** |
 | R1–R2, R4–R6, R8 | `curl -u`, `Basic`, service-password env assignments, SSH pubkeys | **0 each** | — |
 | R3 | `admin:`/`user:` pair | 8 | — |
 | R7 | `sops -d` | 2 | — |
@@ -151,7 +181,7 @@ actually credential-shaped rather than a prose false positive.
 
 | # | Where | Redacted shape | Live/dead | Justification |
 |---|---|---|---|---|
-| 1 | `planning/personal-forge/assets/04-runner-topology-research.md`, commit `39a0959`, in the `server:` YAML block (`token: d4fe***`, 40 chars, plus `uuid: 33834eef-…`) | 40-char hex runner registration token | **DEAD** | Verbatim Forgejo documentation example. `curl -sL https://forgejo.org/docs/latest/admin/actions/registration/` and `grep -qF` on both values matches the live docs page exactly — the token and the uuid are upstream's sample values; only the `url:` line was adapted to `git.home.stromdahl.tech`. It never authenticated against anything of ours: no Forgejo instance exists yet (the whole epic is pre-deploy), so no runner was ever registered with it. |
+| 1 | `planning/personal-forge/assets/04-runner-topology-research.md`, commit `39a0959`, in the `server:` YAML block (`token: d4fe***`, 40 chars, plus `uuid: 33834eef-…`) | 40-char hex runner registration token | **DEAD** | Verbatim Forgejo documentation example. `curl -sL https://forgejo.org/docs/latest/admin/actions/registration/` and `grep -qF` on both values matches the live docs page exactly — the token and the uuid are upstream's sample values; only the `url:` line was adapted to `git.home.stromdahl.tech`. The byte-match is decisive on its own: the value never belonged to us, so there is nothing it could authenticate against. |
 | 2 | `04-runner-topology-research.md` (×2 lines, ×3 blob revisions) | `permissions: id-token: writ***` | **DEAD** | Not an assignment — a quoted GitHub Actions workflow permission literal (`id-token: write`). The regex matched the word `write`. |
 | 3 | `planning/personal-forge/assets/05-prototype-notes.md` (×2 revisions) | `--must-change-password=fals***` | **DEAD** | A CLI flag value (`false`), not a credential. The prototype's actual admin password is not in the corpus (R4/R5 = 0). |
 | 4 | `planning/hermes-helium/assets/10-telegram-authz-probe.md` (×3 revisions; commits `452d2c6`, `35b8e06`, `f3419a2`) | `printf 'TELEGRAM_BOT_TOKEN=…\n…\nANTHROPIC_API_KEY=…\n' > $D/.env` | **DEAD** | Both token values are written as a literal ellipsis `…` in the transcript — the author elided them at capture time. The line also carries `TELEGRAM_ALLOWED_USERS=8468278488`, which is a Telegram numeric user id (an identifier, not a bearer credential). |
@@ -184,7 +214,8 @@ actually credential-shaped rather than a prose false positive.
 ## Conclusion
 
 **No live secret is present in the public history of `planning/` or `issues/`.**
-Nothing to rotate; acceptance criterion 3 is satisfied vacuously. The one
+Nothing to rotate, so acceptance criterion 3 has no work to do — it is ticked as
+vacuous, *not* on the strength of an owner acceptance, which nobody gave. The one
 credential-shaped 40-character token is upstream documentation's own example
 value, verified against the live docs page rather than assumed.
 
