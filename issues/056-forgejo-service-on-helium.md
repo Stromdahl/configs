@@ -170,3 +170,38 @@ exists (hermes-helium 022)` failed `rc=127` with `--name: command not found`. Ca
 a folded scalar — so the flags become separate shell commands. Pre-existing latent bug,
 unrelated to Forgejo, triggered whenever the `else` branch runs. Filed separately rather
 than fixed here.
+
+## AC5 verified 2026-08-24 — clone and push both work
+
+After the owner changed the admin password (which is what unblocked the API — see below),
+the remaining setup completed and **AC5 passes**:
+
+- Admin `ms` / `ms@stromdahl.tech` created via CLI; the krypton agent key added (HTTP 201);
+  private test repo `ms/ac5-probe` created (HTTP 201).
+- The API advertises exactly `ssh://git@git.home.stromdahl.tech:222/ms/ac5-probe.git`
+  — the form predicted from the rehearsal, confirmed here on the real instance.
+- `git clone` against that exact string **succeeded** from krypton over the LAN, and a
+  follow-up `git push` also succeeded, so the write path works too (not just read).
+- helium's own sshd remains on 22 (`SSH-2.0-OpenSSH_10.0p2`), Forgejo's on 222
+  (`SSH-2.0-Go`).
+
+**`--must-change-password` blocks the whole API, not just the web login.** Every API call
+returned 403 `You must change your password` until the owner changed it. Worth knowing
+before choosing that flag for any future service account: it is not a UI-only gate.
+
+## Still open
+
+1. **AC1's mesh half is unverified.** `https://git.home.stromdahl.tech/` returns 200 with
+   a valid Let's Encrypt cert over the LAN, and the same request forced to the LAN IP
+   proves the router and cert are correct — but helium's mesh IP `100.65.22.72` is not
+   reachable from krypton (pre-existing, unrelated to this issue), so the mesh path could
+   not be exercised from here. One load of the URL from a phone or roaming laptop on the
+   mesh closes this.
+2. **Four access tokens remain on the `ms` account** (`gitea-admin`, `ac5-probe-setup`,
+   `ac5-diag`, `ac5-final`), created while working through the API. Revocation was
+   attempted and **failed**: `DELETE /api/v1/users/ms/tokens/<id>` returns 401 under token
+   auth even though `GET` on the same path returns 200 — Forgejo's token-management
+   endpoints require **basic auth**, which needs the owner's new password. Revoke them in
+   the UI under Settings → Applications.
+3. **The test repo `ms/ac5-probe` still exists.** Harmless, and it is the AC5 evidence;
+   delete it whenever, or leave it until `issues/063` populates the org for real.
